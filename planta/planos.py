@@ -1,0 +1,623 @@
+"""Láminas de la planta industrial: FL_PI_01 a FL_PI_05."""
+
+import math
+from datetime import date
+
+from ezdxf.enums import TextEntityAlignment
+
+from . import layout as L
+from . import calculos as C
+from . import dibujo as D
+from .lamina import Hoja, FORMATOS
+
+A = TextEntityAlignment
+FECHA = date.today().strftime("%d/%m/%Y")
+PROYECTO = "Planta industrial de extintores FLAMA S.A. - año 10 (2035)"
+
+
+def f(v, d=1):
+    """número con coma decimal."""
+    return f"{v:,.{d}f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def hoja(doc, fmt, ox, titulo, sub, codigo, n, tot, escala, tipo="Plano de planta", material="-", unidades="Cotas en m"):
+    h = Hoja(doc, fmt, ox)
+    h.formato()
+    h.rotulo({"titulo": titulo, "subtitulo": sub, "codigo": codigo, "hoja": n, "hojas": tot, "escala": escala,
+              "material": material, "edicion": "0", "fecha": FECHA, "dibujo": "Claude Code", "reviso": "",
+              "aprobo": "", "tipo_doc": tipo, "empresa": "FLAMA S.A.", "tol_titulo": "Unidades",
+              "tolerancias": unidades})
+    return h
+
+
+def titulo_hoja(pl, h, texto, sub=None):
+    pl.texto(texto, (h.fx0 + 8, h.fy1 - 8), 7.0, A.TOP_LEFT, papel=True)
+    if sub:
+        pl.texto(sub, (h.fx0 + 8, h.fy1 - 18), 3.5, A.TOP_LEFT, papel=True)
+
+
+def leyenda_flujos(pl, x, y, cats, titulo="Referencias", w=70):
+    nombres = {"MP": "MP: materia prima (azul)", "SE": "SE: semielaborado (naranja)",
+               "TL": "Tren logístico de un sentido (SE)", "RET": "Retorno vacío del tren",
+               "PT": "PT: producto terminado (verde)", "SCRAP": "Scrap y retal (gris)",
+               "PER": "Hilos de personal (magenta)", "EFL-L": "Efluentes líquidos (marrón)",
+               "EFL-G": "Emisiones gaseosas: captación y salida por techo (cian)"}
+    pl.texto(titulo, (x, y), 3.5, A.BOTTOM_LEFT, papel=True)
+    yy = y - 6
+    for c in cats:
+        pl.m.add_lwpolyline([(x, yy), (x + 16, yy)], dxfattribs={"layer": D.COLOR_FLUJO[c]})
+        pl.punta((x + 16, yy), (1, 0), 3.0, 1.5, D.RGB_FLUJO[c], D.COLOR_FLUJO[c], papel=True)
+        pl.texto(nombres[c], (x + 20, yy), 2.5, A.MIDDLE_LEFT, papel=True)
+        yy -= 5.5
+    return yy
+
+
+def base_planta(pl, relleno=True, eq_rotulos=True, fino=True, ejes=True, h_eq=1.2):
+    """Nave, anexos, sectores, pasillos, equipos y aberturas (fondo común de los planos de flujo)."""
+    D.sectores(pl, relleno=relleno)
+    D.locales(pl, rotulos=False, relleno=relleno)
+    if relleno:
+        for s in L.ANEXOS:
+            if s.cod == "RC":
+                pass
+    D.pasillos(pl, demarcacion=True, h=1.6)
+    D.equipos(pl, rotulos=eq_rotulos, h=h_eq, fino=fino)
+    D.muros(pl)
+    D.puertas(pl, etiquetas=True, h=1.6)
+    if ejes:
+        D.ejes(pl, r_glob=3.0, sobresale=3.0)
+
+
+def emisiones(pl):
+    for x, y, nom in L.EMISIONES:
+        r = 0.7
+        pl.circulo((x, y), r, "F-EFL-GAS")
+        pl.linea((x - r * 0.7, y - r * 0.7), (x + r * 0.7, y + r * 0.7), "F-EFL-GAS")
+        pl.linea((x - r * 0.7, y + r * 0.7), (x + r * 0.7, y - r * 0.7), "F-EFL-GAS")
+
+
+# ================================================================ composición común de los planos de flujo
+VENTANA = (L.TERRENO[0], -64.0, L.TERRENO[2], L.TERRENO[3])     # terreno completo + vereda y calle
+
+
+def lamina_flujo(doc, ox, cod, titulo, denom, sub, tipo, n=1, tot=1):
+    h = hoja(doc, "A0", ox, denom, sub, cod, n, tot, "1:200", tipo)
+    k = 200
+    x0, y0, x1, y1 = VENTANA
+    alto = (y1 - y0) * 1000 / k
+    pl = D.Plano(h, k, (x0, y0), (h.fx0 + 10, h.fy1 - 34 - alto))
+    titulo_hoja(pl, h, titulo, "Planta industrial FLAMA S.A. - Parque Industrial Villa de Luján, Sarandí (Avellaneda) - "
+                "dimensionada al año 10 (2035). Escala 1:200. Norte arriba; la calle de acceso está al sur.")
+    return h, pl
+
+
+def norte(pl, xy, r=3.0):
+    c = pl.P(*xy)
+    rr = 2 * r
+    pl.m.add_circle(c, rr, dxfattribs={"layer": "A-TEXTO"})
+    pts = [(c[0], c[1] + rr), (c[0] - rr * 0.35, c[1] - rr * 0.6), (c[0], c[1] - rr * 0.3)]
+    hh = pl.m.add_hatch(dxfattribs={"layer": "A-TEXTO"})
+    hh.set_solid_fill(rgb=(0, 0, 0))
+    hh.paths.add_polyline_path(pts, is_closed=True)
+    pl.m.add_lwpolyline([(c[0], c[1] + rr), (c[0] + rr * 0.35, c[1] - rr * 0.6), (c[0], c[1] - rr * 0.3)],
+                        dxfattribs={"layer": "A-TEXTO"})
+    pl.texto("N", (c[0], c[1] + rr + 1.5), 3.5, A.BOTTOM_CENTER, papel=True)
+
+
+def sitio(pl, rotulos=True, estacionamiento=True):
+    """Terreno, línea municipal, calles internas, portones, estacionamiento y elementos exteriores."""
+    x0, y0, x1, y1 = L.TERRENO
+    pl.pl([(x0, y0), (x1, y0), (x1, y1), (x0, y1)], "A-EXTERIOR", True, lineweight=70)
+    # calle pública y vereda
+    pl.linea((x0 - 2, y0 - 3.0), (x1 + 2, y0 - 3.0), "A-EXTERIOR")
+    pl.texto("VEREDA", ((x0 + x1) / 2, y0 - 1.5), 2.0, A.MIDDLE_CENTER)
+    pl.texto("CALLE (acceso) - Gral. Heredia, Parque Industrial Villa de Luján", ((x0 + x1) / 2 - 30, y0 - 3.8),
+             2.2, A.TOP_CENTER)
+    pl.linea((x0, y0 + L.RETIRO_FRENTE), (x1, y0 + L.RETIRO_FRENTE), "A-SECTOR")
+    pl.texto("Retiro de frente parquizado 10 m (verificar con el reglamento del parque)", (x0 + 48, y0 + 5), 1.8,
+             A.MIDDLE_CENTER)
+    for r in L.CALLES:
+        pl.rect(r, "A-EXTERIOR")
+    pl.texto("Calle interna de camiones 7 m (sentido: entra por G1, sale por G3)", (60.0, 60.5), 2.0, A.MIDDLE_CENTER)
+    for cod, a, b, uso in L.PORTONES_TERRENO:
+        pl.linea((a, y0), (b, y0), "A-ABERTURA")
+        pl.linea((a, y0 + 0.4), (b, y0 + 0.4), "A-ABERTURA")
+        if rotulos:
+            pl.texto(cod, ((a + b) / 2, y0 + 1.6), 2.0, A.MIDDLE_CENTER)
+    for cod, nom, r, tipo in L.EXTERIOR:
+        if tipo == "reserva":
+            pl.rayado(r.pts(), "A-EXTERIOR", 6.0, 45)
+        pl.rect(r, "A-EXTERIOR")
+        if rotulos:
+            pl.texto(cod, (r.x0 + 0.5, r.y1 - 0.5), 1.6, A.TOP_LEFT)
+    if estacionamiento:
+        # dos filas de cocheras de 2,50 × 5,00 y calle de 6 m; 2 accesibles de 3,50 junto al ingreso peatonal
+        xs = [-8.0 + 2.5 * i for i in range(25)]
+        for yb, yt in ((-26.0, -21.0), (-37.0, -32.0)):
+            for x in xs:
+                pl.linea((x, yb), (x, yt), "A-EXTERIOR")
+            pl.linea((xs[0], yb if yb < -30 else yb), (xs[-1], yb if yb < -30 else yb), "A-EXTERIOR")
+        for x in (52.0, 48.5, 45.0):
+            pl.linea((x, -26.0), (x, -21.0), "A-EXTERIOR")
+        pl.texto("2 accesibles 3,50 m", (48.5, -23.5), 1.4, A.MIDDLE_CENTER)
+        pl.texto("40 cocheras 2,50 × 5,00", (20.0, -29.0), 1.8, A.MIDDLE_CENTER)
+        # camino peatonal desde G4 al hall
+        pl.pl([(22.5, -60.0), (22.5, -44.0), (37.0, -44.0), (37.0, -15.0), (40.2, -13.0)], "A-SECTOR")
+    norte(pl, (140.0, -52.0))
+
+
+def fondo(pl, relleno=True, rot_eq=True, h_eq=1.2, sitio_=True):
+    """Nave, anexos, sectores, pasillos, equipos, aberturas y exterior."""
+    if sitio_:
+        sitio(pl)
+    D.sectores(pl, relleno=relleno)
+    D.locales(pl, rotulos=False, relleno=relleno)
+    D.pasillos(pl, demarcacion=True, h=1.6)
+    D.equipos(pl, rotulos=rot_eq, h=h_eq, fino=True)
+    D.muros(pl)
+    D.puertas(pl, etiquetas=True, h=1.6)
+    D.ejes(pl, r_glob=2.6, sobresale=1.6, completo=False)
+
+
+class Columna:
+    """Cursor para ir apilando bloques en la columna derecha de la lámina."""
+
+    def __init__(self, h, pl, x0=None):
+        self.pl = pl
+        self.x = x0 if x0 is not None else pl.P(L.TERRENO[2], 0)[0] + 12
+        self.y = h.fy1 - 34
+        self.w = h.fx1 - 6 - self.x
+
+    def bajar(self, d):
+        self.y -= d
+
+
+
+
+# ================================================================ FL_PI_03 flujo de materiales
+MARCAS_03 = [
+    (1, (6.5, 52.0), "MP-1 hojas y flejes en chasis: bahía interior BR, descarga por los dos lados (P1)"),
+    (2, (14.2, 52.0), "MP-2 hojas o flejes en semi: playa norte bajo alero, descarga por los dos lados (P1b)"),
+    (3, (8.0, 49.5), "MP-3 caño Ø76,2 × 6 m en atados (P1)"),
+    (4, (-6.0, 13.8), "MP-4 casquetes de carros (P7)"),
+    (5, (89.0, 51.0), "MP-5 polvo químico en big bags (P4)"),
+    (6, (98.0, 51.0), "MP-6 válvulas, manómetros, etiquetas y embalaje (P5)"),
+    (7, (76.3, 51.0), "MP-7 químicos de pretratamiento y pintura en polvo (P3)"),
+    (8, (129.0, 12.6), "MP-8 polvo de carros, estructuras y ruedas (P8)"),
+    (9, (129.0, 16.4), "MP-9 tercerizados revendidos (M3)"),
+    (10, (54.0, 38.0), "SE tren logístico: sector MP -> celdas -> pintura, un solo sentido"),
+    (11, (-6.0, 7.4), "SE carros a pintura tercerizada (P6); vuelven pintados por P8"),
+    (12, (129.0, 31.0), "PT a expedición por los muelles M1 y M2"),
+    (13, (129.0, 3.4), "PT carros terminados (P9)"),
+    (14, (-6.0, 20.2), "Scrap oeste: orillas de hoja (P2)"),
+    (15, (32.8, 46.0), "Scrap norte: esqueleto de fleje (P2b)"),
+    (16, (71.5, -32.0), "Efluentes líquidos a tratamiento PTE y colectora"),
+    (17, (104.0, -8.5), "Recargas: RC-1 -> descarga -> PH -> recarga -> despacho RC-2"),
+]
+
+
+def flujos_materiales(pl):
+    camion(pl, (10.4, 41.0), 18.6, "Semi 30 t", horiz=True)
+    camion(pl, (5.2, 24.8), 10.0, "Chasis 16 t", horiz=False)
+    camion(pl, (-11.0, 0.5), 9.5, "Pintor", horiz=False)
+    camion(pl, (122.0, 27.2), 9.5, "PT", horiz=True)
+    camion(pl, (122.0, 13.3), 9.5, "Tercerizados", horiz=True)
+    camion(pl, (122.0, 8.8), 9.5, "Carros", horiz=True)
+    camion(pl, (85.0, 39.0), 9.5, "Polvo / insumos", horiz=True)
+    camion(pl, (101.0, -18.5), 6.0, "Utilitario", horiz=True)
+    for fl in L.FLUJOS:
+        pl.flujo(fl.pts, fl.cat, cada=22.0 if fl.cat in ("TL", "SE") else 26.0,
+                 largo=2.6 if fl.cat != "TL" else 3.4, ancho=1.3 if fl.cat != "TL" else 1.9)
+    pl.flujo(L.RC_FLUJO, "SE", cada=22.0, largo=2.6, ancho=1.3)
+    for fl in L.EFLUENTES:
+        pl.flujo(fl.pts, fl.cat, cada=30.0, largo=2.4, ancho=1.2)
+    emisiones(pl)
+
+
+def fl_pi_03(doc, ox):
+    h, pl = lamina_flujo(doc, ox, "FL_PI_03", "FL_PI_03 - FLUJO DE MATERIALES: MP, SE, PT, SCRAP Y EFLUENTES",
+                         "Flujo de materiales", "MP, SE, PT, scrap y efluentes - año 10", "Diagrama de flujo", 1, 2)
+    fondo(pl)
+    flujos_materiales(pl)
+    D.rotulos_sector(pl, h=1.7, areas=False)
+    for n, xy, txt in MARCAS_03:
+        globo(pl, n, xy)
+    col = Columna(h, pl)
+    x = col.x
+    y = leyenda_flujos(pl, x, col.y, ["MP", "SE", "TL", "RET", "PT", "SCRAP", "EFL-L", "EFL-G"])
+    y -= 3
+    pl.texto("Flujos numerados", (x, y), 3.5, A.BOTTOM_LEFT, papel=True)
+    y -= 5.5
+    for n, xy, txt in MARCAS_03:
+        globo_papel(pl, n, (x + 3, y))
+        pl.texto(txt, (x + 8, y), 2.2, A.MIDDLE_LEFT, papel=True)
+        y -= 5.0
+    y = pl.parrafo(["Criterios: cada MP entra por el portón más cercano a la máquina que la transforma;",
+                    "recorrido recto oeste -> este con 0 cruces entre MP, SE y PT (verificado por cálculo);",
+                    "tren logístico de un solo sentido; scrap por portones propios a volquetes exteriores",
+                    "(el chatarrero no entra); efluentes por gravedad a PTE junto a la colectora."], x, y - 2, 2.2)
+    cols = [("Proveedor / material", 58, "l"), ("t/entr.", 14, "c"), ("Entr./año", 15, "c"),
+            ("Vehículo", 62, "l"), ("Portón", 36, "c"), ("Destino", 25, "c")]
+    filas = [[g, f(t, 1), f(n, 1), v, p, d] for g, t, n, v, p, d in C.ENTREGAS]
+    y = pl.tabla(x, y - 12, cols, filas, 4.3, 2.1, "Recepción de MP por entrega (año 10)")
+    cols2 = [("Formato de camión", 56, "l"), ("Largo m", 14, "c"), ("Carga t", 14, "c"), ("PBT t", 12, "c"),
+             ("Dónde se descarga", 114, "l")]
+    filas2 = [[a, f(b, 1), f(c, 1), f(d, 1), e] for a, b, c, d, e in C.CAMIONES]
+    y = pl.tabla(x, y - 12, cols2, filas2, 4.3, 2.0, "Formatos de descarga (Ley 24.449: ancho 2,60 m, alto 4,10 m)")
+    cols3 = [("Autoelevador (c = 500 mm)", 50, "l"), ("Paquete por el lado largo (c = 750)", 58, "c"),
+             ("Por el lado corto (c = 1500)", 50, "c")]
+    filas3 = [[f"{f(q, 1)} t nominal", f"{f(a, 2)} t " + ("NO" if a < 2 else "OK"), f"{f(b, 2)} t NO"]
+              for q, a, b in C.analisis_peso()]
+    y = pl.tabla(x, y - 12, cols3, filas3, 4.3, 2.1, "Análisis de peso: paquete de hoja 1500 × 3000 de 2 t")
+    y = pl.parrafo(["Q = Qn · (cn + d) / (c + d), d = 0,45 m. Se adopta autoelevador eléctrico de 3,0 t con horquillas",
+                    "de 1,8 m y posicionador (toma el paquete por el lado largo: 2,37 t > 2 t).",
+                    "Pradecon entrega 35,3 t por mes: supera un semi (30 t). Se parte en dos entregas quincenales",
+                    "de 17,6 t en chasis con balancín; baja el stock máximo de chapa.",
+                    "Dimensionado a la carga máxima: playa norte para semi de 18,6 m / 30 t y bahía interior para",
+                    "chasis de 10 m; las dos con descarga por ambos lados."], x, y - 3, 2.1)
+    cols4 = [("Formato de hoja", 66, "l"), ("Hojas/sem", 18, "c"), ("Paquete 2 t cubre (sem)", 32, "c"),
+             ("Paquete propuesto", 32, "c"), ("Stock máx. (sem)", 24, "c")]
+    filas4 = [[r["formato"], f(r["hojas_sem"], 1), f(r["cob_2t"], 1),
+               f"{r['hojas_paq']} h ({f(r['kg_paq'] / 1000, 2)} t)", f(r["cob_max"], 1)] for r in C.sobrestock()]
+    y = pl.tabla(x, y - 12, cols4, filas4, 4.3, 2.1, "Anti-sobrestock de chapa SAE 1010")
+    y = pl.parrafo([
+        "1. Un módulo del cantiléver por formato con 2 posiciones (en uso y en espera): si están ocupadas no se",
+        "   pide (kanban de 2 paquetes, tope pintado). 2. Paquetes chicos en formatos de bajo consumo: ninguno",
+        "   cubre más de 2 semanas. 3. Tarjeta de color por mes de ingreso; semáforo verde < 4 sem., amarillo",
+        "   4 a 6, rojo > 6 (se consume primero y se inspecciona óxido). 4. LAF aceitada con film VCI, bajo techo."],
+        x, y - 3, 2.1)
+    return h
+
+
+def fl_pi_03b(doc, ox):
+    h, pl = lamina_flujo(doc, ox, "FL_PI_03", "FL_PI_03 - REDES: ELECTRICIDAD, AIRE, GASES Y EFLUENTES",
+                         "Redes e instalaciones", "Tendidos mínimos desde la sala técnica", "Plano de instalaciones",
+                         2, 2)
+    fondo(pl, relleno=False, rot_eq=True)
+    D.rotulos_sector(pl, h=1.7, areas=False)
+    R_ = C.redes()
+    tg = C.TGBT
+    for sec, kw, (cx, cy), lg in R_["elec"]:
+        pts = [tg, (tg[0], 33.4), (cx, 33.4), (cx, cy)]
+        pl.pl(pts, "I-ELEC")
+        pl.circulo((cx, cy), 0.6, "I-ELEC")
+        pl.texto(f"TS {sec}", (cx + 0.8, cy + 0.6), 1.6, A.BOTTOM_LEFT, "I-ELEC")
+    pl.pl([(58.0, 36.0), (58.0, 30.0), (4.0, 30.0), (4.0, 12.0), (104.0, 12.0), (104.0, 30.0), (58.0, 30.0)], "I-AIRE")
+    for cod, lg in R_["sold"]:
+        e = next(x for x in L.EQUIPOS if x.cod == cod)
+        pl.pl([C.JGS, (C.JGS[0], 31.0), (e.rect.c[0], 31.0), e.rect.c], "I-SOLD")
+    for cod, lg in R_["n2"]:
+        e = next(x for x in L.EQUIPOS if x.cod == cod)
+        pl.pl([C.JGN, (C.JGN[0], 29.8), (104.4, 29.8), (104.4, e.rect.c[1]), e.rect.c], "I-N2")
+    for cod, lg in R_["gas"]:
+        e = next(x for x in L.EQUIPOS if x.cod == cod)
+        pl.pl([C.ERM, (C.ERM[0], 31.6), (e.rect.c[0], 31.6), e.rect.c], "I-GAS")
+    for fl in L.EFLUENTES:
+        pl.flujo(fl.pts, fl.cat, cada=30.0, largo=2.4, ancho=1.2)
+    emisiones(pl)
+    col = Columna(h, pl)
+    x, y = col.x, col.y
+    pl.texto("Referencias", (x, y), 3.5, A.BOTTOM_LEFT, papel=True)
+    y -= 6
+    for capa, txt in (("I-ELEC", "Alimentador eléctrico TGBT -> tablero seccional (TS)"),
+                      ("I-AIRE", "Aire comprimido: anillo con bajadas FRL cada 8 m"),
+                      ("I-SOLD", "Gas de soldadura Ar/CO₂ (ARCAL 21) desde la jaula JG-S"),
+                      ("I-N2", "Nitrógeno para presurización desde la jaula JG-N"),
+                      ("I-GAS", "Gas natural a los hornos desde la regulación ERM"),
+                      ("F-EFL-LIQ", "Efluentes líquidos a PTE (enterrado, por gravedad)"),
+                      ("F-EFL-GAS", "Captación localizada y salida por techo")):
+        pl.m.add_lwpolyline([(x, y), (x + 16, y)], dxfattribs={"layer": capa})
+        pl.texto(txt, (x + 20, y), 2.3, A.MIDDLE_LEFT, papel=True)
+        y -= 5.5
+    y = pl.parrafo(["Criterio 4 (minimizar tendidos): la sala técnica ST (transformador, TGBT y compresores) está en",
+                    "el centro de cargas, sobre la fachada norte; las jaulas de gases, junto a sus consumos; la PTE,",
+                    "al sur junto a la colectora. Los procesos con efluente líquido (PH, pretratamiento y lavado de",
+                    "recargas) quedan en una franja central de 20 m de ancho para acortar la cañería enterrada.",
+                    "Recargas tiene tableros propios, manifold de N₂ y cámara de decantación.",
+                    f"Potencia instalada de equipos: {f(R_['kw_total'], 0)} kW; con simultaneidad 0,6 -> transformador de",
+                    "315 kVA (verificar con el relevamiento de cargas definitivo)."], x, y - 3, 2.2)
+    cols = [("Tablero seccional", 44, "l"), ("kW", 16, "c"), ("Largo desde TGBT m", 34, "c")]
+    filas = [[s_, f(k, 1), f(lg, 1)] for s_, k, c_, lg in R_["elec"]]
+    filas.append(["Total", f(R_["kw_total"], 1), f(sum(r[3] for r in R_["elec"]), 1)])
+    yb = pl.tabla(x, y - 12, cols, filas, 4.3, 2.1, "Alimentadores (recorrido ortogonal)")
+    x2 = x + 104
+    yy = y - 12
+    for tit, datos in (("Agua de PH y pretratamiento a PTE", R_["agua"]), ("Gas natural a hornos", R_["gas"]),
+                       ("Nitrógeno", R_["n2"]), ("Gas de soldadura", R_["sold"])):
+        yy = pl.tabla(x2, yy, [("Punto", 36, "l"), ("Largo m", 22, "c")],
+                      [[c_, f(l_, 1)] for c_, l_ in datos] + [["Total", f(sum(l_ for c_, l_ in datos), 1)]],
+                      4.1, 2.1, tit) - 11
+    pl.parrafo([f"Anillo de aire comprimido: {f(R_['aire_anillo_m'], 0)} m.",
+                "Compresor a tornillo, tanque pulmón y secador frigorífico en ST.",
+                "N₂: manifold con conmutación automática, regulador y detector de fugas."], x2 + 66, y - 12, 2.1)
+    return h
+
+
+# ================================================================ FL_PI_01 DIR
+TRONCOS = {
+    "hombres": [(22.5, -60.0), (22.5, -44.0), (37.0, -44.0), (37.0, -15.0), (40.2, -13.0), (40.7, -9.5), (40.9, -6.6),
+                (41.2, -3.0), (47.3, -3.0), (47.3, -6.6), (51.4, -6.6), (51.4, 0.0)],
+    "mujeres": [(40.9, -6.6), (51.4, -6.9), (55.2, -6.9), (55.2, -3.0), (55.2, -6.3), (51.9, -6.3), (51.9, 0.0)],
+    "comedor": [(51.4, -6.6), (60.8, -6.6), (60.8, -10.2)],
+    "recargas": [(51.4, -6.6), (65.9, -6.6), (68.0, -6.6), (68.0, -8.8), (70.0, -8.8), (73.0, -8.8)],
+    "oficinas": [(40.9, -6.6), (47.4, -7.6), (47.4, -10.2)],
+}
+
+
+def fl_pi_01(doc, ox):
+    h, pl = lamina_flujo(doc, ox, "FL_PI_01", "FL_PI_01 - DIAGRAMA DE RECORRIDO DE HILOS DEL PERSONAL (DIR)",
+                         "DIR hilos de personal", "Recorridos del personal - año 10", "Diagrama de recorrido")
+    fondo(pl, relleno=True, rot_eq=True)
+    for fl in L.FLUJOS:
+        pl.pl(fl.pts, "F-RET")
+    for s_ in L.LOCALES:
+        pl.texto(s_.cod, s_.rect.c, 1.3, A.MIDDLE_CENTER)
+    for pts in TRONCOS.values():
+        pl.pl(pts, "F-PERSONAL")
+    grupos = []
+    for nom, main, br in L.HILOS:
+        pl.pl(main, "F-PERSONAL")
+        mx = 0.0
+        for a, b, c_, d in br:
+            pl.pl([(a, b), (c_, d)], "F-PERSONAL")
+            pl.relleno(circ_pts((c_, d), 0.35), D.RGB_FLUJO["PER"], "F-PERSONAL")
+            mx = max(mx, math.dist((a, b), (c_, d)))
+        if not br:
+            pl.relleno(circ_pts(main[-1], 0.35), D.RGB_FLUJO["PER"], "F-PERSONAL")
+        grupos.append((nom, C.largo(main) + mx, main))
+    for cod, r, nota in L.SENDAS:
+        globo(pl, cod, (r.c[0] - 3.5, r.c[1]), 3.0)
+    D.rotulos_sector(pl, h=1.6, areas=False)
+    col = Columna(h, pl)
+    x, y = col.x, col.y
+    pl.texto("Referencias", (x, y), 3.5, A.BOTTOM_LEFT, papel=True)
+    y -= 6
+    pl.m.add_lwpolyline([(x, y), (x + 16, y)], dxfattribs={"layer": "F-PERSONAL"})
+    pl.texto("Hilo de personal (magenta, trazos)", (x + 20, y), 2.3, A.MIDDLE_LEFT, papel=True)
+    y -= 5.5
+    pl.m.add_circle((x + 8, y), 0.9, dxfattribs={"layer": "F-PERSONAL"})
+    pl.texto("Puesto de trabajo", (x + 20, y), 2.3, A.MIDDLE_LEFT, papel=True)
+    y -= 5.5
+    pl.m.add_lwpolyline([(x, y), (x + 16, y)], dxfattribs={"layer": "F-RET"})
+    pl.texto("Flujos de materiales, de fondo (ver FL_PI_03)", (x + 20, y), 2.3, A.MIDDLE_LEFT, papel=True)
+    y -= 5.5
+    for k in range(4):
+        pl.m.add_lwpolyline([(x + k * 4, y - 1.2), (x + k * 4 + 2, y - 1.2), (x + k * 4 + 2, y + 1.2), (x + k * 4, y + 1.2)],
+                            close=True, dxfattribs={"layer": "A-SENDA"})
+    pl.texto("Senda peatonal señalizada: único cruce de hilo y flujo", (x + 20, y), 2.3, A.MIDDLE_LEFT, papel=True)
+    y = pl.parrafo([
+        "",
+        "Recorrido: estacionamiento -> G4 -> hall y fichado -> vestuario (ropa de calle) -> sanitarios y",
+        "duchas -> paso a planta PP-1 -> pasillo de personal PP (sur) -> calles de operarios PO -> puesto.",
+        "Se vuelve por el mismo camino y se pasa por el vestuario (circuito sucio -> limpio).",
+        "Separación de circulaciones: pasillo de personal PP al sur, contra servicios; pasillo de materiales",
+        "PM al norte. En las celdas los operarios trabajan del lado de afuera de cada horquilla y llegan",
+        "por las calles PO sin cruzar el recorrido de las piezas. Sólo el personal del sector MP cruza el",
+        "colector del tren logístico, por las sendas SP-1 y SP-2 (demarcación, semáforo y espejo).",
+        "Cruces de hilos con flujos verificados por cálculo sobre el modelo: 2, ambos en sendas.",
+        "Recargas: su personal pasa por el pasaje cubierto este (RC-4) y usa el núcleo sanitario este,",
+        "que también atiende al extremo este de la planta por PP-3. El mostrador tiene puerta propia al",
+        "estacionamiento: el público no entra a la planta.",
+    ], x, y - 2, 2.2)
+    cols = [("Hilo (grupo de puestos)", 64, "l"), ("Desde PP-1 (m)", 26, "c"), ("A sanitario (m)", 26, "c")]
+    filas = []
+    for nom, lg, main in grupos:
+        fin = main[-1]
+        d1 = abs(fin[0] - 51.4) + abs(fin[1])
+        d2 = abs(fin[0] - 71.6) + abs(fin[1])
+        filas.append([nom, f(lg, 0), f(min(d1, d2), 0)])
+    yb1 = pl.tabla(x, y - 12, cols, filas, 4.3, 2.1, "Longitud de los hilos (turno mañana)")
+    ops = {}
+    for e in L.EQUIPOS:
+        ops.setdefault(e.sector, [0, 0])
+        ops[e.sector][0] += 1 if e.op else 0
+        ops[e.sector][1] += e.op
+    nombre = {s_.cod: s_.nombre for s_ in L.SECTORES}
+    cols2 = [("Sector", 88, "l"), ("Puestos", 16, "c"), ("Operarios", 18, "c")]
+    filas2 = [[f"{k} {nombre.get(k, '')}", v[0], v[1]] for k, v in ops.items() if v[1]]
+    filas2.append(["Total de puestos (la DT, con coef. hombre-máquina, da 30 operarios)", "",
+                   sum(v[1] for v in ops.values())])
+    yb2 = pl.tabla(x + 126, y - 12, cols2, filas2, 4.0, 2.0, "Puestos con operario en la nave")
+    y = min(yb1, yb2)
+    san = C.sanitarios()
+    cols3 = [("Artefacto", 36, "l"), ("H req.", 16, "c"), ("H proy.", 16, "c"), ("M req.", 16, "c"),
+             ("M proy.", 16, "c")]
+    filas3 = [[k.capitalize(), san["req_H"][k], san["proy"]["H"][k], san["req_M"][k], san["proy"]["M"][k]]
+              for k in ("inodoros", "lavabos", "orinales", "duchas")]
+    filas3.append(["Armarios (art. 50)", san["armarios_req"]["H"], san["armarios_proy"]["H"], san["armarios_req"]["M"],
+                   san["armarios_proy"]["M"]])
+    filas3.append(["Sanitario accesible", "-", "2", "-", "unisex"])
+    yb = pl.tabla(x, y - 12, cols3, filas3, 4.3, 2.1,
+                  f"Sanitarios (Dec. 351/79 art. 49): {san['H']} H y {san['M']} M en el turno más numeroso")
+    pl.parrafo([
+        "Turno mañana: 53 personas + 8 choferes que inician",
+        "y terminan en planta; 10 % mujeres (DT 2035).",
+        "Dos núcleos para repartir la planta en forma",
+        "equitativa: principal (servicios, junto a PP-1) y",
+        "este (ala de recargas, PP-3), cada uno con H, M y",
+        "sanitario accesible (Ley 24.314, Dec. 914/97).",
+        "Vestuario de mujeres al 20 % de la dotación para no",
+        "condicionar la incorporación de personal femenino.",
+        "Lactario (Ley 26.873) y primeros auxilios en servicios.",
+        "Espacio de cuidado (Dec. 144/2022): no obligatorio",
+        "con menos de 100 personas (dotación 71).",
+    ], x + 112, y - 12, 2.1)
+    return h
+
+
+def circ_pts(c, r, n=16):
+    return [(c[0] + r * math.cos(2 * math.pi * i / n), c[1] + r * math.sin(2 * math.pi * i / n)) for i in range(n)]
+
+
+# ================================================================ FL_PI_02 flujo de operaciones
+ASME = {}
+for _c in ("M04", "M15", "M16", "M06", "M08", "M09", "M10", "M11", "M12", "C01", "C02", "C03", "C04", "C05", "C08",
+           "C09", "A03", "A04", "A05", "A06", "B01", "B02", "B03", "B04", "B05", "B06", "B08", "B10", "P01", "P02",
+           "P03", "P04", "P06", "P08", "T01", "T02", "T03", "T04", "T05", "T07", "T08", "T09", "T10", "T11", "T12",
+           "T13"):
+    ASME[_c] = "O"
+for _c in ("M13", "C06", "B09", "P09", "T06", "Q01"):
+    ASME[_c] = "I"
+for _c in ("A07", "B07", "C07"):
+    ASME[_c] = "OI"
+for _c in ("M17", "A00", "A09", "A10", "A08", "B00", "B11", "B12", "C12", "P07", "SM-K", "PU-G"):
+    ASME[_c] = "D"
+ALMACENES = ("AL-1H", "AL-1F", "AL-1T", "AL-1C", "PÑ", "AL-PV", "AL-2", "QP", "AL-3", "S4", "PTC", "RC-DP")
+
+CURSOGRAMAS = {
+    "S1 - Matafuegos ABC 1 kg (fabricados)": [
+        ("A", "Caño en cantiléver", "AL-1T"), ("O", "Corte de caño láser", "M15/M16"), ("D", "Pulmón", "M17"),
+        ("T", "Tren logístico", "PM"), ("D", "Kanban", "A00"), ("O", "Numerado", "A03"),
+        ("O", "Encastre de fondo", "A04"), ("O", "Encastre de cúpula con cuello", "A05"), ("D", "Pulmón", "A09"),
+        ("O", "Soldadura circunferencial", "A06"), ("OI", "Prueba hidráulica 100 %", "A07"),
+        ("D", "Pulmón a pintura", "A08"), ("T", "Tren logístico", "PM"), ("O", "Pretratamiento", "P02"),
+        ("O", "Secado", "P03"), ("O", "Pintura en polvo", "P04"), ("O", "Polimerizado", "P06"),
+        ("I", "Espesor y adherencia", "P09"), ("O", "Carga de polvo", "T01"), ("O", "Ensamblaje", "T03/T04"),
+        ("O", "Presurización con N₂", "T05"), ("I", "Hermeticidad", "T06"), ("O", "Etiquetado", "T07"),
+        ("O", "Embalaje y palletizado", "T08/T09"), ("O", "Envolvado", "T11"), ("A", "Almacén de PT", "AL-3"),
+        ("T", "Expedición", "M1/M2")],
+    "Subconjunto cúpulas y fondos 1-10 kg": [
+        ("A", "Flejes", "AL-1F"), ("O", "Desbobinado y enderezado", "M06"), ("O", "Corte y embutido", "M08"),
+        ("O", "Preparación de cuello", "M09/M10"), ("O", "Soldadura de cuello", "M11/M12"),
+        ("D", "Supermercado", "SM-K"), ("T", "Tren logístico a A04/A05 y B05", "PM")],
+    "S2 - Matafuegos ABC 2,5 / 5 / 10 kg": [
+        ("A", "Hojas LAF", "AL-1H"), ("O", "Corte de cuerpo", "M04"), ("D", "Pulmón", "PU-G"),
+        ("T", "Tren logístico", "PM"), ("D", "Supermercado", "B00"), ("O", "Numerado", "B01"),
+        ("O", "Cilindrado", "B02"), ("O", "Soldadura longitudinal", "B03"), ("O", "Bordoneado", "B04"),
+        ("O", "Encastre de fondo y cúpula", "B05"), ("O", "Soldadura circunferencial", "B06"),
+        ("OI", "Prueba hidráulica 100 %", "B07"), ("O", "Granallado", "B08"), ("I", "Detección de defectos", "B09"),
+        ("O", "Corrección", "B10"), ("D", "Pulmón a pintura", "B11"), ("T", "Tren logístico", "PM"),
+        ("O", "Pintura (igual que S1)", "P02-P06"), ("O", "Terminación (igual que S1)", "T01-T11"),
+        ("A", "Almacén de PT", "AL-3"), ("T", "Expedición", "M1/M2")],
+    "S3 - Matafuegos ABC rodantes 25 / 50 / 70 / 100 kg": [
+        ("A", "Hojas LAC", "AL-1H"), ("O", "Corte de cuerpo", "M04"), ("D", "Pulmón", "PU-G"),
+        ("O", "Cilindrado 4 rodillos", "C01"), ("O", "Punteo, refuerzo y estructura", "C02/C03"),
+        ("O", "Soldadura longitudinal", "C04"), ("O", "Soldadura circ. (casquetes AL-1C)", "C05"),
+        ("I", "Inspección de costuras", "C06"), ("OI", "Prueba hidráulica 4,0 MPa", "C07"),
+        ("O", "Marcado", "C08"), ("D", "Espera de retiro", "C12"), ("T", "Pintura tercerizada (P6 -> P8)", "-"),
+        ("O", "Carga de polvo", "T02"), ("O", "Armado de ruedas y manguera", "T12"),
+        ("O", "Presurización y etiquetado", "T13"), ("A", "Carros terminados", "PTC"), ("T", "Expedición", "P9")],
+    "S4 - Tercerizados revendidos (CO₂, agua, AFFF, K, agente limpio)": [
+        ("T", "Recepción", "M3"), ("I", "Control de recepción y sello IRAM", "S4"), ("A", "Stock", "S4"),
+        ("T", "Expedición con el pedido", "M2")],
+    "RC - Recargas (servicio)": [
+        ("T", "Recepción", "RC-1"), ("I", "Clasificación en 4 colas", "RC-MO"), ("O", "Desarme", "RC-DE"),
+        ("OI", "Descarga y ensayo de funcionamiento", "RC-DC"), ("OI", "PH, lavado y secado", "RC-PH"),
+        ("O", "Recarga por familia", "RC-PV/GA/LQ"), ("O", "Ensamblaje y presurización", "RC-EN"),
+        ("I", "Peso y hermeticidad", "RC-EN"), ("O", "Retoque y etiquetado", "RC-RP"),
+        ("A", "Para entregar", "RC-DP"), ("T", "Despacho", "RC-2")],
+}
+
+
+def simbolo(pl, tipo, c, r=1.7, papel=False):
+    """Símbolos ASME: O operación, I inspección, OI combinada, D demora, A almacenamiento, T transporte."""
+    p = c if papel else pl.P(*c)
+    m = pl.m
+    at = {"layer": "A-TEXTO"}
+    if tipo == "O":
+        m.add_circle(p, r, dxfattribs=at)
+    elif tipo == "I":
+        m.add_lwpolyline([(p[0] - r, p[1] - r), (p[0] + r, p[1] - r), (p[0] + r, p[1] + r), (p[0] - r, p[1] + r)],
+                         close=True, dxfattribs=at)
+    elif tipo == "OI":
+        m.add_lwpolyline([(p[0] - r, p[1] - r), (p[0] + r, p[1] - r), (p[0] + r, p[1] + r), (p[0] - r, p[1] + r)],
+                         close=True, dxfattribs=at)
+        m.add_circle(p, r * 0.8, dxfattribs=at)
+    elif tipo == "D":
+        m.add_lwpolyline([(p[0] - r * 0.8, p[1] - r), (p[0], p[1] - r), (p[0], p[1] + r), (p[0] - r * 0.8, p[1] + r)],
+                         dxfattribs=at)
+        m.add_arc(p, r, 270, 90, dxfattribs=at)
+    elif tipo == "A":
+        m.add_lwpolyline([(p[0] - r, p[1] + r * 0.8), (p[0] + r, p[1] + r * 0.8), (p[0], p[1] - r)],
+                         close=True, dxfattribs=at)
+    elif tipo == "T":
+        m.add_lwpolyline([(p[0] - r, p[1] - r * 0.35), (p[0] + r * 0.2, p[1] - r * 0.35), (p[0] + r * 0.2, p[1] - r * 0.8),
+                          (p[0] + r, p[1]), (p[0] + r * 0.2, p[1] + r * 0.8), (p[0] + r * 0.2, p[1] + r * 0.35),
+                          (p[0] - r, p[1] + r * 0.35)], close=True, dxfattribs=at)
+
+
+def fl_pi_02(doc, ox):
+    h, pl = lamina_flujo(doc, ox, "FL_PI_02", "FL_PI_02 - FLUJO DE OPERACIONES Y PROCESOS POR SECCIÓN",
+                         "Flujo de operaciones", "Secuencia de operaciones por sección - año 10", "Diagrama de proceso")
+    fondo(pl, relleno=True, rot_eq=False)
+    for fl in L.FLUJOS:
+        if fl.cat in ("SE", "TL", "PT"):
+            pl.flujo(fl.pts, fl.cat, cada=24.0, largo=2.4, ancho=1.2)
+    pl.flujo(L.RC_FLUJO, "SE", cada=24.0, largo=2.4, ancho=1.2)
+    for e in L.EQUIPOS:
+        t = ASME.get(e.cod)
+        if t:
+            simbolo(pl, t, e.rect.c, 1.5)
+            pl.texto(e.cod, (e.rect.c[0], e.rect.c[1] - 0.9), 1.1, A.TOP_CENTER)
+    for s in L.SECTORES + L.LOCALES:
+        if s.cod in ASME:
+            simbolo(pl, ASME[s.cod], s.rect.c, 1.5)
+        if s.cod in ALMACENES:
+            simbolo(pl, "A", s.rect.c, 1.6)
+    for s in L.LOCALES:
+        if s.cat == "RC":
+            pl.texto(s.cod, (s.rect.x0 + 0.4, s.rect.y1 - 0.4), 1.4, A.TOP_LEFT)
+    D.rotulos_sector(pl, h=1.7, areas=False)
+    # secciones (S1..S4, RC) con recuadro rotulado
+    for cod, nom, r in (("S1", "S1 1 kg", L.R(41.0, 11.8, 53.0, 31.4)), ("S2", "S2 2,5-10 kg", L.R(53.6, 11.4, 66.0, 31.4)),
+                        ("S3", "S3 rodantes", L.R(0.1, 2.5, 36.2, 10.1)), ("S4", "S4 tercerizados", L.R(110.8, 11.8, 119.9, 17.0)),
+                        ("RC", "RC recargas", L.R(70.0, -17.0, 98.0, 0.0))):
+        pl.rect(r, "F-TL")
+        pl.texto(nom, (r.x1 - 0.4, r.y0 + 0.5), 2.2, A.BOTTOM_RIGHT, "F-TL")
+    col = Columna(h, pl)
+    x, y = col.x, col.y
+    pl.texto("Símbolos (ASME)", (x, y), 3.5, A.BOTTOM_LEFT, papel=True)
+    y -= 7
+    for t, txt in (("O", "Operación"), ("I", "Inspección / control"), ("OI", "Operación e inspección combinadas"),
+                   ("T", "Transporte (tren logístico, autoelevador, carro)"), ("D", "Demora: pulmón o supermercado"),
+                   ("A", "Almacenamiento")):
+        simbolo(pl, t, (x + 4, y), 2.0, papel=True)
+        pl.texto(txt, (x + 10, y), 2.4, A.MIDDLE_LEFT, papel=True)
+        y -= 6.0
+    y = leyenda_flujos(pl, x + 140, col.y, ["SE", "TL", "PT"], "Flujos")
+    y = pl.parrafo(["Secciones: S1 1 kg fabricado; S2 manuales 2,5-10 kg;", "S3 rodantes 25-100 kg; S4 tercerizados revendidos",
+                    "(sin transformación); RC recargas (servicio, ala propia).",
+                    "Pintura y terminación son comunes a S1 y S2; los carros",
+                    "se pintan afuera. El 1 kg no se granalla."], x + 140, y - 3, 2.1)
+    y = col.y - 46
+    fila_alta = 0
+    xx = x
+    for i, (nom, pasos) in enumerate(CURSOGRAMAS.items()):
+        if i == 3:
+            y -= fila_alta + 18
+            xx = x
+            fila_alta = 0
+        cols = [("", 7, "c"), ("Paso", 57, "l"), ("Dónde", 25, "c")]
+        filas = [["", d, w] for t, d, w in pasos]
+        yb = pl.tabla(xx, y, cols, filas, 3.9, 1.9, nom if len(nom) < 44 else nom[:42] + "…", h_tit=2.6)
+        for j, (t, d, w) in enumerate(pasos):
+            simbolo(pl, t, (xx + 3.5, y - (j + 1.5) * 3.9), 1.35, papel=True)
+        cuenta = {t: sum(1 for p in pasos if p[0] == t) for t in ("O", "I", "OI", "T", "D", "A")}
+        pl.texto("O {O} · I {I} · O/I {OI} · T {T} · D {D} · A {A}".format(**cuenta), (xx, yb - 2.5), 2.1,
+                 A.TOP_LEFT, papel=True)
+        fila_alta = max(fila_alta, y - yb)
+        xx += 92
+    return h
+
+
+def camion(pl, p, largo, rot, horiz=True):
+    if horiz:
+        r = L.R(p[0], p[1], p[0] + largo, p[1] + 2.6)
+    else:
+        r = L.R(p[0], p[1], p[0] + 2.6, p[1] + largo)
+    pl.rect(r, "A-EXTERIOR")
+    if horiz:
+        pl.linea((p[0] + 2.3, p[1]), (p[0] + 2.3, p[1] + 2.6), "A-EXTERIOR")
+    else:
+        pl.linea((p[0], p[1] + largo - 2.3), (p[0] + 2.6, p[1] + largo - 2.3), "A-EXTERIOR")
+    pl.texto(rot, r.c, 1.5, A.MIDDLE_CENTER, rot=0 if horiz else 90)
+
+
+def globo(pl, n, xy, r=2.2):
+    pl.m.add_circle(pl.P(*xy), r, dxfattribs={"layer": "A-TEXTO"})
+    pl.texto(str(n), xy, 2.0, A.MIDDLE_CENTER)
+
+
+def globo_papel(pl, n, p, r=2.2):
+    pl.m.add_circle(p, r, dxfattribs={"layer": "A-TEXTO"})
+    pl.texto(str(n), p, 2.0, A.MIDDLE_CENTER, papel=True)

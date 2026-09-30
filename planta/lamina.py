@@ -12,7 +12,6 @@ from ezdxf.enums import TextEntityAlignment
 import shapely.geometry as sg
 from shapely.ops import unary_union
 
-from . import vistas as V
 
 FORMATOS = {"A3": (420.0, 297.0), "A2": (594.0, 420.0), "A1": (841.0, 594.0), "A0": (1189.0, 841.0)}
 MARGEN_IZQ, MARGEN = 25.0, 10.0          # IRAM 4504: 25 mm a la izquierda (archivo), 10 mm en los demás
@@ -148,7 +147,7 @@ class Hoja:
             xm = (bx[i] + bx[i + 1]) / 2
             self.texto(str(i + 1), (xm, self.fy0 - 5), 3.5, A.MIDDLE_CENTER)
             self.texto(str(i + 1), (xm, self.fy1 + 5), 3.5, A.MIDDLE_CENTER)
-        letras = "ABCDEFGHJKLMNP"
+        letras = "ABCDEFGHJKLMNPQRSTUVWXYZ"
         for j in range(len(by) - 1):
             ym = (by[j] + by[j + 1]) / 2
             L = letras[len(by) - 2 - j]
@@ -209,7 +208,8 @@ class Hoja:
         C("Método de proyección", None, x0 + 20, y0 + 14, c1, yF)
         self.simbolo_primer_diedro(x0 + 27.5, y0 + 19.5, 2.5)
         self.texto("ISO E", (x0 + 51.5, y0 + 19.5), 2.5, A.MIDDLE_RIGHT, "11-TEXTO-ROTULO")
-        C("Tolerancias generales", "ISO 2768-m", x0, y0, x0 + 33, y0 + 14, 3.5)
+        C(r.get("tol_titulo", "Tolerancias generales"), r.get("tolerancias", "ISO 2768-m"), x0, y0, x0 + 33,
+          y0 + 14, 3.5 if len(r.get("tolerancias", "ISO 2768-m")) <= 11 else 2.5)
         C("Formato", self.fmt, x0 + 33, y0, c1, y0 + 14, 3.5)
         # ---- columna 2: propietario, denominación, tipo de documento
         C("Propietario", r.get("empresa", "FLAMA S.A."), c1, y1 - 12, c2, y1, 5.0)
