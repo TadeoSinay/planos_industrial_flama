@@ -322,11 +322,11 @@ def iluminacion():
 
 
 # ================================================================ 7. redes: longitud de tendidos
-TGBT = (58.0, 36.0)            # sala técnica norte (centro de cargas)
-PTE_P = (69.0, -21.0)
-JGS = (43.0, 36.0)
-JGN = (108.0, 36.0)
-ERM = (81.5, 36.0)
+TGBT = (42.0, 50.0)            # sala técnica norte (centro de cargas)
+PTE_P = (76.0, -19.0)
+JGS = (53.0, 50.0)
+JGN = (62.6, 0.0)
+ERM = (96.0, 25.5)
 
 
 def _manh(a, b):
@@ -349,7 +349,7 @@ def redes():
     gas = [(e.cod, _manh(e.rect.c, ERM)) for e in L.EQUIPOS if e.gas]
     n2 = [(e.cod, _manh(e.rect.c, JGN)) for e in L.EQUIPOS if e.n2]
     sold = [(e.cod, _manh(e.rect.c, JGS)) for e in L.EQUIPOS if e.polvo and "Soldadura" in e.nombre]
-    aire = 2 * 104.0 + 2 * 18.0 + 6 * 8.0   # anillo sobre PM y PP + 6 bajadas a celdas
+    aire = 2 * 90.0 + 2 * 25.0 + 12 * 6.0   # anillo sobre PC y lazo de pintura + 12 bajadas a líneas
     return {"elec": elec, "agua": agua, "gas": gas, "n2": n2, "sold": sold, "aire_anillo_m": aire,
             "kw_total": sum(e.kw for e in L.EQUIPOS)}
 

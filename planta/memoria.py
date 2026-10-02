@@ -35,10 +35,11 @@ def generar(ruta):
     s.append(tabla(["Familia", "Tasa de diseño (u/h)"], [[k, f(v, 1)] for k, v in t.items()]))
     # 2 layout
     s.append("\n## 2. Nave y sectores\n")
-    s.append(f"Nave de {f(L.NAVE_L, 0)} × {f(L.NAVE_A, 0)} m = {f(L.NAVE_L * L.NAVE_A, 0)} m², pórticos de 36 m de luz "
-             f"cada {f(L.MODULO, 0)} m, altura libre {f(L.ALTURA_LIBRE, 2)} m (Dec. 351/79 exige ≥ 3 m). Anexos: servicios "
-             f"{f(L.ANEXOS[0].rect.area, 0)} m², recargas {f(L.ANEXOS[1].rect.area, 0)} m², sala técnica "
-             f"{f(L.ANEXOS[2].rect.area, 0)} m².\n")
+    s.append(f"Nave de {f(L.NAVE_L, 0)} × {f(L.NAVE_A, 0)} m = {f(L.NAVE_L * L.NAVE_A, 0)} m², layout en U, pórticos de dos "
+             f"luces de 25 m cada {f(L.MODULO, 0)} m, altura libre {f(L.ALTURA_LIBRE, 2)} m (Dec. 351/79 exige ≥ 3 m). "
+             f"Recargas dentro de la nave (ángulo SO, {f(L.ANEXOS[1].rect.area, 0)} m²). Anexos: servicios "
+             f"{f(L.ANEXOS[0].rect.area, 0)} m², sala técnica {f(L.ANEXOS[2].rect.area, 0)} m², cobertizo de químicos "
+             f"{f(L.ANEXOS[3].rect.area, 0)} m².\n")
     s.append(tabla(["Código", "Sector", "m² proyectados", "m² requeridos", "Nota"],
                    [[x.cod, x.nombre, f(x.rect.area, 1), f(x.area_req, 1) if x.area_req else "-", x.nota]
                     for x in L.SECTORES]))
@@ -106,8 +107,8 @@ def generar(ruta):
                         continue
                     n += 1
     s.append(f"Cruces entre flujos de MP, SE y PT (verificación geométrica sobre el modelo): **{n}**. Cruces de hilos de "
-             f"personal con flujos: **{len(L.SENDAS)}**, los dos en sendas señalizadas (SP-1 y SP-2) sobre el colector del "
-             "tren logístico, que usa el personal del sector MP.\n")
+             f"personal con flujos: todos dentro de las **{len(L.SENDAS)}** sendas peatonales señalizadas (SP-1 a "
+             f"SP-{len(L.SENDAS)}).\n")
     # 7 sanitarios
     san = C.sanitarios()
     s.append("## 7. Sanitarios, vestuarios y servicios (Dec. 351/79 arts. 49 y 50)\n")

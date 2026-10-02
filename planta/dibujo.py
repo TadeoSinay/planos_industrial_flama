@@ -303,7 +303,7 @@ def muros(pl, detalle=True):
             pl.relleno(q, (0, 0, 0), "A-COLUMNA")
     # columnas de frontis cada 6 m en los testeros
     for x in (0.0, L.NAVE_L):
-        for y in (6.0, 12.0, 18.0, 24.0, 30.0):
+        for y in (6.25, 12.5, 18.75, 31.25, 37.5, 43.75):
             q = [(x - 0.15, y - 0.15), (x + 0.15, y - 0.15), (x + 0.15, y + 0.15), (x - 0.15, y + 0.15)]
             pl.relleno(q, (0, 0, 0), "A-COLUMNA")
 
@@ -325,10 +325,11 @@ def ejes(pl, r_glob=4.0, sobresale=6.0, cotas=True, completo=True):
             pl.circulo((x, yy), rg, "A-EJE")
             pl.texto(str(i + 1), (x, yy), r_glob * 0.9, A.MIDDLE_CENTER, "A-TEXTO")
     for j, y in enumerate(L.EJES_Y):
-        pl.linea((-sobresale, y), (X + sobresale, y), "A-EJE")
-        for xx in (-sobresale - rg, X + sobresale + rg):
+        xo = -sobresale - (19.0 if any(a.rect.x1 <= 0.5 and a.rect.y0 <= y <= a.rect.y1 for a in L.ANEXOS) else 0.0)
+        pl.linea((xo, y), (X + sobresale, y), "A-EJE")
+        for xx in (xo - rg, X + sobresale + rg):
             pl.circulo((xx, y), rg, "A-EJE")
-            pl.texto("AB"[j], (xx, y), r_glob * 0.9, A.MIDDLE_CENTER, "A-TEXTO")
+            pl.texto("ABC"[j], (xx, y), r_glob * 0.9, A.MIDDLE_CENTER, "A-TEXTO")
 
 
 def puertas(pl, etiquetas=True, h=1.8):
@@ -575,3 +576,13 @@ def _lineas(g):
             out += _lineas(x)
         return out
     return []
+
+
+def vehiculos(pl):
+    """Autoelevadores y transpaletas en sus pasillos (posición típica de trabajo)."""
+    from . import simbolos as S
+    S.autoelevador(pl, 14.4, 44.0, 90)
+    S.autoelevador(pl, 43.0, 20.6, 180)
+    S.autoelevador(pl, 46.5, 15.6, 0, carga=False)
+    S.transpaleta(pl, 58.0, 14.9, 180)
+    S.transpaleta(pl, 68.0, 14.9, 180)

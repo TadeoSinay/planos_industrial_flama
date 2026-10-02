@@ -38,7 +38,7 @@ def titulo_hoja(pl, h, texto, sub=None):
 
 def leyenda_flujos(pl, x, y, cats, titulo="Referencias", w=70):
     nombres = {"MP": "MP: materia prima (azul)", "SE": "SE: semielaborado (naranja)",
-               "TL": "Tren logístico de un sentido (SE)", "RET": "Retorno vacío del tren",
+               "TL": "Tren logístico de un sentido (SE)", "RET": "Retorno de ganchos vacíos del lazo de pintura (aéreo)",
                "PT": "PT: producto terminado (verde)", "SCRAP": "Scrap y retal (gris)",
                "PER": "Hilos de personal (magenta)", "EFL-L": "Efluentes líquidos (marrón)",
                "EFL-G": "Emisiones gaseosas: captación y salida por techo (cian)"}
@@ -118,7 +118,7 @@ def sitio(pl, rotulos=True, estacionamiento=True):
              A.MIDDLE_CENTER)
     for r in L.CALLES:
         pl.rect(r, "A-EXTERIOR")
-    pl.texto("Calle interna de camiones 7 m (sentido: entra por G1, sale por G3)", (60.0, 60.5), 2.0, A.MIDDLE_CENTER)
+    pl.texto("Calle interna de camiones 7 m (sentido: entra por G1, sale por G3)", (45.0, 59.8), 2.0, A.MIDDLE_CENTER)
     for cod, a, b, uso in L.PORTONES_TERRENO:
         pl.linea((a, y0), (b, y0), "A-ABERTURA")
         pl.linea((a, y0 + 0.4), (b, y0 + 0.4), "A-ABERTURA")
@@ -132,18 +132,18 @@ def sitio(pl, rotulos=True, estacionamiento=True):
             pl.texto(cod, (r.x0 + 0.5, r.y1 - 0.5), 1.6, A.TOP_LEFT)
     if estacionamiento:
         # dos filas de cocheras de 2,50 × 5,00 y calle de 6 m; 2 accesibles de 3,50 junto al ingreso peatonal
-        xs = [-8.0 + 2.5 * i for i in range(25)]
-        for yb, yt in ((-26.0, -21.0), (-37.0, -32.0)):
+        xs = [-26.0 + 2.5 * i for i in range(21)]
+        for yb, yt in ((-27.0, -22.0), (-39.0, -34.0)):
             for x in xs:
                 pl.linea((x, yb), (x, yt), "A-EXTERIOR")
-            pl.linea((xs[0], yb if yb < -30 else yb), (xs[-1], yb if yb < -30 else yb), "A-EXTERIOR")
-        for x in (52.0, 48.5, 45.0):
-            pl.linea((x, -26.0), (x, -21.0), "A-EXTERIOR")
-        pl.texto("2 accesibles 3,50 m", (48.5, -23.5), 1.4, A.MIDDLE_CENTER)
-        pl.texto("40 cocheras 2,50 × 5,00", (20.0, -29.0), 1.8, A.MIDDLE_CENTER)
-        # camino peatonal desde G4 al hall
-        pl.pl([(22.5, -60.0), (22.5, -44.0), (37.0, -44.0), (37.0, -15.0), (40.2, -13.0)], "A-SECTOR")
-    norte(pl, (140.0, -52.0))
+            pl.linea((xs[0], yb), (xs[-1], yb), "A-EXTERIOR")
+        for x in (24.0, 27.5):
+            pl.linea((x, -27.0), (x, -22.0), "A-EXTERIOR")
+        pl.texto("2 accesibles 3,50 m", (25.8, -24.5), 1.4, A.MIDDLE_CENTER)
+        pl.texto("40 cocheras 2,50 × 5,00", (0.0, -30.5), 1.8, A.MIDDLE_CENTER)
+        # camino peatonal desde G4 al hall de servicios (SV-1)
+        pl.pl([(22.5, -62.0), (22.5, -46.0), (32.0, -46.0), (32.0, -14.0), (-4.2, -14.0), (-4.2, 11.0)], "A-SECTOR")
+    norte(pl, (112.0, -50.0))
 
 
 def fondo(pl, relleno=True, rot_eq=True, h_eq=1.2, sitio_=True):
@@ -154,6 +154,7 @@ def fondo(pl, relleno=True, rot_eq=True, h_eq=1.2, sitio_=True):
     D.locales(pl, rotulos=False, relleno=relleno)
     D.pasillos(pl, demarcacion=True, h=1.6)
     D.equipos(pl, rotulos=rot_eq, h=h_eq, fino=True)
+    D.vehiculos(pl)
     D.muros(pl)
     D.puertas(pl, etiquetas=True, h=1.6)
     D.ejes(pl, r_glob=2.6, sobresale=1.6, completo=False)
@@ -176,35 +177,37 @@ class Columna:
 
 # ================================================================ FL_PI_03 flujo de materiales
 MARCAS_03 = [
-    (1, (6.5, 52.0), "MP-1 hojas y flejes en chasis: bahía interior BR, descarga por los dos lados (P1)"),
-    (2, (14.2, 52.0), "MP-2 hojas o flejes en semi: playa norte bajo alero, descarga por los dos lados (P1b)"),
-    (3, (8.0, 49.5), "MP-3 caño Ø76,2 × 6 m en atados (P1)"),
-    (4, (-6.0, 13.8), "MP-4 casquetes de carros (P7)"),
-    (5, (89.0, 51.0), "MP-5 polvo químico en big bags (P4)"),
-    (6, (98.0, 51.0), "MP-6 válvulas, manómetros, etiquetas y embalaje (P5)"),
-    (7, (76.3, 51.0), "MP-7 químicos de pretratamiento y pintura en polvo (P3)"),
-    (8, (129.0, 12.6), "MP-8 polvo de carros, estructuras y ruedas (P8)"),
-    (9, (129.0, 16.4), "MP-9 tercerizados revendidos (M3)"),
-    (10, (54.0, 38.0), "SE tren logístico: sector MP -> celdas -> pintura, un solo sentido"),
-    (11, (-6.0, 7.4), "SE carros a pintura tercerizada (P6); vuelven pintados por P8"),
-    (12, (129.0, 31.0), "PT a expedición por los muelles M1 y M2"),
-    (13, (129.0, 3.4), "PT carros terminados (P9)"),
-    (14, (-6.0, 20.2), "Scrap oeste: orillas de hoja (P2)"),
-    (15, (32.8, 46.0), "Scrap norte: esqueleto de fleje (P2b)"),
-    (16, (71.5, -32.0), "Efluentes líquidos a tratamiento PTE y colectora"),
-    (17, (104.0, -8.5), "Recargas: RC-1 -> descarga -> PH -> recarga -> despacho RC-2"),
+    (1, (-8.0, 46.5), "MP-1 hojas e insumos en chasis: bahía interior BR, descarga por los dos lados (P1)"),
+    (2, (11.0, 54.0), "MP-2 flejes y caño en semi: playa norte bajo alero, descarga por los dos lados (P1b)"),
+    (3, (37.8, -9.0), "MP-3 casquetes de carros y tercerizados (M3)"),
+    (4, (68.0, -9.0), "MP-4 polvo químico en big bags (P4)"),
+    (5, (58.0, -9.0), "MP-5 válvulas, manómetros, etiquetas y embalaje (P5)"),
+    (6, (104.0, 44.5), "MP-6 químicos de pretratamiento (QP -> P3)"),
+    (7, (104.0, 13.0), "MP-7 pintura en polvo a la cabina (P3b)"),
+    (8, (26.0, -9.0), "MP-8 carros pintados, polvo, estructuras y ruedas (P8)"),
+    (9, (50.0, 39.0), "SE línea G 2,5-10 kg: corte -> PH -> granallado -> pintura"),
+    (10, (55.0, 49.0), "SE celda 1 kg: láser -> PH -> transportador -> pintura"),
+    (11, (84.0, 8.0), "SE lazo de pintura: carga -> pretratamiento -> cabina -> hornos -> descarga"),
+    (12, (60.0, 22.4), "SE terminación: carga de polvo -> ensamblaje -> palletizado"),
+    (13, (20.4, -9.0), "SE carros a pintura tercerizada (P6); vuelven pintados por P8"),
+    (14, (48.3, -9.0), "PT a expedición por los muelles M1 y M2"),
+    (15, (37.0, -12.0), "PT carros terminados (P9)"),
+    (16, (-7.0, 34.6), "Scrap a volquete (P2)"),
+    (17, (79.0, -30.0), "Efluentes líquidos a tratamiento PTE y colectora"),
+    (18, (-8.0, 5.8), "Recargas: RC-1 -> descarga -> PH -> recarga -> despacho RC-2"),
 ]
 
 
 def flujos_materiales(pl):
-    camion(pl, (10.4, 41.0), 18.6, "Semi 30 t", horiz=True)
-    camion(pl, (5.2, 24.8), 10.0, "Chasis 16 t", horiz=False)
-    camion(pl, (-11.0, 0.5), 9.5, "Pintor", horiz=False)
-    camion(pl, (122.0, 27.2), 9.5, "PT", horiz=True)
-    camion(pl, (122.0, 13.3), 9.5, "Tercerizados", horiz=True)
-    camion(pl, (122.0, 8.8), 9.5, "Carros", horiz=True)
-    camion(pl, (85.0, 39.0), 9.5, "Polvo / insumos", horiz=True)
-    camion(pl, (101.0, -18.5), 6.0, "Utilitario", horiz=True)
+    camion(pl, (6.0, 51.6), 18.6, "Semi 30 t", horiz=True)
+    camion(pl, (-12.0, 42.6), 10.0, "Chasis 16 t", horiz=True)
+    camion(pl, (19.0, -14.0), 9.5, "Pintor", horiz=False)
+    camion(pl, (45.2, -14.0), 9.5, "PT", horiz=False)
+    camion(pl, (48.8, -14.0), 9.5, "PT", horiz=False)
+    camion(pl, (39.6, -14.0), 9.5, "Tercerizados", horiz=False)
+    camion(pl, (66.7, -14.0), 9.5, "Polvo", horiz=False)
+    camion(pl, (56.7, -14.0), 9.5, "Insumos", horiz=False)
+    camion(pl, (-20.0, 1.6), 6.0, "Utilitario", horiz=True)
     for fl in L.FLUJOS:
         pl.flujo(fl.pts, fl.cat, cada=22.0 if fl.cat in ("TL", "SE") else 26.0,
                  largo=2.6 if fl.cat != "TL" else 3.4, ancho=1.3 if fl.cat != "TL" else 1.9)
@@ -224,7 +227,7 @@ def fl_pi_03(doc, ox):
         globo(pl, n, xy)
     col = Columna(h, pl)
     x = col.x
-    y = leyenda_flujos(pl, x, col.y, ["MP", "SE", "TL", "RET", "PT", "SCRAP", "EFL-L", "EFL-G"])
+    y = leyenda_flujos(pl, x, col.y, ["MP", "SE", "RET", "PT", "SCRAP", "EFL-L", "EFL-G"])
     y -= 3
     pl.texto("Flujos numerados", (x, y), 3.5, A.BOTTOM_LEFT, papel=True)
     y -= 5.5
@@ -233,8 +236,8 @@ def fl_pi_03(doc, ox):
         pl.texto(txt, (x + 8, y), 2.2, A.MIDDLE_LEFT, papel=True)
         y -= 5.0
     y = pl.parrafo(["Criterios: cada MP entra por el portón más cercano a la máquina que la transforma;",
-                    "recorrido recto oeste -> este con 0 cruces entre MP, SE y PT (verificado por cálculo);",
-                    "tren logístico de un solo sentido; scrap por portones propios a volquetes exteriores",
+                    "recorrido en U (banda norte al este, pintura al sur, banda sur al oeste) con 0 cruces entre",
+                    "MP, SE y PT (verificado por cálculo); scrap por portón propio a volquete exterior",
                     "(el chatarrero no entra); efluentes por gravedad a PTE junto a la colectora."], x, y - 2, 2.2)
     cols = [("Proveedor / material", 58, "l"), ("t/entr.", 14, "c"), ("Entr./año", 15, "c"),
             ("Vehículo", 62, "l"), ("Portón", 36, "c"), ("Destino", 25, "c")]
@@ -278,20 +281,23 @@ def fl_pi_03b(doc, ox):
     R_ = C.redes()
     tg = C.TGBT
     for sec, kw, (cx, cy), lg in R_["elec"]:
-        pts = [tg, (tg[0], 33.4), (cx, 33.4), (cx, cy)]
+        pts = [tg, (tg[0], 37.8), (cx, 37.8), (cx, cy)] if cy > 25 else [tg, (tg[0], 37.8), (36.0, 37.8),
+                                                                       (36.0, 27.4), (cx, 27.4), (cx, cy)]
         pl.pl(pts, "I-ELEC")
         pl.circulo((cx, cy), 0.6, "I-ELEC")
         pl.texto(f"TS {sec}", (cx + 0.8, cy + 0.6), 1.6, A.BOTTOM_LEFT, "I-ELEC")
-    pl.pl([(58.0, 36.0), (58.0, 30.0), (4.0, 30.0), (4.0, 12.0), (104.0, 12.0), (104.0, 30.0), (58.0, 30.0)], "I-AIRE")
+    pl.pl([(42.0, 50.0), (42.0, 29.6), (2.0, 29.6), (2.0, 25.2), (90.4, 25.2), (90.4, 29.6), (42.0, 29.6)], "I-AIRE")
     for cod, lg in R_["sold"]:
         e = next(x for x in L.EQUIPOS if x.cod == cod)
-        pl.pl([C.JGS, (C.JGS[0], 31.0), (e.rect.c[0], 31.0), e.rect.c], "I-SOLD")
+        yy = 37.6 if e.rect.c[1] > 25 else 24.8
+        pl.pl([C.JGS, (C.JGS[0], 37.6), (37.0, 37.6), (37.0, yy), (e.rect.c[0], yy), e.rect.c], "I-SOLD")
     for cod, lg in R_["n2"]:
         e = next(x for x in L.EQUIPOS if x.cod == cod)
-        pl.pl([C.JGN, (C.JGN[0], 29.8), (104.4, 29.8), (104.4, e.rect.c[1]), e.rect.c], "I-N2")
+        pl.pl([C.JGN, (C.JGN[0], 15.0), (e.rect.c[0], 15.0), e.rect.c], "I-N2")
     for cod, lg in R_["gas"]:
         e = next(x for x in L.EQUIPOS if x.cod == cod)
-        pl.pl([C.ERM, (C.ERM[0], 31.6), (e.rect.c[0], 31.6), e.rect.c], "I-GAS")
+        yy = 44.2 if e.rect.c[1] > 20 else 6.0
+        pl.pl([C.ERM, (94.6, C.ERM[1]), (94.6, yy), (e.rect.c[0], yy), e.rect.c], "I-GAS")
     for fl in L.EFLUENTES:
         pl.flujo(fl.pts, fl.cat, cada=30.0, largo=2.4, ancho=1.2)
     emisiones(pl)
@@ -312,7 +318,7 @@ def fl_pi_03b(doc, ox):
     y = pl.parrafo(["Criterio 4 (minimizar tendidos): la sala técnica ST (transformador, TGBT y compresores) está en",
                     "el centro de cargas, sobre la fachada norte; las jaulas de gases, junto a sus consumos; la PTE,",
                     "al sur junto a la colectora. Los procesos con efluente líquido (PH, pretratamiento y lavado de",
-                    "recargas) quedan en una franja central de 20 m de ancho para acortar la cañería enterrada.",
+                    "recargas) bajan por una cañería enterrada a lo largo del pasillo central hasta la PTE.",
                     "Recargas tiene tableros propios, manifold de N₂ y cámara de decantación.",
                     f"Potencia instalada de equipos: {f(R_['kw_total'], 0)} kW; con simultaneidad 0,6 -> transformador de",
                     "315 kVA (verificar con el relevamiento de cargas definitivo)."], x, y - 3, 2.2)
@@ -335,12 +341,12 @@ def fl_pi_03b(doc, ox):
 
 # ================================================================ FL_PI_01 DIR
 TRONCOS = {
-    "hombres": [(22.5, -60.0), (22.5, -44.0), (37.0, -44.0), (37.0, -15.0), (40.2, -13.0), (40.7, -9.5), (40.9, -6.6),
-                (41.2, -3.0), (47.3, -3.0), (47.3, -6.6), (51.4, -6.6), (51.4, 0.0)],
-    "mujeres": [(40.9, -6.6), (51.4, -6.9), (55.2, -6.9), (55.2, -3.0), (55.2, -6.3), (51.9, -6.3), (51.9, 0.0)],
-    "comedor": [(51.4, -6.6), (60.8, -6.6), (60.8, -10.2)],
-    "recargas": [(51.4, -6.6), (65.9, -6.6), (68.0, -6.6), (68.0, -8.8), (70.0, -8.8), (73.0, -8.8)],
-    "oficinas": [(40.9, -6.6), (47.4, -7.6), (47.4, -10.2)],
+    "hombres": [(22.5, -62.0), (22.5, -46.0), (32.0, -46.0), (32.0, -14.0), (-4.2, -14.0), (-4.2, 11.0),
+                (-4.2, 14.0), (-1.1, 14.0), (-1.1, 24.4), (-14.1, 24.4), (-14.1, 27.1), (-7.8, 27.1), (-3.7, 25.5),
+                (-1.1, 25.5), (-1.1, 27.2), (0.0, 27.2)],
+    "mujeres": [(-1.1, 21.5), (-14.1, 21.5)],
+    "comedor": [(-1.1, 13.0), (-12.0, 13.0)],
+    "oficinas": [(-1.1, 16.7), (-14.0, 16.7)],
 }
 
 
@@ -388,24 +394,23 @@ def fl_pi_01(doc, ox):
     y = pl.parrafo([
         "",
         "Recorrido: estacionamiento -> G4 -> hall y fichado -> vestuario (ropa de calle) -> sanitarios y",
-        "duchas -> paso a planta PP-1 -> pasillo de personal PP (sur) -> calles de operarios PO -> puesto.",
+        "duchas -> paso a planta PP-1 -> pasillo central de personal PC (eje B) -> puesto.",
         "Se vuelve por el mismo camino y se pasa por el vestuario (circuito sucio -> limpio).",
-        "Separación de circulaciones: pasillo de personal PP al sur, contra servicios; pasillo de materiales",
-        "PM al norte. En las celdas los operarios trabajan del lado de afuera de cada horquilla y llegan",
-        "por las calles PO sin cruzar el recorrido de las piezas. Sólo el personal del sector MP cruza el",
-        "colector del tren logístico, por las sendas SP-1 y SP-2 (demarcación, semáforo y espejo).",
-        "Cruces de hilos con flujos verificados por cálculo sobre el modelo: 2, ambos en sendas.",
-        "Recargas: su personal pasa por el pasaje cubierto este (RC-4) y usa el núcleo sanitario este,",
-        "que también atiende al extremo este de la planta por PP-3. El mostrador tiene puerta propia al",
-        "estacionamiento: el público no entra a la planta.",
+        "El PC corre entre las dos bandas de la U: los operarios de la banda norte trabajan del lado sur",
+        "de sus máquinas y los de la banda sur del lado norte, de modo que llegan al puesto sin cruzar el",
+        "recorrido de las piezas. La línea de carros es una horquilla con su calle de operarios adentro.",
+        "Donde un hilo corta un flujo (cuerpos de carros, cúpulas, láseres, lazo de pintura) hay una",
+        "senda peatonal SP demarcada (cebra amarilla IRAM 10005, espejo y prioridad peatonal).",
+        f"Cruces de hilos con flujos verificados por cálculo sobre el modelo: todos en {len(L.SENDAS)} sendas.",
+        "Recargas ocupa el ángulo SO de la nave: su personal entra por el PC y usa los sanitarios del",
+        "bloque de servicios. El mostrador tiene portón propio (RC-1): el público no entra a la planta.",
     ], x, y - 2, 2.2)
     cols = [("Hilo (grupo de puestos)", 64, "l"), ("Desde PP-1 (m)", 26, "c"), ("A sanitario (m)", 26, "c")]
     filas = []
     for nom, lg, main in grupos:
         fin = main[-1]
-        d1 = abs(fin[0] - 51.4) + abs(fin[1])
-        d2 = abs(fin[0] - 71.6) + abs(fin[1])
-        filas.append([nom, f(lg, 0), f(min(d1, d2), 0)])
+        d1 = abs(fin[0]) + abs(fin[1] - 27.2)
+        filas.append([nom, f(lg, 0), f(d1 + 7.8, 0)])
     yb1 = pl.tabla(x, y - 12, cols, filas, 4.3, 2.1, "Longitud de los hilos (turno mañana)")
     ops = {}
     for e in L.EQUIPOS:
@@ -432,10 +437,10 @@ def fl_pi_01(doc, ox):
     pl.parrafo([
         "Turno mañana: 53 personas + 8 choferes que inician",
         "y terminan en planta; 10 % mujeres (DT 2035).",
-        "Dos núcleos para repartir la planta en forma",
-        "equitativa: principal (servicios, junto a PP-1) y",
-        "este (ala de recargas, PP-3), cada uno con H, M y",
-        "sanitario accesible (Ley 24.314, Dec. 914/97).",
+        "Núcleo sanitario en servicios, junto a PP-1, con",
+        "H, M y sanitario accesible (Ley 24.314, Dec. 914/97);",
+        "el PC lleva a todos los puestos sin cruzar flujos",
+        "fuera de las sendas.",
         "Vestuario de mujeres al 20 % de la dotación para no",
         "condicionar la incorporación de personal femenino.",
         "Lactario (Ley 26.873) y primeros auxilios en servicios.",
@@ -454,23 +459,22 @@ ASME = {}
 for _c in ("M04", "M15", "M16", "M06", "M08", "M09", "M10", "M11", "M12", "C01", "C02", "C03", "C04", "C05", "C08",
            "C09", "A03", "A04", "A05", "A06", "B01", "B02", "B03", "B04", "B05", "B06", "B08", "B10", "P01", "P02",
            "P03", "P04", "P06", "P08", "T01", "T02", "T03", "T04", "T05", "T07", "T08", "T09", "T10", "T11", "T12",
-           "T13"):
+           "T13", "B14", "A11", "B03"):
     ASME[_c] = "O"
 for _c in ("M13", "C06", "B09", "P09", "T06", "Q01"):
     ASME[_c] = "I"
 for _c in ("A07", "B07", "C07"):
     ASME[_c] = "OI"
-for _c in ("M17", "A00", "A09", "A10", "A08", "B00", "B11", "B12", "C12", "P07", "SM-K", "PU-G"):
+for _c in ("M17", "A08", "B11", "C12", "P07", "SMK", "PU1", "CT1"):
     ASME[_c] = "D"
 ALMACENES = ("AL-1H", "AL-1F", "AL-1T", "AL-1C", "PÑ", "AL-PV", "AL-2", "QP", "AL-3", "S4", "PTC", "RC-DP")
 
 CURSOGRAMAS = {
     "S1 - Matafuegos ABC 1 kg (fabricados)": [
         ("A", "Caño en cantiléver", "AL-1T"), ("O", "Corte de caño láser", "M15/M16"), ("D", "Pulmón", "M17"),
-        ("T", "Tren logístico", "PM"), ("D", "Kanban", "A00"), ("O", "Numerado", "A03"),
-        ("O", "Encastre de fondo", "A04"), ("O", "Encastre de cúpula con cuello", "A05"), ("D", "Pulmón", "A09"),
-        ("O", "Soldadura circunferencial", "A06"), ("OI", "Prueba hidráulica 100 %", "A07"),
-        ("D", "Pulmón a pintura", "A08"), ("T", "Tren logístico", "PM"), ("O", "Pretratamiento", "P02"),
+        ("O", "Numerado", "A03"), ("O", "Encastre de fondo", "A04"), ("O", "Encastre de cúpula con cuello", "A05"),
+        ("O", "Soldadura circunferencial", "A06"), ("OI", "Prueba hidráulica 100 %", "A07"), ("O", "Secado", "A11"),
+        ("T", "Transportador de rodillos", "CT1"), ("D", "Pulmón a pintura", "A08"), ("O", "Pretratamiento", "P02"),
         ("O", "Secado", "P03"), ("O", "Pintura en polvo", "P04"), ("O", "Polimerizado", "P06"),
         ("I", "Espesor y adherencia", "P09"), ("O", "Carga de polvo", "T01"), ("O", "Ensamblaje", "T03/T04"),
         ("O", "Presurización con N₂", "T05"), ("I", "Hermeticidad", "T06"), ("O", "Etiquetado", "T07"),
@@ -479,18 +483,18 @@ CURSOGRAMAS = {
     "Subconjunto cúpulas y fondos 1-10 kg": [
         ("A", "Flejes", "AL-1F"), ("O", "Desbobinado y enderezado", "M06"), ("O", "Corte y embutido", "M08"),
         ("O", "Preparación de cuello", "M09/M10"), ("O", "Soldadura de cuello", "M11/M12"),
-        ("D", "Supermercado", "SM-K"), ("T", "Tren logístico a A04/A05 y B05", "PM")],
+        ("D", "Supermercado", "SMK"), ("T", "Carro kanban a A04/A05 y B05", "-")],
     "S2 - Matafuegos ABC 2,5 / 5 / 10 kg": [
-        ("A", "Hojas LAF", "AL-1H"), ("O", "Corte de cuerpo", "M04"), ("D", "Pulmón", "PU-G"),
-        ("T", "Tren logístico", "PM"), ("D", "Supermercado", "B00"), ("O", "Numerado", "B01"),
-        ("O", "Cilindrado", "B02"), ("O", "Soldadura longitudinal", "B03"), ("O", "Bordoneado", "B04"),
-        ("O", "Encastre de fondo y cúpula", "B05"), ("O", "Soldadura circunferencial", "B06"),
-        ("OI", "Prueba hidráulica 100 %", "B07"), ("O", "Granallado", "B08"), ("I", "Detección de defectos", "B09"),
-        ("O", "Corrección", "B10"), ("D", "Pulmón a pintura", "B11"), ("T", "Tren logístico", "PM"),
+        ("A", "Hojas LAF", "AL-1H"), ("O", "Corte de cuerpo", "M04"), ("D", "Pulmón", "PU1"),
+        ("O", "Numerado", "B01"), ("O", "Cilindrado", "B02"), ("O", "Soldadura longitudinal", "B03"),
+        ("O", "Encastre de fondo y cúpula", "B05"), ("O", "Bordoneado", "B04"),
+        ("O", "Soldadura circunferencial", "B06"), ("OI", "Prueba hidráulica 100 %", "B07"), ("O", "Secado", "B14"),
+        ("O", "Granallado", "B08"), ("I", "Detección de defectos", "B09"),
+        ("O", "Corrección (vuelve a PH)", "B10"), ("D", "Pulmón a pintura", "B11"),
         ("O", "Pintura (igual que S1)", "P02-P06"), ("O", "Terminación (igual que S1)", "T01-T11"),
         ("A", "Almacén de PT", "AL-3"), ("T", "Expedición", "M1/M2")],
     "S3 - Matafuegos ABC rodantes 25 / 50 / 70 / 100 kg": [
-        ("A", "Hojas LAC", "AL-1H"), ("O", "Corte de cuerpo", "M04"), ("D", "Pulmón", "PU-G"),
+        ("A", "Hojas LAC", "AL-1H"), ("O", "Corte de cuerpo", "M04"), ("D", "Pulmón", "PU1"),
         ("O", "Cilindrado 4 rodillos", "C01"), ("O", "Punteo, refuerzo y estructura", "C02/C03"),
         ("O", "Soldadura longitudinal", "C04"), ("O", "Soldadura circ. (casquetes AL-1C)", "C05"),
         ("I", "Inspección de costuras", "C06"), ("OI", "Prueba hidráulica 4,0 MPa", "C07"),
@@ -499,13 +503,13 @@ CURSOGRAMAS = {
         ("O", "Presurización y etiquetado", "T13"), ("A", "Carros terminados", "PTC"), ("T", "Expedición", "P9")],
     "S4 - Tercerizados revendidos (CO₂, agua, AFFF, K, agente limpio)": [
         ("T", "Recepción", "M3"), ("I", "Control de recepción y sello IRAM", "S4"), ("A", "Stock", "S4"),
-        ("T", "Expedición con el pedido", "M2")],
+        ("T", "Expedición con el pedido", "M1/M2")],
     "RC - Recargas (servicio)": [
         ("T", "Recepción", "RC-1"), ("I", "Clasificación en 4 colas", "RC-MO"), ("O", "Desarme", "RC-DE"),
         ("OI", "Descarga y ensayo de funcionamiento", "RC-DC"), ("OI", "PH, lavado y secado", "RC-PH"),
         ("O", "Recarga por familia", "RC-PV/GA/LQ"), ("O", "Ensamblaje y presurización", "RC-EN"),
         ("I", "Peso y hermeticidad", "RC-EN"), ("O", "Retoque y etiquetado", "RC-RP"),
-        ("A", "Para entregar", "RC-DP"), ("T", "Despacho", "RC-2")],
+        ("A", "Para entregar", "RC-EN"), ("T", "Despacho", "RC-2")],
 }
 
 
@@ -559,9 +563,9 @@ def fl_pi_02(doc, ox):
             pl.texto(s.cod, (s.rect.x0 + 0.4, s.rect.y1 - 0.4), 1.4, A.TOP_LEFT)
     D.rotulos_sector(pl, h=1.7, areas=False)
     # secciones (S1..S4, RC) con recuadro rotulado
-    for cod, nom, r in (("S1", "S1 1 kg", L.R(41.0, 11.8, 53.0, 31.4)), ("S2", "S2 2,5-10 kg", L.R(53.6, 11.4, 66.0, 31.4)),
-                        ("S3", "S3 rodantes", L.R(0.1, 2.5, 36.2, 10.1)), ("S4", "S4 tercerizados", L.R(110.8, 11.8, 119.9, 17.0)),
-                        ("RC", "RC recargas", L.R(70.0, -17.0, 98.0, 0.0))):
+    for cod, nom, r in (("S1", "S1 1 kg", L.R(18.0, 43.4, 72.0, 49.9)), ("S2", "S2 2,5-10 kg", L.R(16.0, 29.6, 72.0, 37.2)),
+                        ("S3", "S3 rodantes", L.R(18.2, 0.1, 38.4, 24.8)), ("S4", "S4 tercerizados", L.R(38.2, 0.1, 44.6, 7.6)),
+                        ("RC", "RC recargas", L.R(0.1, 0.1, 18.3, 24.8))):
         pl.rect(r, "F-TL")
         pl.texto(nom, (r.x1 - 0.4, r.y0 + 0.5), 2.2, A.BOTTOM_RIGHT, "F-TL")
     col = Columna(h, pl)
