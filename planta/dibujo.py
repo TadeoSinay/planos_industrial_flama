@@ -390,9 +390,28 @@ def equipos(pl, rotulos=True, h=1.5, fino=False, operarios=True):
     from . import simbolos as S
     for e in L.EQUIPOS:
         S.dibujar(pl, e, operarios)
+    transportador(pl)
     if rotulos:
         for e in L.EQUIPOS:
             etiqueta(pl, e.cod, e.rect.c, h)
+
+
+def transportador(pl):
+    """Transportador aéreo del lazo de pintura (+4,0 m): viga en trazos, eje y ganchos cada 1,2 m."""
+    lazo = list(L.LAZO) + [(75.1, 38.9)]
+    g = sg.LineString(lazo)
+    for d in (-0.12, 0.12):
+        o = g.parallel_offset(abs(d), "left" if d > 0 else "right", join_style=2)
+        for part in (o.geoms if hasattr(o, "geoms") else [o]):
+            pl.pl(list(part.coords), "A-EQUIPO-OCULTO")
+    pl.pl(lazo, "A-EJE")
+    n = int(g.length / 1.2)
+    for i in range(n):
+        q = g.interpolate(i * 1.2)
+        pl.circulo((q.x, q.y), 0.07, "A-EQUIPO-FINO")
+    for (x, y), a in (((92.0, 38.9), 0), ((92.0, 3.4), 0), ((75.1, 3.4), 0), ((75.1, 38.9), 0)):
+        pl.circulo((x, y), 0.6, "A-EQUIPO-OCULTO")   # ruedas de desvío en las esquinas
+    pl.texto("Transportador aéreo por empuje +4,00 m", (83.5, 39.6 + 1.0), 1.4, A.MIDDLE_CENTER, "A-TEXTO")
 
 
 def etiqueta(pl, cod, xy, h=1.5):
