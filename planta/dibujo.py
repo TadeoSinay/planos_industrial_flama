@@ -21,6 +21,11 @@ CAPAS_PLANTA = {
     "A-ABERTURA": (7, 25, "CONTINUOUS", None, "Puertas, portones y muelles"),
     "A-EQUIPO": (7, 35, "CONTINUOUS", None, "Equipos (contorno)"),
     "A-EQUIPO-FINO": (8, 13, "CONTINUOUS", None, "Detalle de equipos, racks y carros"),
+    "A-EQUIPO-OCULTO": (8, 13, "IRAM-E-TRAZOS", None, "Partes elevadas u ocultas de equipos"),
+    "A-EQUIPO-RELLENO": (9, 13, "CONTINUOUS", None, "Rellenos de cuerpo de equipos"),
+    "A-SEGURIDAD": (1, 18, "IRAM-E-TRAZOS", None, "Resguardos, cortinas de luz y zonas de barrido"),
+    "A-OPERARIO": (6, 18, "CONTINUOUS", None, "Operarios en su puesto"),
+    "A-VEHICULO": (40, 25, "CONTINUOUS", None, "Autoelevadores, tren logístico y transpaletas"),
     "A-SECTOR": (8, 18, "IRAM-E-TRAZOS", None, "Límite de sector"),
     "A-PASILLO": (2, 35, "CONTINUOUS", (215, 165, 0), "Demarcación de pasillos (amarillo IRAM 10005)"),
     "A-SENDA": (2, 25, "CONTINUOUS", (215, 165, 0), "Sendas peatonales (cebra)"),
@@ -379,22 +384,30 @@ def puertas(pl, etiquetas=True, h=1.8):
             pl.texto(cod, ((a[0] + b[0]) / 2 + off[0], (a[1] + b[1]) / 2 + off[1]), h * 0.9, A.MIDDLE_CENTER)
 
 
-def equipos(pl, rotulos=True, h=1.5, fino=False):
+def equipos(pl, rotulos=True, h=1.5, fino=False, operarios=True):
+    """Equipos con su símbolo de detalle (planta/simbolos.py) y etiqueta de código."""
+    from . import simbolos as S
     for e in L.EQUIPOS:
-        r = e.rect
-        capa = "A-EQUIPO-FINO" if fino else "A-EQUIPO"
-        if e.forma == "circ":
-            pl.circulo(r.c, r.w / 2, capa)
-            radio = 4.0
-            pl.circulo(r.c, radio, "A-EQUIPO-FINO")
-        else:
-            pl.rect(r, capa)
-            if e.forma == "rack":
-                pl.linea((r.x0, r.y0), (r.x1, r.y1), "A-EQUIPO-FINO")
-                pl.linea((r.x0, r.y1), (r.x1, r.y0), "A-EQUIPO-FINO")
-        if rotulos:
-            rot = 90 if r.h > r.w * 1.8 else 0
-            pl.texto(e.cod, r.c, h, A.MIDDLE_CENTER, "A-TEXTO", rot)
+        S.dibujar(pl, e, operarios)
+    if rotulos:
+        for e in L.EQUIPOS:
+            etiqueta(pl, e.cod, e.rect.c, h)
+
+
+def etiqueta(pl, cod, xy, h=1.5):
+    """Etiqueta de equipo: óvalo blanco con borde y código (mm de papel)."""
+    c = pl.P(*xy)
+    w, a = len(cod) * h * 0.72 + h * 0.9, h * 0.85
+    pts = []
+    for i in range(24):
+        t = 2 * math.pi * i / 24
+        x = math.cos(t)
+        pts.append((c[0] + (w / 2 - a) * (1 if x >= 0 else -1) + a * x, c[1] + a * math.sin(t)))
+    hh = pl.m.add_hatch(dxfattribs={"layer": "A-EQUIPO-RELLENO"})
+    hh.set_solid_fill(rgb=(255, 255, 255))
+    hh.paths.add_polyline_path(pts, is_closed=True)
+    pl.m.add_lwpolyline(pts, close=True, dxfattribs={"layer": "A-EQUIPO"})
+    pl.texto(cod, c, h, A.MIDDLE_CENTER, "A-TEXTO", 0, papel=True)
 
 
 def sectores(pl, relleno=True, rotulos=True, h=2.0, areas=True, cats=None):
