@@ -10,7 +10,8 @@ from .lamina import FORMATOS
 PAGE_NAMES = {"A3": "ISO_full_bleed_A3_(420.00_x_297.00_MM)",
               "A2": "ISO_full_bleed_A2_(594.00_x_420.00_MM)",
               "A1": "ISO_full_bleed_A1_(841.00_x_594.00_MM)",
-              "A0": "ISO_full_bleed_A0_(1189.00_x_841.00_MM)"}
+              "A0": "ISO_full_bleed_A0_(1189.00_x_841.00_MM)",
+              "2A0": "ISO_full_bleed_2A0_(1189.00_x_1682.00_MM)"}
 
 
 def preparar_layouts(doc, hojas):

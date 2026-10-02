@@ -39,6 +39,9 @@ CAPAS_PLANTA = {
     "A-COTA": (7, 18, "CONTINUOUS", None, "Cotas IRAM 4513"),
     "A-EXTERIOR": (8, 25, "CONTINUOUS", None, "Terreno, calles, playas y veredas"),
     "A-LOCAL": (7, 25, "CONTINUOUS", None, "Tabiques de locales de servicio"),
+    "A-MOBILIARIO": (8, 18, "CONTINUOUS", (80, 80, 90), "Mobiliario, artefactos sanitarios y equipamiento menor"),
+    "A-MAMPARA": (1, 35, "CONTINUOUS", (200, 40, 40), "Mamparas y cortinas ignífugas de soldadura"),
+    "A-ZONA-LOG": (5, 25, "IRAM-F-TRAZO-PUNTO", (40, 90, 200), "Límites de circulación de autoelevador"),
     "A-SANITARIO": (8, 13, "CONTINUOUS", None, "Artefactos sanitarios y mobiliario"),
     "F-MP": (5, 70, "CONTINUOUS", None, "Flujo de materia prima (azul)"),
     "F-SE": (30, 70, "CONTINUOUS", None, "Flujo de semielaborado (naranja)"),
@@ -356,6 +359,10 @@ def puertas(pl, etiquetas=True, h=1.8):
             if etiquetas:
                 pl.texto(p.cod, ((a + b) / 2, y + sgn * (1.3 if p.tipo != "emergencia" else w + 0.9)), h,
                          A.MIDDLE_CENTER, "S-ESCAPE" if p.tipo == "emergencia" else "A-TEXTO")
+                uso = getattr(L, "USO_CORTO", {}).get(p.cod)
+                if uso:
+                    pl.texto(uso, ((a + b) / 2, y + sgn * (1.3 + h * 1.25 / pl.s * 1.0 + 0.9)), h * 0.62,
+                             A.MIDDLE_CENTER, "A-TEXTO")
         else:
             x = X + 0.3 if p.muro == "E" else -0.3
             sgn = 1 if p.muro == "E" else -1
@@ -373,12 +380,20 @@ def puertas(pl, etiquetas=True, h=1.8):
             if etiquetas:
                 pl.texto(p.cod, (x + sgn * (2.2 if p.tipo != "emergencia" else w + 1.2), (a + b) / 2), h,
                          A.MIDDLE_CENTER, "S-ESCAPE" if p.tipo == "emergencia" else "A-TEXTO")
+                uso = getattr(L, "USO_CORTO", {}).get(p.cod)
+                if uso:
+                    pl.texto(uso, (x + sgn * (3.4 + h * 0.6 / pl.s), (a + b) / 2), h * 0.62, A.MIDDLE_CENTER,
+                             "A-TEXTO", 90)
     for cod, a, b, tipo, uso in L.PUERTAS_ANEXOS:
         if tipo == "peatonal":
             if abs(a[0] - b[0]) < 1e-6:
                 w = abs(b[1] - a[1])
-                pl.linea(a, (a[0] + w, a[1]), "A-ABERTURA")
-                pl.arco(a, w, 0, 90, "A-ABERTURA")
+                if a[0] < 0:          # muro oeste del anexo: abre hacia afuera
+                    pl.linea(a, (a[0] - w, a[1]), "A-ABERTURA")
+                    pl.arco(a, w, 90, 180, "A-ABERTURA")
+                else:
+                    pl.linea(a, (a[0] + w, a[1]), "A-ABERTURA")
+                    pl.arco(a, w, 0, 90, "A-ABERTURA")
             else:
                 w = abs(b[0] - a[0])
                 pl.linea(a, (a[0], a[1] - w), "A-ABERTURA")
@@ -396,6 +411,8 @@ def equipos(pl, rotulos=True, h=1.5, fino=False, operarios=True):
     from . import simbolos as S
     for e in L.EQUIPOS:
         S.dibujar(pl, e, operarios)
+    mamparas(pl)
+    mobiliario(pl)
     transportador(pl)
     pulmones(pl, h)
     if rotulos:
@@ -405,6 +422,37 @@ def equipos(pl, rotulos=True, h=1.5, fino=False, operarios=True):
             else:
                 rot = 90 if e.rect.h > e.rect.w * 1.6 else 0
                 pl.texto(corto(e.nombre), e.rect.c, h * 0.62, A.MIDDLE_CENTER, "A-TEXTO", rot)
+
+
+def mobiliario(pl):
+    """Mobiliario de todos los locales y puertas interiores (planta/mobiliario.py)."""
+    from . import mobiliario as MB
+    for mb in L.MOBILIARIO:
+        MB.dibujar(pl, mb)
+    for x, y, w, muro, abre in getattr(L, "PUERTAS_INT", []):
+        MB.puerta_int(pl, x, y, w, muro, abre)
+
+
+def mamparas(pl):
+    """Mamparas ignífugas alrededor de cada puesto de soldadura, abiertas sólo del lado del operario
+    (recomendación de la cátedra: protegen del arco a quien pasa por la calle)."""
+    from . import simbolos as S
+    for e in L.EQUIPOS:
+        if S.tipo_de(e) not in ("sold_long", "sold_circ", "banco_sold"):
+            continue
+        r, f, d = e.rect, S.frente_de(e), 0.3
+        x0, y0, x1, y1 = r.x0 - d, r.y0 - d, r.x1 + d, r.y1 + d
+        lados = {"S": [(x0, y0), (x0, y1), (x1, y1), (x1, y0)], "N": [(x0, y1), (x0, y0), (x1, y0), (x1, y1)],
+                 "O": [(x0, y0), (x1, y0), (x1, y1), (x0, y1)], "E": [(x1, y0), (x0, y0), (x0, y1), (x1, y1)]}[f]
+        pl.pl(lados, "A-MAMPARA")
+
+
+def zonas_logisticas(pl, h=1.4):
+    """Zona sin autoelevador: al norte de la senda sólo circulan carros a mano y transpaletas."""
+    z = L.R(13.8, 24.5, 87.7, 43.7)
+    pl.rect(z, "A-ZONA-LOG")
+    pl.texto("ZONA SIN AUTOELEVADOR: CARROS A MANO Y TRANSPALETA", (z.x0 + 26.0, z.y1 - 0.45), h,
+             A.MIDDLE_CENTER, "A-ZONA-LOG")
 
 
 def corto(nombre):
@@ -546,6 +594,8 @@ def pasillos(pl, demarcacion=True, rotulos=False, h=1.6):
                 x += 0.8
             pl.texto(cod, (r.c[0], r.y1 + 0.8), h, A.MIDDLE_CENTER, "A-TEXTO")
     defensas(pl)
+    if demarcacion:
+        zonas_logisticas(pl)
 
 
 def defensas(pl):

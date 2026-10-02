@@ -45,7 +45,7 @@ CAMIONES = [
      "Alero de descarga norte: autoelevador por los dos lados; entra al almacén de MP por P1"),
     ("Camión chasis con balancín (3 ejes)", 11.0, 16.0, 26.0,
      "Alero de descarga norte (junto al semi): autoelevador por los dos lados, bajo techo"),
-    ("Camión chasis 2 ejes", 9.5, 9.0, 16.5, "Alero norte, P4, P5, P3, P8 o M3 según el material"),
+    ("Camión chasis 2 ejes", 9.5, 9.0, 16.5, "Alero norte, muelles M1-M3, P4, P3 o P8 según el material"),
     ("Utilitario / furgón", 6.0, 1.5, 3.5, "Portones de cada sector; recargas por RC-1"),
 ]
 # Ley 24.449 y Dec. 779/95: ancho 2,60 m, alto 4,10 m, largo máx. 18,60 m (semi); PBT según ejes
@@ -58,14 +58,14 @@ ENTREGAS = [
     ("Casquetes de carros", 5.93, 4.1, "Chasis 2 ejes", "M3", "AL1C"),
     ("Eli-Met: cuplas y asientos", 3.68, 5.6, "Chasis 2 ejes", "Alero + P1", "PÑ"),
     ("Soldadura: alambre y consumibles", 1.89, 8.1, "Chasis 2 ejes", "Alero + P1", "PÑ"),
-    ("CYM: granalla", 3.11, 2.0, "Chasis 2 ejes", "Alero + P1", "PÑ"),
+    ("CYM: granalla", 3.11, 2.0, "Chasis 2 ejes", "P3", "GR"),
     ("Air Liquide: gases", 7.64, 31.3, "Chasis 2 ejes (baterías)", "Jaulas JG-S y JG-N", "Exterior"),
     ("Polvo químico (Polvex / DEMSA)", 13.13, 31.0, "Chasis con balancín", "P4 (1-10 kg) y P8 (carros)", "SP-1, SP-2"),
-    ("Válvulas y componentes", 8.16, 8.3, "Chasis con balancín", "P5", "AL-2"),
+    ("Válvulas y componentes", 8.16, 8.3, "Chasis con balancín", "Muelle M2", "AL-2"),
     ("Estructuras y ruedas de carros", 5.52, 15.1, "Chasis 2 ejes", "P8", "S-TC"),
     ("Pintura en polvo", 0.79, 8.3, "Utilitario", "P3", "QP"),
     ("Químicos de pretratamiento", 0.46, 1.8, "Utilitario", "P3", "QP"),
-    ("Embalaje, pallets e imprenta", 4.61, 15.3, "Chasis 2 ejes", "P5", "AL-2"),
+    ("Embalaje, pallets e imprenta", 4.61, 15.3, "Chasis 2 ejes", "Muelle M2", "AL-2"),
     ("Agentes para recargas", 2.87, 8.2, "Chasis 2 ejes", "RC-1", "RC"),
     ("Tercerizados revendidos", 3.0, 24.0, "Chasis 2 ejes (SUPUESTO)", "M3", "S4"),
 ]
@@ -174,12 +174,26 @@ def sanitarios():
     m = tm["M"]
     req_h, req_m = art49(h), art49(m)
     req_m["orinales"] = 0
-    proy = {"H": {"inodoros": 3 + 2, "lavabos": 6 + 2, "orinales": 6 + 2, "duchas": 4},
-            "M": {"inodoros": 2 + 1, "lavabos": 2 + 1, "orinales": 0, "duchas": 2},
-            "accesibles": 2}
+    from .mobiliario import SANITARIOS
+
+    def contar(locales):
+        c = {"inodoros": 0, "lavabos": 0, "orinales": 0, "duchas": 0, "armarios": 0}
+        for mb in L.MOBILIARIO:
+            k = SANITARIOS.get(mb.tipo)
+            if k and any(_dentro(mb.rect, s.rect) for s in L.LOCALES if s.cod in locales):
+                c[k] += mb.n * (2 if k == "armarios" else 1)
+        return c
+    ch_, cm_ = contar(("SV-VH", "SV-SH")), contar(("SV-VM", "SV-SM"))
+    proy = {"H": {k: ch_[k] for k in ("inodoros", "lavabos", "orinales", "duchas")},
+            "M": {k: cm_[k] for k in ("inodoros", "lavabos", "orinales", "duchas")},
+            "accesibles": sum(1 for mb in L.MOBILIARIO if mb.tipo == "inodoro_acc")}
     return {"H": h, "M": m, "req_H": req_h, "req_M": req_m, "proy": proy,
             "armarios_req": {"H": PERSONAL["armarios"]["H"], "M": PERSONAL["armarios"]["M"]},
-            "armarios_proy": {"H": 62, "M": 14}}
+            "armarios_proy": {"H": ch_["armarios"], "M": cm_["armarios"]}}
+
+
+def _dentro(a, b, tol=0.05):
+    return a.x0 >= b.x0 - tol and a.y0 >= b.y0 - tol and a.x1 <= b.x1 + tol and a.y1 <= b.y1 + tol
 
 
 # ================================================================ 5. grilla, medios de escape y extintores
@@ -189,7 +203,7 @@ PASO = 0.5
 def _grilla():
     nx, ny = int(L.NAVE_L / PASO), int(L.NAVE_A / PASO)
     libre = [[True] * ny for _ in range(nx)]
-    for e in L.EQUIPOS:
+    for e in list(L.EQUIPOS) + [mb for mb in L.MOBILIARIO if mb.rect.x0 >= 0]:
         r = e.rect
         for i in range(max(0, int(r.x0 / PASO)), min(nx, int(math.ceil(r.x1 / PASO)))):
             for j in range(max(0, int(r.y0 / PASO)), min(ny, int(math.ceil(r.y1 / PASO)))):
@@ -376,3 +390,85 @@ def resumen():
         "pulmones": pulmones(), "tren": tren_logistico(), "sanitarios": sanitarios(), "escape": escape(),
         "iluminacion": iluminacion(), "redes": redes(),
     }
+
+
+# ================================================================ manejo de materiales: métodos y tiempos
+# velocidad media (m/s, ida cargado y vuelta vacío) y tiempo fijo por viaje (min: tomar, dejar, maniobrar)
+MEDIOS = {"Autoelevador": (1.5, 1.5), "Apiladora": (1.0, 1.5), "Transpaleta": (0.8, 1.0),
+          "Carro a mano": (0.8, 0.5), "Zorra milk run": (0.8, 0.5)}
+MIN_TURNO = 480.0 * 0.85          # 8 h con 15 % de suplementos (OIT)
+CIL_DIA = 1184                    # cilindros 1-10 kg por día en el mes pico 2035 (Dimensionamiento, hoja 2035)
+CIL_1KG = 0.80                    # participación del 1 kg en los cilindros
+CARROS_DIA = round(CIL_DIA * CIL_1KG / 80 + CIL_DIA * (1 - CIL_1KG) / 24)   # carro: 80 u de 1 kg o 24 u de 5 kg
+MILK_RUN = [(53.0, 40.0), (17.5, 40.0), (17.5, 39.4), (40.2, 39.4), (40.2, 34.2), (82.0, 34.2), (82.0, 40.0),
+            (53.0, 40.0)]
+
+
+def _largo(pts):
+    return sum(math.dist(a, b) for a, b in zip(pts, pts[1:]))
+
+
+def _lf(desc):
+    """Largo dentro de la nave (y del alero) del flujo cuya descripción empieza con `desc`."""
+    fl = next(f for f in L.FLUJOS if f.rot.startswith(desc))
+    pts = [(x, max(y, 0.0)) if y < 0 else (x, y) for x, y in fl.pts]
+    pts = [(x, min(y, 52.0)) for x, y in pts]
+    return _largo(pts)
+
+
+def manejo():
+    """Tabla de manejo de materiales: unidad de carga, medio, recorrido, viajes por día, tiempo y ocupación."""
+    tramos_linea = 9
+    filas = [
+        # unidad de carga, medio, de -> a, viajes/día, distancia (m)
+        ("Paquete de hojas ≤ 2 t", "Autoelevador", "Alero -> rack guillotina (P1)", 1.5, _lf("Chapa")),
+        ("Rollo de fleje 0,5-1 t", "Autoelevador", "Alero -> porta-flejes (P1)", 0.8, _lf("Flejes")),
+        ("Atado de caño 6 m", "Autoelevador", "Alero -> cantiléver láser (P1)", 0.6, _lf("Caño")),
+        ("Pallet de insumos pesados", "Autoelevador", "Alero -> pañol PÑ (P1)", 0.5, _lf("Insumos al pañol")),
+        ("Big bag de polvo 1 t", "Autoelevador", "P4 -> estación de descarga", 1.7, _lf("Polvo químico")),
+        ("Pallet de válvulas / cajas", "Transpaleta", "Muelle M2 -> rack AL-2", 1.3, _lf("Válvulas")),
+        ("Tambor / cajas de pintura", "Transpaleta", "P3 -> QP", 0.3, _lf("Químicos y pintura")),
+        ("Carro de cuerpos 2,5-10 kg (24 u)", "Carro a mano", "PU-4 -> 9 encastre", 14, _lf("Cuerpos 2,5-10")),
+        ("Carro de cuerpos 1 kg (80 u)", "Carro a mano", "PU-L2 -> 9 encastre", 12, _lf("Cuerpos 1 kg al")),
+        ("Carro de fondos (150 u)", "Carro a mano", "PU-K -> 9 encastre", 8, _lf("Fondos al encastre")),
+        ("Carro de cúpulas con cuello (60 u)", "Carro a mano", "PU-C -> 11 sold. circ.", 20,
+         _lf("Cúpulas a la soldadura circ")),
+        (f"Carro de cilindros, {tramos_linea} tramos 9 -> 16", "Carro a mano", "entre pasos (prom. por tramo)",
+         CARROS_DIA * tramos_linea, _lf("Línea principal") / tramos_linea),
+        ("Carro de cilindros controlados", "Carro a mano", "PU-8 -> 17 carga de pintura", CARROS_DIA,
+         _lf("A la carga de pintura")),
+        ("Carro de cilindros pintados", "Carro a mano", "PU-9 -> 18 carga de polvo", CARROS_DIA,
+         _lf("A la carga de polvo")),
+        ("Zorra de consumibles (vuelta)", "Zorra milk run", "PÑL -> 24 puestos -> PÑL", 4, _largo(MILK_RUN) / 2),
+        ("Pallet de PT", "Apiladora", "Envolvedora -> rack AL-3", 7.2, _lf("Almacén de PT")),
+        ("Pallet de PT", "Autoelevador", "Rack AL-3 -> muelle M1 / M2", 7.2, _lf("Expedición M1")),
+        ("Pallet de cilindros vacíos", "Autoelevador", "AL-C -> rack AL-3", 2.8, _lf("Cilindros vendidos")),
+        ("Contenedor de scrap 1 m³", "Autoelevador", "SCR -> volquete (P2)", 0.6, _lf("Scrap a volquete")),
+    ]
+    out, uso = [], {}
+    for u, m, ruta, n, d in filas:
+        v, t0 = MEDIOS[m]
+        t = 2 * d / v / 60.0 + t0
+        out.append({"carga": u, "medio": m, "ruta": ruta, "viajes": n, "dist": d, "t_viaje": t, "min_dia": n * t})
+        uso[m] = uso.get(m, 0.0) + n * t
+    ocup = {m: uso[m] / MIN_TURNO for m in uso}
+    return {"filas": out, "min": uso, "ocup": ocup, "carros_dia": CARROS_DIA}
+
+
+PORTONES = [
+    # portón, qué pasa, vehículo, frecuencia (2035), horario
+    ("P1 + alero", "Entra MP: chapa, caño, flejes, insumos pesados", "Semi / chasis", "≈ 2,4 por semana", "7 a 10 h"),
+    ("P2", "Sale scrap a volquete (el chatarrero no entra)", "Volquete 6 m³", "≈ 1 por semana", "Libre"),
+    ("P3", "Entran químicos, pintura en polvo y granalla", "Utilitario / chasis", "≈ 0,3 por semana", "7 a 10 h"),
+    ("P4", "Entra polvo químico en big bags", "Chasis con balancín", "≈ 0,65 por semana", "7 a 10 h"),
+    ("M1 / M2", "Sale PT; M2 recibe válvulas, cajas, etiquetas y film", "Semi / chasis", "7 PT + 0,5 insumos por semana",
+     "PT 13 a 17 h; insumos 7 a 10 h"),
+    ("M3", "Entran tercerizados revendidos y casquetes de carros", "Chasis", "≈ 0,6 por semana", "7 a 10 h"),
+    ("P6", "Salen carros al pintor y vuelven pintados (mismo viaje)", "Chasis del pintor", "≈ 1 por semana",
+     "Coordinado"),
+    ("P8", "Entran estructuras, ruedas y polvo de carros", "Chasis", "≈ 0,3 por semana", "7 a 10 h"),
+    ("P9", "Salen carros terminados", "Chasis", "≈ 1 por semana", "13 a 17 h"),
+    ("RC-1 / RC-2", "Recargas: entran y salen equipos de clientes", "Utilitarios de reparto (8)",
+     "2 vueltas por día", "Milk run mañana y tarde"),
+    ("PP-1", "Personal: vestuarios <-> senda de la nave", "A pie", "63 personas, 2 turnos", "Entrada y salida"),
+]

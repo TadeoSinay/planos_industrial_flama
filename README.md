@@ -16,8 +16,8 @@ dibujo que [planos_flama-](https://github.com/TadeoSinay/planos_flama-).
 |---|---|---|---|
 | `FL_PI_01` | **DIR: recorrido de hilos del personal** | A0 1:200 | Hilos desde el estacionamiento y los vestuarios hasta cada puesto; longitudes, puestos, sanitarios (art. 49) |
 | `FL_PI_02` | **Flujo de operaciones** | A0 1:200 | Símbolos ASME en cada equipo, flujo de SE por sección y cursogramas sinópticos de S1, S2, S3, S4, subconjunto de cúpulas y recargas |
-| `FL_PI_03` | **Flujo de materiales** (2 hojas) | A0 1:200 | H1: MP (azul), SE (naranja), tren logístico, PT (verde), scrap, efluentes; recepción de MP con análisis de peso y anti-sobrestock. H2: redes eléctricas, aire, N₂, gases y efluentes con longitudes |
-| `FL_PI_04` | **Plano formal normalizado** (4 hojas) | A0 1:200 / 1:100 / 1:50 / 1:20 | H1 implantación; H2 y H3 planta de la nave acotada con las máquinas en detalle (ejes, vanos, pasillos, equipos, extintores, salidas); H4 servicios 1:50, sanitario accesible 1:20 y corte 1:100 |
+| `FL_PI_03` | **Flujo y manejo de materiales** | A0 1:200 | MP (azul), SE (naranja), PT (verde), scrap y efluentes; jerarquía de circulación; tabla de métodos y tiempos (unidad de carga, medio, recorrido, viajes/día, min/día, ocupación); función y frecuencia de cada portón; recepción de MP |
+| `FL_PI_04` | **Plano formal normalizado** (1 hoja 2A0) | 1:100 / 1:200 / 1:500 | Planta general 1:100 de la nave, servicios y recargas con cada máquina, puesto, pulmón, mueble y artefacto; acotada (ejes, vanos, pasillos, anexos); extintores y salidas; implantación 1:500; corte 1:200; cuadros de equipos, locales y superficies |
 | `FL_PI_05` | **Aprovechamiento de chapa** | A1 1:20 / 1:10 | Anidado de cuerpos 2,5-100 kg en hojas estándar, discos de cúpula y fondo en fleje, caño del 1 kg |
 
 Documentos: [`docs/MEMORIA_DE_CALCULO.md`](docs/MEMORIA_DE_CALCULO.md) (se regenera con el modelo) y
@@ -28,11 +28,30 @@ Documentos: [`docs/MEMORIA_DE_CALCULO.md`](docs/MEMORIA_DE_CALCULO.md) (se regen
 | Flujo | Color | ACI | Capa |
 |---|---|---|---|
 | **MP**, materia prima | azul | 5 | F-MP |
-| **SE**, semielaborado | naranja | 30 | F-SE, F-TL (tren logístico) |
+| **SE**, semielaborado | naranja | 30 | F-SE |
 | **PT**, producto terminado | verde | 3 | F-PT |
 | Personal (hilos) | magenta, trazos | 6 | F-PERSONAL |
 | Scrap y retal | gris, trazo y punto | 8 | F-SCRAP |
 | Efluentes líquidos / gaseosos | marrón / cian, trazos | 34 / 4 | F-EFL-LIQ / F-EFL-GAS |
+
+## Versión 4: logística, métodos y tiempos
+
+- **5 láminas en vez de 9**: DIR, operaciones, materiales (con manejo de materiales) y un único plano formal 2A0
+  1:100 con todo; más el anidado de chapa.
+- **Ningún local vacío** (verificado por `verificar.py`): oficinas con sus 6 puestos, jefatura, hall y fichado,
+  vestuarios con 60 + 20 armarios dobles y bancos, sanitarios y duchas según art. 49 (H incluye choferes),
+  comedor de 5 mesas de 6 con office, primeros auxilios, laboratorio, taller, pañoles, supervisión, EPP,
+  cuarentena, supermercado de carros vacíos, escuelita de soldadura, muestras, granalla, tableros y compresor,
+  químicos, estación de carga de baterías, rampas de muelle. Biblioteca en `planta/mobiliario.py`.
+- **Servicios con circuito**: SV-1 -> hall y fichado -> pasillo limpio -> vestuario -> sanitarios y duchas (sólo desde
+  el vestuario) -> pasillo limpio -> PP-1 -> senda. Administración y visitas al sur del pasillo, sin cruzar
+  vestuarios; comedor a 6 m de la planta.
+- **Circulación**: el autoelevador sólo circula por el pasillo central, el almacén de MP y PT/expedición; al norte de
+  la senda es zona sin autoelevador (carros a mano y transpaleta). Cruces peatonales numerados X1-X16.
+  Mamparas de soldadura en cada puesto de soldar.
+- **Portones con función rotulada**; el P5 se suprimió (≈ 1 camión/semana): esos insumos entran por el muelle M2.
+- **Métodos y tiempos**: 1 autoelevador (≈ 7 % de un turno) y 1 apiladora; 22 carros/día por tramo empujados por
+  el operario que cierra el lote; milk run de consumibles desde el pañol de línea.
 
 ## Concepto del layout (v3)
 
@@ -50,7 +69,7 @@ Documentos: [`docs/MEMORIA_DE_CALCULO.md`](docs/MEMORIA_DE_CALCULO.md) (se regen
 - **Banda sur, de este a oeste**: 18-24 terminación y almacén de cilindros pintados -> PT y muelles M1-M2 -> carros
   (C1-C10, en U, pintura tercerizada por P6/P8) -> recargas (R1-R26, en locales).
 - **MP frente a su máquina**: alero de descarga norte (semi y chasis) -> P1 -> racks de chapa, caño y flejes frente a la
-  guillotina, los láseres y la prensa. Polvo e insumos por P4/P5 junto a la terminación, químicos por P3 junto a pintura.
+  guillotina, los láseres y la prensa. Polvo por P4 e insumos de terminación por el muelle M2, químicos por P3 junto a pintura.
 - **Pulmones** PU-1 a PU-9 entre pasos, con carros de cilindros.
 
 ## Secciones de la planta
@@ -121,7 +140,7 @@ planta/calculos.py  memoria de cálculo: recepción, anti-sobrestock, pulmones, 
 planta/simbolos.py  símbolos de máquinas en planta a escala (40 tipos), operarios y vehículos
 planta/dibujo.py    dibujo de planta a escala sobre la lámina (capas, muros, ejes, flujos con flechas, cotas, tablas)
 planta/planos.py    FL_PI_01 a FL_PI_03
-planta/formal.py    FL_PI_04 (4 hojas)
+planta/formal.py    FL_PI_04 (1 hoja 2A0)
 planta/chapa.py     FL_PI_05
 planta/memoria.py   genera docs/MEMORIA_DE_CALCULO.md
 planta/lamina.py    formato IRAM 4504, rótulo IRAM 4508, estilos de cota IRAM 4513

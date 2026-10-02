@@ -101,6 +101,14 @@ class Equipo:
 
 
 @dataclass
+class Mueble:
+    tipo: str                # función de planta/mobiliario.py
+    rect: R
+    frente: str = "S"        # lado de uso / acceso (S, E, N, O)
+    n: int = 1               # cantidad de módulos (armarios, inodoros, sillas...) o variante
+
+
+@dataclass
 class Puerta:
     cod: str
     muro: str                # N, S, E, O (de la nave) o texto de anexo
@@ -155,6 +163,9 @@ PASILLOS = [
     Pasillo("PO-2", R(30.0, 33.6, 82.6, 34.8), "PO", 1.2, "Calle de operarios y carros de la línea principal"),
     Pasillo("PO-3", R(16.9, 38.95, 41.0, 39.95), "PO", 1.0, "Calle de operarios de cúpulas y cuellos (N3)"),
     Pasillo("PO-L", R(16.8, 31.8, 29.2, 32.9), "PO", 1.1, "Calle del operario de los láseres"),
+    Pasillo("PO-4", R(41.0, 39.4, 87.6, 40.6), "PO", 1.2,
+            "Calle norte: pañol de línea, escuelita, muestras y granalla; salidas SE-2, SE-3 y SE-4"),
+    Pasillo("PO-E", R(84.6, 31.6, 87.4, 39.4), "PO", 2.8, "Calle de transpaleta: P3 -> granalla (GR)"),
     Pasillo("PT-A", R(34.2, 0.3, 37.6, 18.8), "PM", 3.4, "Autoelevador: M3 -> casquetes y rack de PT 1"),
     Pasillo("PT-B", R(38.7, 6.8, 42.1, 18.8), "PM", 3.4, "Autoelevador del almacén de PT (centro)"),
     Pasillo("PT-C", R(44.3, 6.8, 47.7, 18.8), "PM", 3.4, "Autoelevador del almacén de PT (este) y envolvedora"),
@@ -188,20 +199,31 @@ SECTORES = [
            "6 desbobinado + embutido -> 7 preparación de cuello -> 8 soldadura de cuello"),
     Sector("N4", "Unión y prueba hidráulica", R(34.6, 35.0, 66.6, 39.0), "PROD", "S1 / S2",
            "9 encastre -> 10 bordoneado -> 11 soldadura circ. -> 12 PH -> 13 secado"),
-    Sector("N5", "Granallado y defectos", R(70.2, 34.8, 87.6, 39.6), "PROD", "S1 / S2",
+    Sector("N5", "Granallado y defectos", R(70.2, 34.8, 87.6, 39.3), "PROD", "S1 / S2",
            "14 granallado -> 15 detección de defectos -> 16 corrección"),
     Sector("Q", "Laboratorio de calidad", R(49.4, 24.8, 56.8, 29.4), "CAL", "común",
-           "Rotura, expansión, potencial extintor; probetas de soldadura (IRAM 3523 / 3550)", 31.0),
+           "Metrología, espesor por ultrasonido, adherencia y espesor de pintura, niebla salina, humedad del "
+           "polvo; probetas de soldadura (IRAM 3523 / 3550)", 31.0),
     Sector("QR", "Cuarentena y lotes retenidos", R(57.0, 24.8, 61.0, 29.4), "CAL", "común",
            "Jaula con llave: lotes rechazados y muestras", 15.0),
-    Sector("SUP", "Supervisión de planta y PCP", R(61.2, 24.8, 65.4, 29.4), "AUX", "común"),
-    Sector("EPP", "EPP y botiquín", R(65.6, 24.8, 69.8, 29.4), "AUX", "común"),
-    Sector("MT", "Mantenimiento y pañol de herramientas", R(41.2, 24.8, 49.2, 29.4), "AUX", "común",
-           "Banco, torno chico, soldadora y repuestos", 30.0),
-    Sector("PV", "Carros vacíos y retorno de pulmones", R(41.2, 29.6, 62.0, 33.4), "AUX", "común",
-           "Estacionamiento de carros de pulmón vacíos sobre la calle PO-2"),
-    Sector("RES", "Reserva para ampliación de la línea", R(48.0, 39.4, 69.8, 43.6), "AUX", "común",
-           "Lugar para una 3ª PH / 2ª granalladora si crece la demanda"),
+    Sector("SUP", "Supervisión de planta y PCP", R(61.2, 24.8, 65.4, 29.4), "AUX", "común",
+           "Encargado de turno y PCP con ventana a la línea; tablero de gestión a la vista"),
+    Sector("EPP", "EPP, botiquín y ducha lavaojos", R(65.6, 24.8, 69.8, 29.4), "AUX", "común",
+           "Entrega de EPP contra vale; caretas fotosensibles de recambio"),
+    Sector("MT", "Taller de mantenimiento", R(41.2, 24.8, 49.2, 29.4), "AUX", "común",
+           "Bancos, torno, agujereadora, soldadora móvil y repuestos; entra la transpaleta desde el pasillo", 30.0),
+    Sector("PV", "Carros vacíos: supermercado de retorno", R(41.2, 29.6, 62.0, 33.4), "AUX", "común",
+           "Cada carro vuelve vacío a su puesto de carga por PO-1 / PO-2; acá esperan los de reserva y los del "
+           "milk run de abastecimiento"),
+    # ---------------- franja norte (sobre la calle PO-4): apoyo a la línea
+    Sector("PÑL", "Pañol de línea (ventanilla)", R(48.0, 40.8, 58.0, 43.6), "AUX", "común",
+           "Alambre 0,9 / 1,2 mm, toberas, puntas, discos y EPP; entrega contra vale a 10 m de las soldadoras"),
+    Sector("ES", "Escuelita de soldadura", R(58.2, 40.8, 65.6, 43.6), "AUX", "común",
+           "3 cabinas con mampara y extracción: práctica y homologación de soldadores (cátedra)"),
+    Sector("AR", "Muestras retenidas y archivo de calidad", R(67.6, 40.8, 76.0, 43.6), "CAL", "común",
+           "Un cilindro testigo por lote y legajos de trazabilidad (IRAM 3517 / 3523)"),
+    Sector("GR", "Granalla y repuestos de granallado y pintura", R(78.0, 40.8, 87.6, 43.6), "MP", "común",
+           "Pallets de granalla (40 × 25 kg) junto a la granalladora; entran por P3 con transpaleta"),
     # ---------------- columna este: pintura y servicios de pintura
     Sector("S-P", "Pintura en polvo (lazo)", R(70.2, 0.3, 87.7, 24.4), "PINT", "S1 / S2",
            "17 carga -> pretratamiento -> secado -> cabina -> polimerizado -> enfriamiento -> descarga"),
@@ -210,14 +232,15 @@ SECTORES = [
     Sector("ST-I", "Tableros, compresor de pintura y colector", R(70.2, 24.8, 76.2, 31.4), "AUX", "común"),
     # ---------------- banda sur: terminación y almacén de cilindros
     Sector("AL-C", "Almacén de cilindros pintados", R(50.2, 12.4, 69.8, 18.8), "PT", "S1 / S2",
-           "Cilindros vendidos vacíos y pulmón de pintados antes de terminación"),
+           "Pulmón de pintados antes de la carga de polvo y cilindros vendidos vacíos; estación de carga de "
+           "baterías de autoelevador y apiladoras sobre el pasillo central"),
     Sector("SP-1", "Sala de carga de polvo", R(62.0, 0.3, 69.8, 12.2), "TERM", "S1 / S2",
            "Recinto HR ≤ 70 %, 8 renovaciones por hora, sin estufas (IRAM 3517-2); big bags a 2 alturas"),
     Sector("S-T", "Terminación 1-10 kg", R(50.2, 1.9, 61.8, 12.2), "TERM", "S1 / S2",
            "18 carga de polvo -> 19 ensamblaje -> 20 presurización -> 21 hermeticidad -> 22 etiquetado "
            "-> 23 embalaje -> 24 envolvedora"),
     Sector("AL-2", "Insumos de terminación y embalaje", R(50.2, 0.3, 62.0, 1.8), "MP", "S1 / S2",
-           "Rack de 4 niveles a lo largo del muro sur; entra por P5", 40.0),
+           "Rack de 4 niveles a lo largo del muro sur; llega por el muelle M2 (sin portón propio)", 40.0),
     # ---------------- banda sur: PT
     Sector("AL-3", "Almacén de producto terminado", R(34.2, 6.8, 50.0, 18.8), "PT", "S1 / S2",
            "4 racks de 12 m × 4 niveles = 128 posiciones (req. 88)"),
@@ -480,15 +503,14 @@ PUERTAS = [
     Puerta("M3", "S", 34.4, 37.4, 3.2, "muelle", "Recepción de tercerizados y casquetes"),
     Puerta("M1", "S", 41.2, 44.2, 3.2, "muelle", "Expedición PT (rampa niveladora)"),
     Puerta("M2", "S", 45.6, 48.6, 3.2, "muelle", "Expedición PT (rampa niveladora)"),
-    Puerta("P5", "S", 58.6, 61.4, 4.0, "porton", "Insumos de terminación y embalaje"),
     Puerta("P4", "S", 63.0, 66.0, 4.0, "porton", "Polvo químico (big bags)"),
-    Puerta("P3", "E", 26.0, 29.0, 3.0, "porton", "Químicos de pretratamiento y pintura en polvo"),
+    Puerta("P3", "E", 26.0, 29.0, 3.0, "porton", "Químicos de pretratamiento, pintura en polvo y granalla"),
     # salidas de emergencia (1,10 m, barral antipánico, abren hacia afuera)
     Puerta("SE-1", "N", 30.0, 31.1, 2.1, "emergencia"),
-    Puerta("SE-2", "N", 50.0, 51.1, 2.1, "emergencia"),
+    Puerta("SE-2", "N", 46.9, 48.0, 2.1, "emergencia"),
     Puerta("SE-3", "N", 66.0, 67.1, 2.1, "emergencia"),
-    Puerta("SE-4", "N", 82.0, 83.1, 2.1, "emergencia"),
-    Puerta("SE-5", "E", 40.0, 41.1, 2.1, "emergencia"),
+    Puerta("SE-4", "N", 76.4, 77.5, 2.1, "emergencia"),
+    Puerta("SE-5", "E", 36.0, 37.1, 2.1, "emergencia"),
     Puerta("SE-6", "E", 12.0, 13.1, 2.1, "emergencia"),
     Puerta("SE-7", "S", 86.0, 87.1, 2.1, "emergencia"),
     Puerta("SE-8", "S", 14.0, 15.1, 2.1, "emergencia"),
@@ -525,7 +547,7 @@ FLUJOS = [
     Flujo("MP", [(36.6, -6.0), (36.6, 0.0), (36.6, 1.5), (37.8, 1.5)], "Tercerizados revendidos (M3)", "S4"),
     Flujo("MP", [(64.5, -6.0), (64.5, 0.0), (64.5, 2.0), (68.6, 2.0)], "Polvo químico en big bags (P4)"),
     Flujo("MP", [(68.6, 5.2), (67.6, 5.2)], "Big bag a la carga de polvo"),
-    Flujo("MP", [(60.0, -6.0), (60.0, 0.0), (60.0, 1.0), (58.2, 1.0)], "Válvulas, manómetros, cajas (P5)"),
+    Flujo("MP", [(48.2, -6.0), (48.2, 0.0), (48.2, 1.0), (50.2, 1.0)], "Válvulas, manómetros, cajas (muelle M2)"),
     Flujo("MP", [(55.5, 1.6), (55.5, 3.0), (59.3, 3.0), (59.3, 4.8)], "Válvulas a ensamblaje"),
     Flujo("MP", [(51.3, 1.6), (51.3, 4.4)], "Cajas y film a embalaje"),
     Flujo("MP", [(96.0, 27.5), (88.0, 27.5), (86.0, 27.5)], "Químicos y pintura en polvo (P3)"),
@@ -675,26 +697,35 @@ def _hilos():
 
 
 # ============================================================ LOCALES
-# servicios SV (x -18..0, y 19..37,8): pasillo N-S contra la nave (PP-1); vestuarios al norte, oficinas al sur
-_dy = 7.8
+# servicios SV (x -18..0, y 19..37,8). Circuito: ingreso SV-1 -> hall y fichado -> pasillo limpio (PL) ->
+# vestuario -> sanitarios y duchas (sólo desde el vestuario) -> pasillo limpio -> PP-1 -> senda de la nave.
+# Al sur del pasillo, lo que usan visitas y administración sin cruzar vestuarios; al norte, el personal.
+# El comedor queda a 6 m de PP-1 (refrigerio de 30 min en 2 tandas) con lavamanos en la entrada.
 LOCALES = [
-    Sector("SV-VH", "Vestuario hombres (62 armarios)", R(-17.8, 24.4 + _dy, -10.4, 29.8 + _dy), "SERV", "común"),
-    Sector("SV-SH", "Sanitarios y duchas hombres", R(-10.2, 24.4 + _dy, -5.4, 29.8 + _dy), "SERV", "común",
-           "3 inodoros, 6 mingitorios, 6 lavabos, 4 duchas"),
-    Sector("SV-LI", "Limpieza", R(-5.2, 26.8 + _dy, -2.2, 29.8 + _dy), "SERV", "común"),
-    Sector("SV-PS", "Paso a planta", R(-5.2, 24.4 + _dy, -2.2, 26.6 + _dy), "CIRC", "común"),
-    Sector("SV-VM", "Vestuario y sanitarios mujeres (14 armarios)", R(-17.8, 18.8 + _dy, -10.4, 24.2 + _dy), "SERV",
-           "común", "2 inodoros, 2 lavabos, 2 duchas"),
-    Sector("SV-AC", "Sanitario accesible", R(-10.2, 21.6 + _dy, -7.8, 24.2 + _dy), "SERV", "común",
+    Sector("SV-PA", "Primeros auxilios y lactario", R(-17.9, 19.1, -15.2, 22.9), "SERV", "común",
+           "Camilla, botiquín, lavabo y heladera; salida directa al exterior para ambulancia"),
+    Sector("SV-OF", "Oficina (6 puestos)", R(-15.0, 19.1, -8.6, 22.9), "SERV", "común",
+           "Calidad, administración y ventas, compras, PCP y administrativo de la tarde (Servicios y Oficinas)"),
+    Sector("SV-JP", "Jefatura de planta y reuniones", R(-8.4, 19.1, -5.4, 22.9), "SERV", "común",
+           "Escritorio y mesa para 4"),
+    Sector("SV-AC", "Sanitario accesible y de visitas", R(-5.2, 19.1, -3.2, 22.9), "SERV", "común",
            "Círculo libre Ø 1,50 m, barras, inodoro con 0,80 m libre lateral (Ley 24.314, Dec. 914/97)"),
-    Sector("SV-LA", "Lactario", R(-10.2, 18.8 + _dy, -7.8, 21.4 + _dy), "SERV", "común", "Buena práctica (Ley 26.873)"),
-    Sector("SV-PA", "Primeros auxilios", R(-7.6, 18.8 + _dy, -2.2, 24.2 + _dy), "SERV", "común"),
-    Sector("SV-CO", "Pasillo", R(-2.0, 11.2 + _dy, -0.2, 29.8 + _dy), "CIRC", "común"),
-    Sector("SV-HA", "Hall, recepción y fichado", R(-6.0, 11.2 + _dy, -2.2, 18.6 + _dy), "SERV", "común"),
-    Sector("SV-OF", "Oficinas (6 puestos)", R(-17.8, 14.8 + _dy, -10.4, 18.6 + _dy), "SERV", "común"),
-    Sector("SV-JP", "Jefatura de planta", R(-10.2, 14.8 + _dy, -8.2, 18.6 + _dy), "SERV", "común"),
-    Sector("SV-RE", "Reuniones", R(-8.0, 14.8 + _dy, -6.2, 18.6 + _dy), "SERV", "común"),
-    Sector("SV-CM", "Comedor 30 plazas y office", R(-17.8, 11.2 + _dy, -6.2, 14.6 + _dy), "SERV", "común"),
+    Sector("SV-HA", "Hall, recepción y fichado", R(-3.0, 19.1, -0.1, 22.9), "SERV", "común",
+           "Reloj biométrico y tablero de novedades al paso"),
+    Sector("SV-PL", "Pasillo limpio a la planta (PP-1)", R(-17.9, 23.0, -0.1, 24.5), "CIRC", "común"),
+    Sector("SV-VH", "Vestuario hombres (60 armarios dobles)", R(-17.9, 24.6, -11.2, 31.4), "SERV", "común",
+           "Armario doble ropa de calle / de trabajo (Dec. 351/79 art. 50); req. 56 en 2035"),
+    Sector("SV-SH", "Sanitarios y duchas hombres", R(-17.9, 31.6, -11.2, 37.7), "SERV", "común",
+           "3 inodoros, 6 mingitorios, 6 lavabos, 4 duchas (art. 49: turno mañana 47 H + 8 choferes)"),
+    Sector("SV-VM", "Vestuario mujeres (20 armarios dobles)", R(-11.0, 24.6, -6.4, 28.8), "SERV", "común",
+           "Req. 10 en 2035"),
+    Sector("SV-SM", "Sanitarios y duchas mujeres", R(-11.0, 29.0, -6.4, 33.8), "SERV", "común",
+           "4 inodoros, 4 lavabos, 3 duchas"),
+    Sector("SV-LI", "Limpieza, ropería y lavadero", R(-11.0, 34.0, -6.4, 37.7), "SERV", "común",
+           "Lavado de ropa de trabajo; carro y artículos de limpieza"),
+    Sector("SV-PS", "Pasillo de servicios", R(-6.2, 24.6, -5.0, 37.7), "CIRC", "común"),
+    Sector("SV-CM", "Comedor (30 plazas) y office", R(-4.8, 24.6, -0.1, 37.7), "SERV", "común",
+           "5 mesas de 6; 2 tandas de 30 min por turno (27 personas en la tanda mayor)"),
     # recargas RC (x 0,3..18, y 0,3..19,2): entra por RC-1, recorre en U y sale por RC-2
     Sector("RC-RE", "Recepción, clasificación y recibidos", R(0.5, 0.5, 5.8, 5.4), "RC", "RC",
            "Clasificación en 4 colas: polvo, CO₂, agente limpio y líquidos"),
@@ -717,9 +748,120 @@ LOCALES = [
 ]
 
 PUERTAS_ANEXOS = [
-    ("SV-1", (-5.2, 19.0), (-3.2, 19.0), "peatonal", "Ingreso de personal y visitas"),
-    ("SV-2", (-18.0, 33.8), (-18.0, 35.0), "peatonal", "Salida de emergencia de vestuarios"),
+    ("SV-1", (-2.6, 19.0), (-1.0, 19.0), "peatonal", "Ingreso de personal y visitas (desde el estacionamiento)"),
+    ("SV-2", (-18.0, 27.6), (-18.0, 28.6), "peatonal", "Salida de emergencia de vestuarios"),
+    ("SV-3", (-17.6, 19.0), (-16.6, 19.0), "peatonal", "Primeros auxilios: salida a ambulancia"),
 ]
+
+# ============================================================ MOBILIARIO (ningún local vacío)
+Mb = Mueble
+MOBILIARIO = [
+    # ---- SV-PA primeros auxilios y lactario
+    Mb("camilla", R(-17.85, 20.2, -17.15, 22.1), "E"), Mb("botiquin", R(-15.6, 21.4, -15.25, 22.2), "O"),
+    Mb("lavabos", R(-17.0, 22.35, -16.3, 22.85), "S", 1), Mb("escritorio", R(-16.4, 19.15, -15.25, 20.45), "N"),
+    Mb("heladera", R(-15.65, 20.6, -15.25, 21.1), "O"),
+    # ---- SV-OF oficina: 6 puestos enfrentados, archivo
+    *[Mb("escritorio", R(-14.9 + i * 1.8, 19.15, -13.2 + i * 1.8, 20.45), "N") for i in range(3)],
+    *[Mb("escritorio", R(-14.9 + i * 1.8, 21.55, -13.2 + i * 1.8, 22.85), "S") for i in range(3)],
+    Mb("archivo", R(-9.4, 19.15, -8.65, 19.6), "N", 2), Mb("pizarra", R(-14.98, 20.6, -14.9, 21.4), "E"),
+    # ---- SV-JP jefatura y reuniones
+    Mb("escritorio", R(-8.3, 21.55, -6.6, 22.85), "S"), Mb("mesa", R(-8.3, 19.15, -6.3, 20.95), "S", 4),
+    Mb("archivo", R(-5.9, 19.2, -5.45, 20.4), "O", 2),
+    # ---- SV-AC sanitario accesible
+    Mb("inodoro_acc", R(-5.15, 19.15, -3.25, 22.85), "N"), Mb("lavabos", R(-5.15, 20.0, -4.65, 20.7), "E", 1),
+    # ---- SV-HA hall, recepción y fichado
+    Mb("mostrador", R(-2.95, 21.2, -1.3, 22.4), "S"), Mb("reloj", R(-0.45, 19.6, -0.15, 20.0), "O"),
+    Mb("pizarra", R(-0.2, 20.2, -0.12, 21.4), "O"), Mb("sillas", R(-2.95, 19.9, -2.5, 20.9), "E", 2),
+    # ---- SV-VH vestuario hombres: 30 módulos dobles × 2 alturas = 60 armarios, bancos
+    Mb("armarios", R(-17.88, 24.7, -17.38, 27.1), "E", 4), Mb("armarios", R(-17.88, 28.9, -17.38, 31.3), "E", 4),
+    Mb("armarios", R(-17.3, 30.88, -13.1, 31.38), "S", 7), Mb("armarios", R(-11.72, 25.5, -11.22, 30.9), "O", 9),
+    Mb("armarios", R(-15.6, 27.4, -13.6, 27.9), "S", 3), Mb("armarios", R(-15.6, 27.9, -13.6, 28.4), "N", 3),
+    Mb("banco_vest", R(-16.9, 24.9, -16.5, 27.0), "E"), Mb("banco_vest", R(-16.9, 29.0, -16.5, 30.6), "E"),
+    Mb("banco_vest", R(-12.6, 25.6, -12.2, 30.2), "O"), Mb("banco_vest", R(-15.6, 26.5, -13.6, 26.9), "S"),
+    Mb("banco_vest", R(-15.6, 28.9, -13.6, 29.3), "N"),
+    # ---- SV-SH sanitarios y duchas hombres
+    Mb("inodoro", R(-17.85, 36.15, -15.0, 37.65), "S", 3), Mb("mingitorios", R(-14.9, 37.2, -11.3, 37.65), "S", 6),
+    Mb("duchas", R(-17.85, 31.7, -16.95, 35.3), "E", 4), Mb("banco_vest", R(-16.4, 32.0, -16.0, 35.0), "O"),
+    Mb("lavabos", R(-11.75, 31.9, -11.25, 36.1), "O", 6),
+    # ---- SV-VM y SV-SM mujeres
+    Mb("armarios", R(-6.92, 25.5, -6.42, 28.5), "O", 5), Mb("armarios", R(-10.98, 25.5, -10.48, 28.5), "E", 5),
+    Mb("banco_vest", R(-8.9, 25.4, -8.5, 28.2), "E"),
+    Mb("inodoro", R(-7.95, 29.05, -6.45, 32.85), "O", 4), Mb("duchas", R(-10.95, 32.85, -8.25, 33.75), "S", 3),
+    Mb("lavabos", R(-10.95, 29.6, -10.45, 32.4), "E", 4),
+    # ---- SV-LI limpieza, ropería y lavadero
+    Mb("lavadero", R(-10.9, 37.0, -8.2, 37.65), "S"), Mb("estanteria", R(-8.0, 37.1, -6.5, 37.65), "S"),
+    Mb("carro_limpieza", R(-10.8, 34.2, -10.1, 34.8), "N"), Mb("estanteria", R(-10.95, 35.2, -10.45, 36.6), "E"),
+    # ---- SV-CM comedor: 5 mesas de 6, office y lavamanos en la entrada
+    Mb("lavabos", R(-4.75, 26.3, -4.3, 27.7), "E", 2),
+    *[Mb("mesa", R(-3.9, y0, -1.9, y0 + 1.7), "S", 6) for y0 in (25.1, 27.4, 29.7, 32.0, 34.3)],
+    Mb("mesada", R(-0.75, 33.0, -0.15, 37.6), "O", 2), Mb("heladera", R(-0.85, 32.0, -0.15, 32.8), "O"),
+    Mb("dispenser", R(-0.55, 25.0, -0.15, 25.4), "O"),
+    # ---- MT taller de mantenimiento
+    Mb("torno", R(41.3, 28.4, 43.6, 29.35), "S"), Mb("agujereadora", R(43.8, 28.6, 44.6, 29.35), "S"),
+    Mb("banco_trabajo", R(44.8, 28.6, 47.0, 29.35), "S"), Mb("banco_trabajo", R(47.2, 28.6, 49.15, 29.35), "S"),
+    Mb("estanteria", R(48.6, 25.0, 49.15, 28.2), "O"), Mb("soldadora", R(41.3, 25.0, 42.3, 25.6), "N"),
+    Mb("escritorio", R(46.6, 24.85, 48.4, 26.15), "N"), Mb("contenedor", R(45.0, 24.85, 46.4, 25.75), "N"),
+    # ---- Q laboratorio de calidad
+    Mb("marmol", R(49.5, 27.9, 51.5, 28.9), "S"), Mb("mesa_lab", R(51.8, 28.65, 55.0, 29.35), "S"),
+    Mb("camara", R(55.3, 28.3, 56.75, 29.35), "S"), Mb("camara", R(55.9, 26.6, 56.75, 27.6), "O"),
+    Mb("balanza_lab", R(49.5, 25.0, 50.2, 25.6), "N"), Mb("escritorio", R(50.5, 24.85, 52.3, 26.15), "N"),
+    Mb("estanteria", R(52.6, 24.85, 54.6, 25.35), "N"), Mb("mesa_lab", R(54.9, 24.85, 56.75, 25.55), "N"),
+    # ---- QR cuarentena
+    Mb("jaula", R(57.1, 24.9, 60.9, 29.3), "S"), Mb("pallets", R(57.3, 27.8, 59.9, 29.1), "S", 1),
+    Mb("cilindros_piso", R(57.3, 25.9, 58.9, 27.4), "S", 0),
+    # ---- SUP supervisión y PCP
+    Mb("escritorio", R(61.3, 28.0, 62.9, 29.35), "S"), Mb("escritorio", R(63.1, 28.0, 64.7, 29.35), "S"),
+    Mb("pizarra", R(65.2, 25.5, 65.35, 27.5), "O"), Mb("mesa", R(61.4, 25.0, 63.4, 26.8), "S", 4),
+    Mb("archivo", R(64.0, 24.85, 65.3, 25.35), "N", 3),
+    # ---- EPP
+    Mb("estanteria", R(65.7, 28.8, 69.7, 29.35), "S"), Mb("estanteria", R(65.65, 25.6, 66.15, 28.4), "E"),
+    Mb("ventanilla", R(67.0, 24.85, 69.0, 25.5), "N"), Mb("botiquin", R(69.3, 26.0, 69.75, 26.8), "O"),
+    Mb("lavaojos", R(69.1, 27.2, 69.75, 27.9), "O"),
+    # ---- PV supermercado de carros vacíos (frente a la calle PO-2)
+    Mb("carros_vacios", R(41.6, 29.7, 49.6, 31.3), "N", 10), Mb("carros_vacios", R(49.8, 29.7, 56.6, 31.3), "N", 8),
+    Mb("carros_vacios", R(56.8, 29.7, 61.8, 31.3), "N", 5),
+    # ---- ST-I tableros y compresor
+    Mb("tablero_el", R(70.3, 30.6, 74.3, 31.35), "S", 4), Mb("compresor", R(70.4, 25.0, 73.4, 26.4), "N"),
+    Mb("estanteria", R(75.6, 25.0, 76.15, 28.0), "O"),
+    # ---- QP químicos y pintura en polvo
+    Mb("tambores", R(81.0, 29.6, 84.4, 31.3), "S", 10), Mb("tambores", R(81.0, 25.0, 83.0, 26.4), "N", 6),
+    Mb("pallets", R(84.8, 29.8, 87.5, 31.3), "S", 0), Mb("estanteria", R(85.0, 25.0, 87.5, 25.5), "N"),
+    Mb("lavaojos", R(83.6, 25.0, 84.2, 25.6), "N"),
+    # ---- franja norte: pañol de línea, escuelita, muestras y granalla
+    Mb("estanteria", R(48.1, 43.0, 55.0, 43.55), "S"), Mb("estanteria", R(48.1, 41.2, 48.6, 42.7), "E"),
+    Mb("ventanilla", R(52.0, 40.85, 54.0, 41.25), "N"), Mb("escritorio", R(55.2, 42.2, 57.0, 43.55), "S"),
+    Mb("pallets", R(55.3, 40.9, 57.9, 42.0), "N", 0),
+    Mb("cabina_sold", R(58.3, 41.0, 63.7, 43.55), "S", 3), Mb("mesa", R(63.9, 41.2, 65.5, 43.0), "E", 4),
+    Mb("estanteria", R(67.7, 43.0, 75.9, 43.55), "S"), Mb("estanteria", R(68.5, 41.6, 74.5, 42.1), "S"),
+    Mb("escritorio", R(74.6, 40.85, 75.95, 42.2), "N"),
+    Mb("pallets", R(78.2, 42.3, 85.0, 43.5), "S", 0), Mb("estanteria", R(85.3, 42.9, 87.5, 43.55), "S"),
+    Mb("contenedor", R(78.2, 40.9, 79.8, 41.9), "N"),
+    # ---- expedición y tercerizados
+    Mb("rampa", R(41.2, 0.35, 44.2, 2.35), "S"), Mb("rampa", R(45.6, 0.35, 48.6, 2.35), "S"),
+    Mb("pallets", R(37.9, 0.4, 40.3, 6.5), "E", 0),
+    # ---- AL-C: carga de baterías sobre el pasillo central y pallets de cilindros
+    Mb("cargador", R(50.4, 16.9, 54.6, 18.75), "N", 3), Mb("pallets", R(50.4, 12.6, 62.2, 15.3), "S", 1),
+    Mb("pallets", R(55.0, 16.7, 62.2, 18.6), "N", 1),
+    # ---- RC-IR inutilizados y residuos
+    Mb("jaula", R(0.6, 13.5, 2.6, 15.7), "E"), Mb("cilindros_piso", R(0.75, 13.7, 2.4, 15.5), "E", 0),
+    Mb("tambores", R(2.8, 13.5, 4.1, 14.9), "O", 2), Mb("contenedor", R(2.8, 15.0, 4.1, 15.7), "O"),
+]
+
+# puertas interiores de una hoja: (x, y, ancho, muro 'h'/'v', abre +1/-1)
+PUERTAS_INT = [
+    (-16.2, 22.9, 0.8, "h", -1), (-9.5, 22.9, 0.8, "h", -1), (-6.5, 22.9, 0.8, "h", -1), (-4.6, 22.9, 0.9, "h", -1),
+    (-1.1, 22.9, 0.8, "h", -1), (-13.0, 24.6, 0.9, "h", 1), (-12.9, 31.5, 0.9, "h", 1), (-8.2, 24.6, 0.8, "h", 1),
+    (-10.2, 28.9, 0.8, "h", 1), (-6.3, 34.6, 0.8, "v", -1), (-4.9, 25.0, 0.9, "v", 1),
+]
+
+# función de cada portón, rotulada en todos los planos (qué entra o sale, nunca un código suelto)
+USO_CORTO = {
+    "P1": "MP: chapa, caño, flejes e insumos pesados", "P2": "Scrap a volquete",
+    "RC-1": "Recargas: entran equipos", "RC-2": "Recargas: salen equipos",
+    "P6": "Carros al pintor y vuelta", "P8": "Carros: estructuras, ruedas y polvo", "P9": "Carros terminados",
+    "M3": "Tercerizados y casquetes", "M1": "PT a camión", "M2": "PT a camión / insumos de terminación",
+    "P4": "Polvo químico (big bags)", "P3": "Químicos, pintura en polvo y granalla", "PP-1": "Personal",
+}
 
 # ============================================================ IMPLANTACIÓN
 LM_Y = TERRENO[1]
@@ -797,7 +939,7 @@ def _sendas():
     S = []
     for i, g in enumerate(grupos, 1):
         xs, ys = [p[0] for p in g], [p[1] for p in g]
-        S.append((f"SP-{i}", R(min(xs) - 0.6, min(ys) - 0.6, max(xs) + 0.6, max(ys) + 0.6),
+        S.append((f"X{i}", R(min(xs) - 0.6, min(ys) - 0.6, max(xs) + 0.6, max(ys) + 0.6),
                   "Senda peatonal señalizada (cebra amarilla, IRAM 10005) en el cruce del personal con un flujo"))
     return S
 
@@ -814,7 +956,7 @@ ABERTURAS = [
     (20.0, 21.2, "personal a carros"),
     (24.6, 26.0, "carros de cuerpos a la zona de carros"),
     (33.7, 34.9, "personal a terminación de carros"),
-    (41.4, 44.4, "autoelevador a mantenimiento"),
+    (41.4, 44.4, "transpaleta a mantenimiento"),
     (48.4, 49.6, "personal a PT y expedición"),
     (60.4, 61.6, "personal a terminación"),
 ]
@@ -834,5 +976,5 @@ def _defensas():
 DEFENSAS = _defensas()
 for _a, _b, _t in ABERTURAS:
     if _t.startswith("personal"):
-        SENDAS.append((f"SP-{len(SENDAS) + 1}", R(_a, 19.2, _b, 23.0), "Senda peatonal: " + _t +
+        SENDAS.append((f"X{len(SENDAS) + 1}", R(_a, 19.2, _b, 23.0), "Senda peatonal: " + _t +
                        " (cruza el carril de autoelevador)"))

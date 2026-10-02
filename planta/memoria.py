@@ -52,7 +52,7 @@ def generar(ruta):
     s.append("Se dimensiona para la carga máxima: un semirremolque de 18,6 m y 30 t o dos chasis de 10 m en el alero "
              "de descarga norte (23 × 10,6 m), con descarga por ambos lados con autoelevador. La MP entra por P1 al "
              "pasillo AM y queda en racks frente a la máquina que la consume (chapa frente a la guillotina, caño frente "
-             "a los láseres, flejes frente a la prensa). Otros ingresos, junto a su consumo: P4 y P5 al sur (polvo e "
+             "a los láseres, flejes frente a la prensa). Otros ingresos, junto a su consumo: P4 al sur (polvo), muelle M2 ("
              "insumos de terminación), P3 al este (químicos y pintura), M3 (casquetes y tercerizados) y P8 (polvo, "
              "estructuras y ruedas de carros).\n")
     s.append(tabla(["Formato", "Largo (m)", "Carga útil (t)", "PBT (t)", "Descarga"],
@@ -81,16 +81,26 @@ def generar(ruta):
              "amarillo 4 a 6, rojo > 6: se consume primero y se inspecciona óxido). Hoja LAF aceitada con film VCI, "
              "descargada y guardada siempre bajo techo, lejos de la PH y del lavado.\n")
     # 5 pulmones
-    s.append("## 5. Pulmones y tren logístico\n")
+    s.append("## 5. Pulmones y manejo de materiales (métodos y tiempos)\n")
     s.append(tabla(["Pulmón", "Tasa (u/h)", "Cobertura (h)", "Unidades", "Carros", "Criterio"],
                    [[r["pulmon"], f(r["tasa"], 1), f(r["cob_h"], 2), f(r["u"], 0), r["carros"], r["criterio"]]
                     for r in C.pulmones()]))
-    tr = C.tren_logistico()
-    s.append(f"\nTren logístico (tractor eléctrico + 3 carros), recorrido de un solo sentido de {f(tr['largo_m'], 0)} m: "
-             f"ciclo de {f(tr['ciclo_min'], 1)} min con 7 paradas; admite {f(tr['viajes_h_max'], 1)} viajes/h y hacen falta "
-             f"{f(tr['viajes_h_nec'], 1)} por capacidad: se programa cada 20 min (3 viajes/h) para que los kanban roten "
-             "chicos. Es lo que permite que las dos celdas y el sector MP entreguen y retiren en el mismo pasillo sin "
-             "que se crucen los flujos.\n")
+    M_ = C.manejo()
+    s.append("\nTiempo por viaje = 2 × distancia / velocidad + tiempo fijo de toma y entrega. Distancias medidas sobre "
+             "los recorridos del modelo; día pico 2035.\n")
+    s.append(tabla(["Unidad de carga", "Medio", "Recorrido", "Viajes/día", "m", "min/viaje", "min/día"],
+                   [[r["carga"], r["medio"], r["ruta"], f(r["viajes"], 1), f(r["dist"], 0), f(r["t_viaje"], 1),
+                     f(r["min_dia"], 0)] for r in M_["filas"]]))
+    s.append(f"\nOcupación sobre un turno útil de 408 min: autoelevador {f(M_['ocup']['Autoelevador'] * 100, 0)} %, "
+             f"apiladora {f(M_['ocup']['Apiladora'] * 100, 0)} %. Un autoelevador eléctrico alcanza (y descarga los "
+             f"camiones). Entre pasos se mueven {M_['carros_dia']} carros por día y por tramo: los empuja el operario que "
+             "cierra el lote (< 1 min por viaje), sin tren logístico ni chofer; al norte de la senda no entra el "
+             "autoelevador. Un abastecedor por turno hace el milk run de consumibles desde el pañol de línea y repone "
+             "carros vacíos desde el supermercado PV.\n")
+    s.append(tabla(["Portón", "Qué entra o sale", "Vehículo", "Frecuencia", "Horario"], [list(r) for r in C.PORTONES]))
+    s.append("\nEl antiguo portón P5 (insumos de terminación) se suprimió: recibía ≈ 1 camión por semana a 10 m de los "
+             "muelles, que trabajan muy por debajo de su capacidad; ahora esos pallets bajan por la rampa del muelle M2 "
+             "y van con transpaleta al rack AL-2.\n")
     # 6 cruces
     s.append("## 6. Cruces de flujos y de hilos\n")
     from shapely.geometry import LineString, Point
@@ -108,8 +118,8 @@ def generar(ruta):
                         continue
                     n += 1
     s.append(f"Cruces entre flujos de MP, SE y PT (verificación geométrica sobre el modelo): **{n}**. Cruces de hilos de "
-             f"personal con flujos: todos dentro de las **{len(L.SENDAS)}** sendas peatonales señalizadas (SP-1 a "
-             f"SP-{len(L.SENDAS)}).\n")
+             f"personal con flujos: todos dentro de las **{len(L.SENDAS)}** sendas peatonales señalizadas (X1 a "
+             f"X{len(L.SENDAS)}).\n")
     # 7 sanitarios
     san = C.sanitarios()
     s.append("## 7. Sanitarios, vestuarios y servicios (Dec. 351/79 arts. 49 y 50)\n")

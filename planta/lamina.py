@@ -13,7 +13,8 @@ import shapely.geometry as sg
 from shapely.ops import unary_union
 
 
-FORMATOS = {"A3": (420.0, 297.0), "A2": (594.0, 420.0), "A1": (841.0, 594.0), "A0": (1189.0, 841.0)}
+FORMATOS = {"A3": (420.0, 297.0), "A2": (594.0, 420.0), "A1": (841.0, 594.0), "A0": (1189.0, 841.0),
+            "2A0": (1682.0, 1189.0)}
 MARGEN_IZQ, MARGEN = 25.0, 10.0          # IRAM 4504: 25 mm a la izquierda (archivo), 10 mm en los demás
 ROT_W, ROT_H = 175.0, 51.0               # IRAM 4508: rótulo de 175 × 51 mm
 ESCALAS = [(1, 1), (1, 2), (1, 5), (1, 10), (1, 20)]      # IRAM 4505 / ISO 5455

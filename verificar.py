@@ -67,6 +67,31 @@ def main():
     for e in L.EQUIPOS:
         if not nave.contains(caja(e.rect)):
             err(f"equipo {e.cod} fuera de la nave")
+    # 5b. mobiliario: dentro de su local, sin pisar equipos, pulmones, pasillos ni otros muebles
+    locs = L.SECTORES + L.LOCALES
+    for mb in L.MOBILIARIO:
+        if not any(caja(s.rect, -0.06).contains(caja(mb.rect)) for s in locs):
+            err(f"mueble {mb.tipo} {mb.rect} fuera de un local")
+        for e in L.EQUIPOS:
+            if caja(mb.rect, 0.01).intersects(caja(e.rect, 0.01)):
+                err(f"mueble {mb.tipo} {mb.rect} pisa el equipo {e.cod}")
+        for p in L.PULMONES:
+            if caja(mb.rect, 0.01).intersects(caja(p.rect, 0.01)):
+                err(f"mueble {mb.tipo} {mb.rect} pisa el pulmón {p.cod}")
+        for p in L.PASILLOS:
+            if caja(mb.rect, 0.02).intersects(caja(p.rect, 0.02)):
+                err(f"mueble {mb.tipo} {mb.rect} invade el pasillo {p.cod}")
+    for a, b in itertools.combinations(L.MOBILIARIO, 2):
+        if caja(a.rect, 0.01).intersects(caja(b.rect, 0.01)) and not {"jaula", "inodoro_acc"} & {a.tipo, b.tipo}:
+            err(f"muebles superpuestos: {a.tipo} {a.rect} y {b.tipo} {b.rect}")
+    # 5c. ningún local vacío
+    for s in locs:
+        if s.cat == "CIRC":
+            continue
+        z = caja(s.rect)
+        llenos = [x for x in list(L.EQUIPOS) + list(L.MOBILIARIO) + list(L.PULMONES) if z.contains(Point(x.rect.c))]
+        if not llenos:
+            err(f"local vacío: {s.cod} {s.nombre}")
     # 6. superficies requeridas
     for s in L.SECTORES + L.LOCALES:
         if s.area_req and s.rect.area < 0.95 * s.area_req and "altura" not in s.nota and "niveles" not in s.nota:
@@ -87,7 +112,7 @@ def main():
     if ex["cant"] < ex["minimo_sup"]:
         err("extintores insuficientes")
     # 10. salidas generadas
-    esperados = {"FL_PI_01": 1, "FL_PI_02": 1, "FL_PI_03": 2, "FL_PI_04": 4, "FL_PI_05": 1}
+    esperados = {"FL_PI_01": 1, "FL_PI_02": 1, "FL_PI_03": 1, "FL_PI_04": 1, "FL_PI_05": 1}
     try:
         import pymupdf
         for cod, n_h in esperados.items():

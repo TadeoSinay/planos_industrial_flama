@@ -142,7 +142,7 @@ def sitio(pl, rotulos=True, estacionamiento=True):
         pl.texto("2 accesibles 3,50 m", (25.8, -24.5), 1.4, A.MIDDLE_CENTER)
         pl.texto("40 cocheras 2,50 × 5,00", (0.0, -30.5), 1.8, A.MIDDLE_CENTER)
         # camino peatonal desde G4 al hall de servicios (SV-1)
-        pl.pl([(22.5, -62.0), (22.5, -46.0), (32.0, -46.0), (32.0, -14.0), (-4.2, -14.0), (-4.2, 19.0)], "A-PASILLO")
+        pl.pl([(22.5, -62.0), (22.5, -46.0), (32.0, -46.0), (32.0, -14.0), (-1.8, -14.0), (-1.8, 19.0)], "A-PASILLO")
     norte(pl, (112.0, -50.0))
 
 
@@ -180,7 +180,7 @@ MARCAS_03 = [
     (1, (5.0, 53.0), "MP-1 chapa, caño, flejes e insumos: alero de descarga norte, entran por P1"),
     (2, (35.4, -9.0), "MP-2 casquetes de carros y tercerizados revendidos (M3)"),
     (3, (65.5, -9.0), "MP-3 polvo químico en big bags (P4)"),
-    (4, (59.5, -9.0), "MP-4 válvulas, manómetros, etiquetas y embalaje (P5)"),
+    (4, (49.5, -9.0), "MP-4 válvulas, manómetros, etiquetas y embalaje (por el muelle M2)"),
     (5, (93.0, 29.5), "MP-5 químicos de pretratamiento y pintura en polvo (P3)"),
     (6, (26.7, -9.0), "MP-6 carros pintados, polvo, estructuras y ruedas (P8)"),
     (7, (30.6, 29.0), "SE fila N1: guillotina -> numerado -> cilindrado -> soldadura longitudinal"),
@@ -207,7 +207,6 @@ def flujos_materiales(pl):
     camion(pl, (45.6, -14.0), 9.5, "PT", horiz=False)
     camion(pl, (35.2, -14.0), 9.5, "Tercerizados", horiz=False)
     camion(pl, (63.2, -14.0), 9.5, "Polvo", horiz=False)
-    camion(pl, (58.8, -14.0), 9.5, "Insumos", horiz=False)
     camion(pl, (88.6, 26.2), 9.5, "Químicos", horiz=True)
     camion(pl, (-20.0, 1.6), 6.0, "Utilitario", horiz=True)
     for fl in L.FLUJOS:
@@ -221,7 +220,7 @@ def flujos_materiales(pl):
 
 def fl_pi_03(doc, ox):
     h, pl = lamina_flujo(doc, ox, "FL_PI_03", "FL_PI_03 - FLUJO DE MATERIALES: MP, SE, PT, SCRAP Y EFLUENTES",
-                         "Flujo de materiales", "MP, SE, PT, scrap y efluentes - año 10", "Diagrama de flujo", 1, 2)
+                         "Flujo de materiales", "MP, SE, PT, scrap y manejo de materiales - año 10", "Diagrama de flujo", 1, 1)
     fondo(pl)
     flujos_materiales(pl)
     D.rotulos_sector(pl, h=1.7, areas=False)
@@ -238,39 +237,38 @@ def fl_pi_03(doc, ox):
         pl.texto(txt, (x + 8, y), 2.2, A.MIDDLE_LEFT, papel=True)
         y -= 5.0
     y = pl.parrafo(["Criterios: cada MP entra por el portón más cercano a la máquina que la transforma;",
-                    "recorrido en U (banda norte al este, pintura al sur, banda sur al oeste) con 0 cruces entre",
-                    "MP, SE y PT (verificado por cálculo); scrap por portón propio a volquete exterior",
-                    "(el chatarrero no entra); efluentes por gravedad a PTE junto a la colectora."], x, y - 2, 2.2)
-    cols = [("Proveedor / material", 58, "l"), ("t/entr.", 14, "c"), ("Entr./año", 15, "c"),
-            ("Vehículo", 62, "l"), ("Portón", 36, "c"), ("Destino", 25, "c")]
-    filas = [[g, f(t, 1), f(n, 1), v, p, d] for g, t, n, v, p, d in C.ENTREGAS]
-    y = pl.tabla(x, y - 12, cols, filas, 4.3, 2.1, "Recepción de MP por entrega (año 10)")
-    cols2 = [("Formato de camión", 56, "l"), ("Largo m", 14, "c"), ("Carga t", 14, "c"), ("PBT t", 12, "c"),
-             ("Dónde se descarga", 114, "l")]
-    filas2 = [[a, f(b, 1), f(c, 1), f(d, 1), e] for a, b, c, d, e in C.CAMIONES]
-    y = pl.tabla(x, y - 12, cols2, filas2, 4.3, 2.0, "Formatos de descarga (Ley 24.449: ancho 2,60 m, alto 4,10 m)")
-    cols3 = [("Autoelevador (c = 500 mm)", 50, "l"), ("Paquete por el lado largo (c = 750)", 58, "c"),
-             ("Por el lado corto (c = 1500)", 50, "c")]
-    filas3 = [[f"{f(q, 1)} t nominal", f"{f(a, 2)} t " + ("NO" if a < 2 else "OK"), f"{f(b, 2)} t NO"]
-              for q, a, b in C.analisis_peso()]
-    y = pl.tabla(x, y - 12, cols3, filas3, 4.3, 2.1, "Análisis de peso: paquete de hoja 1500 × 3000 de 2 t")
-    y = pl.parrafo(["Q = Qn · (cn + d) / (c + d), d = 0,45 m. Se adopta autoelevador eléctrico de 3,0 t con horquillas",
-                    "de 1,8 m y posicionador (toma el paquete por el lado largo: 2,37 t > 2 t).",
-                    "Pradecon entrega 35,3 t por mes: supera un semi (30 t). Se parte en dos entregas quincenales",
-                    "de 17,6 t en chasis con balancín; baja el stock máximo de chapa.",
-                    "Dimensionado a la carga máxima: alero norte para semi de 18,6 m / 30 t o dos chasis de 10 m,",
-                    "con descarga por ambos lados; la MP entra por P1 a racks frente a cada máquina."], x, y - 3, 2.1)
-    cols4 = [("Formato de hoja", 66, "l"), ("Hojas/sem", 18, "c"), ("Paquete 2 t cubre (sem)", 32, "c"),
-             ("Paquete propuesto", 32, "c"), ("Stock máx. (sem)", 24, "c")]
-    filas4 = [[r["formato"], f(r["hojas_sem"], 1), f(r["cob_2t"], 1),
-               f"{r['hojas_paq']} h ({f(r['kg_paq'] / 1000, 2)} t)", f(r["cob_max"], 1)] for r in C.sobrestock()]
-    y = pl.tabla(x, y - 12, cols4, filas4, 4.3, 2.1, "Anti-sobrestock de chapa SAE 1010")
+                    "recorrido en U con 0 cruces entre MP, SE y PT (verificado por cálculo); scrap por portón",
+                    "propio a volquete exterior (el chatarrero no entra). Jerarquía de circulación:",
+                    "1) pasillo central PC 3,80 m: autoelevador doble sentido, único lugar donde circula;",
+                    "2) senda peatonal PP 1,20 m separada por defensa, cruces sólo en cebras X1, X2...;",
+                    "3) calles de carros y operarios PO 0,90-1,60 m al norte: ZONA SIN AUTOELEVADOR;",
+                    "4) calles de transpaleta y apiladora en PT, terminación y expedición."], x, y - 2, 2.2)
+    M_ = C.manejo()
+    cols = [("Unidad de carga", 56, "l"), ("Medio", 26, "l"), ("Recorrido", 50, "l"), ("Viajes/día", 16, "c"),
+            ("m", 11, "c"), ("min/viaje", 15, "c"), ("min/día", 15, "c")]
+    filas = [[r["carga"], r["medio"], r["ruta"], f(r["viajes"], 1), f(r["dist"], 0), f(r["t_viaje"], 1),
+              f(r["min_dia"], 0)] for r in M_["filas"]]
+    y = pl.tabla(x, y - 12, cols, filas, 4.0, 1.9,
+                 "Manejo de materiales: métodos y tiempos (día pico 2035, 1.184 cilindros/día)")
+    oc = M_["ocup"]
     y = pl.parrafo([
-        "1. Un módulo del cantiléver por formato con 2 posiciones (en uso y en espera): si están ocupadas no se",
-        "   pide (kanban de 2 paquetes, tope pintado). 2. Paquetes chicos en formatos de bajo consumo: ninguno",
-        "   cubre más de 2 semanas. 3. Tarjeta de color por mes de ingreso; semáforo verde < 4 sem., amarillo",
-        "   4 a 6, rojo > 6 (se consume primero y se inspecciona óxido). 4. LAF aceitada con film VCI, bajo techo."],
+        f"Tiempo por viaje = 2 × distancia / velocidad + tiempo fijo (autoelevador 1,5 m/s y 1,5 min; transpaleta y",
+        f"carro 0,8 m/s y 1,0 / 0,5 min). Turno útil 408 min (8 h - 15 % de suplementos).",
+        f"Autoelevador: {f(M_['min']['Autoelevador'], 0)} min/día = {f(oc['Autoelevador'] * 100, 0)} % de un turno: "
+        f"con 1 unidad alcanza y sobra para descargar camiones (≈ 45 min por semi).",
+        f"Apiladora del PT: {f(oc['Apiladora'] * 100, 0)} %. Carros: {M_['carros_dia']} carros/día por tramo; cada carro "
+        f"lo empuja el operario que cierra el lote (≈ 0,7 min,",
+        "< 3 % de su jornada): no hace falta tren logístico ni chofer. Un abastecedor por turno hace el milk run",
+        "de consumibles desde el pañol de línea (2 vueltas por turno, 24 puestos) y repone carros vacíos (PV)."],
         x, y - 3, 2.1)
+    cols = [("Portón", 20, "l"), ("Qué entra o sale", 84, "l"), ("Vehículo", 34, "l"), ("Frecuencia", 40, "l"),
+            ("Horario", 34, "l")]
+    y = pl.tabla(x, y - 12, cols, [list(r) for r in C.PORTONES], 4.0, 1.9,
+                 "Portones: función y frecuencia (no hay portón sin uso; el ex P5 se suprimió: sus insumos llegan por M2)")
+    cols = [("Proveedor / material", 58, "l"), ("t/entr.", 14, "c"), ("Entr./año", 15, "c"),
+            ("Vehículo", 56, "l"), ("Portón", 36, "c"), ("Destino", 25, "c")]
+    filas = [[g, f(t, 1), f(n, 1), v, p, d] for g, t, n, v, p, d in C.ENTREGAS]
+    y = pl.tabla(x, y - 12, cols, filas, 4.0, 1.9, "Recepción de MP por entrega (año 10)")
     return h
 
 
@@ -347,12 +345,13 @@ def fl_pi_03b(doc, ox):
 
 # ================================================================ FL_PI_01 DIR
 TRONCOS = {
-    "hombres": [(22.5, -62.0), (22.5, -46.0), (32.0, -46.0), (32.0, -14.0), (-4.2, -14.0), (-4.2, 19.0),
-                (-4.2, 21.8), (-1.1, 21.8), (-1.1, 32.2), (-14.1, 32.2), (-14.1, 34.9), (-7.8, 34.9), (-3.7, 33.3),
-                (-1.1, 33.3), (-1.1, 23.7), (0.0, 23.7)],
-    "mujeres": [(-1.1, 29.3), (-14.1, 29.3)],
-    "comedor": [(-1.1, 20.8), (-12.0, 20.8)],
-    "oficinas": [(-1.1, 24.5), (-14.0, 24.5)],
+    # garita -> hall y fichado -> pasillo limpio -> vestuario -> sanitarios y duchas -> PP-1
+    "hombres": [(22.5, -62.0), (22.5, -46.0), (32.0, -46.0), (32.0, -14.0), (-1.8, -14.0), (-1.8, 19.0),
+                (-1.8, 20.4), (-0.7, 21.2), (-0.7, 23.6), (-12.55, 23.6), (-12.55, 28.6), (-12.45, 33.4)],
+    "a planta": [(-12.25, 28.6), (-12.25, 23.9), (0.0, 23.9)],
+    "mujeres": [(-7.8, 23.6), (-7.8, 27.0), (-9.8, 30.5)],
+    "comedor": [(-5.6, 23.9), (-5.6, 25.45), (-3.0, 25.45), (-3.0, 30.0)],
+    "oficinas": [(-9.1, 23.6), (-9.1, 21.2), (-12.0, 21.2)],
 }
 
 
@@ -399,14 +398,14 @@ def fl_pi_01(doc, ox):
     pl.texto("Senda peatonal señalizada: único cruce de hilo y flujo", (x + 20, y), 2.3, A.MIDDLE_LEFT, papel=True)
     y = pl.parrafo([
         "",
-        "Recorrido: estacionamiento -> G4 -> hall y fichado -> vestuario (ropa de calle) -> sanitarios y",
-        "duchas -> paso a planta PP-1 -> pasillo central de personal PC (eje B) -> puesto.",
-        "Se vuelve por el mismo camino y se pasa por el vestuario (circuito sucio -> limpio).",
+        "Recorrido: estacionamiento -> G4 -> SV-1 hall y fichado -> pasillo limpio -> vestuario (armario",
+        "doble: ropa de calle / de trabajo) -> sanitarios y duchas (sólo desde el vestuario) -> pasillo",
+        "limpio -> PP-1 -> senda peatonal PP (separada del autoelevador por defensa) -> puesto.",
         "El PC corre entre las dos bandas de la U: los operarios de la banda norte trabajan del lado sur",
         "de sus máquinas y los de la banda sur del lado norte, de modo que llegan al puesto sin cruzar el",
         "recorrido de las piezas. La línea de carros es una horquilla con su calle de operarios adentro.",
         "Donde un hilo corta un flujo (cuerpos de carros, cúpulas, láseres, lazo de pintura) hay una",
-        "senda peatonal SP demarcada (cebra amarilla IRAM 10005, espejo y prioridad peatonal).",
+        "senda peatonal X demarcada (cebra amarilla IRAM 10005, espejo y prioridad peatonal).",
         f"Cruces de hilos con flujos verificados por cálculo sobre el modelo: todos en {len(L.SENDAS)} sendas.",
         "Recargas ocupa el ángulo SO de la nave: su personal entra por el PC y usa los sanitarios del",
         "bloque de servicios. El mostrador tiene portón propio (RC-1): el público no entra a la planta.",
@@ -416,7 +415,7 @@ def fl_pi_01(doc, ox):
     for nom, lg, main in grupos:
         fin = main[-1]
         d1 = abs(fin[0]) + abs(fin[1] - 23.7)
-        filas.append([nom, f(lg, 0), f(d1 + 7.8, 0)])
+        filas.append([nom, f(lg, 0), f(d1 + 21.5, 0)])
     yb1 = pl.tabla(x, y - 12, cols, filas, 4.3, 2.1, "Longitud de los hilos (turno mañana)")
     ops = {}
     for e in L.EQUIPOS:
@@ -437,7 +436,7 @@ def fl_pi_01(doc, ox):
               for k in ("inodoros", "lavabos", "orinales", "duchas")]
     filas3.append(["Armarios (art. 50)", san["armarios_req"]["H"], san["armarios_proy"]["H"], san["armarios_req"]["M"],
                    san["armarios_proy"]["M"]])
-    filas3.append(["Sanitario accesible", "-", "2", "-", "unisex"])
+    filas3.append(["Sanitario accesible", "-", str(san["proy"]["accesibles"]), "-", "unisex"])
     yb = pl.tabla(x, y - 12, cols3, filas3, 4.3, 2.1,
                   f"Sanitarios (Dec. 351/79 art. 49): {san['H']} H y {san['M']} M en el turno más numeroso")
     pl.parrafo([

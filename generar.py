@@ -15,8 +15,8 @@ SALIDA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "salida")
 PLANOS = {
     "FL_PI_01": [("FL_PI_01", "A0", PL.fl_pi_01)],
     "FL_PI_02": [("FL_PI_02", "A0", PL.fl_pi_02)],
-    "FL_PI_03": [("FL_PI_03-1", "A0", PL.fl_pi_03), ("FL_PI_03-2", "A0", PL.fl_pi_03b)],
-    "FL_PI_04": [(f"FL_PI_04-{n}", "A0", (lambda doc, ox, n=n: FO.fl_pi_04(doc, ox, n))) for n in (1, 2, 3, 4)],
+    "FL_PI_03": [("FL_PI_03", "A0", PL.fl_pi_03)],
+    "FL_PI_04": [("FL_PI_04", "2A0", FO.fl_pi_04)],
     "FL_PI_05": [("FL_PI_05", "A1", CH.lamina)],
 }
 
