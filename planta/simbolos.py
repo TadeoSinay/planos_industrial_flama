@@ -19,6 +19,7 @@ import math
 CONT, FINO, OC, SEG, OP, VEH = "A-EQUIPO", "A-EQUIPO-FINO", "A-EQUIPO-OCULTO", "A-SEGURIDAD", "A-OPERARIO", \
     "A-VEHICULO"
 REL = "A-EQUIPO-RELLENO"
+AREA = "A-AREA-TRABAJO"
 
 ACERO = (226, 231, 238)
 GRIS = (238, 238, 238)
@@ -1293,6 +1294,75 @@ def carros(m):
             m.ln((u - 0.25, v + 0.3), (u + 0.25, v + 0.3), CONT)
 
 
+def paquetes(m):
+    """Paquetes de chapa a piso (2 alturas): bloques de 1,6 × 3,1 m con la pila de hojas y separadores."""
+    U, V = m.Lu, m.Lv
+    nu = max(1, int(U / 1.75))
+    nv = max(1, int(V / 2.6))
+    du, dv = U / nu, V / nv
+    for i in range(nu):
+        for j in range(nv):
+            u0, v0 = i * du + 0.08, j * dv + 0.08
+            u1, v1 = (i + 1) * du - 0.08, (j + 1) * dv - 0.08
+            m.caja(u0, v0, u1, v1, (232, 236, 242), CONT)
+            m.rc(u0 + 0.08, v0 + 0.08, u1 - 0.08, v1 - 0.08)
+            m.ln((u0 + 0.08, v0 + 0.08), (u1 - 0.08, v1 - 0.08))
+            for k in (0.25, 0.75):
+                m.rc(u0 + 0.1, v0 + (v1 - v0) * k - 0.05, u1 - 0.1, v0 + (v1 - v0) * k + 0.05, OC)
+
+
+def cantilever(m):
+    """Cantiléver: columna central, brazos cada 1 m y atados de caño apoyados a lo largo."""
+    U, V = m.Lu, m.Lv
+    vc = V / 2
+    m.caja(0, vc - 0.1, U, vc + 0.1, OSCURO, CONT)
+    for i in range(int(U / 1.0) + 1):
+        u = min(i * 1.0 + 0.1, U - 0.1)
+        m.caja(u - 0.05, 0.05, u + 0.05, V - 0.05, GRIS2, FINO)
+    for vv in (0.25, 0.45, V - 0.45, V - 0.25):
+        m.ln((0.0, vv), (U, vv), CONT)
+        m.ln((0.0, vv + 0.06), (U, vv + 0.06))
+
+
+def portaflejes(m):
+    """Porta-flejes: bastidor con rollos de fleje (Ø 1,0 m) apoyados de canto."""
+    U, V = m.Lu, m.Lv
+    m.rc(0, 0, U, V, CONT)
+    n = max(1, int(U / 1.1))
+    r = min(0.5, V / 2 - 0.05)
+    for i in range(n):
+        u = (i + 0.5) * U / n
+        m.fc(u, V / 2, r, (225, 230, 236))
+        m.ci(u, V / 2, r, CONT)
+        m.ci(u, V / 2, r * 0.5)
+        m.ci(u, V / 2, r * 0.75, OC)
+
+
+def estanteria(m):
+    """Estantería de pañol: módulos con cruz (como el rev4), parantes y estantes."""
+    U, V = m.Lu, m.Lv
+    n = max(1, int(U / 1.0))
+    for i in range(n):
+        u0, u1 = i * U / n, (i + 1) * U / n
+        m.caja(u0, 0, u1, V, GRIS, FINO)
+        m.ln((u0, 0), (u1, V))
+        m.ln((u0, V), (u1, 0))
+        m.poste(u0 + 0.04, 0.04, 0.06)
+        m.poste(u1 - 0.04, V - 0.04, 0.06)
+
+
+def contenedores(m):
+    """Contenedores basculantes de scrap (1 m³) con bocas de horquilla."""
+    U, V = m.Lu, m.Lv
+    n = max(1, int(U / 1.5))
+    for i in range(n):
+        u0, u1 = i * U / n + 0.1, (i + 1) * U / n - 0.1
+        m.caja(u0, 0.1, u1, V - 0.1, (230, 230, 230), CONT)
+        m.pl([(u0 + 0.1, 0.1), (u0 + 0.25, V - 0.25), (u1 - 0.25, V - 0.25), (u1 - 0.1, 0.1)])
+        for k in (0.3, 0.7):
+            m.rc(u0 + (u1 - u0) * k - 0.12, 0.1, u0 + (u1 - u0) * k + 0.12, 0.3, OC)
+
+
 # =================================================================== vehículos
 def autoelevador(pl, x, y, ang, carga=True):
     """Autoelevador de 3,0 t (planta): contrapeso, techo de protección, mástil, horquillas y pallet."""
@@ -1366,6 +1436,8 @@ SIMBOLOS = {
     "envolvedora": envolvedora, "balanza": balanza, "mesa_tijera": mesa_tijera, "mesa_bolas": mesa_bolas,
     "mesa_rodillos": mesa_rodillos, "mesa_control": mesa_control, "pluma": pluma,
     "cabina_muestras": cabina_muestras, "rack": rack, "kanban": kanban, "pulmon": pulmon, "carros": carros,
+    "paquetes": paquetes, "cantilever": cantilever, "portaflejes": portaflejes, "estanteria": estanteria,
+    "contenedores": contenedores,
 }
 
 CLAVES = [
@@ -1409,15 +1481,50 @@ def frente_de(e):
     return "S" if r.w >= r.h else "O"
 
 
+def operario_rev(m, u, v, mira=90.0):
+    """Operario estilo de planta (bloque de rev4): semicírculo de hombros y cabeza, mirando a `mira`."""
+    a = math.radians(mira)
+    f = (math.cos(a), math.sin(a))
+    t = (-f[1], f[0])
+    r = 0.30
+    arco = [(u + t[0] * r * math.cos(s_) - f[0] * r * math.sin(s_), v + t[1] * r * math.cos(s_) - f[1] * r * math.sin(s_))
+            for s_ in [math.pi * i / 12 for i in range(13)]]
+    m.fl(arco + [arco[0]], (250, 225, 245))
+    m.pl(arco, OP, True)
+    m.fc(u + f[0] * 0.02, v + f[1] * 0.02, 0.12, BLANCO)
+    m.ci(u + f[0] * 0.02, v + f[1] * 0.02, 0.12, OP)
+
+
+def area_trabajo(m, n_op):
+    """Marco del área de trabajo (máquina + puesto), abierto en el frente para el acceso del operario."""
+    U, V = m.Lu, m.Lv
+    e, fr, g = 0.15, 0.95, 0.45
+    u0, u1, v0, v1 = -e, U + e, -fr, V + e
+    m.pl([(u0, v0), (u0, v1), (u1, v1), (u1, v0)], AREA)
+    huecos = sorted(U * (i + 1) / (n_op + 1) for i in range(max(1, n_op)))
+    x = u0
+    for h in huecos:
+        if h - g > x:
+            m.ln((x, v0), (h - g, v0), AREA)
+        x = h + g
+    if x < u1:
+        m.ln((x, v0), (u1, v0), AREA)
+
+
+SIN_PUESTO = ("rack", "kanban", "pulmon", "carros", "pluma", "paquetes", "cantilever", "portaflejes",
+              "estanteria", "contenedores")
+
+
 def dibujar(pl, e, operarios=True):
-    """Dibuja el equipo `e` con su símbolo de detalle y sus operarios al frente."""
+    """Dibuja el equipo `e` con su símbolo, su área de trabajo y sus operarios al frente."""
     t = tipo_de(e)
     fn = SIMBOLOS.get(t, banco)
     m = M.rect(pl, e.rect, frente_de(e), getattr(e, "espejo", False))
     fn(m)
-    if operarios and e.op > 0 and t not in ("rack", "kanban", "pulmon", "carros", "pluma"):
+    if operarios and e.op > 0 and t not in SIN_PUESTO:
         n = int(e.op)
+        area_trabajo(m, n)
         for i in range(n):
-            m.operario(m.Lu * (i + 1) / (n + 1), -0.42, 90.0)
+            operario_rev(m, m.Lu * (i + 1) / (n + 1), -0.48, 90.0)
     m.fin()
     return t

@@ -42,27 +42,27 @@ def tasas():
 CAMIONES = [
     # formato, largo total (m), carga útil (t), PBT (t), dónde se descarga
     ("Semirremolque playo 3+3 ejes", 18.6, 30.0, 45.0,
-     "Playa norte techada (alero): autoelevador por los dos lados; entra al sector MP por P1b"),
+     "Alero de descarga norte: autoelevador por los dos lados; entra al almacén de MP por P1"),
     ("Camión chasis con balancín (3 ejes)", 11.0, 16.0, 26.0,
-     "Bahía interior BR (entra por P1): autoelevador por los dos lados, bajo techo"),
-    ("Camión chasis 2 ejes", 9.5, 9.0, 16.5, "Bahía interior BR, P4, P5, P3, P8 o M3 según el material"),
+     "Alero de descarga norte (junto al semi): autoelevador por los dos lados, bajo techo"),
+    ("Camión chasis 2 ejes", 9.5, 9.0, 16.5, "Alero norte, P4, P5, P3, P8 o M3 según el material"),
     ("Utilitario / furgón", 6.0, 1.5, 3.5, "Portones de cada sector; recargas por RC-1"),
 ]
 # Ley 24.449 y Dec. 779/95: ancho 2,60 m, alto 4,10 m, largo máx. 18,60 m (semi); PBT según ejes
 
 ENTREGAS = [
     # grupo (proveedor), t por entrega, entregas/año, formato asignado, portón, destino
-    ("Pradecon: hojas + fleje 0,9", 35.26, 18.1, "Semi (máx.) o 2 chasis quincenales", "P1b / P1", "AL-1H, AL-1F"),
-    ("Pacheco: flejes 1,25-2,0", 5.05, 29.3, "Chasis 2 ejes", "P1b", "AL-1F"),
-    ("Metalprisa: caño Ø76,2", 4.23, 28.9, "Chasis 2 ejes", "P1", "AL-1T"),
-    ("Casquetes de carros", 5.93, 4.1, "Chasis 2 ejes", "P7", "AL-1C"),
-    ("Eli-Met: cuplas y asientos", 3.68, 5.6, "Chasis 2 ejes", "P1", "PÑ"),
-    ("Soldadura: alambre y consumibles", 1.89, 8.1, "Chasis 2 ejes", "P1", "PÑ"),
-    ("CYM: granalla", 3.11, 2.0, "Chasis 2 ejes", "P1", "PÑ"),
+    ("Pradecon: hojas + fleje 0,9", 35.26, 18.1, "Semi (máx.) o 2 chasis quincenales", "Alero + P1", "AL-1H, AL-1R"),
+    ("Pacheco: flejes 1,25-2,0", 5.05, 29.3, "Chasis 2 ejes", "Alero + P1", "AL-1R"),
+    ("Metalprisa: caño Ø76,2", 4.23, 28.9, "Chasis 2 ejes", "Alero + P1", "AL-1R"),
+    ("Casquetes de carros", 5.93, 4.1, "Chasis 2 ejes", "M3", "AL1C"),
+    ("Eli-Met: cuplas y asientos", 3.68, 5.6, "Chasis 2 ejes", "Alero + P1", "PÑ"),
+    ("Soldadura: alambre y consumibles", 1.89, 8.1, "Chasis 2 ejes", "Alero + P1", "PÑ"),
+    ("CYM: granalla", 3.11, 2.0, "Chasis 2 ejes", "Alero + P1", "PÑ"),
     ("Air Liquide: gases", 7.64, 31.3, "Chasis 2 ejes (baterías)", "Jaulas JG-S y JG-N", "Exterior"),
-    ("Polvo químico (Polvex / DEMSA)", 13.13, 31.0, "Chasis con balancín", "P4 (1-10 kg) y P8 (carros)", "AL-PV, SP-2"),
+    ("Polvo químico (Polvex / DEMSA)", 13.13, 31.0, "Chasis con balancín", "P4 (1-10 kg) y P8 (carros)", "SP-1, SP-2"),
     ("Válvulas y componentes", 8.16, 8.3, "Chasis con balancín", "P5", "AL-2"),
-    ("Estructuras y ruedas de carros", 5.52, 15.1, "Chasis 2 ejes", "P8", "T14"),
+    ("Estructuras y ruedas de carros", 5.52, 15.1, "Chasis 2 ejes", "P8", "S-TC"),
     ("Pintura en polvo", 0.79, 8.3, "Utilitario", "P3", "QP"),
     ("Químicos de pretratamiento", 0.46, 1.8, "Utilitario", "P3", "QP"),
     ("Embalaje, pallets e imprenta", 4.61, 15.3, "Chasis 2 ejes", "P5", "AL-2"),
@@ -322,11 +322,11 @@ def iluminacion():
 
 
 # ================================================================ 7. redes: longitud de tendidos
-TGBT = (42.0, 50.0)            # sala técnica norte (centro de cargas)
-PTE_P = (76.0, -19.0)
-JGS = (53.0, 50.0)
-JGN = (62.6, 0.0)
-ERM = (96.0, 25.5)
+TGBT = (41.0, 44.2)            # sala técnica norte (centro de cargas)
+PTE_P = (70.0, -19.0)
+JGS = (52.0, 44.4)
+JGN = (53.0, -1.0)
+ERM = (88.6, 5.5)
 
 
 def _manh(a, b):
@@ -349,7 +349,7 @@ def redes():
     gas = [(e.cod, _manh(e.rect.c, ERM)) for e in L.EQUIPOS if e.gas]
     n2 = [(e.cod, _manh(e.rect.c, JGN)) for e in L.EQUIPOS if e.n2]
     sold = [(e.cod, _manh(e.rect.c, JGS)) for e in L.EQUIPOS if e.polvo and "Soldadura" in e.nombre]
-    aire = 2 * 90.0 + 2 * 25.0 + 12 * 6.0   # anillo sobre PC y lazo de pintura + 12 bajadas a líneas
+    aire = 2 * 70.0 + 2 * 24.0 + 14 * 6.0   # anillo sobre el pasillo central + 14 bajadas a la línea
     return {"elec": elec, "agua": agua, "gas": gas, "n2": n2, "sold": sold, "aire_anillo_m": aire,
             "kw_total": sum(e.kw for e in L.EQUIPOS)}
 

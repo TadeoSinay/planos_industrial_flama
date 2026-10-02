@@ -35,11 +35,11 @@ def generar(ruta):
     s.append(tabla(["Familia", "Tasa de diseño (u/h)"], [[k, f(v, 1)] for k, v in t.items()]))
     # 2 layout
     s.append("\n## 2. Nave y sectores\n")
-    s.append(f"Nave de {f(L.NAVE_L, 0)} × {f(L.NAVE_A, 0)} m = {f(L.NAVE_L * L.NAVE_A, 0)} m², layout en U, pórticos de dos "
-             f"luces de 25 m cada {f(L.MODULO, 0)} m, altura libre {f(L.ALTURA_LIBRE, 2)} m (Dec. 351/79 exige ≥ 3 m). "
-             f"Recargas dentro de la nave (ángulo SO, {f(L.ANEXOS[1].rect.area, 0)} m²). Anexos: servicios "
-             f"{f(L.ANEXOS[0].rect.area, 0)} m², sala técnica {f(L.ANEXOS[2].rect.area, 0)} m², cobertizo de químicos "
-             f"{f(L.ANEXOS[3].rect.area, 0)} m².\n")
+    s.append(f"Nave de {f(L.NAVE_L, 0)} × {f(L.NAVE_A, 0)} m = {f(L.NAVE_L * L.NAVE_A, 0)} m², recorrido en U con una línea "
+             f"que converge paso a paso, pórticos de dos luces (19,40 y 24,60 m) cada {f(L.MODULO, 0)} m, altura libre "
+             f"{f(L.ALTURA_LIBRE, 2)} m (Dec. 351/79 exige ≥ 3 m). Recargas dentro de la nave (ángulo SO, "
+             f"{f(L.ANEXOS[1].rect.area, 0)} m²). Anexos: servicios {f(L.ANEXOS[0].rect.area, 0)} m² y sala técnica "
+             f"{f(L.ANEXOS[2].rect.area, 0)} m².\n")
     s.append(tabla(["Código", "Sector", "m² proyectados", "m² requeridos", "Nota"],
                    [[x.cod, x.nombre, f(x.rect.area, 1), f(x.area_req, 1) if x.area_req else "-", x.nota]
                     for x in L.SECTORES]))
@@ -49,11 +49,12 @@ def generar(ruta):
              "(3 módulos × 5 niveles), flejes 21 rollos + 6 en espera, caño 12 atados, casquetes 18 pallets.\n")
     # 3 recepción
     s.append("\n## 3. Recepción de MP y análisis de peso de la carga\n")
-    s.append("Se dimensiona para la carga máxima: un semirremolque de 18,6 m y 30 t en la playa norte bajo alero, y un "
-             "chasis de 10 m en la bahía interior BR. En los dos puntos el camión se descarga por ambos lados con "
-             "autoelevador (lateral de 4,5 a 6 m libres a cada lado). Hay dos puntos de ingreso de MP además de estos: "
-             "P4/P5 (polvo e insumos de terminación, al norte, junto a su consumo) y P8 (polvo, estructuras y ruedas de "
-             "carros, al este).\n")
+    s.append("Se dimensiona para la carga máxima: un semirremolque de 18,6 m y 30 t o dos chasis de 10 m en el alero "
+             "de descarga norte (23 × 10,6 m), con descarga por ambos lados con autoelevador. La MP entra por P1 al "
+             "pasillo AM y queda en racks frente a la máquina que la consume (chapa frente a la guillotina, caño frente "
+             "a los láseres, flejes frente a la prensa). Otros ingresos, junto a su consumo: P4 y P5 al sur (polvo e "
+             "insumos de terminación), P3 al este (químicos y pintura), M3 (casquetes y tercerizados) y P8 (polvo, "
+             "estructuras y ruedas de carros).\n")
     s.append(tabla(["Formato", "Largo (m)", "Carga útil (t)", "PBT (t)", "Descarga"],
                    [[a, f(b, 1), f(c, 1), f(d, 1), e] for a, b, c, d, e in C.CAMIONES]))
     s.append("\n" + tabla(["Proveedor / material", "t por entrega", "Entregas/año", "Vehículo", "Portón", "Destino"],

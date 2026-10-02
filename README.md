@@ -5,10 +5,10 @@ sobre un modelo en código (`planta/layout.py`, coordenadas en metros). De ahí 
 PDF, con rótulo IRAM 4508, formato IRAM 4504 y acotación IRAM 4513, más la memoria de cálculo. Usa la misma base de
 dibujo que [planos_flama-](https://github.com/TadeoSinay/planos_flama-).
 
-> Estado: **layout en U** (nave 96 × 50 m), 5 planos (9 láminas) con cada máquina dibujada en planta a escala
-> (`planta/simbolos.py`: bastidores, rodillos, mordazas, motores, tableros, resguardos y operarios). Verificación
-> automática sin errores: **0 cruces entre flujos de MP, SE y PT**, cruces de personal sólo en 7 sendas señalizadas,
-> recorrido máximo a una salida de 30 m, 24 extintores por cálculo de recorrido.
+> Estado: **versión 3: línea convergente paso a paso** (nave 88 × 44 m) según el diagrama de bloques de FLAMA, con
+> el lenguaje gráfico del rev4: cada máquina con su número de paso, operario y área de trabajo; pulmones (PU) con carros
+> entre pasos; sectores en rojo. Verificación automática sin errores: **0 cruces entre flujos de MP, SE y PT**, cruces
+> de personal sólo en 9 sendas señalizadas, recorrido máximo a una salida de 24,4 m, 20 extintores por cálculo.
 
 ## Planos (`salida/`)
 
@@ -34,21 +34,24 @@ Documentos: [`docs/MEMORIA_DE_CALCULO.md`](docs/MEMORIA_DE_CALCULO.md) (se regen
 | Scrap y retal | gris, trazo y punto | 8 | F-SCRAP |
 | Efluentes líquidos / gaseosos | marrón / cian, trazos | 34 / 4 | F-EFL-LIQ / F-EFL-GAS |
 
-## Concepto del layout (U)
+## Concepto del layout (v3)
 
-- **Nave** de 96 × 50 m (4.800 m²): 12 módulos de 8 m, dos luces de 25 m con columnas centrales en el eje B.
-- **Pasillo central de personal (PC)** a lo largo del eje B, desde el bloque de servicios (fachada oeste) hasta el
-  interior del lazo de pintura. Los operarios de la banda norte trabajan del lado sur de sus máquinas y los de la
-  banda sur del lado norte: llegan al puesto sin cruzar las piezas.
-- **Banda norte** (flujo hacia el este): recepción de MP (bahía interior P1 y playa del semi P1b) -> guillotina,
-  prensa y láseres -> tres líneas paralelas: T (1 kg), K (cúpulas, fondos y cuellos) y G (2,5-10 kg, con PH,
-  secado, granallado, detección y corrección).
-- **Columna este**: pintura en polvo con transportador aéreo en lazo (carga -> pretratamiento -> secado -> cabina ->
-  polimerizado -> enfriamiento -> descarga).
-- **Banda sur** (flujo hacia el oeste): carga de polvo y terminación -> almacén de PT y muelles M1-M2 (sur) -> línea
-  de carros en horquilla (sale a pintura tercerizada por P6, vuelve por P8) -> recargas en el ángulo SO.
-- Cada MP entra junto a su proceso: chapa e insumos por P1 (oeste), flejes y caño por P1b (norte), casquetes y
-  tercerizados por M3, polvo por P4, insumos de terminación por P5, químicos por P3 y pintura por P3b (este).
+- **Nave** de 88 × 44 m (3.872 m²): 11 módulos de 8 m, dos luces (19,40 y 24,60 m) con columnas en el eje B, al borde
+  del pasillo central (autoelevador doble sentido + senda peatonal).
+- **Banda norte, una línea que converge** (diagrama de bloques de FLAMA):
+  - fila sur (N1): chapa -> 1 guillotina -> 2 numerado -> 3 cilindrado -> 4 soldadura longitudinal;
+  - fila media (N2): caño -> 5 corte láser (1 kg);
+  - fila central (N3): fleje -> 6 desbobinado y embutido -> fondos al encastre; cúpulas -> 7 preparación de cuello ->
+    8 soldadura de cuello;
+  - línea principal (N4-N5): 9 encastre -> 10 bordoneado -> 11 soldadura circunferencial (entra la cúpula) -> 12 PH ->
+    13 secado -> 14 granallado -> 15 detección de defectos -> 16 corrección -> 17 pintura.
+- **Columna este**: 17 pintura en polvo en lazo (carga, pretratamiento, secado, cabina, polimerizado, enfriamiento,
+  descarga). Es la vuelta de la U.
+- **Banda sur, de este a oeste**: 18-24 terminación y almacén de cilindros pintados -> PT y muelles M1-M2 -> carros
+  (C1-C10, en U, pintura tercerizada por P6/P8) -> recargas (R1-R26, en locales).
+- **MP frente a su máquina**: alero de descarga norte (semi y chasis) -> P1 -> racks de chapa, caño y flejes frente a la
+  guillotina, los láseres y la prensa. Polvo e insumos por P4/P5 junto a la terminación, químicos por P3 junto a pintura.
+- **Pulmones** PU-1 a PU-9 entre pasos, con carros de cilindros.
 
 ## Secciones de la planta
 

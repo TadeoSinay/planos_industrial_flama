@@ -27,68 +27,67 @@ Mes pico = 1,40 × promedio (dic-ene). Horas productivas del mes pico: 22 días 
 
 ## 2. Nave y sectores
 
-Nave de 96 × 50 m = 4.800 m², layout en U, pórticos de dos luces de 25 m cada 8 m, altura libre 8,00 m (Dec. 351/79 exige ≥ 3 m). Recargas dentro de la nave (ángulo SO, 435 m²). Anexos: servicios 342 m², sala técnica 70 m², cobertizo de químicos 58 m².
+Nave de 88 × 44 m = 3.872 m², recorrido en U con una línea que converge paso a paso, pórticos de dos luces (19,40 y 24,60 m) cada 8 m, altura libre 8,00 m (Dec. 351/79 exige ≥ 3 m). Recargas dentro de la nave (ángulo SO, 335 m²). Anexos: servicios 338 m² y sala técnica 58 m².
 
 | Código | Sector | m² proyectados | m² requeridos | Nota |
 |---|---|---|---|---|
-| BR | Bahía interior de descarga | 136,0 | - | Chasis de 10 m entra por P1 y se descarga por los dos lados con autoelevador de 3,0 t |
-| SCR-O | Scrap (orillas, esqueleto de fleje y recortes) | 33,6 | - | Contenedores basculantes de 1 m³; salen por P2 al volquete del patio oeste |
-| PÑ | Pañol de insumos pesados | 40,9 | 35,2 | Alambre MIG, granalla, asientos de válvula y cuplas, tapones, consumibles |
-| AL-1F | Flejes | 18,0 | 18,0 | Porta-flejes de 5 módulos × 3 niveles = 15 rollos + 6 en espera junto al desbobinador |
-| AL-1H | Chapa en hojas | 17,8 | 17,8 | Cantiléver de 3 módulos × 5 niveles = 15 paquetes ≤ 2 t; un formato por módulo, FIFO |
-| AL-1T | Caño Ø76,2 × 6 m | 12,6 | 12,6 | Cantiléver de 3 niveles × 4 atados = 12 atados |
-| MQ-G | Corte de cuerpos (guillotina) | 70,1 | - |  |
-| MQ-K | Cúpulas, fondos y cuellos | 59,2 | - |  |
-| MQ-T | Corte de caño 1 kg (láser de tubo) | 75,6 | - |  |
-| S1 | Celda 1 kg | 177,2 | - | Numerado, encastre de fondo y cúpula, soldadura circ., PH, secado y transportador a pintura |
-| S2 | Línea 2,5-10 kg | 322,7 | - | Cilindrado, soldadura long., encastre, bordoneado, soldadura circ., PH, secado, granallado, detección y corrección |
-| S-P | Pintura en polvo 1-10 kg (lazo) | 1.160,9 | - | Transportador aéreo por empuje en lazo: carga, pretratamiento, secado, cabina, polimerizado, enfriamiento y descarga |
-| Q | Laboratorio de calidad | 42,2 | 36,2 | Rotura, expansión, potencial extintor; control de polvo y de soldadura |
-| QR | Cuarentena y lotes retenidos | 31,7 | 15,0 | Jaula con llave: lotes rechazados y muestras |
-| MT | Mantenimiento y pañol de herramientas | 44,8 | 30,0 | Banco, torno chico y repuestos |
-| SUP | Supervisión de planta y PCP | 16,3 | - |  |
-| EPP | EPP y botiquín | 16,3 | - |  |
-| SP-1 | Sala de carga de polvo 1-10 kg | 64,0 | - | Recinto cerrado HR ≤ 70 %, 8 renovaciones por hora, sin estufas (IRAM 3517-2) |
-| S-T | Terminación 1-10 kg | 96,8 | - | Ensamblaje, presurización con N₂, hermeticidad, etiquetado, embalaje y palletizado |
-| AL-PV | Polvo químico en big bags | 102,2 | 23,1 | 21 posiciones a 2 alturas, HR ≤ 70 %, entra por P4 |
-| AL-2 | Insumos de terminación y embalaje | 154,6 | 97,5 | Rack de 4 niveles: válvulas, manómetros, mangueras, etiquetas, cajas, film y pallets; entra por P5 |
-| AL-3 | Almacén de producto terminado | 165,9 | - | Rack de 3 frentes × 4 niveles = 100 posiciones (req. 88) |
-| EXP | Expedición y muelles | 88,1 | - | Consolidación de pedidos frente a M1-M2 (2 × 8 pallets) |
-| S4 | Tercerizados revendidos | 42,6 | - | CO₂, agua, AFFF, clase K y agente limpio con sello IRAM: recepción, control y stock |
-| BAT | Carga de baterías de autoelevadores | 22,1 | - | Local ventilado con lavaojos; estacionamiento de autoelevadores y tractor |
-| S3 | Línea de carros 25-100 kg | 293,0 | - | Horquilla: cilindrado, punteo, soldadura long. (norte, O->E); soldadura circ., inspección, PH 4,0 MPa y marcado (centro, E->O) |
-| AL-1C | Casquetes de carros | 8,3 | 8,0 | Rack de 3 niveles × 4 pallets = 12 posiciones, junto a la soldadura circunferencial |
-| SP-2 | Sala de carga de polvo de carros | 68,8 | - | Recinto HR ≤ 70 %: big bags propios y cabina de descarga de muestras (IRAM 3550) |
-| S-TC | Terminación de carros | 50,2 | - | Armado de ruedas y manguera, presurización y etiquetado |
-| PTC | Carros terminados | 18,0 | 12,0 | 0,5 m² por carro a piso |
+| AL-1H | Chapa en paquetes (reserva) | 58,9 | 50,0 | 8 posiciones de 1,6 × 3,1 m a 2 alturas = 16 paquetes ≤ 2 t; FIFO, semáforo de antigüedad |
+| PÑ | Pañol de insumos pesados | 62,7 | 35,2 | Alambre MIG, granalla, cuplas, tapones y consumibles |
+| SCR | Scrap: orillas, despuntes y esqueleto de fleje | 52,2 | - | Contenedores basculantes; salen por P2 al volquete del patio norte |
+| AL-1R | Racks frente a máquina: chapa, caño y flejes | 48,6 | - | Chapa en uso (frente a la guillotina), caño 6 m (frente a los láseres), flejes (frente a la prensa) |
+| N1 | Corte y cuerpo 2,5-10 kg | 103,4 | - | 1 guillotina -> 2 numerado -> 3 cilindrado -> 4 soldadura longitudinal |
+| N2 | Corte de caño 1 kg | 65,5 | - | 5 corte láser de caño |
+| N3 | Cúpulas, fondos y cuellos | 110,9 | - | 6 desbobinado + embutido -> 7 preparación de cuello -> 8 soldadura de cuello |
+| N4 | Unión y prueba hidráulica | 128,0 | - | 9 encastre -> 10 bordoneado -> 11 soldadura circ. -> 12 PH -> 13 secado |
+| N5 | Granallado y defectos | 83,5 | - | 14 granallado -> 15 detección de defectos -> 16 corrección |
+| Q | Laboratorio de calidad | 34,0 | 31,0 | Rotura, expansión, potencial extintor; probetas de soldadura (IRAM 3523 / 3550) |
+| QR | Cuarentena y lotes retenidos | 18,4 | 15,0 | Jaula con llave: lotes rechazados y muestras |
+| SUP | Supervisión de planta y PCP | 19,3 | - |  |
+| EPP | EPP y botiquín | 19,3 | - |  |
+| MT | Mantenimiento y pañol de herramientas | 36,8 | 30,0 | Banco, torno chico, soldadora y repuestos |
+| PV | Carros vacíos y retorno de pulmones | 91,6 | - | Estacionamiento de carros de pulmón vacíos, cerca de donde se cargan |
+| S-P | Pintura en polvo (lazo) | 421,7 | - | 17 carga -> pretratamiento -> secado -> cabina -> polimerizado -> enfriamiento -> descarga |
+| QP | Químicos y pintura en polvo | 44,9 | 24,1 | Batea ≥ 110 % del mayor envase; pintura en polvo < 30 °C; portón P3 |
+| ST-I | Tableros, compresor de pintura y colector | 39,6 | - |  |
+| AL-C | Almacén de cilindros pintados | 133,3 | - | Cilindros vendidos vacíos y pulmón de pintados antes de terminación |
+| SP-1 | Sala de carga de polvo | 92,8 | - | Recinto HR ≤ 70 %, 8 renovaciones por hora, sin estufas (IRAM 3517-2); big bags a 2 alturas |
+| S-T | Terminación 1-10 kg | 102,1 | - | 18 carga de polvo -> 19 ensamblaje -> 20 presurización -> 21 hermeticidad -> 22 etiquetado -> 23 embalaje -> 24 envolvedora |
+| AL-2 | Insumos de terminación y embalaje | 33,6 | 40,0 | Rack de 4 niveles a lo largo del muro sur; entra por P5 |
+| AL-3 | Almacén de producto terminado | 195,9 | - | 4 racks de 12 m × 4 niveles = 128 posiciones (req. 88) |
+| EXP | Expedición y muelles | 61,7 | - | Consolidación de pedidos frente a M1-M2 |
+| S4 | Tercerizados revendidos | 36,5 | - | CO₂, agua, AFFF, clase K y agente limpio con sello IRAM: recepción por M3, control y stock |
+| S3 | Línea de carros 25-100 kg | 177,0 | - | C1 cilindrado -> C2 punteo -> C3 soldadura long. -> C4 soldadura circ. -> C5 inspección -> C6 PH -> C7 marcado |
+| SP-2 | Sala de carga de polvo de carros | 45,0 | - | Recinto HR ≤ 70 %: big bags propios y cabina de descarga de muestras (IRAM 3550) |
+| S-TC | Terminación de carros | 40,5 | - | C9 armado de ruedas y manguera -> C10 presurización y etiquetado |
+| PU-CP | Carros a pintura tercerizada | 30,0 | - | Espera de retiro del pintor (P6); vuelven pintados por P8 |
 
 Los m² requeridos de MP (hoja MP Almacén) suponen almacenamiento a piso o en rack de 3 niveles con medio pasillo propio. En el layout la chapa, los flejes, el caño y los casquetes van en cantiléver y racks en altura, frente al pasillo de autoelevador AM que comparten, con las mismas posiciones: hojas 15 paquetes (3 módulos × 5 niveles), flejes 21 rollos + 6 en espera, caño 12 atados, casquetes 18 pallets.
 
 
 ## 3. Recepción de MP y análisis de peso de la carga
 
-Se dimensiona para la carga máxima: un semirremolque de 18,6 m y 30 t en la playa norte bajo alero, y un chasis de 10 m en la bahía interior BR. En los dos puntos el camión se descarga por ambos lados con autoelevador (lateral de 4,5 a 6 m libres a cada lado). Hay dos puntos de ingreso de MP además de estos: P4/P5 (polvo e insumos de terminación, al norte, junto a su consumo) y P8 (polvo, estructuras y ruedas de carros, al este).
+Se dimensiona para la carga máxima: un semirremolque de 18,6 m y 30 t o dos chasis de 10 m en el alero de descarga norte (23 × 10,6 m), con descarga por ambos lados con autoelevador. La MP entra por P1 al pasillo AM y queda en racks frente a la máquina que la consume (chapa frente a la guillotina, caño frente a los láseres, flejes frente a la prensa). Otros ingresos, junto a su consumo: P4 y P5 al sur (polvo e insumos de terminación), P3 al este (químicos y pintura), M3 (casquetes y tercerizados) y P8 (polvo, estructuras y ruedas de carros).
 
 | Formato | Largo (m) | Carga útil (t) | PBT (t) | Descarga |
 |---|---|---|---|---|
-| Semirremolque playo 3+3 ejes | 18,6 | 30,0 | 45,0 | Playa norte techada (alero): autoelevador por los dos lados; entra al sector MP por P1b |
-| Camión chasis con balancín (3 ejes) | 11,0 | 16,0 | 26,0 | Bahía interior BR (entra por P1): autoelevador por los dos lados, bajo techo |
-| Camión chasis 2 ejes | 9,5 | 9,0 | 16,5 | Bahía interior BR, P4, P5, P3, P8 o M3 según el material |
+| Semirremolque playo 3+3 ejes | 18,6 | 30,0 | 45,0 | Alero de descarga norte: autoelevador por los dos lados; entra al almacén de MP por P1 |
+| Camión chasis con balancín (3 ejes) | 11,0 | 16,0 | 26,0 | Alero de descarga norte (junto al semi): autoelevador por los dos lados, bajo techo |
+| Camión chasis 2 ejes | 9,5 | 9,0 | 16,5 | Alero norte, P4, P5, P3, P8 o M3 según el material |
 | Utilitario / furgón | 6,0 | 1,5 | 3,5 | Portones de cada sector; recargas por RC-1 |
 
 | Proveedor / material | t por entrega | Entregas/año | Vehículo | Portón | Destino |
 |---|---|---|---|---|---|
-| Pradecon: hojas + fleje 0,9 | 35,26 | 18,1 | Semi (máx.) o 2 chasis quincenales | P1b / P1 | AL-1H, AL-1F |
-| Pacheco: flejes 1,25-2,0 | 5,05 | 29,3 | Chasis 2 ejes | P1b | AL-1F |
-| Metalprisa: caño Ø76,2 | 4,23 | 28,9 | Chasis 2 ejes | P1 | AL-1T |
-| Casquetes de carros | 5,93 | 4,1 | Chasis 2 ejes | P7 | AL-1C |
-| Eli-Met: cuplas y asientos | 3,68 | 5,6 | Chasis 2 ejes | P1 | PÑ |
-| Soldadura: alambre y consumibles | 1,89 | 8,1 | Chasis 2 ejes | P1 | PÑ |
-| CYM: granalla | 3,11 | 2,0 | Chasis 2 ejes | P1 | PÑ |
+| Pradecon: hojas + fleje 0,9 | 35,26 | 18,1 | Semi (máx.) o 2 chasis quincenales | Alero + P1 | AL-1H, AL-1R |
+| Pacheco: flejes 1,25-2,0 | 5,05 | 29,3 | Chasis 2 ejes | Alero + P1 | AL-1R |
+| Metalprisa: caño Ø76,2 | 4,23 | 28,9 | Chasis 2 ejes | Alero + P1 | AL-1R |
+| Casquetes de carros | 5,93 | 4,1 | Chasis 2 ejes | M3 | AL1C |
+| Eli-Met: cuplas y asientos | 3,68 | 5,6 | Chasis 2 ejes | Alero + P1 | PÑ |
+| Soldadura: alambre y consumibles | 1,89 | 8,1 | Chasis 2 ejes | Alero + P1 | PÑ |
+| CYM: granalla | 3,11 | 2,0 | Chasis 2 ejes | Alero + P1 | PÑ |
 | Air Liquide: gases | 7,64 | 31,3 | Chasis 2 ejes (baterías) | Jaulas JG-S y JG-N | Exterior |
-| Polvo químico (Polvex / DEMSA) | 13,13 | 31,0 | Chasis con balancín | P4 (1-10 kg) y P8 (carros) | AL-PV, SP-2 |
+| Polvo químico (Polvex / DEMSA) | 13,13 | 31,0 | Chasis con balancín | P4 (1-10 kg) y P8 (carros) | SP-1, SP-2 |
 | Válvulas y componentes | 8,16 | 8,3 | Chasis con balancín | P5 | AL-2 |
-| Estructuras y ruedas de carros | 5,52 | 15,1 | Chasis 2 ejes | P8 | T14 |
+| Estructuras y ruedas de carros | 5,52 | 15,1 | Chasis 2 ejes | P8 | S-TC |
 | Pintura en polvo | 0,79 | 8,3 | Utilitario | P3 | QP |
 | Químicos de pretratamiento | 0,46 | 1,8 | Utilitario | P3 | QP |
 | Embalaje, pallets e imprenta | 4,61 | 15,3 | Chasis 2 ejes | P5 | AL-2 |
@@ -135,7 +134,7 @@ Tren logístico (tractor eléctrico + 3 carros), recorrido de un solo sentido de
 
 ## 6. Cruces de flujos y de hilos
 
-Cruces entre flujos de MP, SE y PT (verificación geométrica sobre el modelo): **0**. Cruces de hilos de personal con flujos: todos dentro de las **7** sendas peatonales señalizadas (SP-1 a SP-7).
+Cruces entre flujos de MP, SE y PT (verificación geométrica sobre el modelo): **0**. Cruces de hilos de personal con flujos: todos dentro de las **9** sendas peatonales señalizadas (SP-1 a SP-9).
 
 ## 7. Sanitarios, vestuarios y servicios (Dec. 351/79 arts. 49 y 50)
 
@@ -166,28 +165,27 @@ Armarios: H 56 requeridos / 62 proyectados; M 7 / 14 (vestuario de mujeres al 20
 | SV-JP Jefatura de planta | 7,6 |
 | SV-RE Reuniones | 6,8 |
 | SV-CM Comedor 30 plazas y office | 39,4 |
-| RC-MO Mostrador, recepción y clasificación | 32,5 |
-| RC-DE Desarme | 33,1 |
-| RC-DC Descarga y ensayo de funcionamiento | 34,2 |
-| RC-PH PH con jaula, lavado y secado | 34,8 |
-| RC-PV Recinto de polvo (HR ≤ 70 %) | 33,6 |
-| RC-EN Ensamblaje, presurización y despacho | 33,1 |
-| RC-GA CO₂ y agente limpio | 22,8 |
-| RC-LQ Líquidos | 22,0 |
-| RC-RP Retoque de pintura y etiquetado | 21,7 |
-| RC-CO Pasillo de recargas | 39,4 |
-| RC-FI Flota de intercambio | 70,2 |
-| RC-IR Inutilizados y residuos | 36,0 |
+| RC-RE Recepción, clasificación y recibidos | 30,2 |
+| RC-DE Desarme y lavado | 33,1 |
+| RC-DC Descarga y ensayo de funcionamiento | 33,1 |
+| RC-PH PH con jaula, secado y Puffer | 32,5 |
+| RC-PV Recinto de polvo (HR ≤ 70 %) | 41,4 |
+| RC-GA CO₂ y agente limpio | 20,7 |
+| RC-IR Inutilizados y residuos | 11,1 |
+| RC-DP Despacho y equipos para entregar | 13,3 |
+| RC-EN Ensamblaje, presurización, peso, hermeticidad y retoque | 50,3 |
+| RC-LQ Líquidos | 18,6 |
+| RC-RP Etiquetado y flota de intercambio | 19,7 |
 
 ## 8. Medios de escape (Dec. 351/79 anexo VII)
 
-Factor de ocupación industrial 16 m²/persona: N = 300 personas teóricas; n = N/100 -> 3 unidades de ancho de salida (1,55 m mínimos). Proyectado: 10 salidas de emergencia de 1,10 m (11,00 m) con barral antipánico, más los portones con puerta de hombre y el paso a servicios.
+Factor de ocupación industrial 16 m²/persona: N = 242 personas teóricas; n = N/100 -> 3 unidades de ancho de salida (1,55 m mínimos). Proyectado: 9 salidas de emergencia de 1,10 m (9,90 m) con barral antipánico, más los portones con puerta de hombre y el paso a servicios.
 
-Recorrido real máximo hasta una salida, calculado sobre una grilla de 0,5 m que rodea los equipos: **30,0 m** (punto x = 44,5, y = 24,5), por debajo de los 40 m que se toman como límite (verificar el artículo vigente).
+Recorrido real máximo hasta una salida, calculado sobre una grilla de 0,5 m que rodea los equipos: **26,5 m** (punto x = 16,5, y = 29,5), por debajo de los 40 m que se toman como límite (verificar el artículo vigente).
 
 ## 9. Protección contra incendio
 
-Extintores ABC de 10 kg en la nave: **24** (mínimo por superficie 1 cada 200 m² = 24), ubicados por cálculo para que ningún punto quede a más de 20 m de recorrido (IRAM 3517-2:2020, fuego clase A). Se suman 10 en anexos y exteriores, CO₂ junto a tableros y un carro de 50 kg ABC en pintura y en la sala de polvo. Señalización con chapa baliza y cartel en altura (IRAM 3517-2 cap. 7). La reserva de agua contra incendio y la red de hidrantes quedan previstas en el terreno y se confirman con el estudio de carga de fuego.
+Extintores ABC de 10 kg en la nave: **20** (mínimo por superficie 1 cada 200 m² = 20), ubicados por cálculo para que ningún punto quede a más de 20 m de recorrido (IRAM 3517-2:2020, fuego clase A). Se suman 10 en anexos y exteriores, CO₂ junto a tableros y un carro de 50 kg ABC en pintura y en la sala de polvo. Señalización con chapa baliza y cartel en altura (IRAM 3517-2 cap. 7). La reserva de agua contra incendio y la red de hidrantes quedan previstas en el terreno y se confirman con el estudio de carga de fuego.
 
 ## 10. Iluminación (método de los lúmenes)
 
@@ -195,127 +193,142 @@ Luminaria LED de 150 W y 21.000 lm; factor de utilización 0,65; mantenimiento 0
 
 | Sector | lx | m² | Luminarias | kW |
 |---|---|---|---|---|
-| BR Bahía interior de descarga | 150 | 136 | 2 | 0,30 |
-| SCR-O Scrap (orillas, esqueleto de fleje y recortes) | 300 | 34 | 1 | 0,15 |
-| PÑ Pañol de insumos pesados | 150 | 41 | 1 | 0,15 |
-| AL-1F Flejes | 150 | 18 | 1 | 0,15 |
-| AL-1H Chapa en hojas | 150 | 18 | 1 | 0,15 |
-| AL-1T Caño Ø76,2 × 6 m | 150 | 13 | 1 | 0,15 |
-| MQ-G Corte de cuerpos (guillotina) | 300 | 70 | 2 | 0,30 |
-| MQ-K Cúpulas, fondos y cuellos | 300 | 59 | 2 | 0,30 |
-| MQ-T Corte de caño 1 kg (láser de tubo) | 300 | 76 | 3 | 0,45 |
-| S1 Celda 1 kg | 300 | 177 | 5 | 0,75 |
-| S2 Línea 2,5-10 kg | 300 | 323 | 9 | 1,35 |
-| S-P Pintura en polvo 1-10 kg (lazo) | 500 | 1.161 | 54 | 8,10 |
-| Q Laboratorio de calidad | 750 | 42 | 3 | 0,45 |
-| QR Cuarentena y lotes retenidos | 750 | 32 | 3 | 0,45 |
-| MT Mantenimiento y pañol de herramientas | 300 | 45 | 2 | 0,30 |
-| SUP Supervisión de planta y PCP | 300 | 16 | 1 | 0,15 |
-| EPP EPP y botiquín | 300 | 16 | 1 | 0,15 |
-| SP-1 Sala de carga de polvo 1-10 kg | 300 | 64 | 2 | 0,30 |
-| S-T Terminación 1-10 kg | 300 | 97 | 3 | 0,45 |
-| AL-PV Polvo químico en big bags | 150 | 102 | 2 | 0,30 |
-| AL-2 Insumos de terminación y embalaje | 150 | 155 | 3 | 0,45 |
-| AL-3 Almacén de producto terminado | 150 | 166 | 3 | 0,45 |
-| EXP Expedición y muelles | 150 | 88 | 2 | 0,30 |
-| S4 Tercerizados revendidos | 150 | 43 | 1 | 0,15 |
-| BAT Carga de baterías de autoelevadores | 300 | 22 | 1 | 0,15 |
-| S3 Línea de carros 25-100 kg | 300 | 293 | 9 | 1,35 |
-| AL-1C Casquetes de carros | 150 | 8 | 1 | 0,15 |
-| SP-2 Sala de carga de polvo de carros | 300 | 69 | 2 | 0,30 |
-| S-TC Terminación de carros | 300 | 50 | 2 | 0,30 |
-| PTC Carros terminados | 150 | 18 | 1 | 0,15 |
+| AL-1H Chapa en paquetes (reserva) | 150 | 59 | 1 | 0,15 |
+| PÑ Pañol de insumos pesados | 150 | 63 | 1 | 0,15 |
+| SCR Scrap: orillas, despuntes y esqueleto de fleje | 300 | 52 | 2 | 0,30 |
+| AL-1R Racks frente a máquina: chapa, caño y flejes | 150 | 49 | 1 | 0,15 |
+| N1 Corte y cuerpo 2,5-10 kg | 300 | 103 | 3 | 0,45 |
+| N2 Corte de caño 1 kg | 300 | 66 | 2 | 0,30 |
+| N3 Cúpulas, fondos y cuellos | 300 | 111 | 4 | 0,60 |
+| N4 Unión y prueba hidráulica | 300 | 128 | 4 | 0,60 |
+| N5 Granallado y defectos | 300 | 84 | 3 | 0,45 |
+| Q Laboratorio de calidad | 750 | 34 | 3 | 0,45 |
+| QR Cuarentena y lotes retenidos | 750 | 18 | 2 | 0,30 |
+| SUP Supervisión de planta y PCP | 300 | 19 | 1 | 0,15 |
+| EPP EPP y botiquín | 300 | 19 | 1 | 0,15 |
+| MT Mantenimiento y pañol de herramientas | 300 | 37 | 2 | 0,30 |
+| PV Carros vacíos y retorno de pulmones | 300 | 92 | 3 | 0,45 |
+| S-P Pintura en polvo (lazo) | 500 | 422 | 20 | 3,00 |
+| QP Químicos y pintura en polvo | 150 | 45 | 1 | 0,15 |
+| ST-I Tableros, compresor de pintura y colector | 300 | 40 | 2 | 0,30 |
+| AL-C Almacén de cilindros pintados | 150 | 133 | 2 | 0,30 |
+| SP-1 Sala de carga de polvo | 300 | 93 | 3 | 0,45 |
+| S-T Terminación 1-10 kg | 300 | 102 | 3 | 0,45 |
+| AL-2 Insumos de terminación y embalaje | 150 | 34 | 1 | 0,15 |
+| AL-3 Almacén de producto terminado | 150 | 196 | 3 | 0,45 |
+| EXP Expedición y muelles | 150 | 62 | 1 | 0,15 |
+| S4 Tercerizados revendidos | 150 | 37 | 1 | 0,15 |
+| S3 Línea de carros 25-100 kg | 300 | 177 | 5 | 0,75 |
+| SP-2 Sala de carga de polvo de carros | 300 | 45 | 2 | 0,30 |
+| S-TC Terminación de carros | 300 | 40 | 2 | 0,30 |
+| PU-CP Carros a pintura tercerizada | 300 | 30 | 1 | 0,15 |
 
-Total: 124 luminarias, 18,6 kW.
+Total: 80 luminarias, 12,0 kW.
 
 ## 11. Redes: longitud de tendidos (criterio 4)
 
 | Tablero seccional | kW | Largo desde el TGBT (m) |
 |---|---|---|
-| BR | 0,1 | 45,1 |
-| MQ-G | 17,2 | 36,4 |
-| MQ-K | 65,0 | 25,0 |
-| MQ-T | 20,0 | 22,0 |
-| S2 | 72,1 | 24,0 |
-| S1 | 28,0 | 3,8 |
-| S-P | 33,0 | 73,5 |
-| SP-1 | 9,0 | 55,8 |
-| S-T | 2,5 | 47,6 |
-| AL-3 | 1,5 | 39,6 |
-| S3 | 69,5 | 41,1 |
-| SP-2 | 5,0 | 59,5 |
-| S-TC | 1,0 | 53,7 |
+| N1 | 31,3 | 30,2 |
+| N2 | 20,0 | 30,9 |
+| N3 | 65,0 | 24,2 |
+| N4 | 54,5 | 16,4 |
+| N5 | 31,0 | 42,1 |
+| S-P | 33,0 | 75,3 |
+| SP-1 | 9,0 | 60,6 |
+| S-T | 2,5 | 52,4 |
+| AL-3 | 1,5 | 42,0 |
+| S3 | 68,0 | 41,3 |
+| SP-2 | 5,0 | 57,1 |
+| S-TC | 1,0 | 48,3 |
+| RC-RE | 1,5 | 80,1 |
+| RC-DE | 2,0 | 72,3 |
+| RC-DC | 2,5 | 66,1 |
+| RC-PH | 1,5 | 61,2 |
+| RC-PV | 2,5 | 67,9 |
+| RC-GA | 1,5 | 73,8 |
+| RC-LQ | 0,5 | 58,6 |
+| RC-EN | 4,0 | 61,6 |
+| RC-RP | 0,5 | 54,6 |
+| RC-DP | 0,5 | 66,0 |
 
-**Agua de PH y pretratamiento a PTE**: B07 81 m, A07 98 m, P02 66 m (total 244 m).
+**Agua de PH y pretratamiento a PTE**: A07 73 m, B07 70 m, P02 48 m (total 191 m).
 
-**Gas natural a hornos**: B14 52 m, A11 68 m, P03 8 m, P06 31 m (total 160 m).
+**Gas natural a hornos**: B14 57 m, A11 59 m, P03 6 m, P06 16 m (total 138 m).
 
-**Nitrógeno**: T05 23 m, T13 34 m (total 57 m).
+**Nitrógeno**: T05 13 m, T13 27 m (total 40 m).
 
-**Gas de soldadura**: M11 32 m, M12 34 m, B03 36 m, B06 27 m, A06 15 m, C04 46 m, C05 54 m (total 244 m).
+**Gas de soldadura**: B03 32 m, M11 34 m, M12 32 m, A06 16 m, B06 13 m, C04 52 m, C05 55 m (total 234 m).
 
 
-Anillo de aire comprimido: 302 m. Potencia instalada de equipos: 324 kW.
+Anillo de aire comprimido: 272 m. Potencia instalada de equipos: 339 kW.
 
 ## 12. Longitud de los flujos
 
 | Tipo | Flujo | Largo (m) |
 |---|---|---|
-| MP | Chapa en hojas (chasis en bahía interior) | 31,9 |
-| MP | Paquete a la mesa elevadora | 0,3 |
-| MP | Hoja a la guillotina | 1,6 |
-| MP | Caño en atados (semi en playa norte) | 11,0 |
-| MP | Atado al cargador del láser | 0,2 |
-| MP | Flejes (semi en playa norte) | 15,2 |
-| MP | Rollo al desbobinador | 7,2 |
-| MP | Insumos al pañol | 18,7 |
-| MP | Casquetes (M3) | 16,5 |
-| MP | Casquete a la soldadura circ. | 1,6 |
-| MP | Polvo químico (big bags, P4) | 15,2 |
-| MP | Big bag a la carga de polvo | 7,7 |
-| MP | Válvulas, manómetros, etiquetas, cajas (P5) | 15,2 |
-| MP | Insumos a ensamblaje y embalaje | 8,1 |
-| MP | Químicos y pintura (QP) | 2,0 |
-| MP | Desengrasante y fosfatizante al túnel | 15,1 |
-| MP | Pintura en polvo a la cabina (P3b) | 11,2 |
-| MP | Carros pintados y polvo de carros (P8) | 12,1 |
-| MP | Tercerizados revendidos (M3) | 10,0 |
-| SE | Cuerpo cortado | 0,3 |
-| SE | Cuerpos al pulmón | 0,3 |
-| SE | Cuerpos de carros a la cilindradora | 9,6 |
+| MP | Chapa: alero -> rack de la guillotina | 26,6 |
+| MP | Paquete a la mesa elevadora | 0,4 |
+| MP | Caño: alero -> cantiléver del láser | 21,0 |
+| MP | Atado al cargador | 0,4 |
+| MP | Atado al cargador | 0,4 |
+| MP | Flejes: alero -> porta-flejes | 15,5 |
+| MP | Rollo al desbobinador | 0,4 |
+| MP | Insumos al pañol | 18,9 |
+| MP | Casquetes de carros (M3) | 17,1 |
+| MP | Casquete a la soldadura circ. | 6,7 |
+| MP | Tercerizados revendidos (M3) | 9,0 |
+| MP | Polvo químico en big bags (P4) | 13,3 |
+| MP | Big bag a la carga de polvo | 3,8 |
+| MP | Válvulas, manómetros, cajas (P5) | 8,8 |
+| MP | Válvulas a ensamblaje | 9,8 |
+| MP | Cajas y film a embalaje | 3,0 |
+| MP | Químicos y pintura en polvo (P3) | 10,0 |
+| MP | Desengrasante y fosfatizante al túnel | 10,7 |
+| MP | Pintura en polvo a la cabina | 32,8 |
+| MP | Carros pintados y polvo de carros (P8) | 9,4 |
+| SE | Cuerpo cortado | 0,2 |
+| SE | Cuerpos al pulmón | 0,2 |
+| SE | Cuerpo 2,5-10 kg: numerado -> cilindrado -> soldadura longitudinal | 11,9 |
+| SE | Cuerpos 2,5-10 kg al encastre | 6,3 |
+| SE | Cuerpos de carros a la cilindradora | 6,8 |
+| SE | Cuerpo 1 kg | 0,4 |
+| SE | Cuerpo 1 kg | 0,4 |
+| SE | Cuerpos 1 kg al encastre | 8,7 |
 | SE | Fleje enderezado | 0,2 |
 | SE | Fleje al troquel | 0,2 |
-| SE | Cúpulas al cuello | 1,9 |
-| SE | Cúpulas al cuello | 1,1 |
-| SE | Cuello preparado | 0,6 |
-| SE | Cuello preparado | 0,6 |
-| SE | Cúpulas 1 kg al supermercado | 0,6 |
-| SE | Cúpulas 2,5-10 kg al supermercado | 0,6 |
-| SE | Fondos al supermercado | 7,2 |
-| SE | Cuerpos 1 kg | 1,2 |
-| SE | Cuerpos 1 kg | 1,2 |
-| SE | Fondos 1 kg | 5,8 |
-| SE | Cúpulas 1 kg | 7,2 |
-| SE | Cúpulas y fondos 2,5-10 kg | 11,2 |
-| SE | Línea 2,5-10 kg -> granallado -> pintura | 49,6 |
-| SE | Reproceso: corrección -> nueva PH | 22,0 |
-| SE | Celda 1 kg -> pintura (sin granallado) | 48,4 |
-| SE | Lazo de pintura: pretratamiento, secado, cabina, polimerizado, enfriamiento | 81,9 |
-| RET | Retorno de ganchos vacíos (aéreo, +4,0 m) | 13,0 |
-| SE | Pintados a carga de polvo | 3,0 |
-| SE | Ensamblaje -> presurización -> hermeticidad -> etiquetado -> embalaje | 12,4 |
-| SE | Línea de carros: cilindrado, punteo, soldaduras, inspección, PH y marcado | 33,1 |
-| SE | Carros a pintura tercerizada (P6) | 16,2 |
-| SE | Carga de polvo -> armado -> presurización | 6,0 |
-| PT | Pallet a envolvedora | 0,8 |
+| SE | Fondos al pulmón | 0,4 |
+| SE | Fondos al encastre | 10,2 |
+| SE | Cúpulas a la soldadura de cuello | 2,1 |
+| SE | Cuello preparado | 0,8 |
+| SE | Cúpulas con cuello al pulmón | 0,4 |
+| SE | Cúpulas a la soldadura circ. | 24,2 |
+| SE | Cúpulas a la soldadura circ. | 4,2 |
+| SE | Línea principal: encastre -> bordoneado -> soldadura circ. -> PH -> secado -> granallado | 40,2 |
+| SE | Defectos a corrección | 1,4 |
+| SE | Aprobados al pulmón de pintura | 1,4 |
+| SE | Corregidos al pulmón de pintura | 4,0 |
+| SE | A la carga de pintura | 7,4 |
+| SE | Lazo de pintura: pretratamiento, secado, cabina, polimerizado, enfriamiento | 46,8 |
+| RET | Retorno de ganchos vacíos (aéreo, +4,0 m) | 4,1 |
+| SE | Pintados al pulmón | 1,0 |
+| SE | A la carga de polvo | 3,6 |
+| SE | Ensamblaje -> presurización -> hermeticidad -> etiquetado -> embalaje | 12,0 |
+| SE | Carros: punteo, soldaduras, inspección, PH y marcado | 29,0 |
+| SE | Carros a la espera del pintor | 1,2 |
+| SE | Carros a pintura tercerizada (P6) | 6,6 |
+| SE | Carga de polvo -> armado | 1,0 |
+| SE | Armado -> presurización | 0,2 |
+| PT | Cilindros vendidos vacíos al almacén de PT | 15,2 |
 | PT | Pallet a envolvedora | 1,6 |
-| PT | Almacén de PT | 8,0 |
-| PT | Almacén de PT | 0,1 |
-| PT | Expedición M1 | 23,6 |
-| PT | Expedición M2 | 24,1 |
-| PT | Carros terminados (P9) | 12,6 |
-| PT | Tercerizados a expedición | 2,8 |
-| SCRAP | Scrap (P2) | 7,0 |
+| PT | Pallet a envolvedora | 1,3 |
+| PT | Pallet de cilindros a envolvedora | 3,5 |
+| PT | Almacén de PT | 5,7 |
+| PT | Expedición M1 | 12,8 |
+| PT | Expedición M2 | 13,1 |
+| PT | Carros terminados (P9) | 10,4 |
+| PT | Tercerizados a expedición | 1,0 |
+| SCRAP | Scrap a volquete (P2) | 5,0 |
 
 ## 13. Supuestos a validar
 

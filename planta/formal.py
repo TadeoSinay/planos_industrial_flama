@@ -28,7 +28,11 @@ def salida(pl, p, d, texto="SALIDA"):
     pl.punta(tip, d, 2.6, 1.4, (0, 150, 60), "S-ESCAPE")
 
 
-EXT_ANEXOS = [(-1.1, 13.0), (-1.1, 22.0), (-12.0, 13.0), (-12.0, 26.8), (42.0, 53.0), (99.0, 41.0), (53.0, 52.4)]
+EXT_ANEXOS = [(-1.1, 20.8), (-1.1, 29.8), (-12.0, 20.8), (-12.0, 34.6), (41.0, 47.0), (52.0, 46.4)]
+
+
+def _ext(cod):
+    return next(r for c, n, r, t in L.EXTERIOR if c == cod)
 
 
 # ================================================================ H1 implantación
@@ -52,9 +56,9 @@ def h1_implantacion(doc, ox):
         pl.texto(cod, (r.c[0], r.c[1] + 0.9), 2.0, A.MIDDLE_CENTER)
         if r.w > 9:
             pl.texto(nom if len(nom) < 44 else nom[:42] + "…", (r.c[0], r.c[1] - 1.0), 1.5, A.MIDDLE_CENTER)
-    pl.texto("NAVE INDUSTRIAL 96,00 × 50,00 m - 4800 m² (layout en U)", (48.0, 27.4), 4.0, A.MIDDLE_CENTER)
-    pl.texto("SERVICIOS", (-9.0, 20.5), 3.0, A.MIDDLE_CENTER, rot=90)
-    pl.texto("RECARGAS", (9.2, 12.0), 3.0, A.MIDDLE_CENTER)
+    pl.texto("NAVE INDUSTRIAL 88,00 × 44,00 m - 3872 m² (recorrido en U)", (40.0, 21.4), 4.0, A.MIDDLE_CENTER)
+    pl.texto("SERVICIOS", (-9.0, 28.4), 3.0, A.MIDDLE_CENTER, rot=90)
+    pl.texto("RECARGAS", (9.2, 9.6), 3.0, A.MIDDLE_CENTER)
     for cod, a, b, uso in L.PORTONES_TERRENO:
         pl.texto(f"{cod} ({f(b - a, 2)} m)", ((a + b) / 2, y0 - 1.8), 1.8, A.MIDDLE_CENTER)
     # radios de giro de camiones (semi 12,5 m exterior) en las esquinas del anillo
@@ -65,35 +69,35 @@ def h1_implantacion(doc, ox):
     # cotas generales del terreno y de la implantación
     pl.cota((x0, y1), (x1, y1), 12, True)
     pl.cota((x1, y0), (x1, y1), 12, False)
-    pl.cota((x0, 50.0), (0.0, 50.0), 6, True)
-    pl.cota((96.0, 50.0), (x1, 50.0), 6, True)
-    pl.cota((0.0, 50.0), (96.0, 50.0), 16, True)
-    pl.cota((96.0, 0.0), (96.0, 50.0), 10, False)
-    pl.cota((96.0, 50.0), (96.0, y1), 10, False)
-    pl.cota((96.0, y0), (96.0, 0.0), 10, False)
-    pl.cota((-18.0, 11.0), (0.0, 11.0), -6, True)
-    pl.cota((-18.0, 11.0), (-18.0, 30.0), -6, False)
-    pl.cota((36.0, 56.0), (48.0, 56.0), 3, True)
+    pl.cota((x0, 44.0), (0.0, 44.0), 6, True)
+    pl.cota((88.0, 44.0), (x1, 44.0), 6, True)
+    pl.cota((0.0, 44.0), (88.0, 44.0), 16, True)
+    pl.cota((88.0, 0.0), (88.0, 44.0), 10, False)
+    pl.cota((88.0, 44.0), (88.0, y1), 10, False)
+    pl.cota((88.0, y0), (88.0, 0.0), 10, False)
+    pl.cota((-18.0, 19.0), (0.0, 19.0), -6, True)
+    pl.cota((-18.0, 19.0), (-18.0, 37.8), -6, False)
+    pl.cota((36.0, 50.0), (46.0, 50.0), 3, True)
     pl.cota((-36.0, 0.0), (-29.0, 0.0), -3, True)
     pl.cota((119.0, 0.0), (126.0, 0.0), -3, True)
-    pl.cota((96.0, 20.0), (119.0, 20.0), 0, True)
+    pl.cota((88.0, 14.0), (119.0, 14.0), 0, True)
     # cuadro de superficies
     sup_t = (x1 - x0) * (y1 - y0)
     nave = L.NAVE_L * L.NAVE_A
     anex = sum(s.rect.area for s in L.ANEXOS if s.cod != "RC")
-    cub = nave + anex
+    cub = nave + anex + _ext("PL-N").area
     xt = pl.P(x1, 0)[0] + 14
     yt = h.fy1 - 36
     cols = [("Concepto", 70, "l"), ("m²", 22, "r"), ("%", 16, "r")]
     filas = [["Terreno 170,00 × 125,00", f(sup_t, 0), "100,0"],
-             ["Nave industrial 96,00 × 50,00", f(nave, 0), f(nave / sup_t * 100, 1)],
+             ["Nave industrial 88,00 × 44,00", f(nave, 0), f(nave / sup_t * 100, 1)],
              ["  incluye recargas (ángulo SO)", f(L.ANEXOS[1].rect.area, 0), ""],
              ["Servicios al personal y oficinas", f(L.ANEXOS[0].rect.area, 0), f(L.ANEXOS[0].rect.area / sup_t * 100, 1)],
              ["Sala técnica norte", f(L.ANEXOS[2].rect.area, 0), f(L.ANEXOS[2].rect.area / sup_t * 100, 1)],
-             ["Cobertizo de químicos (este)", f(L.ANEXOS[3].rect.area, 0), f(L.ANEXOS[3].rect.area / sup_t * 100, 1)],
+             ["Alero de descarga de MP (norte)", f(_ext("PL-N").area, 0), f(_ext("PL-N").area / sup_t * 100, 1)],
              ["Superficie cubierta total", f(cub, 0), f(cub / sup_t * 100, 1)],
              ["FOS = cubierta / terreno", "", f(cub / sup_t, 2).replace(",", ",")],
-             ["Reserva de ampliación (este)", f(L.EXTERIOR[7][2].area, 0), ""]]
+             ["Reserva de ampliación (este)", f(_ext("AMP").area, 0), ""]]
     y = pl.tabla(xt, yt, cols, filas, 5.0, 2.4, "Cuadro de superficies")
     y = pl.parrafo(["FOS, FOT, retiros y altura máxima: verificar con el reglamento del",
                     "parque industrial y el código de Avellaneda (Ley 13.744 de parques",
@@ -109,8 +113,8 @@ def h1_implantacion(doc, ox):
                 "en los muelles sur sin cruzarse. Autos y peatones entran por el frente, separados",
                 "de los camiones. Radio de giro exterior del semi: 12,50 m.",
                 "Pavimento de hormigón en calles, playas y patios; veredas perimetrales de 1,20 m.",
-                "Nave: pórticos metálicos de dos luces de 25 m cada 8 m (columnas centrales en el eje B,",
-                "a lo largo del pasillo central de personal); altura libre bajo",
+                "Nave: pórticos metálicos de dos luces (19,40 y 24,60 m) cada 8 m, columnas centrales en el",
+                "eje B, al borde del pasillo central; altura libre bajo",
                 "cercha 8,00 m; cerramiento de zócalo de bloque de 2,40 m y chapa; cubierta de chapa",
                 "con aislación y lucernarios; anexos de mampostería."], xt, y - 4, 2.2)
     return h
@@ -120,13 +124,13 @@ def h1_implantacion(doc, ox):
 def planta_100(doc, ox, n, xa, xb):
     y0, y1 = -9.0, 58.0
     h = hoja(doc, "A0", ox, f"Planta de la nave {'oeste' if n == 2 else 'este'}",
-             f"Ejes {1 + int(round(xa / 8)) if xa > 0 else 1} a {min(13, 1 + int(round(xb / 8)))} - acotada", "FL_PI_04",
+             f"Ejes {1 + int(round(xa / 8)) if xa > 0 else 1} a {min(12, 1 + int(round(xb / 8)))} - acotada", "FL_PI_04",
              n, TOT, "1:100", "Plano de planta", "Estructura metálica")
     k = 100
     pl = D.Plano(h, k, (xa, y0), (h.fx0 + 22, h.fy1 - 34 - (y1 - y0) * 1000 / k))
     titulo_hoja(pl, h, f"FL_PI_04 - PLANO FORMAL NORMALIZADO - HOJA {n}: PLANTA DE LA NAVE, SECTOR "
                        f"{'OESTE' if n == 2 else 'ESTE'} (x = {f(xa, 0)} a {f(xb, 0)} m)",
-                "Escala 1:100. Cotas en metros. Ejes estructurales 1 a 13 cada 8,00 m y A-B-C cada 25,00 m (dos luces, "
+                "Escala 1:100. Cotas en metros. Ejes estructurales 1 a 12 cada 8,00 m y A-B-C (luces de 19,40 y 24,60 m, "
                 "columnas centrales en el eje B).")
     # se dibuja la planta completa y se recorta a la ventana de la hoja
     antes = D.handles(pl.m)
@@ -322,7 +326,9 @@ def h4_servicios(doc, ox):
     h = hoja(doc, "A0", ox, "Servicios y sanitarios", "Planta 1:50, sanitario accesible 1:20, corte 1:100",
              "FL_PI_04", TOT, TOT, "1:50", "Plano de detalle", "Mampostería / estructura metálica")
     # ---- planta de servicios 1:50 (x -18,6..0,6, y 10,4..30,6)
-    pl = D.Plano(h, 50, (-19.5, 9.0), (h.fx0 + 25, h.fy1 - 60 - 23 * 20))
+    P0 = (h.fx0 + 25, h.fy1 - 60 - 23 * 20)
+    pl = D.Plano(h, 50, (-19.5, 16.8), P0)
+    pl_old = D.Plano(h, 50, (-19.5, 9.0), P0)
     titulo_hoja(pl, h, "FL_PI_04 - PLANO FORMAL NORMALIZADO - HOJA 4: SERVICIOS, SANITARIOS Y CORTE",
                 "Planta del bloque de servicios 1:50; sanitario accesible 1:20; corte transversal de la nave 1:100. "
                 "Cotas en metros.")
@@ -330,23 +336,23 @@ def h4_servicios(doc, ox):
     D.locales(pl, rotulos=False)
     D.muros(pl)
     D.puertas(pl, etiquetas=True, h=2.5)
-    servicios_detalle(pl)
+    servicios_detalle(pl_old)
     for s_ in L.LOCALES:
         if s_.rect.x1 > 0.5:
             continue
         pl.texto(s_.nombre if len(s_.nombre) < 30 else s_.nombre[:28] + "…", (s_.rect.c[0], s_.rect.y0 + 0.9),
                  2.0, A.MIDDLE_CENTER, rot=90 if s_.rect.w < 2.5 else 0)
         pl.texto(f"{f(s_.rect.area, 1)} m²", (s_.rect.c[0], s_.rect.y0 + 0.45), 1.8, A.MIDDLE_CENTER)
-    D.recortar(pl, antes, -18.6, 10.4, 1.2, 30.6)
-    pl.texto("NAVE: pasillo central de personal PC", (0.9, 20.0), 2.5, A.MIDDLE_CENTER, rot=90)
-    pl.texto("BLOQUE DE SERVICIOS AL PERSONAL Y OFICINAS - 1:50", pl.P(-18.0, 32.5), 3.0, A.BOTTOM_LEFT, papel=True)
-    xs = sorted({v for s_ in L.LOCALES if s_.rect.x1 < 0.5 and s_.rect.y1 > 29 for v in (s_.rect.x0, s_.rect.x1)})
-    pl.cadena(xs, 30.0, 10.0, True)
-    xs2 = sorted({v for s_ in L.LOCALES if s_.rect.x1 < 0.5 and s_.rect.y0 < 11.5 for v in (s_.rect.x0, s_.rect.x1)})
-    pl.cadena(xs2, 11.0, -8.0, True)
-    pl.cota((-18.0, 11.0), (0.0, 11.0), -16.0, True)
-    pl.cadena([11.0, 14.6, 18.6, 24.2, 30.0], -18.0, -10.0, False)
-    pl.cota((-18.0, 11.0), (-18.0, 30.0), -18.0, False)
+    D.recortar(pl, antes, -18.6, 18.2, 1.2, 38.4)
+    pl.texto("NAVE: pasillo central y senda peatonal", (0.9, 28.0), 2.5, A.MIDDLE_CENTER, rot=90)
+    pl.texto("BLOQUE DE SERVICIOS AL PERSONAL Y OFICINAS - 1:50", pl.P(-18.0, 40.3), 3.0, A.BOTTOM_LEFT, papel=True)
+    xs = sorted({v for s_ in L.LOCALES if s_.rect.x1 < 0.5 and s_.rect.y1 > 36.8 for v in (s_.rect.x0, s_.rect.x1)})
+    pl.cadena(xs, 37.8, 10.0, True)
+    xs2 = sorted({v for s_ in L.LOCALES if s_.rect.x1 < 0.5 and s_.rect.y0 < 19.3 for v in (s_.rect.x0, s_.rect.x1)})
+    pl.cadena(xs2, 19.0, -8.0, True)
+    pl.cota((-18.0, 19.0), (0.0, 19.0), -16.0, True)
+    pl.cadena([19.0, 22.4, 26.4, 32.0, 37.8], -18.0, -10.0, False)
+    pl.cota((-18.0, 19.0), (-18.0, 37.8), -18.0, False)
     # ---- sanitario accesible 1:20 (dibujo de detalle en coordenadas propias del local)
     pa = D.Plano(h, 20, (57.6, -3.2), (h.fx0 + 470, h.fy1 - 60 - 70))
     pa.rect(L.R(58.0, -2.8, 60.4, -0.2), "A-LOCAL")
@@ -393,37 +399,39 @@ def h4_servicios(doc, ox):
 
 
 def corte(pc):
-    """Corte transversal A-A de la nave (norte-sur, por el eje 4), dos luces de 25 m, 1:100."""
+    """Corte transversal A-A de la nave (norte-sur, por el eje 4), dos luces, 1:100."""
     y0 = 0.0
     W = L.NAVE_A
+    ejes = L.EJES_Y
     pc.linea((-4.0, y0), (W + 10.0, y0), "A-EXTERIOR")
-    for x in (0.0, 25.0, W):
+    for x in ejes:
         pc.rect(L.R(x - 0.2, 0.0, x + 0.2, 8.0), "A-MURO")
-    for a in (0.0, 25.0):
-        b = a + 25.0
-        pc.pl([(a - 0.3, 8.0), (a + 12.5, 9.6), (b + 0.3, 8.0)], "A-MURO")
-        pc.pl([(a + 0.2, 7.2), (a + 12.5, 8.7), (b - 0.2, 7.2)], "A-EQUIPO")
-        for i in range(1, 10):
-            x = a + i * 2.5
-            yt = 8.0 + 1.6 * (1 - abs(x - a - 12.5) / 12.5)
-            yb = 7.2 + 1.5 * (1 - abs(x - a - 12.5) / 12.5)
+    for a, b in zip(ejes, ejes[1:]):
+        m = (a + b) / 2
+        hl = 1.6 * (b - a) / 25.0
+        pc.pl([(a - 0.3, 8.0), (m, 8.0 + hl), (b + 0.3, 8.0)], "A-MURO")
+        pc.pl([(a + 0.2, 7.2), (m, 7.2 + hl * 0.94), (b - 0.2, 7.2)], "A-EQUIPO")
+        n = max(4, int((b - a) / 2.5))
+        for i in range(1, n):
+            x = a + i * (b - a) / n
+            yt = 8.0 + hl * (1 - abs(x - m) / ((b - a) / 2))
+            yb = 7.2 + hl * 0.94 * (1 - abs(x - m) / ((b - a) / 2))
             pc.linea((x, yb), (x, yt), "A-EQUIPO-FINO")
-    # transportador aéreo y canaleta en el valle
-    pc.rect(L.R(24.4, 9.6, 25.6, 9.9), "A-EQUIPO")
-    # sala técnica al norte
+    pc.rect(L.R(ejes[1] - 0.6, 8.2, ejes[1] + 0.6, 8.5), "A-EQUIPO")
+    # sala técnica y alero al norte
     pc.rect(L.R(W + 0.2, 0.0, W + 6.0, 4.0), "A-LOCAL")
     pc.texto("ST", (W + 3.1, 2.0), 2.2, A.MIDDLE_CENTER)
     pc.linea((-0.6, 2.4), (-0.2, 2.4), "A-EQUIPO")
     pc.texto("Zócalo de bloque 2,40", (-0.8, 1.2), 2.0, A.MIDDLE_RIGHT)
-    pc.cota((0.0, 0.0), (25.0, 0.0), -6, True)
-    pc.cota((25.0, 0.0), (W, 0.0), -6, True)
+    for a, b in zip(ejes, ejes[1:]):
+        pc.cota((a, 0.0), (b, 0.0), -6, True)
     pc.cota((W, 0.0), (W, 8.0), 14, False)
     pc.cota((W, 8.0), (W, 9.6), 14, False)
     pc.texto("NPT ±0,00", (0.6, 0.4), 2.2, A.BOTTOM_LEFT)
-    pc.texto("Altura libre bajo cercha 8,00 m", (12.5, 5.0), 2.5, A.MIDDLE_CENTER)
-    pc.texto("PC", (27.4, 0.4), 2.0, A.BOTTOM_CENTER)
-    pc.texto("Banda sur: terminación, PT, carros, recargas", (12.5, 2.0), 2.0, A.MIDDLE_CENTER)
-    pc.texto("Banda norte: MP, corte y líneas", (38.5, 2.0), 2.0, A.MIDDLE_CENTER)
+    pc.texto("Altura libre bajo cercha 8,00 m", (ejes[1] / 2, 5.0), 2.5, A.MIDDLE_CENTER)
+    pc.texto("Pasillo central", (21.5, 0.4), 2.0, A.BOTTOM_CENTER)
+    pc.texto("Banda sur: recargas, carros, PT, terminación", (ejes[1] / 2, 2.0), 2.0, A.MIDDLE_CENTER)
+    pc.texto("Banda norte: MP, corte y línea", ((ejes[1] + W) / 2 + 2, 2.0), 2.0, A.MIDDLE_CENTER)
     pc.texto("CORTE TRANSVERSAL A-A (por eje 4) - 1:100", pc.P(0.0, 11.5), 3.0, A.BOTTOM_LEFT, papel=True)
     pc.texto("S", pc.P(0.0, -2.5), 2.5, A.MIDDLE_CENTER, papel=True)
     pc.texto("N", pc.P(W, -2.5), 2.5, A.MIDDLE_CENTER, papel=True)
@@ -433,7 +441,7 @@ def fl_pi_04(doc, ox, n):
     if n == 1:
         return h1_implantacion(doc, ox)
     if n == 2:
-        return planta_100(doc, ox, 2, -20.0, 46.0)
+        return planta_100(doc, ox, 2, -20.0, 42.0)
     if n == 3:
-        return planta_100(doc, ox, 3, 46.0, 104.0)
+        return planta_100(doc, ox, 3, 42.0, 104.0)
     return h4_servicios(doc, ox)

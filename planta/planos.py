@@ -142,7 +142,7 @@ def sitio(pl, rotulos=True, estacionamiento=True):
         pl.texto("2 accesibles 3,50 m", (25.8, -24.5), 1.4, A.MIDDLE_CENTER)
         pl.texto("40 cocheras 2,50 × 5,00", (0.0, -30.5), 1.8, A.MIDDLE_CENTER)
         # camino peatonal desde G4 al hall de servicios (SV-1)
-        pl.pl([(22.5, -62.0), (22.5, -46.0), (32.0, -46.0), (32.0, -14.0), (-4.2, -14.0), (-4.2, 11.0)], "A-SECTOR")
+        pl.pl([(22.5, -62.0), (22.5, -46.0), (32.0, -46.0), (32.0, -14.0), (-4.2, -14.0), (-4.2, 19.0)], "A-PASILLO")
     norte(pl, (112.0, -50.0))
 
 
@@ -177,36 +177,38 @@ class Columna:
 
 # ================================================================ FL_PI_03 flujo de materiales
 MARCAS_03 = [
-    (1, (-8.0, 46.5), "MP-1 hojas e insumos en chasis: bahía interior BR, descarga por los dos lados (P1)"),
-    (2, (11.0, 54.0), "MP-2 flejes y caño en semi: playa norte bajo alero, descarga por los dos lados (P1b)"),
-    (3, (37.8, -9.0), "MP-3 casquetes de carros y tercerizados (M3)"),
-    (4, (68.0, -9.0), "MP-4 polvo químico en big bags (P4)"),
-    (5, (58.0, -9.0), "MP-5 válvulas, manómetros, etiquetas y embalaje (P5)"),
-    (6, (104.0, 44.5), "MP-6 químicos de pretratamiento (QP -> P3)"),
-    (7, (104.0, 13.0), "MP-7 pintura en polvo a la cabina (P3b)"),
-    (8, (26.0, -9.0), "MP-8 carros pintados, polvo, estructuras y ruedas (P8)"),
-    (9, (50.0, 39.0), "SE línea G 2,5-10 kg: corte -> PH -> granallado -> pintura"),
-    (10, (55.0, 49.0), "SE celda 1 kg: láser -> PH -> transportador -> pintura"),
-    (11, (84.0, 8.0), "SE lazo de pintura: carga -> pretratamiento -> cabina -> hornos -> descarga"),
-    (12, (60.0, 22.4), "SE terminación: carga de polvo -> ensamblaje -> palletizado"),
-    (13, (20.4, -9.0), "SE carros a pintura tercerizada (P6); vuelven pintados por P8"),
-    (14, (48.3, -9.0), "PT a expedición por los muelles M1 y M2"),
-    (15, (37.0, -12.0), "PT carros terminados (P9)"),
-    (16, (-7.0, 34.6), "Scrap a volquete (P2)"),
-    (17, (79.0, -30.0), "Efluentes líquidos a tratamiento PTE y colectora"),
-    (18, (-8.0, 5.8), "Recargas: RC-1 -> descarga -> PH -> recarga -> despacho RC-2"),
+    (1, (5.0, 53.0), "MP-1 chapa, caño, flejes e insumos: alero de descarga norte, entran por P1"),
+    (2, (35.4, -9.0), "MP-2 casquetes de carros y tercerizados revendidos (M3)"),
+    (3, (65.5, -9.0), "MP-3 polvo químico en big bags (P4)"),
+    (4, (59.5, -9.0), "MP-4 válvulas, manómetros, etiquetas y embalaje (P5)"),
+    (5, (93.0, 29.5), "MP-5 químicos de pretratamiento y pintura en polvo (P3)"),
+    (6, (26.7, -9.0), "MP-6 carros pintados, polvo, estructuras y ruedas (P8)"),
+    (7, (30.6, 29.0), "SE fila N1: guillotina -> numerado -> cilindrado -> soldadura longitudinal"),
+    (8, (31.4, 31.6), "SE láser 1 kg -> encastre"),
+    (9, (33.0, 42.4), "SE cúpulas y fondos: embutido -> cuello -> soldadura circunferencial"),
+    (10, (53.0, 33.6), "SE línea principal: encastre -> bordoneado -> sold. circ. -> PH -> secado -> granallado"),
+    (11, (79.0, 11.0), "SE lazo de pintura: carga -> pretratamiento -> cabina -> hornos -> descarga"),
+    (12, (57.0, 11.6), "SE terminación: carga de polvo -> ensamblaje -> presurización -> embalaje"),
+    (13, (20.2, -9.0), "SE carros a pintura tercerizada (P6); vuelven pintados por P8"),
+    (14, (44.7, -9.0), "PT a expedición por los muelles M1 y M2"),
+    (15, (31.4, -9.0), "PT carros terminados (P9)"),
+    (16, (-6.0, 44.0), "Scrap a volquete (P2)"),
+    (17, (73.0, -30.0), "Efluentes líquidos a tratamiento PTE y colectora"),
+    (18, (-8.0, 10.0), "Recargas: RC-1 -> descarga -> PH -> recarga -> despacho RC-2"),
+    (19, (56.0, 17.8), "PT cilindros vendidos vacíos: almacén de cilindros -> PT"),
 ]
 
 
 def flujos_materiales(pl):
-    camion(pl, (6.0, 51.6), 18.6, "Semi 30 t", horiz=True)
-    camion(pl, (-12.0, 42.6), 10.0, "Chasis 16 t", horiz=True)
+    camion(pl, (0.5, 46.0), 18.6, "Semi 30 t", horiz=True)
+    camion(pl, (0.5, 50.6), 10.0, "Chasis 16 t", horiz=True)
     camion(pl, (19.0, -14.0), 9.5, "Pintor", horiz=False)
-    camion(pl, (45.2, -14.0), 9.5, "PT", horiz=False)
-    camion(pl, (48.8, -14.0), 9.5, "PT", horiz=False)
-    camion(pl, (39.6, -14.0), 9.5, "Tercerizados", horiz=False)
-    camion(pl, (66.7, -14.0), 9.5, "Polvo", horiz=False)
-    camion(pl, (56.7, -14.0), 9.5, "Insumos", horiz=False)
+    camion(pl, (41.2, -14.0), 9.5, "PT", horiz=False)
+    camion(pl, (45.6, -14.0), 9.5, "PT", horiz=False)
+    camion(pl, (35.2, -14.0), 9.5, "Tercerizados", horiz=False)
+    camion(pl, (63.2, -14.0), 9.5, "Polvo", horiz=False)
+    camion(pl, (58.8, -14.0), 9.5, "Insumos", horiz=False)
+    camion(pl, (88.6, 26.2), 9.5, "Químicos", horiz=True)
     camion(pl, (-20.0, 1.6), 6.0, "Utilitario", horiz=True)
     for fl in L.FLUJOS:
         pl.flujo(fl.pts, fl.cat, cada=22.0 if fl.cat in ("TL", "SE") else 26.0,
@@ -256,8 +258,8 @@ def fl_pi_03(doc, ox):
                     "de 1,8 m y posicionador (toma el paquete por el lado largo: 2,37 t > 2 t).",
                     "Pradecon entrega 35,3 t por mes: supera un semi (30 t). Se parte en dos entregas quincenales",
                     "de 17,6 t en chasis con balancín; baja el stock máximo de chapa.",
-                    "Dimensionado a la carga máxima: playa norte para semi de 18,6 m / 30 t y bahía interior para",
-                    "chasis de 10 m; las dos con descarga por ambos lados."], x, y - 3, 2.1)
+                    "Dimensionado a la carga máxima: alero norte para semi de 18,6 m / 30 t o dos chasis de 10 m,",
+                    "con descarga por ambos lados; la MP entra por P1 a racks frente a cada máquina."], x, y - 3, 2.1)
     cols4 = [("Formato de hoja", 66, "l"), ("Hojas/sem", 18, "c"), ("Paquete 2 t cubre (sem)", 32, "c"),
              ("Paquete propuesto", 32, "c"), ("Stock máx. (sem)", 24, "c")]
     filas4 = [[r["formato"], f(r["hojas_sem"], 1), f(r["cob_2t"], 1),
@@ -281,23 +283,27 @@ def fl_pi_03b(doc, ox):
     R_ = C.redes()
     tg = C.TGBT
     for sec, kw, (cx, cy), lg in R_["elec"]:
-        pts = [tg, (tg[0], 37.8), (cx, 37.8), (cx, cy)] if cy > 25 else [tg, (tg[0], 37.8), (36.0, 37.8),
-                                                                       (36.0, 27.4), (cx, 27.4), (cx, cy)]
+        pts = [tg, (tg[0], 21.4), (cx, 21.4), (cx, cy)]
         pl.pl(pts, "I-ELEC")
         pl.circulo((cx, cy), 0.6, "I-ELEC")
         pl.texto(f"TS {sec}", (cx + 0.8, cy + 0.6), 1.6, A.BOTTOM_LEFT, "I-ELEC")
-    pl.pl([(42.0, 50.0), (42.0, 29.6), (2.0, 29.6), (2.0, 25.2), (90.4, 25.2), (90.4, 29.6), (42.0, 29.6)], "I-AIRE")
+    pl.pl([(41.0, 44.2), (41.0, 24.4), (2.0, 24.4), (2.0, 19.6), (69.8, 19.6), (69.8, 24.4), (41.0, 24.4)], "I-AIRE")
     for cod, lg in R_["sold"]:
         e = next(x for x in L.EQUIPOS if x.cod == cod)
-        yy = 37.6 if e.rect.c[1] > 25 else 24.8
-        pl.pl([C.JGS, (C.JGS[0], 37.6), (37.0, 37.6), (37.0, yy), (e.rect.c[0], yy), e.rect.c], "I-SOLD")
+        yy = 39.2 if e.rect.c[1] > 24 else 21.0
+        pl.pl([C.JGS, (C.JGS[0], yy), (e.rect.c[0], yy), e.rect.c], "I-SOLD")
     for cod, lg in R_["n2"]:
         e = next(x for x in L.EQUIPOS if x.cod == cod)
-        pl.pl([C.JGN, (C.JGN[0], 15.0), (e.rect.c[0], 15.0), e.rect.c], "I-N2")
+        pl.pl([C.JGN, (C.JGN[0], 2.8), (e.rect.c[0], 2.8), e.rect.c], "I-N2")
     for cod, lg in R_["gas"]:
         e = next(x for x in L.EQUIPOS if x.cod == cod)
-        yy = 44.2 if e.rect.c[1] > 20 else 6.0
-        pl.pl([C.ERM, (94.6, C.ERM[1]), (94.6, yy), (e.rect.c[0], yy), e.rect.c], "I-GAS")
+        if e.rect.c[1] > 24:
+            pts = [C.ERM, (88.2, C.ERM[1]), (88.2, 39.9), (e.rect.c[0], 39.9), e.rect.c]
+        elif e.rect.c[0] > 60:
+            pts = [C.ERM, (e.rect.c[0], C.ERM[1]), e.rect.c]
+        else:
+            pts = [C.ERM, (88.2, C.ERM[1]), (88.2, 0.8), (e.rect.c[0], 0.8), e.rect.c]
+        pl.pl(pts, "I-GAS")
     for fl in L.EFLUENTES:
         pl.flujo(fl.pts, fl.cat, cada=30.0, largo=2.4, ancho=1.2)
     emisiones(pl)
@@ -341,12 +347,12 @@ def fl_pi_03b(doc, ox):
 
 # ================================================================ FL_PI_01 DIR
 TRONCOS = {
-    "hombres": [(22.5, -62.0), (22.5, -46.0), (32.0, -46.0), (32.0, -14.0), (-4.2, -14.0), (-4.2, 11.0),
-                (-4.2, 14.0), (-1.1, 14.0), (-1.1, 24.4), (-14.1, 24.4), (-14.1, 27.1), (-7.8, 27.1), (-3.7, 25.5),
-                (-1.1, 25.5), (-1.1, 27.2), (0.0, 27.2)],
-    "mujeres": [(-1.1, 21.5), (-14.1, 21.5)],
-    "comedor": [(-1.1, 13.0), (-12.0, 13.0)],
-    "oficinas": [(-1.1, 16.7), (-14.0, 16.7)],
+    "hombres": [(22.5, -62.0), (22.5, -46.0), (32.0, -46.0), (32.0, -14.0), (-4.2, -14.0), (-4.2, 19.0),
+                (-4.2, 21.8), (-1.1, 21.8), (-1.1, 32.2), (-14.1, 32.2), (-14.1, 34.9), (-7.8, 34.9), (-3.7, 33.3),
+                (-1.1, 33.3), (-1.1, 23.7), (0.0, 23.7)],
+    "mujeres": [(-1.1, 29.3), (-14.1, 29.3)],
+    "comedor": [(-1.1, 20.8), (-12.0, 20.8)],
+    "oficinas": [(-1.1, 24.5), (-14.0, 24.5)],
 }
 
 
@@ -409,7 +415,7 @@ def fl_pi_01(doc, ox):
     filas = []
     for nom, lg, main in grupos:
         fin = main[-1]
-        d1 = abs(fin[0]) + abs(fin[1] - 27.2)
+        d1 = abs(fin[0]) + abs(fin[1] - 23.7)
         filas.append([nom, f(lg, 0), f(d1 + 7.8, 0)])
     yb1 = pl.tabla(x, y - 12, cols, filas, 4.3, 2.1, "Longitud de los hilos (turno mañana)")
     ops = {}
@@ -457,59 +463,60 @@ def circ_pts(c, r, n=16):
 # ================================================================ FL_PI_02 flujo de operaciones
 ASME = {}
 for _c in ("M04", "M15", "M16", "M06", "M08", "M09", "M10", "M11", "M12", "C01", "C02", "C03", "C04", "C05", "C08",
-           "C09", "A03", "A04", "A05", "A06", "B01", "B02", "B03", "B04", "B05", "B06", "B08", "B10", "P01", "P02",
-           "P03", "P04", "P06", "P08", "T01", "T02", "T03", "T04", "T05", "T07", "T08", "T09", "T10", "T11", "T12",
-           "T13", "B14", "A11", "B03"):
+           "B01", "B01b", "B02", "B03", "E09a", "E09b", "E09c", "B04", "A06", "B06", "B14", "A11", "B08", "B10",
+           "P01", "P02", "P03", "P04", "P06", "P08", "T01", "T02", "T03", "T04", "T05", "T07", "T08", "T09", "T10",
+           "T11", "T12", "T13"):
     ASME[_c] = "O"
-for _c in ("M13", "C06", "B09", "P09", "T06", "Q01"):
+for _c in ("C06", "B09", "P09", "T06", "Q01", "C09"):
     ASME[_c] = "I"
 for _c in ("A07", "B07", "C07"):
     ASME[_c] = "OI"
-for _c in ("M17", "A08", "B11", "C12", "P07", "SMK", "PU1", "CT1"):
+for _c in ("C12", "P07"):
     ASME[_c] = "D"
-ALMACENES = ("AL-1H", "AL-1F", "AL-1T", "AL-1C", "PÑ", "AL-PV", "AL-2", "QP", "AL-3", "S4", "PTC", "RC-DP")
+ALMACENES = ("AL-1H", "AL-1R", "PÑ", "AL-2", "QP", "AL-3", "S4", "AL-C", "RC-DP")
 
 CURSOGRAMAS = {
-    "S1 - Matafuegos ABC 1 kg (fabricados)": [
-        ("A", "Caño en cantiléver", "AL-1T"), ("O", "Corte de caño láser", "M15/M16"), ("D", "Pulmón", "M17"),
-        ("O", "Numerado", "A03"), ("O", "Encastre de fondo", "A04"), ("O", "Encastre de cúpula con cuello", "A05"),
-        ("O", "Soldadura circunferencial", "A06"), ("OI", "Prueba hidráulica 100 %", "A07"), ("O", "Secado", "A11"),
-        ("T", "Transportador de rodillos", "CT1"), ("D", "Pulmón a pintura", "A08"), ("O", "Pretratamiento", "P02"),
-        ("O", "Secado", "P03"), ("O", "Pintura en polvo", "P04"), ("O", "Polimerizado", "P06"),
-        ("I", "Espesor y adherencia", "P09"), ("O", "Carga de polvo", "T01"), ("O", "Ensamblaje", "T03/T04"),
-        ("O", "Presurización con N₂", "T05"), ("I", "Hermeticidad", "T06"), ("O", "Etiquetado", "T07"),
-        ("O", "Embalaje y palletizado", "T08/T09"), ("O", "Envolvado", "T11"), ("A", "Almacén de PT", "AL-3"),
-        ("T", "Expedición", "M1/M2")],
-    "Subconjunto cúpulas y fondos 1-10 kg": [
-        ("A", "Flejes", "AL-1F"), ("O", "Desbobinado y enderezado", "M06"), ("O", "Corte y embutido", "M08"),
-        ("O", "Preparación de cuello", "M09/M10"), ("O", "Soldadura de cuello", "M11/M12"),
-        ("D", "Supermercado", "SMK"), ("T", "Carro kanban a A04/A05 y B05", "-")],
     "S2 - Matafuegos ABC 2,5 / 5 / 10 kg": [
-        ("A", "Hojas LAF", "AL-1H"), ("O", "Corte de cuerpo", "M04"), ("D", "Pulmón", "PU1"),
-        ("O", "Numerado", "B01"), ("O", "Cilindrado", "B02"), ("O", "Soldadura longitudinal", "B03"),
-        ("O", "Encastre de fondo y cúpula", "B05"), ("O", "Bordoneado", "B04"),
-        ("O", "Soldadura circunferencial", "B06"), ("OI", "Prueba hidráulica 100 %", "B07"), ("O", "Secado", "B14"),
-        ("O", "Granallado", "B08"), ("I", "Detección de defectos", "B09"),
-        ("O", "Corrección (vuelve a PH)", "B10"), ("D", "Pulmón a pintura", "B11"),
-        ("O", "Pintura (igual que S1)", "P02-P06"), ("O", "Terminación (igual que S1)", "T01-T11"),
+        ("A", "Hojas LAF (rack frente a la guillotina)", "AL-1R"), ("O", "1 Corte de cuerpo", "M04"),
+        ("D", "Pulmón de cuerpos cortados", "PU-1"), ("O", "2 Numerado", "B01"), ("D", "Pulmón", "PU-2"),
+        ("O", "3 Cilindrado", "B02"), ("D", "Pulmón", "PU-3"), ("O", "4 Soldadura longitudinal", "B03"),
+        ("D", "Pulmón", "PU-4"), ("O", "9 Encastre de fondo", "E09"), ("O", "10 Bordoneado", "B04"),
+        ("O", "11 Soldadura circ. (con la cúpula)", "A06/B06"), ("D", "Pulmón", "PU-5"),
+        ("OI", "12 Prueba hidráulica 100 %", "A07/B07"), ("D", "Pulmón", "PU-6"), ("O", "13 Secado", "B14/A11"),
+        ("D", "Pulmón", "PU-7"), ("O", "14 Granallado", "B08"), ("I", "15 Detección de defectos", "B09"),
+        ("O", "16 Corrección (sólo defectuosos)", "B10"), ("D", "Pulmón a pintura", "PU-8"),
+        ("O", "17 Pintura en polvo (lazo)", "P01-P08"), ("D", "Pulmón de pintados", "PU-9"),
+        ("O", "18-23 Terminación (ver S1)", "T01-T10"), ("O", "24 Envolvedora", "T11"),
         ("A", "Almacén de PT", "AL-3"), ("T", "Expedición", "M1/M2")],
+    "S1 - Matafuegos ABC 1 kg (fabricados)": [
+        ("A", "Caño en cantiléver (frente al láser)", "AL-1R"), ("O", "5 Corte láser de caño", "M15/M16"),
+        ("D", "Pulmón", "PU-L"), ("O", "9-17 Línea común (igual que S2)", "E09-P08"),
+        ("O", "18 Carga de polvo", "T01"), ("O", "19 Ensamblaje", "T03/T04"), ("O", "20 Presurización con N₂", "T05"),
+        ("I", "21 Hermeticidad", "T06"), ("O", "22 Etiquetado", "T07"), ("O", "23 Embalaje y palletizado", "T08/T09"),
+        ("O", "24 Envolvedora", "T11"), ("A", "Almacén de PT", "AL-3"), ("T", "Expedición", "M1/M2")],
+    "Subconjunto cúpulas y fondos 1-10 kg": [
+        ("A", "Flejes (porta-flejes frente a la prensa)", "AL-1R"),
+        ("O", "6 Desbobinado, enderezado y embutido", "M06-M08"), ("D", "Fondos al pulmón", "PU-K"),
+        ("T", "Fondos al encastre (paso 9)", "-"), ("O", "7 Preparación de cuello", "M09/M10"),
+        ("O", "8 Soldadura de cuello en la cúpula", "M11/M12"), ("D", "Cúpulas con cuello", "PU-C"),
+        ("T", "Cúpulas a la soldadura circ. (paso 11)", "-")],
     "S3 - Matafuegos ABC rodantes 25 / 50 / 70 / 100 kg": [
-        ("A", "Hojas LAC", "AL-1H"), ("O", "Corte de cuerpo", "M04"), ("D", "Pulmón", "PU1"),
-        ("O", "Cilindrado 4 rodillos", "C01"), ("O", "Punteo, refuerzo y estructura", "C02/C03"),
-        ("O", "Soldadura longitudinal", "C04"), ("O", "Soldadura circ. (casquetes AL-1C)", "C05"),
-        ("I", "Inspección de costuras", "C06"), ("OI", "Prueba hidráulica 4,0 MPa", "C07"),
-        ("O", "Marcado", "C08"), ("D", "Espera de retiro", "C12"), ("T", "Pintura tercerizada (P6 -> P8)", "-"),
-        ("O", "Carga de polvo", "T02"), ("O", "Armado de ruedas y manguera", "T12"),
-        ("O", "Presurización y etiquetado", "T13"), ("A", "Carros terminados", "PTC"), ("T", "Expedición", "P9")],
+        ("O", "1 Corte de cuerpo (guillotina)", "M04"), ("D", "Pulmón", "PU-1"), ("T", "Cruce al sector de carros", "-"),
+        ("O", "C1 Cilindrado 4 rodillos", "C01"), ("O", "C2 Punteo, refuerzo y estructura", "C02/C03"),
+        ("O", "C3 Soldadura longitudinal", "C04"), ("O", "C4 Soldadura circ. (casquetes)", "C05"),
+        ("I", "C5 Inspección de costuras", "C06"), ("OI", "C6 Prueba hidráulica 4,0 MPa", "C07"),
+        ("O", "C7 Marcado", "C08"), ("D", "Espera del pintor", "C12"), ("T", "Pintura tercerizada (P6 -> P8)", "-"),
+        ("O", "C8 Carga de polvo", "T02"), ("O", "C9 Armado de ruedas y manguera", "T12"),
+        ("O", "C10 Presurización y etiquetado", "T13"), ("T", "Expedición", "P9")],
     "S4 - Tercerizados revendidos (CO₂, agua, AFFF, K, agente limpio)": [
         ("T", "Recepción", "M3"), ("I", "Control de recepción y sello IRAM", "S4"), ("A", "Stock", "S4"),
         ("T", "Expedición con el pedido", "M1/M2")],
     "RC - Recargas (servicio)": [
-        ("T", "Recepción", "RC-1"), ("I", "Clasificación en 4 colas", "RC-MO"), ("O", "Desarme", "RC-DE"),
-        ("OI", "Descarga y ensayo de funcionamiento", "RC-DC"), ("OI", "PH, lavado y secado", "RC-PH"),
-        ("O", "Recarga por familia", "RC-PV/GA/LQ"), ("O", "Ensamblaje y presurización", "RC-EN"),
-        ("I", "Peso y hermeticidad", "RC-EN"), ("O", "Retoque y etiquetado", "RC-RP"),
-        ("A", "Para entregar", "RC-EN"), ("T", "Despacho", "RC-2")],
+        ("T", "Recepción", "RC-1"), ("I", "R1 Clasificación e inspección visual", "RC-RE"), ("O", "R4 Desarme", "RC-DE"),
+        ("OI", "R2 Descarga y ensayo de funcionamiento", "RC-DC"), ("OI", "R7 PH, secado y Puffer", "RC-PH"),
+        ("O", "R3 / R12-R14 Recarga por familia", "RC-PV/GA/LQ"), ("O", "R9 Ensamblaje y R10 presurización", "RC-EN"),
+        ("I", "R22 Peso y R11 hermeticidad", "RC-EN"), ("O", "R20 Retoque y R21 etiquetado", "RC-EN/RP"),
+        ("A", "Para entregar", "RC-DP"), ("T", "R17 Despacho", "RC-2")],
 }
 
 
@@ -563,9 +570,11 @@ def fl_pi_02(doc, ox):
             pl.texto(s.cod, (s.rect.x0 + 0.4, s.rect.y1 - 0.4), 1.4, A.TOP_LEFT)
     D.rotulos_sector(pl, h=1.7, areas=False)
     # secciones (S1..S4, RC) con recuadro rotulado
-    for cod, nom, r in (("S1", "S1 1 kg", L.R(18.0, 43.4, 72.0, 49.9)), ("S2", "S2 2,5-10 kg", L.R(16.0, 29.6, 72.0, 37.2)),
-                        ("S3", "S3 rodantes", L.R(18.2, 0.1, 38.4, 24.8)), ("S4", "S4 tercerizados", L.R(38.2, 0.1, 44.6, 7.6)),
-                        ("RC", "RC recargas", L.R(0.1, 0.1, 18.3, 24.8))):
+    for cod, nom, r in (("S1", "S1 1 kg (corte de caño)", L.R(16.6, 29.6, 29.5, 35.0)),
+                        ("S2", "S2 2,5-10 kg (cuerpo)", L.R(16.6, 24.6, 39.3, 29.6)),
+                        ("S12", "S1 + S2 línea común", L.R(34.3, 34.9, 87.8, 39.8)),
+                        ("S3", "S3 rodantes", L.R(18.1, 0.1, 34.2, 19.4)), ("S4", "S4 tercerizados", L.R(34.1, 0.1, 40.1, 6.7)),
+                        ("RC", "RC recargas", L.R(0.1, 0.1, 18.1, 19.4))):
         pl.rect(r, "F-TL")
         pl.texto(nom, (r.x1 - 0.4, r.y0 + 0.5), 2.2, A.BOTTOM_RIGHT, "F-TL")
     col = Columna(h, pl)
@@ -573,14 +582,14 @@ def fl_pi_02(doc, ox):
     pl.texto("Símbolos (ASME)", (x, y), 3.5, A.BOTTOM_LEFT, papel=True)
     y -= 7
     for t, txt in (("O", "Operación"), ("I", "Inspección / control"), ("OI", "Operación e inspección combinadas"),
-                   ("T", "Transporte (tren logístico, autoelevador, carro)"), ("D", "Demora: pulmón o supermercado"),
+                   ("T", "Transporte (autoelevador o carro de pulmón)"), ("D", "Demora: pulmón o supermercado"),
                    ("A", "Almacenamiento")):
         simbolo(pl, t, (x + 4, y), 2.0, papel=True)
         pl.texto(txt, (x + 10, y), 2.4, A.MIDDLE_LEFT, papel=True)
         y -= 6.0
-    y = leyenda_flujos(pl, x + 140, col.y, ["SE", "TL", "PT"], "Flujos")
+    y = leyenda_flujos(pl, x + 140, col.y, ["SE", "PT"], "Flujos")
     y = pl.parrafo(["Secciones: S1 1 kg fabricado; S2 manuales 2,5-10 kg;", "S3 rodantes 25-100 kg; S4 tercerizados revendidos",
-                    "(sin transformación); RC recargas (servicio, ala propia).",
+                    "(sin transformación); RC recargas (servicio, ángulo SO).",
                     "Pintura y terminación son comunes a S1 y S2; los carros",
                     "se pintan afuera. El 1 kg no se granalla."], x + 140, y - 3, 2.1)
     y = col.y - 46

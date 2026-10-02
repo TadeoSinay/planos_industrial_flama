@@ -19,15 +19,19 @@ CAPAS_PLANTA = {
     "A-COLUMNA": (7, 50, "CONTINUOUS", None, "Columnas"),
     "A-EJE": (1, 18, "IRAM-F-TRAZO-PUNTO", None, "Ejes estructurales"),
     "A-ABERTURA": (7, 25, "CONTINUOUS", None, "Puertas, portones y muelles"),
-    "A-EQUIPO": (7, 35, "CONTINUOUS", None, "Equipos (contorno)"),
+    "A-EQUIPO": (30, 35, "CONTINUOUS", (230, 120, 0), "Equipos (contorno, naranja como en rev4)"),
+    "A-AREA-TRABAJO": (30, 13, "CONTINUOUS", (235, 150, 60), "Área de trabajo: máquina + puesto del operario"),
+    "A-PULMON": (6, 25, "IRAM-E-TRAZOS", (220, 0, 200), "Pulmones entre pasos (carros de cilindros)"),
+    "A-PASO": (7, 25, "CONTINUOUS", None, "Globos con el número de paso"),
+    "A-SECTOR-TXT": (1, 25, "CONTINUOUS", None, "Rótulos de sector (rojo)"),
     "A-EQUIPO-FINO": (8, 13, "CONTINUOUS", None, "Detalle de equipos, racks y carros"),
     "A-EQUIPO-OCULTO": (8, 13, "IRAM-E-TRAZOS", None, "Partes elevadas u ocultas de equipos"),
     "A-EQUIPO-RELLENO": (9, 13, "CONTINUOUS", None, "Rellenos de cuerpo de equipos"),
     "A-SEGURIDAD": (1, 18, "IRAM-E-TRAZOS", None, "Resguardos, cortinas de luz y zonas de barrido"),
     "A-OPERARIO": (6, 18, "CONTINUOUS", None, "Operarios en su puesto"),
     "A-VEHICULO": (40, 25, "CONTINUOUS", None, "Autoelevadores, tren logístico y transpaletas"),
-    "A-SECTOR": (8, 18, "IRAM-E-TRAZOS", None, "Límite de sector"),
-    "A-PASILLO": (2, 35, "CONTINUOUS", (215, 165, 0), "Demarcación de pasillos (amarillo IRAM 10005)"),
+    "A-SECTOR": (1, 25, "CONTINUOUS", None, "Límite de sector (rojo, como en rev4)"),
+    "A-PASILLO": (2, 35, "IRAM-E-TRAZOS", (215, 165, 0), "Demarcación de pasillos (amarillo IRAM 10005)"),
     "A-SENDA": (2, 25, "CONTINUOUS", (215, 165, 0), "Sendas peatonales (cebra)"),
     "A-TEXTO": (7, 18, "CONTINUOUS", None, "Textos"),
     "A-RELLENO": (9, 13, "CONTINUOUS", None, "Rellenos de sectores"),
@@ -386,19 +390,77 @@ def puertas(pl, etiquetas=True, h=1.8):
 
 
 def equipos(pl, rotulos=True, h=1.5, fino=False, operarios=True):
-    """Equipos con su símbolo de detalle (planta/simbolos.py) y etiqueta de código."""
+    """Equipos con su símbolo (planta/simbolos.py), área de trabajo, operarios y globo con el número de paso.
+    Los equipos auxiliares sin paso (mesas, racks, colectores) llevan su nombre corto."""
     from . import simbolos as S
     for e in L.EQUIPOS:
         S.dibujar(pl, e, operarios)
     transportador(pl)
+    pulmones(pl, h)
     if rotulos:
         for e in L.EQUIPOS:
-            etiqueta(pl, e.cod, e.rect.c, h)
+            if getattr(e, "paso", ""):
+                globo_paso(pl, e.paso, e.rect.c, h)
+            else:
+                rot = 90 if e.rect.h > e.rect.w * 1.6 else 0
+                pl.texto(corto(e.nombre), e.rect.c, h * 0.62, A.MIDDLE_CENTER, "A-TEXTO", rot)
+
+
+def corto(nombre):
+    for a, b in (("Mesa elevadora de tijera 3 t", "Mesa elevadora"), ("Rack de ", "Rack "),
+                 ("Carros a pintura tercerizada", "Carros a pintar"), ("Estructuras y ruedas de carros", "Ruedas"),
+                 ("Cabina de descarga de muestras", "Muestras"), ("Deshumidificador y extracción", "Deshumid."),
+                 ("Retoque y control de espesor", "Retoque"), ("Ciclones de recuperación", "Ciclones")):
+        if nombre.startswith(a):
+            return nombre.replace(a, b)
+    return nombre if len(nombre) <= 18 else nombre[:17] + "."
+
+
+def globo_paso(pl, paso, xy, h=1.5):
+    """Globo del número de paso (como los bloques de rev4): círculo blanco con borde y número."""
+    c = pl.P(*xy)
+    r = max(h * 1.25, len(paso) * h * 0.42 + h * 0.5)
+    pts = [(c[0] + r * math.cos(2 * math.pi * i / 28), c[1] + r * math.sin(2 * math.pi * i / 28)) for i in range(28)]
+    hh = pl.m.add_hatch(dxfattribs={"layer": "A-EQUIPO-RELLENO"})
+    hh.set_solid_fill(rgb=(255, 255, 255))
+    hh.paths.add_polyline_path(pts, is_closed=True)
+    pl.m.add_circle(c, r, dxfattribs={"layer": "A-PASO"})
+    pl.texto(paso, c, h * 1.15, A.MIDDLE_CENTER, "A-PASO", 0, papel=True)
+
+
+def pulmones(pl, h=1.5):
+    """Pulmones (PU): recuadro magenta a trazos con sus carros de cilindros, como en rev4."""
+    from . import simbolos as S
+    for p in getattr(L, "PULMONES", []):
+        r = p.rect
+        pl.rect(r, "A-PULMON")
+        pl.texto(p.cod, (r.x0 + 0.15, r.y1 - 0.15), h * 0.7, A.TOP_LEFT, "A-PULMON")
+        n = max(1, p.carros)
+        horiz = p.orient == "h"
+        largo = (r.w if horiz else r.h) - 0.3
+        paso_ = largo / n
+        for i in range(n):
+            if horiz:
+                cx, cy = r.x0 + 0.15 + paso_ * (i + 0.5), r.c[1] - 0.15
+                w, d = min(1.2, paso_ - 0.2), min(0.8, r.h - 0.7)
+            else:
+                cx, cy = r.c[0], r.y0 + 0.15 + paso_ * (i + 0.5) - 0.2
+                w, d = min(0.8, r.w - 0.3), min(1.2, paso_ - 0.3)
+            m = S.M.centro(pl, cx, cy, 0, w, d)
+            m.caja(0, 0, w, d, (250, 240, 250), S.OP)
+            m.cilindros(0.06, 0.06, w - 0.06, d - 0.06, 0.2)
+            m.ln((w / 2 - 0.15, d), (w / 2 - 0.15, d + 0.12), S.OP)
+            m.ln((w / 2 + 0.15, d), (w / 2 + 0.15, d + 0.12), S.OP)
+            m.ln((w / 2 - 0.15, d + 0.12), (w / 2 + 0.15, d + 0.12), S.OP)
+            m.fin()
 
 
 def transportador(pl):
     """Transportador aéreo del lazo de pintura (+4,0 m): viga en trazos, eje y ganchos cada 1,2 m."""
-    lazo = list(L.LAZO) + [(75.1, 38.9)]
+    xs = [p[0] for p in L.LAZO]
+    ys = [p[1] for p in L.LAZO]
+    x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+    lazo = [(x0, y1), (x1, y1), (x1, y0), (x0, y0), (x0, y1)]
     g = sg.LineString(lazo)
     for d in (-0.12, 0.12):
         o = g.parallel_offset(abs(d), "left" if d > 0 else "right", join_style=2)
@@ -409,9 +471,10 @@ def transportador(pl):
     for i in range(n):
         q = g.interpolate(i * 1.2)
         pl.circulo((q.x, q.y), 0.07, "A-EQUIPO-FINO")
-    for (x, y), a in (((92.0, 38.9), 0), ((92.0, 3.4), 0), ((75.1, 3.4), 0), ((75.1, 38.9), 0)):
+    for x, y in ((x0, y1), (x1, y1), (x1, y0), (x0, y0)):
         pl.circulo((x, y), 0.6, "A-EQUIPO-OCULTO")   # ruedas de desvío en las esquinas
-    pl.texto("Transportador aéreo por empuje +4,00 m", (83.5, 39.6 + 1.0), 1.4, A.MIDDLE_CENTER, "A-TEXTO")
+    pl.texto("Transportador aéreo por empuje +4,00 m", (x1 + 0.4, (y0 + y1) / 2), 1.3, A.MIDDLE_CENTER,
+             "A-TEXTO", 90)
 
 
 def etiqueta(pl, cod, xy, h=1.5):
@@ -450,7 +513,7 @@ def rotulos_sector(pl, h=2.0, areas=True, excluir=()):
             continue
         r = s.rect
         x, y = r.x0 + 0.4, r.y1 - 0.4
-        pl.texto(s.cod, (x, y), h, A.TOP_LEFT, "A-TEXTO")
+        pl.texto(s.cod, (x, y), h, A.TOP_LEFT, "A-SECTOR-TXT")
         if areas:
             pl.texto(f"{r.area:.1f} m²".replace(".", ","), (x, y - h / pl.s * 1.5), h * 0.75, A.TOP_LEFT,
                      "A-TEXTO")
@@ -600,8 +663,9 @@ def _lineas(g):
 def vehiculos(pl):
     """Autoelevadores y transpaletas en sus pasillos (posición típica de trabajo)."""
     from . import simbolos as S
-    S.autoelevador(pl, 14.4, 44.0, 90)
-    S.autoelevador(pl, 43.0, 20.6, 180)
-    S.autoelevador(pl, 46.5, 15.6, 0, carga=False)
-    S.transpaleta(pl, 58.0, 14.9, 180)
-    S.transpaleta(pl, 68.0, 14.9, 180)
+    S.autoelevador(pl, 11.9, 38.0, 270)
+    S.autoelevador(pl, 38.8, 13.0, 90)
+    S.autoelevador(pl, 44.4, 15.0, 270, carga=False)
+    S.autoelevador(pl, 30.0, 21.4, 180, carga=False)
+    S.transpaleta(pl, 56.0, 11.4, 180)
+    S.transpaleta(pl, 58.0, 17.6, 180)
