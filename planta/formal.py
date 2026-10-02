@@ -222,12 +222,12 @@ def planta_100(doc, ox, n, xa, xb):
     xt = pl.P(xb, 0)[0] + 12
     yt = h.fy1 - 36
     eqs = [e for e in L.EQUIPOS if xa <= e.rect.c[0] < xb]
-    cols = [("Cód.", 11, "c"), ("Equipo", 80, "l"), ("Medidas m", 24, "c"), ("kW", 11, "c"), ("Op.", 9, "c"),
-            ("Fuente", 44, "l")]
-    filas = [[e.cod, e.nombre, f"{f(e.rect.w, 2)} × {f(e.rect.h, 2)}", f(e.kw, 1) if e.kw else "-", e.op or "-",
+    cols = [("Paso", 12, "c"), ("Cód.", 11, "c"), ("Equipo", 78, "l"), ("Medidas m", 24, "c"), ("kW", 11, "c"),
+            ("Op.", 9, "c"), ("Fuente", 42, "l")]
+    filas = [[e.paso or "-", e.cod, e.nombre, f"{f(e.rect.w, 2)} × {f(e.rect.h, 2)}", f(e.kw, 1) if e.kw else "-", e.op or "-",
               e.fuente.replace("C ", "Cotiz. ").replace("E", "Estimado", 1) if e.fuente.startswith("E") else
               e.fuente.replace("C ", "Cotiz. ")] for e in eqs]
-    y = pl.tabla(xt, yt, cols, filas, 3.9, 1.8, "Equipos (medidas en planta, largo × ancho)")
+    y = pl.tabla(xt, yt, cols, filas, 3.9, 1.8, "Equipos por paso (entero = operación; .1 .2 = máquinas iguales)")
     y = pl.parrafo(["Referencias: cada equipo se dibuja en planta a escala con sus partes (bastidor, rodillos,",
                     "mordazas, motores, tableros), resguardos en rojo y operario en su puesto (magenta);",
                     "en trazos, partes elevadas; óvalo = código del equipo; círculo rojo = barrido de pluma;",

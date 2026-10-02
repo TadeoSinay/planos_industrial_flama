@@ -32,6 +32,7 @@ CAPAS_PLANTA = {
     "A-VEHICULO": (40, 25, "CONTINUOUS", None, "Autoelevadores, tren logístico y transpaletas"),
     "A-SECTOR": (1, 25, "CONTINUOUS", None, "Límite de sector (rojo, como en rev4)"),
     "A-PASILLO": (2, 35, "IRAM-E-TRAZOS", (215, 165, 0), "Demarcación de pasillos (amarillo IRAM 10005)"),
+    "A-DEFENSA": (2, 35, "CONTINUOUS", (230, 180, 0), "Defensa entre carril de autoelevador y senda peatonal"),
     "A-SENDA": (2, 25, "CONTINUOUS", (215, 165, 0), "Sendas peatonales (cebra)"),
     "A-TEXTO": (7, 18, "CONTINUOUS", None, "Textos"),
     "A-RELLENO": (9, 13, "CONTINUOUS", None, "Rellenos de sectores"),
@@ -531,12 +532,34 @@ def pasillos(pl, demarcacion=True, rotulos=False, h=1.6):
             rot = 90 if r.h > r.w else 0
             pl.texto(f"{p.cod} {p.ancho:.2f} m".replace(".", ","), r.c, h, A.MIDDLE_CENTER, "A-TEXTO", rot)
     for cod, r, nota in L.SENDAS:
-        # cebra: franjas de 0,5 m
-        x = r.x0
-        while x < r.x1 - 0.1:
-            pl.relleno([(x, r.y0), (x + 0.4, r.y0), (x + 0.4, r.y1), (x, r.y1)], (215, 165, 0), "A-SENDA")
-            x += 0.8
-        pl.texto(cod, (r.c[0], r.y1 + 0.8), h, A.MIDDLE_CENTER, "A-TEXTO")
+        # cebra: franjas de 0,40 m cada 0,80 m, cruzadas al sentido de marcha del peatón
+        if r.h > r.w:
+            y = r.y0 + 0.2
+            while y < r.y1 - 0.3:
+                pl.relleno([(r.x0, y), (r.x1, y), (r.x1, y + 0.4), (r.x0, y + 0.4)], (215, 165, 0), "A-SENDA")
+                y += 0.8
+            pl.texto(cod, (r.x1 + 0.3, r.c[1]), h * 0.8, A.MIDDLE_LEFT, "A-TEXTO", 90)
+        else:
+            x = r.x0
+            while x < r.x1 - 0.1:
+                pl.relleno([(x, r.y0), (x + 0.4, r.y0), (x + 0.4, r.y1), (x, r.y1)], (215, 165, 0), "A-SENDA")
+                x += 0.8
+            pl.texto(cod, (r.c[0], r.y1 + 0.8), h, A.MIDDLE_CENTER, "A-TEXTO")
+    defensas(pl)
+
+
+def defensas(pl):
+    """Defensa (baranda) entre el carril de autoelevador y la senda peatonal: doble perfil y postes cada 1,5 m."""
+    y0, y1 = L.Y_DEF - 0.1, L.Y_DEF + 0.1
+    for a, b in getattr(L, "DEFENSAS", []):
+        pl.relleno([(a, y0), (b, y0), (b, y1), (a, y1)], (245, 200, 0), "A-DEFENSA")
+        pl.linea((a, y0), (b, y0), "A-DEFENSA")
+        pl.linea((a, y1), (b, y1), "A-DEFENSA")
+        n = max(1, int((b - a) / 1.5))
+        for i in range(n + 1):
+            x = a + (b - a) * i / n
+            pl.relleno([(x - 0.08, y0 - 0.04), (x + 0.08, y0 - 0.04), (x + 0.08, y1 + 0.04), (x - 0.08, y1 + 0.04)],
+                       (30, 30, 30), "A-DEFENSA")
 
 
 def locales(pl, rotulos=True, h=1.6, relleno=False):
@@ -664,8 +687,9 @@ def vehiculos(pl):
     """Autoelevadores y transpaletas en sus pasillos (posición típica de trabajo)."""
     from . import simbolos as S
     S.autoelevador(pl, 11.9, 38.0, 270)
-    S.autoelevador(pl, 38.8, 13.0, 90)
-    S.autoelevador(pl, 44.4, 15.0, 270, carga=False)
-    S.autoelevador(pl, 30.0, 21.4, 180, carga=False)
-    S.transpaleta(pl, 56.0, 11.4, 180)
+    S.autoelevador(pl, 40.4, 13.0, 90)
+    S.autoelevador(pl, 46.0, 15.0, 270, carga=False)
+    S.autoelevador(pl, 30.0, 20.4, 180, carga=False)
+    S.autoelevador(pl, 55.0, 21.9, 0)
+    S.transpaleta(pl, 56.0, 3.05, 180)
     S.transpaleta(pl, 58.0, 17.6, 180)

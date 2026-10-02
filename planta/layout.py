@@ -29,7 +29,7 @@ MODULO = 8.0
 ALTURA_LIBRE = 8.0
 ALTURA_ALERO = 7.2
 EJES_X = [i * MODULO for i in range(int(NAVE_L / MODULO) + 1)]   # 0 ... 88
-EJES_Y = [0.0, 19.4, NAVE_A]          # fila central de columnas en el eje B (borde sur del pasillo)
+EJES_Y = [0.0, 19.0, NAVE_A]          # fila central de columnas en el eje B (borde sur del pasillo)
 COL = 0.40
 MURO = 0.20
 
@@ -144,17 +144,26 @@ class Pulmon:
 
 # ============================================================ PASILLOS
 PASILLOS = [
-    Pasillo("PC", R(0.3, 19.6, 69.8, 23.2), "PM", 3.6,
-            "Pasillo central: autoelevador eléctrico 3,0 t (doble sentido) y carros de pulmón"),
+    Pasillo("PC", R(0.3, 19.2, 69.8, 23.0), "PM", 3.8,
+            "Pasillo central: autoelevador 3,0 t doble sentido (2 × 1,25 m + 3 × 0,40 m de huelgo)"),
     Pasillo("PP", R(0.3, 23.2, 69.8, 24.4), "PP", 1.2,
-            "Senda peatonal demarcada a lo largo del pasillo central (acceso a todos los puestos)"),
+            "Senda peatonal separada del carril de autoelevador por una defensa con aberturas en las sendas"),
     Pasillo("AM", R(10.2, 24.6, 13.6, 43.6), "PM", 3.4,
             "Pasillo de autoelevador del almacén de MP: alero de descarga (P1) -> racks -> máquinas"),
-    Pasillo("PO-1", R(39.4, 24.6, 40.6, 35.2), "PO", 1.2, "Calle de operarios: encastre, cúpulas y celda 1 kg"),
-    Pasillo("PO-2", R(30.0, 33.6, 69.8, 34.8), "PO", 1.2, "Calle de operarios de la línea principal (lado sur)"),
-    Pasillo("PT-1", R(37.1, 6.8, 40.5, 18.8), "PM", 3.4, "Pasillo de autoelevador del almacén de PT (oeste)"),
-    Pasillo("PT-2", R(42.7, 6.8, 46.1, 18.8), "PM", 3.4, "Pasillo de autoelevador del almacén de PT (este)"),
-    Pasillo("EX", R(34.4, 3.0, 49.8, 6.6), "PM", 3.6, "Calle de expedición frente a los muelles"),
+    Pasillo("PO-1", R(39.4, 24.6, 41.0, 35.2), "PO", 1.6, "Calle de operarios y carros de pulmón (N1 -> N4)"),
+    Pasillo("PO-1N", R(39.85, 35.2, 40.75, 38.95), "PO", 0.9, "Paso de operarios entre encastre y bordoneado"),
+    Pasillo("PO-2", R(30.0, 33.6, 82.6, 34.8), "PO", 1.2, "Calle de operarios y carros de la línea principal"),
+    Pasillo("PO-3", R(16.9, 38.95, 41.0, 39.95), "PO", 1.0, "Calle de operarios de cúpulas y cuellos (N3)"),
+    Pasillo("PO-L", R(16.8, 31.8, 29.2, 32.9), "PO", 1.1, "Calle del operario de los láseres"),
+    Pasillo("PT-A", R(34.2, 0.3, 37.6, 18.8), "PM", 3.4, "Autoelevador: M3 -> casquetes y rack de PT 1"),
+    Pasillo("PT-B", R(38.7, 6.8, 42.1, 18.8), "PM", 3.4, "Autoelevador del almacén de PT (centro)"),
+    Pasillo("PT-C", R(44.3, 6.8, 47.7, 18.8), "PM", 3.4, "Autoelevador del almacén de PT (este) y envolvedora"),
+    Pasillo("EX", R(40.6, 3.0, 49.8, 6.6), "PM", 3.6, "Calle de expedición frente a los muelles M1 y M2"),
+    Pasillo("AT", R(50.2, 1.9, 62.0, 4.2), "PM", 2.3, "Calle de abastecimiento de terminación (transpaleta)"),
+    Pasillo("PO-T", R(52.8, 7.2, 62.0, 8.2), "PO", 1.0, "Calle de operarios de terminación"),
+    Pasillo("RC-P", R(0.5, 5.6, 17.8, 7.0), "PO", 1.4, "Corredor de recargas (sur)"),
+    Pasillo("RC-Q", R(0.5, 11.8, 16.2, 13.2), "PO", 1.4, "Corredor de recargas (centro)"),
+    Pasillo("RC-N", R(16.4, 7.0, 17.8, 18.8), "PO", 1.4, "Conector de recargas al pasillo central"),
 ]
 
 # sendas peatonales: se calculan al final del módulo en cada cruce de un hilo con un flujo
@@ -189,8 +198,10 @@ SECTORES = [
     Sector("EPP", "EPP y botiquín", R(65.6, 24.8, 69.8, 29.4), "AUX", "común"),
     Sector("MT", "Mantenimiento y pañol de herramientas", R(41.2, 24.8, 49.2, 29.4), "AUX", "común",
            "Banco, torno chico, soldadora y repuestos", 30.0),
-    Sector("PV", "Carros vacíos y retorno de pulmones", R(48.0, 39.4, 69.8, 43.6), "AUX", "común",
-           "Estacionamiento de carros de pulmón vacíos, cerca de donde se cargan"),
+    Sector("PV", "Carros vacíos y retorno de pulmones", R(41.2, 29.6, 62.0, 33.4), "AUX", "común",
+           "Estacionamiento de carros de pulmón vacíos sobre la calle PO-2"),
+    Sector("RES", "Reserva para ampliación de la línea", R(48.0, 39.4, 69.8, 43.6), "AUX", "común",
+           "Lugar para una 3ª PH / 2ª granalladora si crece la demanda"),
     # ---------------- columna este: pintura y servicios de pintura
     Sector("S-P", "Pintura en polvo (lazo)", R(70.2, 0.3, 87.7, 24.4), "PINT", "S1 / S2",
            "17 carga -> pretratamiento -> secado -> cabina -> polimerizado -> enfriamiento -> descarga"),
@@ -198,24 +209,24 @@ SECTORES = [
            "Batea ≥ 110 % del mayor envase; pintura en polvo < 30 °C; portón P3", 24.1),
     Sector("ST-I", "Tableros, compresor de pintura y colector", R(70.2, 24.8, 76.2, 31.4), "AUX", "común"),
     # ---------------- banda sur: terminación y almacén de cilindros
-    Sector("AL-C", "Almacén de cilindros pintados", R(50.2, 12.4, 69.8, 19.2), "PT", "S1 / S2",
+    Sector("AL-C", "Almacén de cilindros pintados", R(50.2, 12.4, 69.8, 18.8), "PT", "S1 / S2",
            "Cilindros vendidos vacíos y pulmón de pintados antes de terminación"),
     Sector("SP-1", "Sala de carga de polvo", R(62.0, 0.3, 69.8, 12.2), "TERM", "S1 / S2",
            "Recinto HR ≤ 70 %, 8 renovaciones por hora, sin estufas (IRAM 3517-2); big bags a 2 alturas"),
-    Sector("S-T", "Terminación 1-10 kg", R(50.2, 3.4, 61.8, 12.2), "TERM", "S1 / S2",
+    Sector("S-T", "Terminación 1-10 kg", R(50.2, 1.9, 61.8, 12.2), "TERM", "S1 / S2",
            "18 carga de polvo -> 19 ensamblaje -> 20 presurización -> 21 hermeticidad -> 22 etiquetado "
            "-> 23 embalaje -> 24 envolvedora"),
-    Sector("AL-2", "Insumos de terminación y embalaje", R(50.2, 0.3, 61.8, 3.2), "MP", "S1 / S2",
+    Sector("AL-2", "Insumos de terminación y embalaje", R(50.2, 0.3, 62.0, 1.8), "MP", "S1 / S2",
            "Rack de 4 niveles a lo largo del muro sur; entra por P5", 40.0),
     # ---------------- banda sur: PT
-    Sector("AL-3", "Almacén de producto terminado", R(34.2, 6.8, 50.0, 19.2), "PT", "S1 / S2",
+    Sector("AL-3", "Almacén de producto terminado", R(34.2, 6.8, 50.0, 18.8), "PT", "S1 / S2",
            "4 racks de 12 m × 4 niveles = 128 posiciones (req. 88)"),
-    Sector("EXP", "Expedición y muelles", R(40.2, 0.3, 50.0, 6.6), "PT", "común",
+    Sector("EXP", "Expedición y muelles", R(40.6, 0.3, 50.0, 6.6), "PT", "común",
            "Consolidación de pedidos frente a M1-M2"),
-    Sector("S4", "Tercerizados revendidos", R(34.2, 0.3, 40.0, 6.6), "PT", "S4",
+    Sector("S4", "Tercerizados revendidos", R(37.8, 0.3, 40.4, 6.6), "PT", "S4",
            "CO₂, agua, AFFF, clase K y agente limpio con sello IRAM: recepción por M3, control y stock"),
     # ---------------- banda sur: carros (U)
-    Sector("S3", "Línea de carros 25-100 kg", R(18.2, 8.0, 34.0, 19.2), "PROD", "S3",
+    Sector("S3", "Línea de carros 25-100 kg", R(18.2, 8.0, 34.0, 18.8), "PROD", "S3",
            "C1 cilindrado -> C2 punteo -> C3 soldadura long. -> C4 soldadura circ. -> C5 inspección -> C6 PH "
            "-> C7 marcado"),
     Sector("SP-2", "Sala de carga de polvo de carros", R(22.4, 0.3, 28.4, 7.8), "TERM", "S3",
@@ -256,10 +267,10 @@ EQUIPOS = [
     E_("B03", "Soldadura longitudinal", Rw(35.8, 26.4, 2.2, 1.6), "N1", 1, 12.0, polvo=True,
        fuente="C Mitusa GS2ft Ergo", paso="4"),
     # ---------------- N2: corte de caño 1 kg
-    E_("M16", "Láser de tubo 6012", Rw(16.8, 30.1, 10.2, 2.0), "N2", 1, 10.0, aire=True, polvo=True,
-       fuente="C Leapion 6012", paso="5"),
-    E_("M15", "Láser de tubo 6012", Rw(16.8, 32.75, 10.2, 2.0), "N2", 0, 10.0, aire=True, polvo=True,
-       fuente="C Leapion 6012", paso="5"),
+    E_("M16", "Láser de tubo 6012", Rw(16.8, 29.75, 10.2, 2.0), "N2", 1, 10.0, aire=True, polvo=True,
+       fuente="C Leapion 6012", frente="N"),
+    E_("M15", "Láser de tubo 6012", Rw(16.8, 32.95, 10.2, 2.0), "N2", 0, 10.0, aire=True, polvo=True,
+       fuente="C Leapion 6012"),
     # ---------------- N3: cúpulas, fondos y cuellos
     E_("M06", "Desbobinador y enderezador", Rw(16.8, 36.2, 2.6, 2.0), "N3", 0, 3.0, fuente="C alimentador 900 mm",
        paso="6"),
@@ -313,30 +324,29 @@ EQUIPOS = [
        paso="17"),
     E_("P09", "Retoque y control de espesor", Rw(77.0, 13.0, 2.4, 1.6), "S-P", 0, fuente="E"),
     # ---------------- terminación 1-10 kg (este -> oeste, eje y = 8,0)
-    E_("T01", "Carga de polvo 1-10 kg", Rw(64.2, 7.0, 3.4, 2.0), "SP-1", 1, 3.0, aire=True, polvo=True,
+    E_("T01", "Carga de polvo 1-10 kg", Rw(64.2, 4.6, 3.4, 2.0), "SP-1", 1, 3.0, aire=True, polvo=True,
        fuente="C Yukon M-000121 + estación de big bag", frente="N", paso="18"),
     E_("T15", "Deshumidificador y extracción", Rw(67.2, 10.6, 2.4, 1.2), "SP-1", 0, 6.0, fuente="E", frente="N"),
-    E_("RKV", "Rack de big bags de polvo", Rw(68.4, 0.6, 1.1, 5.6), "SP-1", 0, fuente="E", forma="rack"),
-    E_("T03", "Ensamblaje de válvula", Rw(60.0, 7.4, 1.6, 1.2), "S-T", 1, 0.5, aire=True, fuente="E", frente="N",
+    E_("RKV", "Rack de big bags de polvo", Rw(68.6, 0.6, 1.1, 5.6), "SP-1", 0, fuente="E", forma="rack", frente="O"),
+    E_("T03", "Ensamblaje de válvula", Rw(60.3, 4.8, 1.6, 1.2), "S-T", 1, 0.5, aire=True, fuente="E", frente="N",
        paso="19"),
-    E_("T04", "Ensamblaje de válvula", Rw(58.2, 7.4, 1.6, 1.2), "S-T", 1, 0.5, aire=True, fuente="E", frente="N",
+    E_("T04", "Ensamblaje de válvula", Rw(58.5, 4.8, 1.6, 1.2), "S-T", 1, 0.5, aire=True, fuente="E", frente="N",
        paso="19"),
-    E_("T05", "Presurización con N₂", Rw(56.4, 7.5, 1.5, 1.0), "S-T", 1, 0.5, n2=True, fuente="C Yukon M-000150",
+    E_("T05", "Presurización con N₂", Rw(56.7, 4.9, 1.5, 1.0), "S-T", 1, 0.5, n2=True, fuente="C Yukon M-000150",
        frente="N", paso="20"),
-    E_("T06", "Hermeticidad", Rw(54.6, 7.5, 1.5, 1.0), "S-T", 0, 0.5, fuente="E", frente="N", paso="21"),
-    E_("T07", "Etiquetadora semiautomática", Rw(52.8, 7.6, 1.5, 0.8), "S-T", 1, 0.5, fuente="C SISA", frente="N",
+    E_("T06", "Hermeticidad", Rw(54.9, 4.9, 1.5, 1.0), "S-T", 0, 0.5, fuente="E", frente="N", paso="21"),
+    E_("T07", "Etiquetadora semiautomática", Rw(53.1, 5.0, 1.5, 0.8), "S-T", 1, 0.5, fuente="C SISA", frente="N",
        paso="22"),
-    E_("T08", "Embalaje y palletizado", Rw(50.6, 7.2, 1.6, 1.6), "S-T", 1, fuente="E", frente="N", paso="23"),
-    E_("T09", "Embalaje y palletizado", Rw(50.6, 9.4, 1.6, 1.6), "S-T", 1, fuente="E", frente="N", paso="23"),
-    E_("T10", "Palletizado de cilindros vendidos", Rw(50.6, 4.6, 1.6, 1.6), "S-T", 1, fuente="E", frente="N",
+    E_("T08", "Embalaje y palletizado", Rw(50.5, 4.4, 1.6, 1.6), "S-T", 1, fuente="E", frente="E", paso="23"),
+    E_("T09", "Embalaje y palletizado", Rw(50.5, 6.4, 1.6, 1.6), "S-T", 1, fuente="E", frente="E", paso="23"),
+    E_("T10", "Palletizado de cilindros vendidos", Rw(50.5, 8.4, 1.6, 1.6), "S-T", 1, fuente="E", frente="E",
        paso="23"),
     E_("RKI", "Rack de insumos de terminación", Rw(50.6, 0.5, 7.6, 1.1), "AL-2", 0, fuente="E", forma="rack"),
     # ---------------- PT
-    E_("T11", "Envolvedora de pallets", Rw(47.8, 8.2, 1.5, 3.0), "AL-3", 0, 1.5, fuente="C EDOS PS5", paso="24"),
-    E_("RK1", "Rack de PT 1 (4 módulos × 2 × 4)", Rw(36.0, 6.8, 1.1, 12.0), "AL-3", 0, fuente="E", forma="rack"),
-    E_("RK2", "Rack de PT 2 (4 módulos × 2 × 4)", Rw(40.5, 6.8, 1.1, 12.0), "AL-3", 0, fuente="E", forma="rack"),
-    E_("RK3", "Rack de PT 3 (4 módulos × 2 × 4)", Rw(41.6, 6.8, 1.1, 12.0), "AL-3", 0, fuente="E", forma="rack"),
-    E_("RK4", "Rack de PT 4 (4 módulos × 2 × 4)", Rw(46.1, 6.8, 1.1, 12.0), "AL-3", 0, fuente="E", forma="rack"),
+    E_("T11", "Envolvedora de pallets", Rw(48.2, 8.2, 1.5, 3.0), "AL-3", 0, 1.5, fuente="C EDOS PS5", paso="24"),
+    E_("RK1", "Rack de PT 1 (4 módulos × 2 × 4)", Rw(37.6, 6.8, 1.1, 11.6), "AL-3", 0, fuente="E", forma="rack"),
+    E_("RK2", "Rack de PT 2 (4 módulos × 2 × 4)", Rw(42.1, 6.8, 1.1, 11.6), "AL-3", 0, fuente="E", forma="rack"),
+    E_("RK3", "Rack de PT 3 (4 módulos × 2 × 4)", Rw(43.2, 6.8, 1.1, 11.6), "AL-3", 0, fuente="E", forma="rack"),
     # ---------------- S3 carros (U: norte O -> E, centro E -> O, sale por P6 y vuelve por P8)
     E_("C01", "Cilindradora de 4 rodillos", Rw(23.0, 16.8, 4.5, 1.4), "S3", 1, 5.5, fuente="C Getweld", paso="C1"),
     E_("C02", "Punteo, refuerzo y estructura", Rw(28.0, 16.6, 2.5, 1.5), "S3", 1, 10.0, polvo=True, fuente="E",
@@ -355,7 +365,7 @@ EQUIPOS = [
        paso="C7"),
     E_("C09", "Probetas de soldadura", Rw(23.6, 9.0, 2.4, 1.2), "S3", 0, 2.0, fuente="E", frente="N"),
     E_("C10", "Pluma giratoria 1 t", Rw(29.9, 14.9, 0.6, 0.6), "S3", 0, 1.5, fuente="E", forma="circ"),
-    E_("AL1C", "Rack de casquetes de carros", Rw(32.6, 8.4, 1.3, 3.2), "S3", 0, fuente="E", forma="rack"),
+    E_("AL1C", "Rack de casquetes de carros", Rw(32.8, 8.4, 1.2, 3.2), "S3", 0, fuente="E", forma="rack"),
     E_("C12", "Carros a pintura tercerizada", Rw(18.4, 0.6, 3.6, 6.8), "PU-CP", 0, fuente="E", forma="rack",
        tipo="carros"),
     E_("T02", "Carga de polvo de carros", Rw(25.4, 3.4, 2.6, 2.4), "SP-2", 1, 2.0, aire=True, polvo=True,
@@ -372,44 +382,66 @@ EQUIPOS = [
 # recargas: puestos R (numeración del dimensionamiento de recargas), dentro de sus locales
 _RC = [
     # (cod, nombre, (x, y, w, h), local, op, tipo, frente)
-    ("R01", "Recepción y clasificación", (1.0, 4.2, 2.4, 0.9), "RC-RE", 1, "mesa_control", "S"),
-    ("R19a", "Inspección visual", (0.8, 1.2, 1.6, 0.9), "RC-RE", 1, "inspeccion", "N"),
-    ("R19b", "Inspección visual", (2.8, 1.2, 1.6, 0.9), "RC-RE", 1, "inspeccion", "N"),
-    ("R04a", "Desarme de matafuego (morsa)", (6.6, 4.4, 1.4, 0.9), "RC-DE", 1, "banco", "S"),
-    ("R04b", "Desarme de matafuego (morsa)", (8.4, 4.4, 1.4, 0.9), "RC-DE", 1, "banco", "S"),
-    ("R04c", "Desarme de matafuego (morsa)", (10.2, 4.4, 1.4, 0.9), "RC-DE", 1, "banco", "S"),
-    ("R05", "Lavado interior de cilindro", (7.0, 0.8, 2.6, 1.4), "RC-DE", 1, "hermeticidad", "N"),
-    ("R02a", "Descarga de polvo con recuperación", (12.6, 4.2, 1.2, 1.4), "RC-DC", 1, "cabina_muestras", "S"),
-    ("R02b", "Descarga de polvo con recuperación", (14.0, 4.2, 1.2, 1.4), "RC-DC", 1, "cabina_muestras", "S"),
-    ("R02c", "Descarga de polvo con recuperación", (15.4, 4.2, 1.2, 1.4), "RC-DC", 0, "cabina_muestras", "S"),
-    ("R02d", "Descarga de polvo con recuperación", (16.6, 4.2, 1.0, 1.4), "RC-DC", 0, "cabina_muestras", "S"),
-    ("R26", "Descarga de líquidos", (12.6, 0.8, 1.8, 1.4), "RC-DC", 0, "hermeticidad", "N"),
-    ("R07", "Prueba hidráulica con jaula", (14.4, 9.4, 3.2, 2.4), "RC-PH", 1, "ph", "O"),
-    ("R08", "Secado de cilindros", (12.4, 6.6, 3.0, 1.6), "RC-PH", 0, "secadora", "N"),
-    ("R23", "Prueba Puffer (IRAM 3672)", (16.0, 6.6, 1.6, 1.4), "RC-PH", 0, "banco", "N"),
-    ("R03a", "Carga de polvo por vacío", (4.8, 9.8, 1.6, 1.8), "RC-PV", 1, "carga_polvo", "S"),
-    ("R03b", "Carga de polvo por vacío", (6.8, 9.8, 1.6, 1.8), "RC-PV", 1, "carga_polvo", "S"),
-    ("R03c", "Carga de polvo por vacío", (8.8, 9.8, 1.6, 1.8), "RC-PV", 0, "carga_polvo", "S"),
-    ("R16", "Clase D (descarga / carga manual)", (10.6, 6.8, 1.0, 1.6), "RC-PV", 0, "banco", "O"),
-    ("R18", "Deshumidificador sala de polvo", (4.8, 6.6, 2.0, 1.0), "RC-PV", 0, "deshumidificador", "N"),
-    ("R24", "Descarga de CO₂ / agente limpio", (0.8, 9.6, 1.2, 1.4), "RC-GA", 1, "presurizacion", "E"),
-    ("R12", "Carga de CO₂ (trasvasador)", (2.6, 9.6, 1.2, 1.4), "RC-GA", 0, "presurizacion", "O"),
-    ("R13", "Carga de agente limpio + N₂", (0.8, 6.8, 1.2, 1.4), "RC-GA", 0, "presurizacion", "E"),
-    ("R14", "Llenado de agente líquido", (12.6, 12.6, 1.6, 1.2), "RC-LQ", 1, "hermeticidad", "N"),
-    ("R09a", "Ensamblaje (anillo, pescante, rosca)", (4.8, 16.6, 1.6, 1.0), "RC-EN", 1, "ensamble", "S"),
-    ("R09b", "Ensamblaje (anillo, pescante, rosca)", (6.6, 16.6, 1.6, 1.0), "RC-EN", 1, "ensamble", "S"),
-    ("R09c", "Ensamblaje (anillo, pescante, rosca)", (8.4, 16.6, 1.6, 1.0), "RC-EN", 0, "ensamble", "S"),
-    ("R10a", "Presurización N₂", (10.2, 16.6, 1.5, 1.0), "RC-EN", 1, "presurizacion", "S"),
-    ("R10b", "Presurización N₂", (10.2, 14.4, 1.5, 1.0), "RC-EN", 0, "presurizacion", "N"),
-    ("R22", "Ensayo de peso", (4.8, 12.6, 1.2, 1.0), "RC-EN", 0, "balanza", "N"),
-    ("R11", "Hermeticidad (inmersión)", (6.4, 12.6, 1.6, 1.0), "RC-EN", 1, "hermeticidad", "N"),
-    ("R20", "Retoque de pintura", (8.4, 12.6, 1.6, 1.0), "RC-EN", 1, "retoque", "N"),
-    ("R21", "Etiquetado (oblea IRAM + marbete)", (13.0, 16.4, 1.6, 0.9), "RC-RP", 1, "etiquetadora", "S"),
-    ("R17", "Despacho (precintos + remito)", (1.0, 16.6, 2.4, 0.9), "RC-DP", 1, "mesa_control", "S"),
+    ("R01", "Recepción y clasificación", (1.0, 3.6, 2.4, 0.9), "RC-RE", 1, "mesa_control", "S"),
+    ("R19a", "Inspección visual", (0.8, 0.8, 1.6, 0.9), "RC-RE", 1, "inspeccion", "N"),
+    ("R19b", "Inspección visual", (2.8, 0.8, 1.6, 0.9), "RC-RE", 1, "inspeccion", "N"),
+    ("R04a", "Desarme de matafuego (morsa)", (6.4, 3.8, 1.4, 0.9), "RC-DE", 1, "banco", "S"),
+    ("R04b", "Desarme de matafuego (morsa)", (8.2, 3.8, 1.4, 0.9), "RC-DE", 1, "banco", "S"),
+    ("R04c", "Desarme de matafuego (morsa)", (10.0, 3.8, 1.4, 0.9), "RC-DE", 1, "banco", "S"),
+    ("R05", "Lavado interior de cilindro", (6.6, 0.8, 2.6, 1.4), "RC-DE", 1, "hermeticidad", "N"),
+    ("R02a", "Descarga de polvo con recuperación", (12.4, 3.6, 1.2, 1.4), "RC-DC", 1, "cabina_muestras", "S"),
+    ("R02b", "Descarga de polvo con recuperación", (13.8, 3.6, 1.2, 1.4), "RC-DC", 1, "cabina_muestras", "S"),
+    ("R02c", "Descarga de polvo con recuperación", (15.2, 3.6, 1.2, 1.4), "RC-DC", 0, "cabina_muestras", "S"),
+    ("R02d", "Descarga de polvo con recuperación", (16.6, 3.6, 1.0, 1.4), "RC-DC", 0, "cabina_muestras", "S"),
+    ("R26", "Descarga de líquidos", (12.4, 0.8, 1.8, 1.4), "RC-DC", 0, "hermeticidad", "N"),
+    ("R07", "Prueba hidráulica con jaula", (12.3, 9.0, 3.2, 2.4), "RC-PH", 1, "ph", "S"),
+    ("R08", "Secado de cilindros", (12.3, 7.4, 2.4, 1.0), "RC-PH", 0, "secadora", "N"),
+    ("R23", "Prueba Puffer (IRAM 3672)", (14.9, 7.4, 1.2, 1.2), "RC-PH", 0, "banco", "N"),
+    ("R03a", "Carga de polvo por vacío", (4.8, 9.6, 1.6, 1.8), "RC-PV", 1, "carga_polvo", "S"),
+    ("R03b", "Carga de polvo por vacío", (6.8, 9.6, 1.6, 1.8), "RC-PV", 1, "carga_polvo", "S"),
+    ("R03c", "Carga de polvo por vacío", (8.8, 9.6, 1.6, 1.8), "RC-PV", 0, "carga_polvo", "S"),
+    ("R16", "Clase D (descarga / carga manual)", (10.6, 7.4, 1.0, 1.6), "RC-PV", 0, "banco", "O"),
+    ("R18", "Deshumidificador sala de polvo", (4.8, 7.4, 2.0, 1.0), "RC-PV", 0, "deshumidificador", "N"),
+    ("R24", "Descarga de CO₂ / agente limpio", (0.8, 9.8, 1.2, 1.4), "RC-GA", 1, "presurizacion", "E"),
+    ("R12", "Carga de CO₂ (trasvasador)", (2.6, 9.8, 1.2, 1.4), "RC-GA", 0, "presurizacion", "O"),
+    ("R13", "Carga de agente limpio + N₂", (0.8, 7.4, 1.2, 1.4), "RC-GA", 0, "presurizacion", "E"),
+    ("R14", "Llenado de agente líquido", (12.4, 13.6, 1.6, 1.2), "RC-LQ", 1, "hermeticidad", "N"),
+    ("R09a", "Ensamblaje (anillo, pescante, rosca)", (4.8, 17.3, 1.6, 1.0), "RC-EN", 1, "ensamble", "S"),
+    ("R09b", "Ensamblaje (anillo, pescante, rosca)", (6.6, 17.3, 1.6, 1.0), "RC-EN", 1, "ensamble", "S"),
+    ("R09c", "Ensamblaje (anillo, pescante, rosca)", (8.4, 17.3, 1.6, 1.0), "RC-EN", 0, "ensamble", "S"),
+    ("R10a", "Presurización N₂", (10.2, 17.3, 1.5, 1.0), "RC-EN", 1, "presurizacion", "S"),
+    ("R10b", "Presurización N₂", (10.2, 14.9, 1.5, 1.0), "RC-EN", 0, "presurizacion", "N"),
+    ("R22", "Ensayo de peso", (4.8, 13.6, 1.2, 1.0), "RC-EN", 0, "balanza", "N"),
+    ("R11", "Hermeticidad (inmersión)", (6.4, 13.6, 1.6, 1.0), "RC-EN", 1, "hermeticidad", "N"),
+    ("R20", "Retoque de pintura", (8.4, 13.6, 1.6, 1.0), "RC-EN", 1, "retoque", "N"),
+    ("R21", "Etiquetado (oblea IRAM + marbete)", (12.6, 17.3, 1.6, 0.9), "RC-RP", 1, "etiquetadora", "S"),
+    ("R17", "Despacho (precintos + remito)", (1.0, 17.3, 2.4, 0.9), "RC-DP", 1, "mesa_control", "S"),
 ]
 for _c, _n, (_x, _y, _w, _h), _s, _op, _t, _f in _RC:
     EQUIPOS.append(Equipo(_c, _n, Rw(_x, _y, _w, _h), _s, _op, 0.5, fuente="E", tipo=_t, frente=_f,
                           paso=_c[:3].replace("R0", "R")))
+
+# ============================================================ NUMERACIÓN DE PASOS (única, en orden de proceso)
+# entero = operación; .1 .2 .3 = máquinas iguales en paralelo; C = carros; R = recargas
+PASOS = {
+    "M04": "1", "B01": "2.1", "B01b": "2.2", "B02": "3", "B03": "4", "M16": "5.1", "M15": "5.2",
+    "M06": "6.1", "M07": "6.2", "M08": "6.3", "M09": "7.1", "M10": "7.2", "M11": "8.1", "M12": "8.2",
+    "E09a": "9.1", "E09b": "9.2", "E09c": "9.3", "B04": "10", "A06": "11.1", "B06": "11.2",
+    "A07": "12.1", "B07": "12.2", "B14": "13.1", "A11": "13.2", "B08": "14", "B09": "15", "B10": "16",
+    "P01": "17.1", "P02": "17.2", "P03": "17.3", "P04": "17.4", "P06": "17.5", "P07": "17.6", "P08": "17.7",
+    "T01": "18", "T03": "19.1", "T04": "19.2", "T05": "20", "T06": "21", "T07": "22",
+    "T08": "23.1", "T09": "23.2", "T10": "23.3", "T11": "24",
+    "C01": "C1", "C02": "C2.1", "C03": "C2.2", "C04": "C3", "C05": "C4", "C06": "C5", "C07": "C6", "C08": "C7",
+    "T02": "C8", "T12": "C9", "T13": "C10",
+    "R01": "R1", "R19a": "R2.1", "R19b": "R2.2", "R04a": "R3.1", "R04b": "R3.2", "R04c": "R3.3", "R05": "R4",
+    "R02a": "R5.1", "R02b": "R5.2", "R02c": "R5.3", "R02d": "R5.4", "R26": "R6", "R07": "R7", "R08": "R8",
+    "R23": "R9", "R03a": "R10.1", "R03b": "R10.2", "R03c": "R10.3", "R16": "R11", "R24": "R12", "R12": "R13",
+    "R13": "R14", "R14": "R15", "R09a": "R16.1", "R09b": "R16.2", "R09c": "R16.3", "R10a": "R17.1",
+    "R10b": "R17.2", "R22": "R18", "R11": "R19", "R20": "R20", "R21": "R21", "R17": "R22",
+}
+for _e in EQUIPOS:
+    _e.paso = PASOS.get(_e.cod, "")
+
 
 # ============================================================ PULMONES (espera entre pasos)
 PULMONES = [
@@ -420,16 +452,17 @@ PULMONES = [
            "4 Sold. longitudinal", 2, "v"),
     Pulmon("PU-4", R(38.2, 25.0, 39.2, 29.3), "Cuerpos 2,5-10 kg soldados", "4 Sold. longitudinal",
            "9 Encastre", 1, "v"),
-    Pulmon("PU-L", R(27.4, 29.9, 29.2, 34.7), "Cuerpos 1 kg cortados", "5 Láser", "9 Encastre", 2, "v"),
+    Pulmon("PU-L1", R(27.4, 29.8, 29.2, 31.7), "Cuerpos 1 kg cortados (láser 5.1)", "5.1 Láser", "PU-L2", 1, "v"),
+    Pulmon("PU-L2", R(27.4, 33.0, 29.2, 34.9), "Cuerpos 1 kg cortados", "5.2 Láser / PU-L1", "9 Encastre", 1, "v"),
     Pulmon("PU-K", R(24.6, 35.3, 26.4, 38.9), "Fondos embutidos", "6 Embutido", "9 Encastre", 2, "v"),
-    Pulmon("PU-C", R(24.8, 39.4, 26.8, 43.4), "Cúpulas con cuello", "8 Sold. de cuello",
+    Pulmon("PU-C", R(24.8, 40.1, 26.8, 43.5), "Cúpulas con cuello", "8 Sold. de cuello",
            "11 Sold. circunferencial", 2, "v"),
     Pulmon("PU-5", R(48.4, 35.2, 50.4, 38.9), "Cilindros soldados", "11 Sold. circunferencial", "12 PH", 2, "v"),
     Pulmon("PU-6", R(58.0, 35.2, 59.6, 38.9), "Cilindros probados (mojados)", "12 PH", "13 Secado", 2, "v"),
     Pulmon("PU-7", R(64.4, 35.2, 66.4, 38.9), "Cilindros secos", "13 Secado", "14 Granallado", 2, "v"),
-    Pulmon("PU-8", R(76.6, 31.8, 80.4, 34.4), "Cilindros controlados", "15 Detección / 16 Corrección",
+    Pulmon("PU-8", R(76.6, 30.4, 80.4, 33.2), "Cilindros controlados", "15 Detección / 16 Corrección",
            "17 Pintura", 3, "h"),
-    Pulmon("PU-9", R(62.4, 12.6, 69.6, 18.8), "Cilindros pintados", "17 Pintura (descarga)",
+    Pulmon("PU-9", R(62.4, 12.6, 69.6, 18.6), "Cilindros pintados", "17 Pintura (descarga)",
            "18 Carga de polvo / almacén de cilindros", 6, "h"),
     Pulmon("PU-10", R(33.4, 8.2, 34.0, 8.3), "-", "-", "-", 0, "h"),
 ]
@@ -440,13 +473,13 @@ PUERTAS = [
     Puerta("P1", "N", 10.4, 13.4, 4.5, "porton", "MP: autoelevador desde el alero de descarga"),
     Puerta("P2", "O", 39.0, 42.0, 4.0, "porton", "Scrap a volquete"),
     Puerta("RC-1", "O", 1.0, 5.0, 4.0, "porton", "Recargas: recepción de equipos"),
-    Puerta("RC-2", "O", 15.4, 18.6, 4.0, "porton", "Recargas: despacho de equipos recargados"),
+    Puerta("RC-2", "O", 16.2, 18.4, 4.0, "porton", "Recargas: despacho de equipos recargados"),
     Puerta("P6", "S", 18.8, 21.8, 4.0, "porton", "Carros a pintura tercerizada"),
     Puerta("P8", "S", 25.2, 28.2, 4.0, "porton", "Carros pintados, polvo, estructuras y ruedas de carros"),
     Puerta("P9", "S", 30.0, 33.0, 3.0, "porton", "Carros terminados (camión a nivel)"),
-    Puerta("M3", "S", 35.0, 38.0, 3.2, "muelle", "Recepción de tercerizados y casquetes"),
-    Puerta("M1", "S", 41.0, 44.0, 3.2, "muelle", "Expedición PT (rampa niveladora)"),
-    Puerta("M2", "S", 45.4, 48.4, 3.2, "muelle", "Expedición PT (rampa niveladora)"),
+    Puerta("M3", "S", 34.4, 37.4, 3.2, "muelle", "Recepción de tercerizados y casquetes"),
+    Puerta("M1", "S", 41.2, 44.2, 3.2, "muelle", "Expedición PT (rampa niveladora)"),
+    Puerta("M2", "S", 45.6, 48.6, 3.2, "muelle", "Expedición PT (rampa niveladora)"),
     Puerta("P5", "S", 58.6, 61.4, 4.0, "porton", "Insumos de terminación y embalaje"),
     Puerta("P4", "S", 63.0, 66.0, 4.0, "porton", "Polvo químico (big bags)"),
     Puerta("P3", "E", 26.0, 29.0, 3.0, "porton", "Químicos de pretratamiento y pintura en polvo"),
@@ -460,13 +493,13 @@ PUERTAS = [
     Puerta("SE-7", "S", 86.0, 87.1, 2.1, "emergencia"),
     Puerta("SE-8", "S", 14.0, 15.1, 2.1, "emergencia"),
     Puerta("SE-9", "S", 52.0, 53.1, 2.1, "emergencia"),
-    Puerta("PP-1", "O", 23.0, 24.4, 2.1, "peatonal", "Ingreso de personal desde vestuarios"),
+    Puerta("PP-1", "O", 23.2, 24.4, 2.1, "peatonal", "Ingreso de personal desde vestuarios"),
 ]
 
 # ============================================================ ANEXOS
 ANEXOS = [
     Sector("SV", "Bloque de servicios al personal y oficinas", R(-18.0, 19.0, 0.0, 37.8), "SERV", "común"),
-    Sector("RC", "Recargas (ángulo SO de la nave)", R(0.3, 0.3, 18.0, 19.2), "RC", "RC",
+    Sector("RC", "Recargas (ángulo SO de la nave)", R(0.3, 0.3, 18.0, 18.8), "RC", "RC",
            "Dentro de la nave, con tabiques y portones propios"),
     Sector("ST", "Sala técnica: transformador, TGBT y compresores", R(36.0, 44.2, 46.0, 50.0), "AUX", "común"),
 ]
@@ -482,19 +515,19 @@ FLUJOS = [
     Flujo("MP", [(11.9, 52.0), (11.9, 43.8), (11.9, 27.3), (13.8, 27.3)], "Chapa: alero -> rack de la guillotina"),
     Flujo("MP", [(16.4, 27.3), (16.8, 27.3)], "Paquete a la mesa elevadora"),
     Flujo("MP", [(12.4, 52.0), (12.4, 43.8), (12.4, 32.4), (13.8, 32.4)], "Caño: alero -> cantiléver del láser"),
-    Flujo("MP", [(16.4, 31.1), (16.8, 31.1)], "Atado al cargador"),
-    Flujo("MP", [(16.4, 33.75), (16.8, 33.75)], "Atado al cargador"),
+    Flujo("MP", [(16.4, 30.75), (16.8, 30.75)], "Atado al cargador"),
+    Flujo("MP", [(16.4, 33.95), (16.8, 33.95)], "Atado al cargador"),
     Flujo("MP", [(12.9, 52.0), (12.9, 43.8), (12.9, 37.4), (13.8, 37.4)], "Flejes: alero -> porta-flejes"),
     Flujo("MP", [(16.4, 37.2), (16.8, 37.2)], "Rollo al desbobinador"),
     Flujo("MP", [(11.4, 52.0), (11.4, 43.8), (11.4, 34.5), (10.0, 34.5)], "Insumos al pañol"),
-    Flujo("MP", [(35.4, -6.0), (35.4, 0.0), (35.4, 9.6), (33.9, 9.6)], "Casquetes de carros (M3)", "S3"),
+    Flujo("MP", [(35.2, -6.0), (35.2, 0.0), (35.2, 10.0), (34.0, 10.0)], "Casquetes de carros (M3)", "S3"),
     Flujo("MP", [(32.6, 10.0), (28.1, 10.0), (28.1, 12.2)], "Casquete a la soldadura circ.", "S3"),
-    Flujo("MP", [(37.2, -6.0), (37.2, 0.0), (37.2, 3.0)], "Tercerizados revendidos (M3)", "S4"),
-    Flujo("MP", [(64.5, -6.0), (64.5, 0.0), (64.5, 3.4), (68.4, 3.4)], "Polvo químico en big bags (P4)"),
-    Flujo("MP", [(68.4, 5.6), (66.0, 5.6), (66.0, 7.0)], "Big bag a la carga de polvo"),
+    Flujo("MP", [(36.6, -6.0), (36.6, 0.0), (36.6, 1.5), (37.8, 1.5)], "Tercerizados revendidos (M3)", "S4"),
+    Flujo("MP", [(64.5, -6.0), (64.5, 0.0), (64.5, 2.0), (68.6, 2.0)], "Polvo químico en big bags (P4)"),
+    Flujo("MP", [(68.6, 5.2), (67.6, 5.2)], "Big bag a la carga de polvo"),
     Flujo("MP", [(60.0, -6.0), (60.0, 0.0), (60.0, 1.0), (58.2, 1.0)], "Válvulas, manómetros, cajas (P5)"),
-    Flujo("MP", [(55.0, 1.6), (55.0, 3.0), (59.0, 3.0), (59.0, 7.4)], "Válvulas a ensamblaje"),
-    Flujo("MP", [(52.0, 1.6), (52.0, 4.6)], "Cajas y film a embalaje"),
+    Flujo("MP", [(55.5, 1.6), (55.5, 3.0), (59.3, 3.0), (59.3, 4.8)], "Válvulas a ensamblaje"),
+    Flujo("MP", [(51.3, 1.6), (51.3, 4.4)], "Cajas y film a embalaje"),
     Flujo("MP", [(96.0, 27.5), (88.0, 27.5), (86.0, 27.5)], "Químicos y pintura en polvo (P3)"),
     Flujo("MP", [(86.0, 24.8), (86.0, 15.0), (85.1, 15.0)], "Desengrasante y fosfatizante al túnel"),
     Flujo("MP", [(87.0, 24.8), (87.0, 1.0), (78.6, 1.0), (78.6, 1.6)], "Pintura en polvo a la cabina"),
@@ -509,9 +542,10 @@ FLUJOS = [
     Flujo("SE", [(25.3, 25.0), (25.3, 24.4), (25.3, 19.6), (25.3, 18.2)], "Cuerpos de carros a la cilindradora",
           "S3"),
     # ---------------- SE: N2 1 kg y N3 cúpulas y fondos
-    Flujo("SE", [(27.0, 31.1), (27.4, 31.1)], "Cuerpo 1 kg"),
-    Flujo("SE", [(27.0, 33.75), (27.4, 33.75)], "Cuerpo 1 kg"),
-    Flujo("SE", [(29.2, 33.2), (34.2, 33.2), (34.2, 36.1), (35.0, 36.1)], "Cuerpos 1 kg al encastre", "S1"),
+    Flujo("SE", [(27.0, 30.75), (27.4, 30.75)], "Cuerpo 1 kg"),
+    Flujo("SE", [(27.0, 33.95), (27.4, 33.95)], "Cuerpo 1 kg"),
+    Flujo("SE", [(28.3, 31.7), (28.3, 33.0)], "PU-L1 a PU-L2"),
+    Flujo("SE", [(29.2, 34.0), (34.2, 34.0), (34.2, 36.1), (35.0, 36.1)], "Cuerpos 1 kg al encastre", "S1"),
     Flujo("SE", [(19.4, 37.2), (19.6, 37.2)], "Fleje enderezado"),
     Flujo("SE", [(21.0, 37.2), (21.2, 37.2)], "Fleje al troquel"),
     Flujo("SE", [(24.2, 37.1), (24.6, 37.1)], "Fondos al pulmón"),
@@ -528,16 +562,16 @@ FLUJOS = [
                  (64.4, 36.1), (66.4, 36.1), (71.0, 36.1), (75.5, 36.1), (76.4, 36.1)],
           "Línea principal: encastre -> bordoneado -> soldadura circ. -> PH -> secado -> granallado"),
     Flujo("SE", [(78.6, 36.4), (80.0, 36.4)], "Defectos a corrección"),
-    Flujo("SE", [(78.2, 35.8), (78.2, 34.4)], "Aprobados al pulmón de pintura"),
-    Flujo("SE", [(81.9, 35.6), (81.9, 33.1), (80.4, 33.1)], "Corregidos al pulmón de pintura"),
-    Flujo("SE", [(78.5, 31.8), (78.5, 24.4)], "A la carga de pintura"),
+    Flujo("SE", [(78.2, 35.8), (78.2, 33.2)], "Aprobados al pulmón de pintura"),
+    Flujo("SE", [(81.9, 35.6), (81.9, 32.0), (80.4, 32.0)], "Corregidos al pulmón de pintura"),
+    Flujo("SE", [(78.5, 30.4), (78.5, 24.4)], "A la carga de pintura"),
     # ---------------- SE: pintura (lazo) y terminación
     Flujo("SE", LAZO, "Lazo de pintura: pretratamiento, secado, cabina, polimerizado, enfriamiento"),
     Flujo("RET", [(73.1, 20.2), (73.1, 21.4), (76.0, 21.4)], "Retorno de ganchos vacíos (aéreo, +4,0 m)"),
     Flujo("SE", [(70.6, 15.0), (69.6, 15.0)], "Pintados al pulmón"),
-    Flujo("SE", [(66.0, 12.6), (66.0, 9.0)], "A la carga de polvo"),
-    Flujo("SE", [(64.2, 8.0), (61.6, 8.0), (60.0, 8.0), (59.8, 8.0), (58.2, 8.0), (57.9, 8.0), (56.4, 8.0),
-                 (56.1, 8.0), (54.6, 8.0), (54.3, 8.0), (52.8, 8.0), (52.2, 8.0)],
+    Flujo("SE", [(66.6, 12.6), (66.6, 6.6)], "A la carga de polvo"),
+    Flujo("SE", [(64.2, 5.6), (61.9, 5.6), (60.3, 5.6), (60.1, 5.6), (58.5, 5.6), (58.2, 5.6), (56.7, 5.6),
+                 (56.4, 5.6), (54.9, 5.6), (54.6, 5.6), (53.1, 5.6), (52.1, 5.6)],
           "Ensamblaje -> presurización -> hermeticidad -> etiquetado -> embalaje"),
     # ---------------- SE: carros (U)
     Flujo("SE", [(27.5, 17.5), (28.0, 17.4), (30.5, 17.4), (31.0, 17.4), (33.5, 17.4), (33.8, 17.4), (33.8, 13.0),
@@ -549,15 +583,15 @@ FLUJOS = [
     Flujo("SE", [(28.0, 5.4), (29.0, 5.4)], "Carga de polvo -> armado", "S3"),
     Flujo("SE", [(31.4, 5.4), (31.6, 5.4)], "Armado -> presurización", "S3"),
     # ---------------- PT
-    Flujo("PT", [(62.4, 16.0), (50.2, 16.0), (47.2, 16.0)], "Cilindros vendidos vacíos al almacén de PT"),
-    Flujo("PT", [(50.6, 8.0), (49.3, 9.0)], "Pallet a envolvedora"),
-    Flujo("PT", [(50.6, 10.2), (49.3, 10.2)], "Pallet a envolvedora"),
-    Flujo("PT", [(50.6, 5.4), (48.5, 8.2)], "Pallet de cilindros a envolvedora"),
-    Flujo("PT", [(47.8, 9.7), (44.4, 9.7), (44.4, 12.0)], "Almacén de PT"),
-    Flujo("PT", [(42.6, 6.8), (42.6, 0.0), (42.6, -6.0)], "Expedición M1"),
-    Flujo("PT", [(45.4, 6.8), (46.9, 3.0), (46.9, 0.0), (46.9, -6.0)], "Expedición M2"),
+    Flujo("PT", [(62.4, 16.0), (50.2, 16.0), (47.7, 16.0)], "Cilindros vendidos vacíos al almacén de PT"),
+    Flujo("PT", [(50.5, 5.2), (49.7, 8.6)], "Pallet a envolvedora"),
+    Flujo("PT", [(50.5, 7.2), (49.7, 9.6)], "Pallet a envolvedora"),
+    Flujo("PT", [(50.5, 9.2), (49.7, 10.6)], "Pallet de cilindros a envolvedora"),
+    Flujo("PT", [(48.2, 9.7), (46.0, 9.7), (46.0, 12.0)], "Almacén de PT"),
+    Flujo("PT", [(40.4, 6.8), (40.4, 5.0), (42.7, 5.0), (42.7, 0.0), (42.7, -6.0)], "Expedición M1"),
+    Flujo("PT", [(46.0, 6.8), (47.1, 5.0), (47.1, 0.0), (47.1, -6.0)], "Expedición M2"),
     Flujo("PT", [(32.8, 4.4), (32.8, 0.0), (32.8, -6.0)], "Carros terminados (P9)", "S3"),
-    Flujo("PT", [(40.0, 4.5), (41.0, 4.5)], "Tercerizados a expedición", "S4"),
+    Flujo("PT", [(40.4, 2.0), (41.6, 2.0)], "Tercerizados a expedición", "S4"),
     # ---------------- scrap
     Flujo("SCRAP", [(2.0, 40.5), (0.0, 40.5), (-3.0, 40.5)], "Scrap a volquete (P2)"),
 ]
@@ -590,8 +624,7 @@ def _hilos():
         br += _bajada(_op(c)[0], Y_PP, c)
     H.append(("Almacén de MP y corte (N1)", [(0.0, Y_PP), (38.0, Y_PP)], br))
     # láseres, línea principal, cúpulas y calidad: por la calle PO-1
-    br = [(40.0, 29.7, 21.9, 29.7), (21.9, 29.7, _op("M16")[0], _op("M16")[1]),
-          (28.4, 29.7, 28.4, 32.3), (28.4, 32.3, 27.0, 32.3)]
+    br = [(40.0, 32.35, 21.9, 32.35), (21.9, 32.35, _op("M16")[0], _op("M16")[1])]
     br += [(40.0, 34.4, 35.6, 34.4)]
     for c in ("E09a", "E09b", "E09c"):
         x, y = _op(c)
@@ -600,31 +633,32 @@ def _hilos():
     for c in ("B04", "A06", "B06", "A07", "B07"):
         x, y = _op(c)
         br.append((x, 34.4, x, y))
-    br += [(40.2, 34.4, 40.2, 39.1), (40.2, 39.1, 17.8, 39.1)]
+    br += [(40.3, 34.4, 40.3, 39.45), (40.3, 39.45, 17.8, 39.45)]
     for c in ("M08", "M09", "M11"):
         x, y = _op(c)
-        br.append((x, 39.1, x, y))
+        br.append((x, 39.45, x, y))
     H.append(("Láseres, cúpulas, unión y PH (N2-N4)", [(38.0, Y_PP), (40.0, Y_PP), (40.0, 34.4)], br))
     # granallado y defectos (N5) y pintura
-    br = [(68.0, 34.8, 77.5, 34.8)]
+    br = [(68.0, 34.2, 77.5, 34.2)]
     for c in ("B08", "B09"):
         x, y = _op(c)
-        br.append((x, 34.8, x, y))
-    br += [(77.5, 34.8, 79.2, 34.8), (79.2, 34.8, 79.2, 35.2), (79.2, 35.2, _op("B10")[0], _op("B10")[1])]
+        br.append((x, 34.2, x, y))
+    br += [(77.5, 34.2, 79.2, 34.2), (79.2, 34.2, 79.2, 35.2), (79.2, 35.2, _op("B10")[0], _op("B10")[1])]
     br += [(69.8, Y_PP, 69.8, 24.6), (69.8, 24.6, 77.67, 24.6), (77.67, 24.6, 77.67, _op("P01")[1])]
     br += [(69.9, Y_PP, 69.9, _op("P08")[1]), (69.9, _op("P08")[1], _op("P08")[0], _op("P08")[1])]
     br += [(75.6, 21.0, 75.6, 5.0), (75.6, 5.0, _op("P04")[0], _op("P04")[1]), (69.9, 21.0, 75.6, 21.0)]
-    H.append(("Granallado, defectos y pintura (N5, S-P)", [(38.0, Y_PP), (68.0, Y_PP), (68.0, 34.8)], br))
+    H.append(("Granallado, defectos y pintura (N5, S-P)", [(38.0, Y_PP), (68.0, Y_PP), (68.0, 34.2)], br))
     # terminación y PT: bajan cruzando el pasillo y el almacén de cilindros
-    br = []
-    for c in ("T01", "T03", "T04", "T05", "T07", "T08"):
+    br = [(61.0, 7.6, 52.52, 7.6), (52.52, 7.6, 52.52, _op("T08")[1]), (52.52, 7.6, 52.52, _op("T10")[1]),
+          (61.0, 7.6, 65.9, 7.6), (65.9, 7.6, _op("T01")[0], _op("T01")[1])]
+    for c in ("T03", "T04", "T05", "T07"):
         x, y = _op(c)
-        br.append((x, 10.6, x, y))
-    br += [(61.0, 10.6, 51.4, 10.6), (61.0, 10.6, 65.9, 10.6), (49.0, Y_PP, 49.0, 19.2)]
+        br.append((x, 7.6, x, y))
+    br.append((49.0, Y_PP, 49.0, 18.8))
     for c in ("Q", "QR", "SUP", "EPP"):
         r = next(s_.rect for s_ in SECTORES if s_.cod == c)
         br.append((r.c[0], Y_PP, r.c[0], r.y0))
-    H.append(("Terminación, calidad y expedición", [(38.0, Y_PP), (61.0, Y_PP), (61.0, 10.6)], br))
+    H.append(("Terminación, calidad y expedición", [(38.0, Y_PP), (61.0, Y_PP), (61.0, 7.6)], br))
     # carros: entran por el oeste a la calle interior de la U
     br = []
     for c in ("C01", "C02", "C03", "C05", "C06", "C07"):
@@ -635,8 +669,8 @@ def _hilos():
            (_op("T12")[0], _op("T12")[1], _op("T02")[0], _op("T02")[1])]
     H.append(("Línea de carros (S3)", [(0.0, Y_PP), (20.6, Y_PP), (20.6, 15.6), (33.0, 15.6)], br))
     # recargas
-    H.append(("Recargas (RC)", [(9.0, Y_PP), (9.0, 19.2), (9.0, 18.0)],
-              [(9.0, 18.0, 2.2, 18.0), (9.0, 18.0, 14.9, 18.0)]))
+    H.append(("Recargas (RC)", [(17.1, Y_PP), (17.1, 18.8), (17.1, 6.3)],
+              [(17.1, 6.3, 1.0, 6.3), (17.1, 12.5, 1.0, 12.5)]))
     return H
 
 
@@ -662,21 +696,24 @@ LOCALES = [
     Sector("SV-RE", "Reuniones", R(-8.0, 14.8 + _dy, -6.2, 18.6 + _dy), "SERV", "común"),
     Sector("SV-CM", "Comedor 30 plazas y office", R(-17.8, 11.2 + _dy, -6.2, 14.6 + _dy), "SERV", "común"),
     # recargas RC (x 0,3..18, y 0,3..19,2): entra por RC-1, recorre en U y sale por RC-2
-    Sector("RC-RE", "Recepción, clasificación y recibidos", R(0.5, 0.5, 5.8, 6.2), "RC", "RC",
+    Sector("RC-RE", "Recepción, clasificación y recibidos", R(0.5, 0.5, 5.8, 5.4), "RC", "RC",
            "Clasificación en 4 colas: polvo, CO₂, agente limpio y líquidos"),
-    Sector("RC-DE", "Desarme y lavado", R(6.0, 0.5, 11.8, 6.2), "RC", "RC"),
-    Sector("RC-DC", "Descarga y ensayo de funcionamiento", R(12.0, 0.5, 17.8, 6.2), "RC", "RC",
+    Sector("RC-DE", "Desarme y lavado", R(6.0, 0.5, 11.8, 5.4), "RC", "RC"),
+    Sector("RC-DC", "Descarga y ensayo de funcionamiento", R(12.0, 0.5, 17.8, 5.4), "RC", "RC",
            "Sala con extracción y recuperación de polvo"),
-    Sector("RC-PH", "PH con jaula, secado y Puffer", R(12.0, 6.4, 17.8, 12.0), "RC", "RC", "", 20.0),
-    Sector("RC-PV", "Recinto de polvo (HR ≤ 70 %)", R(4.4, 6.4, 11.8, 12.0), "RC", "RC",
-           "Carga ABC, BC y D; 8 renovaciones por hora; sin estufas", 33.5),
-    Sector("RC-GA", "CO₂ y agente limpio", R(0.5, 6.4, 4.2, 12.0), "RC", "RC", "Trasvasador y balanza", 15.0),
-    Sector("RC-IR", "Inutilizados y residuos", R(0.5, 12.2, 4.2, 15.2), "RC", "RC", "", 8.0),
-    Sector("RC-DP", "Despacho y equipos para entregar", R(0.5, 15.4, 4.2, 19.0), "RC", "RC", "", 12.0),
-    Sector("RC-EN", "Ensamblaje, presurización, peso, hermeticidad y retoque", R(4.4, 12.2, 11.8, 19.0), "RC",
-           "RC", "", 40.0),
-    Sector("RC-LQ", "Líquidos", R(12.0, 12.2, 17.8, 15.4), "RC", "RC", "Agua, AFFF y clase K", 15.0),
-    Sector("RC-RP", "Etiquetado y flota de intercambio", R(12.0, 15.6, 17.8, 19.0), "RC", "RC"),
+    Sector("RC-C1", "Corredor de recargas (sur)", R(0.5, 5.6, 17.8, 7.0), "CIRC", "RC"),
+    Sector("RC-GA", "CO₂ y agente limpio", R(0.5, 7.2, 4.2, 11.6), "RC", "RC", "Trasvasador y balanza", 15.0),
+    Sector("RC-PV", "Recinto de polvo (HR ≤ 70 %)", R(4.4, 7.2, 11.8, 11.6), "RC", "RC",
+           "Carga ABC, BC y D; 8 renovaciones por hora; sin estufas", 32.0),
+    Sector("RC-PH", "PH con jaula, secado y Puffer", R(12.0, 7.2, 16.2, 11.6), "RC", "RC", "", 18.0),
+    Sector("RC-C2", "Corredor de recargas (centro)", R(0.5, 11.8, 16.2, 13.2), "CIRC", "RC"),
+    Sector("RC-CN", "Conector al pasillo central", R(16.4, 5.6, 17.8, 18.8), "CIRC", "RC"),
+    Sector("RC-IR", "Inutilizados y residuos", R(0.5, 13.4, 4.2, 15.8), "RC", "RC", "", 8.0),
+    Sector("RC-DP", "Despacho y equipos para entregar", R(0.5, 16.0, 4.2, 18.6), "RC", "RC", "", 9.0),
+    Sector("RC-EN", "Ensamblaje, presurización, peso, hermeticidad y retoque", R(4.4, 13.4, 11.8, 18.6), "RC",
+           "RC", "", 38.0),
+    Sector("RC-LQ", "Líquidos", R(12.0, 13.4, 16.2, 15.8), "RC", "RC", "Agua, AFFF y clase K", 10.0),
+    Sector("RC-RP", "Etiquetado y flota de intercambio", R(12.0, 16.0, 16.2, 18.6), "RC", "RC"),
 ]
 
 PUERTAS_ANEXOS = [
@@ -720,8 +757,8 @@ EFLUENTES = [
     Flujo("EFL-L", [(15.0, 9.4), (15.0, 0.6), (18.2, 0.6)], "Lavado y PH de recargas"),
     Flujo("EFL-L", [(70.0, -27.0), (70.0, -62.0)], "Vuelco a colectora (previa autorización)"),
 ]
-RC_FLUJO = [(-6.0, 3.0), (0.0, 3.0), (3.1, 3.0), (8.9, 3.0), (14.9, 3.0), (14.9, 9.2), (8.1, 9.2), (8.1, 14.8),
-            (14.9, 14.8), (14.9, 17.3), (2.3, 17.3), (0.0, 17.0), (-6.0, 17.0)]
+RC_FLUJO = [(-6.0, 3.0), (0.0, 3.0), (3.1, 3.0), (8.9, 3.0), (14.9, 3.0), (14.9, 9.4), (8.1, 9.4), (8.1, 15.6),
+            (14.1, 15.6), (14.1, 17.8), (2.3, 17.8), (0.0, 17.3), (-6.0, 17.3)]
 
 EMISIONES = [
     (21.6, 41.1, "Humos de soldadura de cuellos"), (32.2, 17.4, "Humos de soldadura de carros"),
@@ -767,3 +804,35 @@ def _sendas():
 
 HILOS = _hilos()
 SENDAS = _sendas()
+
+# ============================================================ DEFENSA ENTRE CARRILES DEL PASILLO CENTRAL
+# baranda de 0,20 m entre el carril de autoelevador y la senda peatonal; aberturas donde se cruza
+Y_DEF = 23.1
+ABERTURAS = [
+    (10.2, 13.6, "autoelevador al almacén de MP (AM)"),
+    (16.6, 17.8, "personal a recargas"),
+    (20.0, 21.2, "personal a carros"),
+    (24.6, 26.0, "carros de cuerpos a la zona de carros"),
+    (33.7, 34.9, "personal a terminación de carros"),
+    (41.4, 44.4, "autoelevador a mantenimiento"),
+    (48.4, 49.6, "personal a PT y expedición"),
+    (60.4, 61.6, "personal a terminación"),
+]
+
+
+def _defensas():
+    tramos, x = [], 0.3
+    for a, b, _ in sorted(ABERTURAS):
+        if a > x:
+            tramos.append((x, a))
+        x = b
+    if x < 69.8:
+        tramos.append((x, 69.8))
+    return tramos
+
+
+DEFENSAS = _defensas()
+for _a, _b, _t in ABERTURAS:
+    if _t.startswith("personal"):
+        SENDAS.append((f"SP-{len(SENDAS) + 1}", R(_a, 19.2, _b, 23.0), "Senda peatonal: " + _t +
+                       " (cruza el carril de autoelevador)"))
