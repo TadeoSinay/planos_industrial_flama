@@ -678,6 +678,9 @@ def sectores(pl, relleno=True, rotulos=True, h=2.0, areas=True, cats=None):
         if relleno:
             pl.relleno(s.rect.pts(), RELLENO.get(s.cat, (240, 240, 240)))
         pl.rect(s.rect, "A-SECTOR")
+    for cod, r, nota in getattr(L, "LIBRES", []):
+        pl.rayado(r.pts(), "A-SECTOR", 1.5, 45)
+        pl.rect(r, "A-SECTOR")
     for s in L.ANEXOS:
         if relleno and s.cod != "ST":
             pass
@@ -695,16 +698,28 @@ def rotulos_sector(pl, h=2.0, areas=True, excluir=()):
         if areas:
             pl.texto(f"{r.area:.1f} m²".replace(".", ","), (x, y - h / pl.s * 1.5), h * 0.75, A.TOP_LEFT,
                      "A-TEXTO")
+    for cod, r, nota in getattr(L, "LIBRES", []):
+        pl.texto(f"{cod} LIBRE {r.area:.1f} m² (a debatir)".replace(".", ","), r.c, h * 0.8, A.MIDDLE_CENTER,
+                 "A-SECTOR-TXT")
+
+
+def red_pasillos():
+    """Contorno único de la red de calles (unión de los rectángulos): las calles se dibujan continuas."""
+    import shapely.geometry as sg
+    from shapely.ops import unary_union
+    u = unary_union([sg.box(p.rect.x0, p.rect.y0, p.rect.x1, p.rect.y1) for p in L.PASILLOS])
+    return list(getattr(u, "geoms", [u]))
 
 
 def pasillos(pl, demarcacion=True, rotulos=False, h=1.6):
+    if demarcacion:
+        for g in red_pasillos():
+            for anillo in [g.exterior] + list(g.interiors):
+                pts = list(anillo.coords)
+                for a, b in zip(pts, pts[1:]):
+                    pl.linea(a, b, "A-PASILLO")
     for p in L.PASILLOS:
         r = p.rect
-        if demarcacion:
-            pl.linea((r.x0, r.y0), (r.x1, r.y0), "A-PASILLO")
-            pl.linea((r.x0, r.y1), (r.x1, r.y1), "A-PASILLO")
-            pl.linea((r.x0, r.y0), (r.x0, r.y1), "A-PASILLO")
-            pl.linea((r.x1, r.y0), (r.x1, r.y1), "A-PASILLO")
         if rotulos:
             rot = 90 if r.h > r.w else 0
             pl.texto(f"{p.cod} {p.ancho:.2f} m".replace(".", ","), r.c, h, A.MIDDLE_CENTER, "A-TEXTO", rot)
@@ -870,3 +885,6 @@ def vehiculos(pl):
     S.transpaleta(pl, 48.6, 1.3, 0)                           # muelle M2 -> insumos de terminación
     S.transpaleta(pl, 85.9, 33.2, 270)                        # P3 -> granalla
     S.transpaleta(pl, 52.0, 18.0, 180)                        # estacionada junto a la carga de baterías
+    # cantiléver de caños: exterior oeste, fuera de la playa de camiones (lo carga el autoelevador desde el norte)
+    ct = next(r for c, n, r, t in L.EXTERIOR if c == "CT")
+    S.dibujar(pl, L.Equipo("CT", "Cantiléver de caños", ct, "CT", 0, tipo="cantilever", frente="N"), False)

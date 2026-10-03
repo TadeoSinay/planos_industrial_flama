@@ -32,11 +32,12 @@ Nave de 88 × 44 m = 3.872 m², recorrido en U con una línea que converge paso 
 | Código | Sector | m² proyectados | m² requeridos | Nota |
 |---|---|---|---|---|
 | PÑ | Pañol de insumos pesados | 19,5 | 35,2 | Rack de pallets 3 niveles (5 módulos × 2 × 3 = 30 posiciones): alambre MIG, cuplas, asientos, tapones |
+| PÑ-R | Reserva del pañol (rack al pasillo central) | 5,5 | - | 1 módulo de 2,7 m × 3 niveles = 6 pallets (tambores de alambre MIG); se toma desde el extremo de PC |
 | SCR | Scrap: basculantes a volquete | 5,6 | - | El autoelevador vuelca los basculantes en el volquete del alero por P2; el chatarrero no entra |
 | AL-1F | Rollos de fleje | 25,4 | - | Rack porta-flejes 2 niveles, 12 cunas × 2 = 24 rollos ≤ 1 t (8 anchos); se toman con gancho C |
 | AL-1H | Paquetes de hojas por formato | 27,0 | 50,0 | 5 posiciones de 1,6 × 3,1 m a 4 alturas = 20 paquetes ≤ 2 t; un formato por posición; FIFO |
 | N1 | Corte y cuerpo 2,5-10 kg | 122,2 | - | 1 guillotina -> 2 numerado -> 3 cilindrado -> 4 soldadura longitudinal |
-| N2 | Corte de caño 1 kg | 101,3 | - | 5 corte láser de caño; caños desde el cantiléver del alero en carro porta-tubos |
+| N2 | Corte de caño 1 kg | 101,3 | - | 5 corte láser de caño; caños desde el cantiléver CT (exterior oeste) en carro porta-tubos por P7 |
 | N3 | Cúpulas, fondos y cuellos | 131,6 | - | 6 desbobinado + embutido -> 7 preparación de cuello -> 8 soldadura de cuello |
 | N4 | Unión y prueba hidráulica | 128,0 | - | 9 encastre -> 10 bordoneado -> 11 soldadura circ. -> 12 PH -> 13 secado |
 | N5 | Granallado y defectos | 78,3 | - | 14 granallado -> 15 detección de defectos -> 16 corrección |
@@ -48,7 +49,6 @@ Nave de 88 × 44 m = 3.872 m², recorrido en U con una línea que converge paso 
 | ESC | Escalera y plataforma elevadora al entrepiso de oficinas (+3,50) | 9,4 | - | Escalera en U de 1,10 m y plataforma elevadora 1,10 × 1,40 (Ley 24.314) |
 | PV | Carros vacíos: supermercado de retorno | 64,8 | - | Cada carro vuelve vacío a su puesto de carga por PO-1 / PO-2; acá esperan los de reserva y los del milk run de abastecimiento |
 | PÑL | Pañol de línea (ventanilla) | 28,0 | - | Alambre 0,9 / 1,2 mm, toberas, puntas, discos y EPP; entrega contra vale a 10 m de las soldadoras |
-| ES | Escuelita de soldadura | 20,7 | - | 3 cabinas con mampara y extracción: práctica y homologación de soldadores (cátedra) |
 | AR | Muestras retenidas y archivo de calidad | 23,5 | - | Un cilindro testigo por lote y legajos de trazabilidad (IRAM 3517 / 3523) |
 | GR | Granalla y repuestos de granallado y pintura | 26,9 | - | Pallets de granalla (40 × 25 kg) junto a la granalladora; entran por P3 con transpaleta |
 | S-P | Pintura en polvo (esquema Electricolor 22 × 13 m) | 286,0 | - | 17 carga -> pretratamiento -> secado -> cabina -> polimerizado -> enfriamiento -> descarga |
@@ -66,7 +66,7 @@ Nave de 88 × 44 m = 3.872 m², recorrido en U con una línea que converge paso 
 | S-TC | Terminación de carros | 40,5 | - | C9 armado de ruedas y manguera -> C10 presurización y etiquetado |
 | PU-CP | Carros a pintura tercerizada | 30,0 | - | Espera de retiro del pintor (P6); vuelven pintados por P8 |
 
-Los m² requeridos de MP (hoja MP Almacén) suponen almacenamiento a piso o en rack de 3 niveles con medio pasillo propio. En el layout la chapa, los flejes, el caño y los casquetes van en cantiléver y racks en altura, frente al pasillo de autoelevador AM que comparten, con las mismas posiciones: hojas 15 paquetes (3 módulos × 5 niveles), flejes 21 rollos + 6 en espera, caño 12 atados, casquetes 18 pallets.
+Los m² requeridos de MP (hoja MP Almacén) suponen almacenamiento a piso o en rack de 3 niveles con medio pasillo propio. En el layout van en altura frente a las calles A1/A2 del autoelevador: hojas en paquetes sobre tacos (AL-1H, 5 posiciones × 4 alturas = 20 paquetes), flejes en porta-flejes (AL-1F, 24 rollos), caño en el cantiléver exterior CT (12 atados) y casquetes en el rack pasante RK1.
 
 
 ## 3. Recepción de MP y análisis de peso de la carga
@@ -121,7 +121,7 @@ Se adopta autoelevador eléctrico de 3,0 t con horquillas de 1,8 m y posicionado
 | LAC 3,2 × 1500 × 3000 (25 y 50 kg) | 7,7 | 2,2 | 16 hojas (1.813 kg) | 4,1 |
 | LAC 4,75 × 1500 × 3000 (70 y 100 kg) | 3,4 | 3,2 | 7 hojas (1.177 kg) | 4,1 |
 
-Reglas: un módulo del cantiléver por formato con dos posiciones (en uso y en espera) y tope pintado; si están ocupadas no se emite pedido (kanban de 2 paquetes). Paquetes chicos en los formatos de bajo consumo para que ninguno cubra más de 2 semanas. Tarjeta de color por mes de ingreso y semáforo (verde < 4 semanas, amarillo 4 a 6, rojo > 6: se consume primero y se inspecciona óxido). Hoja LAF aceitada con film VCI, descargada y guardada siempre bajo techo, lejos de la PH y del lavado.
+Reglas: una posición de AL-1H por formato con dos paquetes (en uso y en espera) y tope pintado; si están ocupadas no se emite pedido (kanban de 2 paquetes). Paquetes chicos en los formatos de bajo consumo para que ninguno cubra más de 2 semanas. Tarjeta de color por mes de ingreso y semáforo (verde < 4 semanas, amarillo 4 a 6, rojo > 6: se consume primero y se inspecciona óxido). Hoja LAF aceitada con film VCI, descargada y guardada siempre bajo techo, lejos de la PH y del lavado.
 
 ## 5. Pulmones y manejo de materiales (métodos y tiempos)
 
@@ -141,7 +141,7 @@ Tiempo por viaje = 2 × distancia / velocidad + tiempo fijo de toma y entrega. D
 |---|---|---|---|---|---|---|
 | Paquete de hojas ≤ 2 t | Autoelevador | Alero -> rack guillotina (P1) | 1,5 | 24 | 2,0 | 3 |
 | Rollo de fleje 0,5-1 t | Autoelevador | Alero -> porta-flejes (P1) | 0,8 | 27 | 2,1 | 2 |
-| Atado de caño 6 m | Autoelevador | Alero -> cantiléver láser (P1) | 0,6 | 16 | 1,8 | 1 |
+| Atado de caño 6 m | Autoelevador | Alero -> cantiléver CT exterior oeste | 0,6 | 31 | 2,2 | 1 |
 | Pallet de insumos pesados | Autoelevador | Alero -> pañol PÑ (P1) | 0,5 | 31 | 2,2 | 1 |
 | Big bag de polvo 1 t | Autoelevador | P4 -> estación de descarga | 1,7 | 6 | 1,6 | 3 |
 | Pallet de válvulas / cajas | Transpaleta | Muelle M2 -> rack AL-2 | 1,3 | 4 | 1,2 | 2 |
@@ -179,7 +179,7 @@ El antiguo portón P5 (insumos de terminación) se suprimió: recibía ≈ 1 cam
 
 ## 6. Cruces de flujos y de hilos
 
-Cruces entre flujos de MP, SE y PT (verificación geométrica sobre el modelo): **5**. Cruces de hilos de personal con flujos: todos dentro de las **16** sendas peatonales señalizadas (X1 a X16).
+Cruces entre flujos de MP, SE y PT (verificación geométrica sobre el modelo): **9**. Cruces de hilos de personal con flujos: todos dentro de las **16** sendas peatonales señalizadas (X1 a X16).
 
 ## 7. Sanitarios, vestuarios y servicios (Dec. 351/79 arts. 49 y 50)
 
@@ -220,7 +220,7 @@ Armarios: H 56 requeridos / 60 proyectados; M 7 / 20 (vestuario de mujeres al 20
 | RC-GA CO₂ y agente limpio | 16,3 |
 | RC-PV Recinto de polvo (HR ≤ 70 %) | 32,6 |
 | RC-PH PH con jaula, secado y Puffer | 18,5 |
-| RC-C2 Corredor de recargas (centro) | 22,0 |
+| RC-C2 Corredor de recargas (centro) | 22,3 |
 | RC-CN Conector al pasillo central | 18,5 |
 | RC-IR Inutilizados y residuos | 8,9 |
 | RC-DP Despacho y equipos para entregar | 9,6 |
@@ -230,7 +230,7 @@ Armarios: H 56 requeridos / 60 proyectados; M 7 / 20 (vestuario de mujeres al 20
 
 ## 8. Medios de escape (Dec. 351/79 anexo VII)
 
-Factor de ocupación industrial 16 m²/persona: N = 242 personas teóricas; n = N/100 -> 3 unidades de ancho de salida (1,55 m mínimos). Proyectado: 9 salidas de emergencia de 1,10 m (9,90 m) con barral antipánico, más los portones con puerta de hombre y el paso a servicios.
+Factor de ocupación industrial 16 m²/persona: N = 242 personas teóricas; n = N/100 -> 3 unidades de ancho de salida (1,55 m mínimos). Proyectado: 11 salidas de emergencia de 1,10 m (12,10 m) con barral antipánico, más los portones con puerta de hombre y el paso a servicios.
 
 Recorrido real máximo hasta una salida, calculado sobre una grilla de 0,5 m que rodea los equipos: **31,9 m** (punto x = 49,5, y = 26,0), por debajo de los 40 m que se toman como límite (verificar el artículo vigente).
 
@@ -245,6 +245,7 @@ Luminaria LED de 150 W y 21.000 lm; factor de utilización 0,65; mantenimiento 0
 | Sector | lx | m² | Luminarias | kW |
 |---|---|---|---|---|
 | PÑ Pañol de insumos pesados | 150 | 19 | 1 | 0,15 |
+| PÑ-R Reserva del pañol (rack al pasillo central) | 150 | 6 | 1 | 0,15 |
 | SCR Scrap: basculantes a volquete | 300 | 6 | 1 | 0,15 |
 | AL-1F Rollos de fleje | 150 | 25 | 1 | 0,15 |
 | AL-1H Paquetes de hojas por formato | 150 | 27 | 1 | 0,15 |
@@ -261,7 +262,6 @@ Luminaria LED de 150 W y 21.000 lm; factor de utilización 0,65; mantenimiento 0
 | ESC Escalera y plataforma elevadora al entrepiso de oficinas (+3,50) | 300 | 9 | 1 | 0,15 |
 | PV Carros vacíos: supermercado de retorno | 300 | 65 | 2 | 0,30 |
 | PÑL Pañol de línea (ventanilla) | 300 | 28 | 1 | 0,15 |
-| ES Escuelita de soldadura | 300 | 21 | 1 | 0,15 |
 | AR Muestras retenidas y archivo de calidad | 750 | 24 | 2 | 0,30 |
 | GR Granalla y repuestos de granallado y pintura | 150 | 27 | 1 | 0,15 |
 | S-P Pintura en polvo (esquema Electricolor 22 × 13 m) | 500 | 286 | 14 | 2,10 |
@@ -325,7 +325,7 @@ Anillo de aire comprimido: 272 m. Potencia instalada de equipos: 329 kW.
 |---|---|---|
 | MP | Chapa: alero -> paquetes AL-1H (P1) | 23,9 |
 | MP | Paquete a la mesa elevadora (autoelevador por el lado largo) | 3,9 |
-| MP | Caños: cantiléver del alero -> carro porta-tubos -> caballetes del láser | 15,5 |
+| MP | Caños: cantiléver CT (oeste) -> P7 -> carro porta-tubos por AN y A2 -> caballetes del láser | 30,8 |
 | MP | Tubos a los caballetes | 6,4 |
 | MP | Flejes: alero -> porta-flejes AL-1F (P1) | 26,8 |
 | MP | Rollo al desbobinador (gancho C) | 19,7 |

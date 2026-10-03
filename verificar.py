@@ -81,6 +81,95 @@ def main():
         comp = [i for i, g in enumerate(partes) if g.intersects(caja(p.rect))]
         if comp and comp[0] != max(range(len(partes)), key=lambda i: partes[i].area):
             err(f"pasillo {p.cod} desconectado de la red principal")
+    # 4c'. cada extremo de calle remata en otra calle, en una puerta del muro exterior o de un local, o es el
+    #      fondo declarado de una calle de rack (FONDOS); sin tolerancia
+    red_e = [caja(p.rect) for p in L.PASILLOS]
+    ab_muro = []
+    for pu in L.PUERTAS:
+        if pu.muro not in ("N", "S", "E", "O"):
+            continue
+        a, b = pu.a, pu.b
+        ab_muro.append({"N": sg.box(a, L.NAVE_A - 0.6, b, L.NAVE_A + 0.6), "S": sg.box(a, -0.6, b, 0.6),
+                        "O": sg.box(-0.6, a, 0.6, b), "E": sg.box(L.NAVE_L - 0.6, a, L.NAVE_L + 0.6, b)}[pu.muro])
+    for cod_l, lista in L.CERRADOS.items():
+        r = next(s.rect for s in L.SECTORES + L.LOCALES if s.cod == cod_l)
+        for lado, a, b, tipo in lista:
+            if tipo in ("ventana", "ventanilla"):
+                continue
+            ab_muro.append({"N": sg.box(a, r.y1 - 0.3, b, r.y1 + 0.3), "S": sg.box(a, r.y0 - 0.3, b, r.y0 + 0.3),
+                            "O": sg.box(r.x0 - 0.3, a, r.x0 + 0.3, b),
+                            "E": sg.box(r.x1 - 0.3, a, r.x1 + 0.3, b)}[lado])
+    for x, y, w, o, _d in L.PUERTAS_INT:
+        ab_muro.append(sg.box(x, y - 0.3, x + w, y + 0.3) if o == "h" else sg.box(x - 0.3, y, x + 0.3, y + w))
+    fondos = getattr(L, "FONDOS", {})
+    recorridos = [LineString(f.pts) for f in L.FLUJOS] + [LineString(m_) for _n, m_, _b in L.HILOS]
+    n_ext = 0
+    for i, p in enumerate(L.PASILLOS):
+        r = p.rect
+        horiz = r.w >= r.h
+        ext = {"O": sg.LineString([(r.x0, r.y0), (r.x0, r.y1)]), "E": sg.LineString([(r.x1, r.y0), (r.x1, r.y1)])} \
+            if horiz else {"S": sg.LineString([(r.x0, r.y0), (r.x1, r.y0)]), "N": sg.LineString([(r.x0, r.y1), (r.x1, r.y1)])}
+        for lado, seg in ext.items():
+            n_ext += 1
+            if any(j != i and seg.intersects(g) for j, g in enumerate(red_e)):
+                continue
+            if any(seg.intersects(z) for z in ab_muro):
+                continue
+            if (p.cod, lado) in fondos:
+                continue
+            if any(seg.intersects(g) for g in recorridos):
+                continue                     # la calle entra a su destino abierto (pintura, puesto): pasa el flujo
+            err(f"la calle {p.cod} termina en su extremo {lado} sin otra calle ni puerta")
+    print(f"extremos de calle revisados: {n_ext} ({len(fondos)} fondos de calle de rack declarados)")
+    # 4e. recorridos del personal y flujos de material que atraviesan una máquina que no es su origen o destino
+    n_atr = 0
+    tramos_h = []
+    for nom, main, br in L.HILOS:
+        tramos_h += [(nom, LineString(main))] + [(nom, LineString([(a_, b_), (c_, d_)])) for a_, b_, c_, d_ in br]
+    for e in L.EQUIPOS:
+        g = caja(e.rect, -0.05)
+        for nom, t in tramos_h:
+            if t.intersects(g) and not any(g.buffer(0.6).contains(Point(q)) for q in (t.coords[0], t.coords[-1])):
+                n_atr += 1
+                err(f"el recorrido del personal {nom} atraviesa {e.cod}")
+        for f in L.FLUJOS:
+            ln = LineString(f.pts)
+            if ln.intersects(g) and not any(g.buffer(0.6).contains(Point(q)) for q in (f.pts[0], f.pts[-1])):
+                # una línea de proceso (SE) visita sus puestos en serie; la pluma y el transportador de pintura
+                # mueven la pieza: no son obstáculos de esa línea
+                visita = f.cat == "SE" and (e.paso or e.sector == "S-P" or "luma" in e.nombre)
+                if f.cat in ("MP", "SE", "PT", "SCRAP") and e.tipo not in ("rack", "cantilever") and not visita \
+                        and not ln.intersection(g).length < 0.01:
+                    n_atr += 1
+                    err(f"el flujo {f.cat} {f.rot} atraviesa {e.cod}")
+    print(f"recorridos y flujos que atraviesan máquinas: {n_atr}")
+    # 4f. ningún flujo ni recorrido atraviesa el muro de un local cerrado fuera de sus puertas, portones o cortinas
+    n_muro = 0
+    for cod_l, lista in L.CERRADOS.items():
+        r = next(s_.rect for s_ in L.SECTORES + L.LOCALES if s_.cod == cod_l)
+        lados = {"S": ((r.x0, r.y0), (r.x1, r.y0)), "N": ((r.x0, r.y1), (r.x1, r.y1)),
+                 "O": ((r.x0, r.y0), (r.x0, r.y1)), "E": ((r.x1, r.y0), (r.x1, r.y1))}
+        for lado, (p0, p1) in lados.items():
+            muro = LineString([p0, p1])
+            for ld, a_, b_, tipo in lista:
+                if ld == lado and tipo in ("puerta", "porton", "cortina"):
+                    hueco = sg.box(a_, p0[1] - 0.1, b_, p0[1] + 0.1) if lado in "SN" else \
+                        sg.box(p0[0] - 0.1, a_, p0[0] + 0.1, b_)
+                    muro = muro.difference(hueco)
+            for pu in L.PUERTAS:                     # portones de la nave en muros compartidos
+                if pu.muro in ("N", "S", "E", "O"):
+                    muro = muro.difference({"N": sg.box(pu.a, L.NAVE_A - 0.6, pu.b, L.NAVE_A + 0.6),
+                                            "S": sg.box(pu.a, -0.6, pu.b, 0.6), "O": sg.box(-0.6, pu.a, 0.6, pu.b),
+                                            "E": sg.box(L.NAVE_L - 0.6, pu.a, L.NAVE_L + 0.6, pu.b)}[pu.muro])
+            for f in L.FLUJOS:
+                if f.cat in ("MP", "SE", "PT", "SCRAP") and LineString(f.pts).intersects(muro):
+                    n_muro += 1
+                    err(f"el flujo {f.cat} {f.rot} atraviesa el muro {lado} de {cod_l}")
+            for nom, t in tramos_h:
+                if t.intersects(muro):
+                    n_muro += 1
+                    err(f"el recorrido {nom} atraviesa el muro {lado} de {cod_l}")
+    print(f"flujos y recorridos a través de muros: {n_muro}")
     # 4d. zona del operario: 1,0 m libre al frente, sin calles de autoelevador ni materiales ajenos
     from planta.simbolos import frente_de
     for e in L.EQUIPOS:

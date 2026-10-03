@@ -243,9 +243,10 @@ PASOS_MP = [
         "deslizan sobre la mesa de bolas (no se levantan a mano)."),
     (5, "Rollos de fleje: pluma del autoelevador con gancho C (ojo vertical) a la cuna de AL-1F, por ancho y espesor."),
     (6, "Rollo al desbobinador SHIMEQ de 2 mandriles: se carga el mandril libre mientras el otro trabaja (sin parar la prensa)."),
-    (7, "Atados de caño 6 m (≤ 600 kg): el autoelevador los apoya, de costado y al aire libre, en el cantiléver CT del alero."),
-    (8, "Carro porta-tubos (2 boguies): 1-2 viajes/día por P1-A2-PO-L a los caballetes de los láseres "
-        "(gira de A2 a PO-L: un caño de 6,5 m pasa la esquina de 3,6 + 1,4 m)."),
+    (7, "Atados de caño 6 m (≤ 600 kg): el autoelevador sale por P1, gira al oeste y los apoya desde el patio PCT en el "
+        "cantiléver CT (exterior oeste, con techo), fuera de la playa donde maniobran los camiones."),
+    (8, "Carro porta-tubos (2 boguies): 1-2 viajes/día del CT por el portón P7 (muro oeste) a AN, A2 y PO-L hasta los "
+        "caballetes (esquinas AN-A2: 1,7 + 3,6 m -> 7,3 m; A2-PO-L: 3,6 + 1,4 m -> 7,4 m; el carro mide 6,5 m)."),
     (9, "Insumos pesados (alambre MIG, cuplas, asientos) al rack de PÑ por A1; de ahí, el milk run al pañol de línea."),
     (10, "Basculantes de scrap de la guillotina y la prensa: el autoelevador los vuelca en el volquete del alero por P2."),
 ]
@@ -268,7 +269,7 @@ def fl_pi_04(doc, ox):
                 "Detalles 1:50 del almacén de MP y de la expedición, con la secuencia de cada movimiento. "
                 "Flota calculada por métodos y tiempos.")
     # ---- detalle MP
-    win = (-1.5, 23.0, 22.5, 49.0)
+    win = (-10.5, 23.0, 18.5, 49.0)                     # incluye el cantiléver CT y el portón P7 (oeste)
     p0 = (h.fx0 + 8, h.fy1 - 36 - (win[3] - win[1]) * 20)
     def _mp(p):
         for fl in L.FLUJOS:
@@ -276,7 +277,7 @@ def fl_pi_04(doc, ox):
                 p.flujo(fl.pts, fl.cat, cada=8.0, largo=3.0, ancho=1.6)
     pm = detalle(h, 50, win, p0, "DETALLE 1 - ALMACÉN DE MP Y CARGA A MÁQUINA - 1:50", extra=_mp)
     for n, xy in ((1, (8.0, 48.4)), (2, (10.9, 45.2)), (3, (8.2, 39.0)), (4, (11.6, 27.2)), (5, (5.0, 36.5)),
-                  (6, (12.0, 37.0)), (7, (17.3, 46.0)), (8, (12.0, 33.6)), (9, (3.8, 30.0)), (10, (3.0, 44.0))):
+                  (6, (12.0, 37.0)), (7, (-5.8, 42.6)), (8, (2.0, 42.75)), (9, (3.8, 30.0)), (10, (3.0, 44.0))):
         globo(pm, n, xy, 3.0)
     pm.cota((2.0, 24.0), (5.6, 24.0), -2.0, True, texto="A1 <>")
     pm.cota((9.1, 24.0), (12.7, 24.0), -2.0, True, texto="A2 <>")
@@ -299,10 +300,12 @@ def fl_pi_04(doc, ox):
         else:
             pt.cota((r.x1 - 1.5, r.y0), (r.x1 - 1.5, r.y1), 0.0, False, texto=f"{c_} <>")
     # ---- textos y tablas
-    xr = p02[0] + (win2[2] - win2[0]) * 20 + 12
-    y = h.fy1 - 34
+    # debajo del detalle 2: flota y métodos y tiempos (izquierda), secuencias (derecha)
+    xr = p02[0] + 160
+    y = p02[1] - 10
     y = pasos_papel(pt, xr, y, PASOS_MP, "Secuencia de la MP (detalle 1)", ancho=h.fx1 - xr - 10)
     y = pasos_papel(pt, xr, y - 4, PASOS_PT, "Secuencia del PT (detalle 2)", ancho=h.fx1 - xr - 10)
+    xr, y = p02[0], p02[1] - 14 - 8 * 3.6 - 14
     M_ = C.manejo()
     cols = [("Unidad de carga", 50, "l"), ("Medio", 24, "l"), ("Viajes/día", 15, "c"), ("m", 10, "c"),
             ("min/día", 14, "c")]

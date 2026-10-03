@@ -326,12 +326,14 @@ def extintores():
     for x in L.EJES_X:
         for y in (0.6, L.NAVE_A - 0.6):
             cand.append((min(max(x, 0.6), L.NAVE_L - 0.6), y))
-    for p in L.PASILLOS:
+    for p in L.PASILLOS:                 # sobre el borde de la calle (soporte de pie o columna), no en su eje
         r = p.rect
-        for x in frange(r.x0 + 1, r.x1 - 1, 6.0):
-            cand.append((x, r.c[1]))
-        for y in frange(r.y0 + 1, r.y1 - 1, 6.0):
-            cand.append((r.c[0], y))
+        if r.w >= r.h:
+            for x in frange(r.x0 + 1, r.x1 - 1, 6.0):
+                cand.append((x, r.y1 - 0.3))
+        else:
+            for y in frange(r.y0 + 1, r.y1 - 1, 6.0):
+                cand.append((r.x0 + 0.3, y))
     cand = [c for c in cand if libre[min(nx - 1, int(c[0] / PASO))][min(ny - 1, int(c[1] / PASO))]]
     dist = {}
     for c in cand:
@@ -460,7 +462,7 @@ def manejo():
         # unidad de carga, medio, de -> a, viajes/día, distancia (m)
         ("Paquete de hojas ≤ 2 t", "Autoelevador", "Alero -> rack guillotina (P1)", 1.5, _lf("Chapa")),
         ("Rollo de fleje 0,5-1 t", "Autoelevador", "Alero -> porta-flejes (P1)", 0.8, _lf("Flejes")),
-        ("Atado de caño 6 m", "Autoelevador", "Alero -> cantiléver láser (P1)", 0.6, _lf("Caño")),
+        ("Atado de caño 6 m", "Autoelevador", "Alero -> cantiléver CT exterior oeste", 0.6, _lf("Caño")),
         ("Pallet de insumos pesados", "Autoelevador", "Alero -> pañol PÑ (P1)", 0.5, _lf("Insumos al pañol")),
         ("Big bag de polvo 1 t", "Autoelevador", "P4 -> estación de descarga", 1.7, _lf("Polvo químico")),
         ("Pallet de válvulas / cajas", "Transpaleta", "Muelle M2 -> rack AL-2", 1.3, _lf("Válvulas")),

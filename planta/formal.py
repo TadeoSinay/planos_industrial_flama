@@ -78,6 +78,8 @@ def planta(pl, xa, xb, y0, y1):
         r = s.rect
         pl.texto(s.cod, (r.x0 + 0.3, r.y1 - 0.3), 2.2, A.TOP_LEFT)
         pl.texto(f"{f(r.area, 1)} m²", (r.x0 + 0.3, r.y1 - 0.6 - 2.6 / pl.s), 1.6, A.TOP_LEFT)
+    for cod, r, nota in L.LIBRES:
+        pl.texto(f"{cod} LIBRE {f(r.area, 1)} m² (a debatir)", r.c, 2.2, A.MIDDLE_CENTER)
     for s in L.LOCALES:
         r = s.rect
         if s.cat == "CIRC" and min(r.w, r.h) < 1.6:
@@ -157,10 +159,11 @@ def fl_pi_01(doc, ox, n=1):
     filas = []
     for e in L.EQUIPOS:
         g = gq.get(e.cod)
-        fu = e.fuente.replace("C ", "Cotiz. ", 1) if e.fuente.startswith("C ") else ("Estimada" + e.fuente[1:])
+        fu = (e.fuente.replace("C ", "Cotiz. ", 1) if e.fuente.startswith("C ") else
+              e.fuente[2:] if e.fuente.startswith("D ") else e.fuente)
         filas.append([e.paso or "-", e.cod, e.nombre[:42], f"{f(e.rect.w, 2)} × {f(e.rect.h, 2)}", fu[:46],
                       e.op or "-", f(g["ss"], 1) if g else "-", f(g["st"], 1) if g else "-"])
-    y = pl.tabla(xt, yt, cols, filas, 3.3, 1.5, "Equipos: medida cotizada o estimada y superficie de Guerchet (m²)")
+    y = pl.tabla(xt, yt, cols, filas, 3.3, 1.5, "Equipos: medida (cotización o criterio de diseño) y superficie de Guerchet (m²)")
     cols = [("Sector", 18, "l"), ("St Guerchet", 22, "c"), ("Dibujado", 20, "c"), ("Holgura", 20, "c")]
     filas = [[r["sector"], f(r["st"], 0), f(r["area"], 0), f(r["area"] - r["st"], 0)]
              for r in sorted(G["sectores"], key=lambda r: r["sector"]) if r["area"]]

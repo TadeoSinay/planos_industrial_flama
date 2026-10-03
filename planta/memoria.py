@@ -44,9 +44,9 @@ def generar(ruta):
                    [[x.cod, x.nombre, f(x.rect.area, 1), f(x.area_req, 1) if x.area_req else "-", x.nota]
                     for x in L.SECTORES]))
     s.append("\nLos m² requeridos de MP (hoja MP Almacén) suponen almacenamiento a piso o en rack de 3 niveles con medio "
-             "pasillo propio. En el layout la chapa, los flejes, el caño y los casquetes van en cantiléver y racks en "
-             "altura, frente al pasillo de autoelevador AM que comparten, con las mismas posiciones: hojas 15 paquetes "
-             "(3 módulos × 5 niveles), flejes 21 rollos + 6 en espera, caño 12 atados, casquetes 18 pallets.\n")
+             "pasillo propio. En el layout van en altura frente a las calles A1/A2 del autoelevador: hojas en paquetes "
+             "sobre tacos (AL-1H, 5 posiciones × 4 alturas = 20 paquetes), flejes en porta-flejes (AL-1F, 24 rollos), "
+             "caño en el cantiléver exterior CT (12 atados) y casquetes en el rack pasante RK1.\n")
     # 3 recepción
     s.append("\n## 3. Recepción de MP y análisis de peso de la carga\n")
     s.append("Se dimensiona para la carga máxima: un semirremolque de 18,6 m y 30 t o dos chasis de 10 m en el alero "
@@ -75,7 +75,7 @@ def generar(ruta):
     s.append(tabla(["Formato", "Hojas/semana", "Paquete de 2 t cubre (sem)", "Paquete propuesto", "Stock máx. (sem)"],
                    [[r["formato"], f(r["hojas_sem"], 1), f(r["cob_2t"], 1),
                      f"{r['hojas_paq']} hojas ({f(r['kg_paq'], 0)} kg)", f(r["cob_max"], 1)] for r in C.sobrestock()]))
-    s.append("\nReglas: un módulo del cantiléver por formato con dos posiciones (en uso y en espera) y tope pintado; si "
+    s.append("\nReglas: una posición de AL-1H por formato con dos paquetes (en uso y en espera) y tope pintado; si "
              "están ocupadas no se emite pedido (kanban de 2 paquetes). Paquetes chicos en los formatos de bajo consumo "
              "para que ninguno cubra más de 2 semanas. Tarjeta de color por mes de ingreso y semáforo (verde < 4 semanas, "
              "amarillo 4 a 6, rojo > 6: se consume primero y se inspecciona óxido). Hoja LAF aceitada con film VCI, "

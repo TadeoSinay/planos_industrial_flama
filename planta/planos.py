@@ -488,7 +488,7 @@ CURSOGRAMAS = {
         ("O", "18-23 Terminación (ver S1)", "T01-T10"), ("O", "24 Envolvedora", "T11"),
         ("A", "Almacén de PT", "AL-3"), ("T", "Expedición", "M1/M2")],
     "S1 - Matafuegos ABC 1 kg (fabricados)": [
-        ("A", "Caño en cantiléver del alero (carro porta-tubos)", "CT"), ("O", "5 Corte láser de caño", "M15/M16"),
+        ("A", "Caño en cantiléver CT (exterior oeste)", "CT"), ("O", "5 Corte láser de caño", "M15/M16"),
         ("D", "Pulmón", "PU-L"), ("O", "9-17 Línea común (igual que S2)", "E09-P08"),
         ("O", "18 Carga de polvo", "T01"), ("O", "19 Ensamblaje", "T03/T04"), ("O", "20 Presurización con N₂", "T05"),
         ("I", "21 Hermeticidad", "T06"), ("O", "22 Etiquetado", "T07"), ("O", "23 Embalaje y palletizado", "T08/T09"),

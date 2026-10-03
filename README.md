@@ -33,6 +33,23 @@ Para abrir en AutoCAD y guardar como DWG: ver [`autocad/LEEME.md`](autocad/LEEME
 | Scrap y retal | gris, trazo y punto | 8 | F-SCRAP |
 | Efluentes líquidos / gaseosos | marrón / cian, trazos | 34 / 4 | F-EFL-LIQ / F-EFL-GAS |
 
+## Versión 6: red de calles continua, sin calles ciegas
+
+- **Calles que se tocan**: A1, A2, PO-1 y PO-5 llegan a la senda; T1-T3 y RC-N al pasillo central; EX a AT; PO-2 a
+  PO-E; PO-3 y PO-L a A2. Se dibuja el contorno único de la red (ya no se ven tramos partidos).
+- **Ningún extremo muere contra un muro**: cada extremo remata en otra calle, en una puerta (SE-5 pasó al final de la
+  calle norte; SE-10 y SE-11 nuevas al final de los corredores de recargas; la puerta de SP-1 quedó frente a PO-T) o
+  en su destino; los fondos de calle de rack están declarados (`FONDOS`). Nueva calle de operarios de pintura PO-PI
+  como remate este del pasillo central. El autoelevador hace un circuito de sentido único en el almacén de MP
+  (entra por A2, sale por A1 con cruce marcado de la senda).
+- **Cantiléver de caños** fuera de la playa de camiones: exterior oeste con techo propio, cargado desde el patio PCT;
+  los caños entran con el carro porta-tubos por el portón P7.
+- **Sin escuelita de soldadura**: el espacio queda libre (LB-1, 20,7 m²) para debatir.
+- **Fuentes de medida**: "C" cotización; el resto indica su criterio (pieza, pallet, módulo de rack o puesto del
+  Dimensionamiento de recargas). Ningún "estimado" suelto.
+- **Controles nuevos en `verificar.py`**: extremos de calle sin tolerancia, recorridos y flujos que atraviesan máquinas
+  y muros de locales cerrados (QP con puerta a pintura y portón a PO-E para la transpaleta; cortina de SP-2 ampliada).
+
 ## Versión 5: medidas cotizadas, logística real y seguridad
 
 - **Medidas de las cotizaciones** (`referencias/INVESTIGACION PROVEEDORES`): guillotina Molinari HG 6 × 3200,
@@ -40,11 +57,12 @@ Para abrir en AutoCAD y guardar como DWG: ver [`autocad/LEEME.md`](autocad/LEEME
   alimentador SHIMEQ, bordoneadora SWM-400, soldadoras Promotech/Getweld, granalladora Airblast 4500 × 1300,
   envolvedora EDOS PS5. **Pintura** según el esquema de Electricolor (22 × 13 m = 286 m², 2 hornos 6 × 2,44,
   cabina 2 × 1,5): bajó de 421,7 m² y no lleva túnel de pretratamiento (no cotizado; queda a debatir con el DT).
-  Las medidas sin cotización (Firesafer) están marcadas como estimadas.
+  Lo que no tiene cotización lleva su criterio de medida (pieza, pallet 1,2 × 1,0, módulo de rack de 2,7 m o puesto
+  del Dimensionamiento de recargas) en vez de "estimado".
 - **Superficie liberada**: el cuadro de Guerchet muestra la holgura de cada sector (N2, N3, AL-3, S-T) para debatir.
 - **MP**: un autoelevador 3 t con prolongaciones (paquetes por el lado largo), pluma con percha y gancho C (rollos);
-  calles A1/A2 y cabecera AN; carga directa a la mesa elevadora y al desbobinador; caños en cantiléver bajo el alero y
-  carro porta-tubos a los caballetes de los láseres. Políticas de stock por formato (kanban de 2 paquetes, 2 rollos).
+  calles A1/A2 y cabecera AN; carga directa a la mesa elevadora y al desbobinador; caños en el cantiléver CT (exterior oeste,
+  fuera de la playa de camiones) y carro porta-tubos por P7 a los caballetes de los láseres. Políticas de stock por formato (kanban de 2 paquetes, 2 rollos).
 - **PT**: 3 calles pasantes del pasillo central a la calle de expedición, racks accesibles por ambas caras, muelles y
   calles sin columnas.
 - **Oficinas**: administración, PCP y jefatura en un entrepiso vidriado sobre la fila central (ven la línea y bajan
@@ -60,7 +78,7 @@ Para abrir en AutoCAD y guardar como DWG: ver [`autocad/LEEME.md`](autocad/LEEME
 - **Ningún local vacío** (verificado por `verificar.py`): oficinas con sus 6 puestos, jefatura, hall y fichado,
   vestuarios con 60 + 20 armarios dobles y bancos, sanitarios y duchas según art. 49 (H incluye choferes),
   comedor de 5 mesas de 6 con office, primeros auxilios, laboratorio, taller, pañoles, supervisión, EPP,
-  cuarentena, supermercado de carros vacíos, escuelita de soldadura, muestras, granalla, tableros y compresor,
+  cuarentena, supermercado de carros vacíos, muestras, granalla, tableros y compresor,
   químicos, estación de carga de baterías, rampas de muelle. Biblioteca en `planta/mobiliario.py`.
 - **Servicios con circuito**: SV-1 -> hall y fichado -> pasillo limpio -> vestuario -> sanitarios y duchas (sólo desde
   el vestuario) -> pasillo limpio -> PP-1 -> senda. Administración y visitas al sur del pasillo, sin cruzar
