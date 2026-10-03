@@ -535,16 +535,58 @@ def rampa(m, n=1):
     m.rc(0.05, 0, U - 0.05, 0.25, FINO)
 
 
+def lockers(m, n=10):
+    """Bloque de lockers individuales: n columnas × 3 filas (1 por empleado), 0,30 m de frente por columna."""
+    U, V = m.Lu, m.Lv
+    for i in range(n):
+        u0, u1 = U * i / n, U * (i + 1) / n
+        m.fr(u0, 0, u1, V, GRIS)
+        m.rc(u0, 0, u1, V, MOB)
+        for k in (1, 2):
+            m.ln((u0, V * k / 3), (u0 + (u1 - u0) * 0.25, V * k / 3), FINO)
+        m.ln((u1 - 0.06, 0.03), (u1 - 0.06, 0.09), FINO)
+
+
+def ducha_acc(m, n=1):
+    """Ducha accesible a nivel: piso con pendiente a rejilla, asiento rebatible y barras."""
+    U, V = m.Lu, m.Lv
+    m.fr(0, 0, U, V, AGUA)
+    m.rc(0, 0, U, V, MOB)
+    m.ci(U / 2, V / 2, 0.06, FINO)
+    m.rc(U - 0.45, V * 0.25, U - 0.02, V * 0.75, MOB)          # asiento rebatible
+    m.ln((0.05, V - 0.05), (U * 0.6, V - 0.05), SEG)           # barra
+    m.ln((0.05, 0.0), (U - 0.05, 0.0), OC)                     # cortina
+
+
+def ducha_emergencia(m, n=1):
+    """Ducha de emergencia con lavaojos: rejilla de piso y volante de accionamiento."""
+    U, V = m.Lu, m.Lv
+    m.fr(0, 0, U, V, VERDE)
+    m.rc(0, 0, U, V, SEG)
+    m.ci(U / 2, V / 2, min(U, V) * 0.35, SEG)
+    m.ci(U / 2, V / 2, 0.06, FINO)
+
+
+def inflamables(m, n=1):
+    """Armario para inflamables (nafta en bidones de seguridad) con batea y puertas de cierre automático."""
+    U, V = m.Lu, m.Lv
+    m.fr(0, 0, U, V, (250, 215, 60))
+    m.rc(0, 0, U, V, MOB)
+    m.ln((U / 2, 0), (U / 2, V), MOB)
+    m.ln((U * 0.25, V * 0.3), (U * 0.25, V * 0.7), FINO)
+    m.ln((U * 0.75, V * 0.3), (U * 0.75, V * 0.7), FINO)
+
+
 TIPOS = {f.__name__: f for f in (
     escritorio, mesa, mostrador, archivo, pizarra, sillas, reloj, armarios, banco_vest, inodoro, inodoro_acc,
     mingitorios, lavabos, duchas, mesada, heladera, dispenser, camilla, botiquin, lavaojos, lavadero,
     carro_limpieza, mesa_lab, marmol, camara, balanza_lab, banco_trabajo, torno, agujereadora, soldadora,
     estanteria, rack, tablero_el, compresor, tambores, bigbags, pallets, jaula, cilindros_piso, contenedor,
-    carros_vacios, cargador, cabina_sold, ventanilla, rampa)}
+    carros_vacios, cargador, cabina_sold, ventanilla, rampa, lockers, ducha_acc, ducha_emergencia, inflamables)}
 
 # artefactos sanitarios que se cuentan para el art. 49 del Dec. 351/79
 SANITARIOS = {"inodoro": "inodoros", "inodoro_acc": "inodoros", "mingitorios": "orinales", "lavabos": "lavabos",
-              "duchas": "duchas", "armarios": "armarios"}
+              "duchas": "duchas", "ducha_acc": "duchas", "armarios": "armarios", "lockers": "lockers"}
 
 
 def dibujar(pl, mueble):

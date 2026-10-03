@@ -45,29 +45,29 @@ CAMIONES = [
      "Alero de descarga norte: autoelevador por los dos lados; entra al almacén de MP por P1"),
     ("Camión chasis con balancín (3 ejes)", 11.0, 16.0, 26.0,
      "Alero de descarga norte (junto al semi): autoelevador por los dos lados, bajo techo"),
-    ("Camión chasis 2 ejes", 9.5, 9.0, 16.5, "Alero norte, muelles M1-M3, P4, P3 o P8 según el material"),
-    ("Utilitario / furgón", 6.0, 1.5, 3.5, "Portones de cada sector; recargas por RC-1"),
+    ("Camión chasis 2 ejes", 9.5, 9.0, 16.5, "Alero norte (P1), muelle P3 o portón P4 según el material"),
+    ("Utilitario / furgón", 6.0, 1.5, 3.5, "Recargas por P2; pintura por P4"),
 ]
 # Ley 24.449 y Dec. 779/95: ancho 2,60 m, alto 4,10 m, largo máx. 18,60 m (semi); PBT según ejes
 
 ENTREGAS = [
     # grupo (proveedor), t por entrega, entregas/año, formato asignado, portón, destino
-    ("Pradecon: hojas + fleje 0,9", 35.26, 18.1, "Semi (máx.) o 2 chasis quincenales", "Alero + P1", "AL-1H, AL-1R"),
-    ("Pacheco: flejes 1,25-2,0", 5.05, 29.3, "Chasis 2 ejes", "Alero + P1", "AL-1R"),
-    ("Metalprisa: caño Ø76,2", 4.23, 28.9, "Chasis 2 ejes", "Alero + P1", "AL-1R"),
-    ("Casquetes de carros", 5.93, 4.1, "Chasis 2 ejes", "M3", "RK1 (cara oeste)"),
-    ("Eli-Met: cuplas y asientos", 3.68, 5.6, "Chasis 2 ejes", "Alero + P1", "PÑ"),
-    ("Soldadura: alambre y consumibles", 1.89, 8.1, "Chasis 2 ejes", "Alero + P1", "PÑ"),
-    ("CYM: granalla", 3.11, 2.0, "Chasis 2 ejes", "P3", "GR"),
-    ("Air Liquide: gases", 7.64, 31.3, "Chasis 2 ejes (baterías)", "Jaulas JG-S y JG-N", "Exterior"),
-    ("Polvo químico (Polvex / DEMSA)", 13.13, 31.0, "Chasis con balancín", "P4 (1-10 kg) y P8 (carros)", "SP-1, SP-2"),
-    ("Válvulas y componentes", 8.16, 8.3, "Chasis con balancín", "Muelle M2", "AL-2"),
-    ("Estructuras y ruedas de carros", 5.52, 15.1, "Chasis 2 ejes", "P8", "S-TC"),
-    ("Pintura en polvo", 0.79, 8.3, "Utilitario", "P3", "QP"),
-    ("Químicos de pretratamiento", 0.46, 1.8, "Utilitario", "P3", "QP"),
-    ("Embalaje, pallets e imprenta", 4.61, 15.3, "Chasis 2 ejes", "Muelle M2", "AL-2"),
-    ("Agentes para recargas", 2.87, 8.2, "Chasis 2 ejes", "RC-1", "RC"),
-    ("Tercerizados revendidos", 3.0, 24.0, "Chasis 2 ejes (SUPUESTO)", "M3", "S4"),
+    ("Pradecon: hojas + fleje 0,9", 35.26, 18.1, "Semi (máx.) o 2 chasis quincenales", "Alero + P1", "AL-1H, AL-1F"),
+    ("Pacheco: flejes 1,25-2,0", 5.05, 29.3, "Chasis 2 ejes", "Alero + P1", "AL-1F"),
+    ("Metalprisa: caño Ø76,2", 4.23, 28.9, "Chasis 2 ejes", "Alero + P1 (atado atravesado)", "AL-1T cantiléver"),
+    ("Eli-Met: cuellos y roscas", 3.68, 5.6, "Chasis 2 ejes", "Alero + P1", "AL-1C"),
+    ("Soldadura: alambre MAG", 1.89, 8.1, "Chasis 2 ejes", "Alero + P1", "AL-1A"),
+    ("Air Liquide: Arcal 21 (baterías)", 3.8, 15.6, "Chasis 2 ejes", "Alero + P1", "AL-GS -> colector SC"),
+    ("Air Liquide: N₂ (baterías)", 3.8, 15.6, "Chasis 2 ejes", "Muelle P3", "SP-1"),
+    ("Polvo químico (Polvex / DEMSA)", 13.13, 31.0, "Chasis con balancín", "Muelle P3", "SP-1 (y SP-2, recargas)"),
+    ("Válvulas, manómetros y pescantes", 8.16, 8.3, "Chasis con balancín", "Muelle P3", "AL-2 -> buffers"),
+    ("Casquetes de carros", 5.93, 4.1, "Chasis 2 ejes", "Muelle P3", "RK1 (cara este)"),
+    ("Estructuras y ruedas de carros", 5.52, 15.1, "Chasis 2 ejes", "Muelle P3", "S-TC"),
+    ("Embalaje, pallets, etiquetas y precintos", 4.61, 15.3, "Chasis 2 ejes", "Muelle P3", "EMB / S-TC / RC-RD"),
+    ("Tercerizados revendidos", 3.0, 24.0, "Chasis 2 ejes (SUPUESTO)", "Muelle P3", "S4"),
+    ("Agentes para recargas", 2.87, 8.2, "Chasis 2 ejes", "Muelle P3", "SP-1 -> recargas"),
+    ("CYM: granalla", 3.11, 2.0, "Chasis 2 ejes", "P4", "GR"),
+    ("Pintura electrostática en polvo", 0.79, 8.3, "Utilitario", "P4", "QP"),
 ]
 
 
@@ -181,9 +181,12 @@ def sanitarios():
         for mb in L.MOBILIARIO:
             k = SANITARIOS.get(mb.tipo)
             if k and any(_dentro(mb.rect, s.rect) for s in L.LOCALES if s.cod in locales):
-                c[k] += mb.n * (2 if k == "armarios" else 1)
+                if k == "lockers":
+                    c["armarios"] += mb.n * 3            # n columnas × 3 filas, 1 por empleado
+                else:
+                    c[k] += mb.n * (2 if k == "armarios" else 1)
         return c
-    ch_, cm_ = contar(("SV-VH", "SV-SH")), contar(("SV-VM", "SV-SM"))
+    ch_, cm_ = contar(("SV-VH", "SV-DH", "SV-SH")), contar(("SV-VM", "SV-SM", "SV-DM"))
     proy = {"H": {k: ch_[k] for k in ("inodoros", "lavabos", "orinales", "duchas")},
             "M": {k: cm_[k] for k in ("inodoros", "lavabos", "orinales", "duchas")},
             "accesibles": sum(1 for mb in L.MOBILIARIO if mb.tipo == "inodoro_acc")}
@@ -377,8 +380,8 @@ def iluminacion():
 # ================================================================ 7. redes: longitud de tendidos
 TGBT = (41.0, 44.2)            # sala técnica norte (centro de cargas)
 PTE_P = (70.0, -19.0)
-JGS = (52.0, 44.4)
-JGN = (53.0, -1.0)
+JGS = (49.5, 41.9)            # colector de Arcal 21 en la sala SC (extremo oeste)
+JGN = (63.4, 10.0)            # baterías de N₂ en el almacén previo a la carga (SP-1)
 ERM = (88.6, 5.5)
 
 
@@ -433,14 +436,15 @@ def resumen():
 
 # ================================================================ manejo de materiales: métodos y tiempos
 # velocidad media (m/s, ida cargado y vuelta vacío) y tiempo fijo por viaje (min: tomar, dejar, maniobrar)
-MEDIOS = {"Autoelevador": (1.5, 1.5), "Apiladora": (1.0, 1.5), "Transpaleta": (0.8, 1.0),
-          "Carro a mano": (0.8, 0.5), "Zorra milk run": (0.8, 0.5)}
+MEDIOS = {"Autoelevador MP": (1.5, 1.5), "Autoelevador carros": (1.5, 1.5), "Autoelevador PT": (1.5, 1.5),
+          "Autoelevador": (1.5, 1.5), "Transpaleta": (0.8, 1.0), "Carro a mano": (0.8, 0.5),
+          "Zorra milk run": (0.8, 0.5)}
 MIN_TURNO = 480.0 * 0.85          # 8 h con 15 % de suplementos (OIT)
 CIL_DIA = 1184                    # cilindros 1-10 kg por día en el mes pico 2035 (Dimensionamiento, hoja 2035)
 CIL_1KG = 0.80                    # participación del 1 kg en los cilindros
 CARROS_DIA = round(CIL_DIA * CIL_1KG / 80 + CIL_DIA * (1 - CIL_1KG) / 24)   # carro: 80 u de 1 kg o 24 u de 5 kg
-MILK_RUN = [(53.0, 40.0), (17.5, 40.0), (17.5, 39.4), (40.2, 39.4), (40.2, 34.2), (82.0, 34.2), (82.0, 40.0),
-            (53.0, 40.0)]
+MILK_RUN = [(40.2, 31.4), (40.2, 39.65), (17.5, 39.65), (17.5, 39.9), (40.4, 39.9), (40.4, 34.0), (82.0, 34.0),
+            (82.0, 40.0), (41.0, 40.0), (40.6, 31.4)]
 
 
 def _largo(pts):
@@ -459,14 +463,31 @@ def manejo():
     """Tabla de manejo de materiales: unidad de carga, medio, recorrido, viajes por día, tiempo y ocupación."""
     tramos_linea = 9
     filas = [
-        # unidad de carga, medio, de -> a, viajes/día, distancia (m)
-        ("Paquete de hojas ≤ 2 t", "Autoelevador", "Alero -> rack guillotina (P1)", 1.5, _lf("Chapa")),
-        ("Rollo de fleje 0,5-1 t", "Autoelevador", "Alero -> porta-flejes (P1)", 0.8, _lf("Flejes")),
-        ("Atado de caño 6 m", "Autoelevador", "Alero -> cantiléver CT exterior oeste", 0.6, _lf("Caño")),
-        ("Pallet de insumos pesados", "Autoelevador", "Alero -> pañol PÑ (P1)", 0.5, _lf("Insumos al pañol")),
-        ("Big bag de polvo 1 t", "Autoelevador", "P4 -> estación de descarga", 1.7, _lf("Polvo químico")),
-        ("Pallet de válvulas / cajas", "Transpaleta", "Muelle M2 -> rack AL-2", 1.3, _lf("Válvulas")),
-        ("Tambor / cajas de pintura", "Transpaleta", "P3 -> QP", 0.3, _lf("Químicos y pintura")),
+        # unidad de carga, medio (autoelevador de MP / de carros y recargas / de PT), de -> a, viajes/día, m
+        ("Paquete de hojas ≤ 2 t", "Autoelevador MP", "Alero -> P1 -> AL-1H", 1.5, _lf("Hojas")),
+        ("Paquete a la guillotina", "Autoelevador MP", "AL-1H -> mesa elevadora", 1.5, _lf("Paquete a la mesa")),
+        ("Rollo de fleje 0,5-1 t", "Autoelevador MP", "Alero -> P1 -> porta-flejes", 0.8, _lf("Flejes")),
+        ("Rollo al desbobinador", "Autoelevador MP", "Porta-flejes -> desbobinador", 0.8, _lf("Rollo al")),
+        ("Atado de caño 6 m (atravesado)", "Autoelevador MP", "Alero -> P1 -> cantiléver", 0.6, _lf("Caños: el")),
+        ("Carro porta-tubos (6,5 m)", "Carro a mano", "Cantiléver -> AN -> A2 -> PO-L", 1.5, _lf("Caños: carro")),
+        ("Batería de Arcal 21", "Autoelevador MP", "Jaula AL-GS -> patio norte -> SC", 0.2, _lf("Batería")),
+        ("Contenedor de scrap (guillotina)", "Autoelevador MP", "Guillotina -> volquete (P1)", 0.5,
+         _lf("Scrap de la guillotina")),
+        ("Carro de scrap (láseres y prensa)", "Carro a mano", "Puesto -> A2 -> volquete (P1)", 1.5,
+         _lf("Esqueleto de la prensa")),
+        ("Big bag de polvo 1 t", "Autoelevador PT", "Muelle P3 -> AT -> SP-1", 1.7, _lf("Polvos, agentes")),
+        ("Pallet de válvulas / manómetros", "Autoelevador PT", "Muelle P3 -> AL-2", 1.3, _lf("Válvulas, manómetros")),
+        ("Pallet de embalaje", "Autoelevador PT", "Muelle P3 -> EMB", 0.7, _lf("Embalaje")),
+        ("Pallet de PT", "Autoelevador PT", "Envolvedora -> rack AL-3", 7.2, _lf("Almacén de PT")),
+        ("Pallet de PT", "Autoelevador PT", "Rack AL-3 -> muelle P3", 7.2, _lf("Expedición (RK2")),
+        ("Pallet de cilindros vacíos", "Autoelevador PT", "AL-C -> rack AL-3", 2.8, _lf("Cilindros vendidos")),
+        ("Pallet de casquetes", "Autoelevador carros", "Muelle P3 -> rack pasante RK1", 0.2, _lf("Casquetes de carros")),
+        ("Carros pintados / polvo / estructuras", "Autoelevador carros", "Muelle P3 -> PO-C -> SP-2 y S-TC", 0.6,
+         _lf("Carros pintados")),
+        ("Carro terminado 25-100 kg", "Autoelevador carros", "S-TC -> muelle P3", 1.0, _lf("Carros terminados")),
+        ("Pallet de bolsas de polvo y agentes", "Autoelevador carros", "SP-1 -> AT -> EX -> PO-C -> recargas", 1.0,
+         _lf("Polvos, agentes") + 45.0),
+        ("Caja de pintura / bolsa de granalla", "Transpaleta", "P4 -> QP y GR", 0.6, _lf("Granalla")),
         ("Carro de cuerpos 2,5-10 kg (24 u)", "Carro a mano", "PU-4 -> 9 encastre", 14, _lf("Cuerpos 2,5-10")),
         ("Carro de cuerpos 1 kg (80 u)", "Carro a mano", "PU-L2 -> 9 encastre", 12, _lf("Cuerpos 1 kg al")),
         ("Carro de fondos (150 u)", "Carro a mano", "PU-K -> 9 encastre", 8, _lf("Fondos al encastre")),
@@ -478,11 +499,8 @@ def manejo():
          _lf("A la carga de pintura")),
         ("Carro de cilindros pintados", "Carro a mano", "PU-9 -> 18 carga de polvo", CARROS_DIA,
          _lf("A la carga de polvo")),
-        ("Zorra de consumibles (vuelta)", "Zorra milk run", "PÑL -> 24 puestos -> PÑL", 4, _largo(MILK_RUN) / 2),
-        ("Pallet de PT", "Apiladora", "Envolvedora -> rack AL-3", 7.2, _lf("Almacén de PT")),
-        ("Pallet de PT", "Autoelevador", "Rack AL-3 -> muelle M1 / M2", 7.2, _lf("Expedición M1")),
-        ("Pallet de cilindros vacíos", "Autoelevador", "AL-C -> rack AL-3", 2.8, _lf("Cilindros vendidos")),
-        ("Contenedor de scrap 1 m³", "Autoelevador", "SCR -> volquete (P2)", 0.6, _lf("Scrap a volquete")),
+        ("Zorra de consumibles y cajas (vuelta)", "Zorra milk run", "Pañol y AL-1 -> puestos -> pañol", 4,
+         _largo(MILK_RUN) / 2),
     ]
     out, uso = [], {}
     for u, m, ruta, n, d in filas:
@@ -496,19 +514,14 @@ def manejo():
 
 PORTONES = [
     # portón, qué pasa, vehículo, frecuencia (2035), horario
-    ("P1 + alero", "Entra MP: chapa, caño, flejes, insumos pesados", "Semi / chasis", "≈ 2,4 por semana", "7 a 10 h"),
-    ("P2", "Sale scrap a volquete (el chatarrero no entra)", "Volquete 6 m³", "≈ 1 por semana", "Libre"),
-    ("P3", "Entran químicos, pintura en polvo y granalla", "Utilitario / chasis", "≈ 0,3 por semana", "7 a 10 h"),
-    ("P4", "Entra polvo químico en big bags", "Chasis con balancín", "≈ 0,65 por semana", "7 a 10 h"),
-    ("M1 / M2", "Sale PT; M2 recibe válvulas, cajas, etiquetas y film", "Semi / chasis", "7 PT + 0,5 insumos por semana",
-     "PT 13 a 17 h; insumos 7 a 10 h"),
-    ("M3", "Entran tercerizados revendidos y casquetes de carros", "Chasis", "≈ 0,6 por semana", "7 a 10 h"),
-    ("P6", "Salen carros al pintor y vuelven pintados (mismo viaje)", "Chasis del pintor", "≈ 1 por semana",
-     "Coordinado"),
-    ("P8", "Entran estructuras, ruedas y polvo de carros", "Chasis", "≈ 0,3 por semana", "7 a 10 h"),
-    ("P9", "Salen carros terminados", "Chasis", "≈ 1 por semana", "13 a 17 h"),
-    ("RC-1 / RC-2", "Recargas: entran y salen equipos de clientes", "Utilitarios de reparto (8)",
+    ("P1 + alero", "Entran hojas, flejes, caños, cuellos, alambre MAG y Arcal 21; sale el scrap al volquete",
+     "Semi / chasis", "≈ 2,4 camiones + 0,6 gases por semana", "7 a 10 h"),
+    ("P2", "Recargas: los utilitarios dejan y retiran equipos de clientes", "Utilitarios de reparto (8)",
      "2 vueltas por día", "Milk run mañana y tarde"),
+    ("P3 (muelle)", "Sale PT y carros (terminados y al pintor); entran revendidos, casquetes, válvulas, "
+     "embalaje, polvos, agentes y N₂", "Semi / chasis", "7 PT + ≈ 3 recepciones por semana",
+     "Recepción 7 a 10 h; expedición 13 a 17 h"),
+    ("P4", "Entran pintura electrostática y granalla", "Utilitario / chasis", "≈ 0,2 por semana", "7 a 10 h"),
     ("PP-1", "Personal: vestuarios <-> senda de la nave", "A pie", "63 personas, 2 turnos", "Entrada y salida"),
 ]
 
@@ -551,8 +564,8 @@ UNIDADES_2035 = {"1 kg": 32073 + 170548, "2,5 kg": 7425 + 6669, "5 kg": 30751 + 
 
 
 def politicas_stock():
-    """Hojas (kanban de 2 paquetes por formato), flejes (2 rollos por ancho y espesor) y caño (cantiléver del
-    alero, revisión semanal). Consumos 2035 (matafuegos + cilindros vendidos) y lotes del proveedor."""
+    """Hojas (kanban de 2 paquetes por formato), flejes (2 rollos por ancho y espesor) y caño (cantiléver
+    interior, revisión semanal). Consumos 2035 (matafuegos + cilindros vendidos) y lotes del proveedor."""
     from .chapa import DISCOS, CANO
     filas = []
     for r in sobrestock():
@@ -578,6 +591,24 @@ def politicas_stock():
     atados = barras / 45 / SEMANAS
     filas.append({"sku": f"Caño Ø{CANO['diam']} × {CANO['esp']} × 6 m".replace(".", ","),
                   "consumo": f"{barras / SEMANAS:.0f} barras/sem".replace(".", ","),
-                  "unidad": "atado de 45 caños (≤ 600 kg)", "sistema": "Revisión semanal (cantiléver de 12 atados)",
+                  "unidad": "atado de 45 caños (≤ 600 kg)", "sistema": "Revisión semanal (cantiléver interior de 12 atados)",
                   "pedido": "Q = 12 - existencia", "max": f"{12 / atados:.1f} sem".replace(".", ",")})
     return filas
+
+
+# ================================================================ colector de gases y humos de soldadura
+SOLDADORAS = ("B03", "A06", "B06", "M11", "M12", "C02", "C03", "C04", "C05")
+
+
+def colector_gases():
+    """Largo de cañería (recorrido ortogonal) del colector de Arcal 21 y de humos a las 9 soldadoras, desde el
+    extremo oeste de la sala SC (donde está) y desde el centro de la sala, para justificar la ubicación."""
+    eq = {e.cod: e for e in L.EQUIPOS}
+    sold = [eq[c].rect.c for c in SOLDADORAS]
+    cg = eq["CG1"].rect.c
+    sc = next(s.rect for s in L.SECTORES if s.cod == "SC").c
+
+    def suma(p):
+        return sum(abs(p[0] - x) + abs(p[1] - y) for x, y in sold)
+    return {"sc": suma(cg), "centro": suma(sc), "n": len(sold),
+            "filas": [(c, abs(cg[0] - eq[c].rect.c[0]) + abs(cg[1] - eq[c].rect.c[1])) for c in SOLDADORAS]}

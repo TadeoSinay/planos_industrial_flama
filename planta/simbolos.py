@@ -1363,6 +1363,39 @@ def contenedores(m):
             m.rc(u0 + (u1 - u0) * k - 0.12, 0.1, u0 + (u1 - u0) * k + 0.12, 0.3, OC)
 
 
+def bateria_gas(m):
+    """Batería de cilindros de gas en marco (12 × 50 L) con colector y cadenas; varias si el largo da."""
+    U, V = m.Lu, m.Lv
+    n = max(1, int(U / 1.1))
+    for i in range(n):
+        u0, u1 = i * U / n + 0.05, (i + 1) * U / n - 0.05
+        m.caja(u0, 0.05, u1, V - 0.05, (236, 236, 228), CONT)
+        nu, nv = max(1, int((u1 - u0) / 0.26)), max(1, int((V - 0.1) / 0.26))
+        for a in range(nu):
+            for b in range(nv):
+                m.fc(u0 + (a + 0.5) * (u1 - u0) / nu, 0.05 + (b + 0.5) * (V - 0.1) / nv, 0.11, (150, 180, 210))
+                m.ci(u0 + (a + 0.5) * (u1 - u0) / nu, 0.05 + (b + 0.5) * (V - 0.1) / nv, 0.11)
+        m.ln((u0 + 0.05, 0.12), (u1 - 0.05, 0.12), CONT)
+
+
+def compresor(m):
+    """Compresor de tornillo carenado: gabinete, rejillas de ventilación y motor."""
+    U, V = m.Lu, m.Lv
+    m.caja(0, 0, U, V, (215, 225, 215), CONT)
+    for k in range(1, 6):
+        m.ln((U * 0.08, V * k / 6), (U * 0.45, V * k / 6))
+    m.motor(U * 0.72, V * 0.5, U * 0.3, min(0.25, V * 0.3))
+
+
+def tanque(m):
+    """Tanque pulmón vertical: envolvente, válvula de seguridad y purga."""
+    U, V = m.Lu, m.Lv
+    r = min(U, V) / 2 - 0.02
+    m.fc(U / 2, V / 2, r, (225, 230, 236))
+    m.ci(U / 2, V / 2, r, CONT)
+    m.ci(U / 2, V / 2, r * 0.25)
+
+
 # =================================================================== vehículos
 def autoelevador(pl, x, y, ang, carga=True):
     """Autoelevador de 3,0 t (planta): contrapeso, techo de protección, mástil, horquillas y pallet."""
@@ -1449,7 +1482,7 @@ SIMBOLOS = {
     "mesa_rodillos": mesa_rodillos, "mesa_control": mesa_control, "pluma": pluma,
     "cabina_muestras": cabina_muestras, "rack": rack, "kanban": kanban, "pulmon": pulmon, "carros": carros,
     "paquetes": paquetes, "cantilever": cantilever, "portaflejes": portaflejes, "estanteria": estanteria,
-    "contenedores": contenedores,
+    "contenedores": contenedores, "bateria_gas": bateria_gas, "compresor": compresor, "tanque": tanque,
 }
 
 CLAVES = [
@@ -1524,7 +1557,7 @@ def area_trabajo(m, n_op):
 
 
 SIN_PUESTO = ("rack", "kanban", "pulmon", "carros", "pluma", "paquetes", "cantilever", "portaflejes",
-              "estanteria", "contenedores")
+              "estanteria", "contenedores", "bateria_gas", "compresor", "tanque")
 
 
 def dibujar(pl, e, operarios=True):

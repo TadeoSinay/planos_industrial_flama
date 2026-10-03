@@ -44,17 +44,21 @@ def generar(ruta):
                    [[x.cod, x.nombre, f(x.rect.area, 1), f(x.area_req, 1) if x.area_req else "-", x.nota]
                     for x in L.SECTORES]))
     s.append("\nLos m² requeridos de MP (hoja MP Almacén) suponen almacenamiento a piso o en rack de 3 niveles con medio "
-             "pasillo propio. En el layout van en altura frente a las calles A1/A2 del autoelevador: hojas en paquetes "
-             "sobre tacos (AL-1H, 5 posiciones × 4 alturas = 20 paquetes), flejes en porta-flejes (AL-1F, 24 rollos), "
-             "caño en el cantiléver exterior CT (12 atados) y casquetes en el rack pasante RK1.\n")
+             "pasillo propio. En el layout el almacén de MP guarda sólo seis rubros, en altura frente a las calles A1/A2 "
+             "del autoelevador de MP: hojas en paquetes sobre tacos (AL-1H, 4 posiciones × 4 alturas, más el LAC 4,75 en "
+             "AL-1L), flejes en porta-flejes de 3 niveles (AL-1F, 24 rollos), caño en el cantiléver interior (AL-1T, 12 "
+             "atados), cuellos y roscas (AL-1C), alambre MAG (AL-1A) y baterías de Arcal 21 (AL-GS). Válvulas, "
+             "manómetros y pescantes van a AL-2 junto a terminación; polvos, agentes y N₂ al almacén previo a la carga "
+             "(SP-1); pintura y granalla a QP y GR. El scrap no se guarda: queda en el contenedor de cada puesto.\n")
     # 3 recepción
     s.append("\n## 3. Recepción de MP y análisis de peso de la carga\n")
     s.append("Se dimensiona para la carga máxima: un semirremolque de 18,6 m y 30 t o dos chasis de 10 m en el alero "
-             "de descarga norte (23 × 10,6 m), con descarga por ambos lados con autoelevador. La MP entra por P1 al "
-             "pasillo AM y queda en racks frente a la máquina que la consume (chapa frente a la guillotina, caño frente "
-             "a los láseres, flejes frente a la prensa). Otros ingresos, junto a su consumo: P4 al sur (polvo), muelle M2 ("
-             "insumos de terminación), P3 al este (químicos y pintura), M3 (casquetes y tercerizados) y P8 (polvo, "
-             "estructuras y ruedas de carros).\n")
+             "de descarga norte (32 × 11,6 m), con descarga por ambos lados con autoelevador. La nave tiene sólo cuatro "
+             "portones, uno por frente logístico: P1 (MP de producción, 7,20 m de ancho para que el atado de caño de 6 m "
+             "entre atravesado), P2 (recargas), el muelle único P3 (PT, carros, revendidos, casquetes, válvulas, embalaje, "
+             "polvos, agentes y N₂; recepción 7 a 10 h y expedición 13 a 17 h) y P4 (pintura y granalla). Los camiones "
+             "entran por G1 (garita y báscula) y salen por G3: calle norte al alero de P1, calle sur a la playa del muelle "
+             "P3 y calle este a P4.\n")
     s.append(tabla(["Formato", "Largo (m)", "Carga útil (t)", "PBT (t)", "Descarga"],
                    [[a, f(b, 1), f(c, 1), f(d, 1), e] for a, b, c, d, e in C.CAMIONES]))
     s.append("\n" + tabla(["Proveedor / material", "t por entrega", "Entregas/año", "Vehículo", "Portón", "Destino"],
@@ -67,9 +71,9 @@ def generar(ruta):
              "(Q = Qn · (cn + d) / (c + d), d = 0,45 m):\n")
     s.append(tabla(["Nominal (c = 500 mm)", "Por el lado largo (c = 750 mm)", "Por el lado corto (c = 1500 mm)"],
                    [[f"{f(q, 1)} t", f"{f(a, 2)} t", f"{f(b, 2)} t"] for q, a, b in C.analisis_peso()]))
-    s.append("\nSe adopta autoelevador eléctrico de 3,0 t con horquillas de 1,8 m y posicionador: toma el paquete por el "
-             "lado largo (2,37 t > 2 t). El de 2,5 t que proponía el Excel queda justo (1,98 t) y no sirve por el lado "
-             "corto.\n")
+    s.append("\nSe adopta para MP un autoelevador a nafta de 3,0 t con horquillas de 1,8 m y posicionador: toma el "
+             "paquete por el lado largo (2,37 t > 2 t). El de 2,5 t que proponía el Excel queda justo (1,98 t) y no sirve "
+             "por el lado corto; sí alcanza para los frentes de carros y recargas y de PT.\n")
     # 4 sobrestock
     s.append("## 4. Anti-sobrestock de chapa SAE 1010\n")
     s.append(tabla(["Formato", "Hojas/semana", "Paquete de 2 t cubre (sem)", "Paquete propuesto", "Stock máx. (sem)"],
@@ -91,16 +95,21 @@ def generar(ruta):
     s.append(tabla(["Unidad de carga", "Medio", "Recorrido", "Viajes/día", "m", "min/viaje", "min/día"],
                    [[r["carga"], r["medio"], r["ruta"], f(r["viajes"], 1), f(r["dist"], 0), f(r["t_viaje"], 1),
                      f(r["min_dia"], 0)] for r in M_["filas"]]))
-    s.append(f"\nOcupación sobre un turno útil de 408 min: autoelevador {f(M_['ocup']['Autoelevador'] * 100, 0)} %, "
-             f"apiladora {f(M_['ocup']['Apiladora'] * 100, 0)} %. Un autoelevador eléctrico alcanza (y descarga los "
-             f"camiones). Entre pasos se mueven {M_['carros_dia']} carros por día y por tramo: los empuja el operario que "
+    oc = M_["ocup"]
+    s.append(f"\nOcupación sobre un turno útil de 408 min: autoelevador de MP {f(oc['Autoelevador MP'] * 100, 0)} %, de "
+             f"carros y recargas {f(oc['Autoelevador carros'] * 100, 0)} %, de PT {f(oc['Autoelevador PT'] * 100, 0)} %. "
+             "Se asigna uno por frente (MP, carros y recargas, PT) para que ninguno cruce el frente de otro ni la "
+             "línea; los tres a nafta, con su armario de inflamables e insumos en MP (AL-1N) y en PT (AL-PN). "
+             f"Entre pasos se mueven {M_['carros_dia']} carros por día y por tramo: los empuja el operario que "
              "cierra el lote (< 1 min por viaje), sin tren logístico ni chofer; al norte de la senda no entra el "
              "autoelevador. Un abastecedor por turno hace el milk run de consumibles desde el pañol de línea y repone "
              "carros vacíos desde el supermercado PV.\n")
     s.append(tabla(["Portón", "Qué entra o sale", "Vehículo", "Frecuencia", "Horario"], [list(r) for r in C.PORTONES]))
-    s.append("\nEl antiguo portón P5 (insumos de terminación) se suprimió: recibía ≈ 1 camión por semana a 10 m de los "
-             "muelles, que trabajan muy por debajo de su capacidad; ahora esos pallets bajan por la rampa del muelle M2 "
-             "y van con transpaleta al rack AL-2.\n")
+    G = C.colector_gases()
+    s.append(f"\nColector de Arcal 21 y de humos de soldadura en el extremo oeste de la sala SC: {f(G['sc'], 0)} m de "
+             f"cañería (recorrido ortogonal) a las {G['n']} soldadoras, contra {f(G['centro'], 0)} m si estuviera en el "
+             "centro de la sala.\n")
+    s.append(tabla(["Soldadora", "m desde el colector"], [[c, f(d, 1)] for c, d in G["filas"]]))
     # 6 cruces
     s.append("## 6. Cruces de flujos y de hilos\n")
     from shapely.geometry import LineString, Point
@@ -129,8 +138,9 @@ def generar(ruta):
                     for k in ("inodoros", "lavabos", "orinales", "duchas")]))
     s.append(f"\nArmarios: H {san['armarios_req']['H']} requeridos / {san['armarios_proy']['H']} proyectados; M "
              f"{san['armarios_req']['M']} / {san['armarios_proy']['M']} (vestuario de mujeres al 20 % de la dotación). "
-             "Dos núcleos (principal y este) con sanitario accesible cada uno (Ley 24.314, Dec. 914/97: círculo libre de "
-             "Ø 1,50 m, espacio lateral de 0,80 m, barras). Lactario como buena práctica (Ley 26.873). Espacio de cuidado "
+             "Lockers individuales, 1 por empleado, en bloques de 10 columnas × 3 filas. Un sanitario accesible con ducha "
+             "en el bloque de servicios (Ley 24.314, Dec. 914/97: círculo libre de Ø 1,50 m, espacio lateral de 0,80 m, "
+             "barras); los sanitarios de planta son sólo de hombres y de mujeres. Espacio de cuidado "
              "no obligatorio (Dec. 144/2022 exige 100 o más personas; la dotación es 71). Comedor de 30 plazas en 2 "
              "tandas (DT Servicios).\n")
     s.append(tabla(["Local", "m²"], [[f"{x.cod} {x.nombre}", f(x.rect.area, 1)] for x in L.LOCALES]))
@@ -180,7 +190,7 @@ def generar(ruta):
     s.append("\n## 13. Supuestos a validar\n")
     s.append("- Tercerizados revendidos: volumen estimado (no figura en los Excel).\n"
              "- Retiros, FOS y FOT del parque industrial; ubicación de la celda de media tensión y de la reducción de gas.\n"
-             "- Medidas de equipos marcados E (estimados): confirmar con los proveedores.\n"
+             "- Medidas de diseño (marcadas D con su criterio): confirmar con los proveedores al cotizar.\n"
              "- Textos normativos marcados como B en el README (Dec. 351/79 arts. 49, 50 y anexo VII; Res. SRT 960/2015): "
              "verificar la versión vigente en InfoLEG.\n"
              "- Recargas se incluye porque figura en el dimensionamiento técnico, aunque no estaba en la lista de secciones "

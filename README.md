@@ -18,7 +18,7 @@ dibujo que [planos_flama-](https://github.com/TadeoSinay/planos_flama-).
 | `FL_PI_02` | **Flujos y operaciones** | A0 1:200 | MP, SE, PT, scrap y efluentes; símbolos ASME en cada equipo; cursogramas de S1, S2, cúpulas, S3, S4 y recargas |
 | `FL_PI_03` | **Personal, evacuación y señalización** | A0 1:200 | DIR (hilos y sendas), salidas, recorrido máximo, extintores, BIE, pulsadores, señalética IRAM 10005, sanitarios y accesibilidad |
 | `FL_PI_04` | **Logística de MP y PT** (2 hojas) | A0 1:50 + A1 1:20 | Almacén de MP (descarga, distribución por tipo de chapa, carga a cada máquina), almacén de PT y expedición, políticas de stock, métodos y tiempos, flota; hoja 2: aprovechamiento de chapa |
-| `FL_PI_05` | **Servicios, oficinas y PCP** | A0 1:50 | Vestuarios, sanitarios, comedor; entrepiso de oficinas vidriado sobre la línea; núcleo sanitario de planta; corte |
+| `FL_PI_05` | **Servicios, oficinas y apoyo** | A0 1:50 | Todo en planta baja: servicios y administración (lockers 1 por empleado, duchas e inodoros en locales separados, sanitario accesible con ducha, comedor); fila central (mantenimiento + pañol, calidad, cuarentena, supervisor, PCP); sanitarios de planta H y M; sala de compresores y colectores |
 
 Para abrir en AutoCAD y guardar como DWG: ver [`autocad/LEEME.md`](autocad/LEEME.md).
 
@@ -32,6 +32,38 @@ Para abrir en AutoCAD y guardar como DWG: ver [`autocad/LEEME.md`](autocad/LEEME
 | Personal (hilos) | magenta, trazos | 6 | F-PERSONAL |
 | Scrap y retal | gris, trazo y punto | 8 | F-SCRAP |
 | Efluentes líquidos / gaseosos | marrón / cian, trazos | 34 / 4 | F-EFL-LIQ / F-EFL-GAS |
+
+## Versión 7: cuatro portones, almacén de MP de seis rubros y servicios sin entrepiso
+
+- **Camiones con ingreso a cada portón**: entran por G1 (garita y báscula de 18 m) y salen por G3. Calle norte al
+  alero de P1, calle sur a la playa de maniobra del muelle P3, calle este a P4. La garita controla G1 (camiones), G2
+  (autos y utilitarios) y G4 (peatones); el camino peatonal llega al hall sin cruzar calles de camiones.
+- **Cuatro portones**: P1 (MP de producción, 7,20 m para que el atado de caño entre atravesado), P2 (recargas, al sur),
+  muelle único P3 (PT, carros, revendidos, casquetes, válvulas, embalaje, polvos, agentes y N₂; recepción 7 a 10 h y
+  expedición 13 a 17 h) y P4 (pintura y granalla). Se eliminaron P2 viejo, P6, P7, P8, P9, M2, M3, RC-1 y RC-2.
+- **Almacén de MP con sólo seis rubros**: gases Arcal 21 (jaula), hojas, flejes, caños (cantiléver interior), cuellos y
+  roscas, alambre MAG. Sin pañol de insumos pesados ni scrap. Válvulas, manómetros y pescantes en AL-2 (terminación)
+  con buffers en cajas por línea (estantería pasante en nuevos, BVC en carros, estante en recargas). Polvos, agentes
+  extintores, baterías de N₂ y deshumidificador en el almacén previo a la carga (SP-1).
+- **Scrap en el puesto**: contenedor en la guillotina, carros en los dos láseres y en la prensa; salen al volquete por
+  P1, el portón más cercano a los tres.
+- **Embalaje diferenciado**: nuevos y revendidos en EMB (junto al muelle), carros en S-TC, recargas en RC-RD; precintos
+  como insumo de PT. Nafta e insumos de autoelevadores en dos armarios (MP y PT).
+- **3 autoelevadores**, uno por frente: MP, carros y recargas (calle nueva PO-C del muelle a carros y recargas), PT.
+- **Servicios y administración** en planta baja (sin entrepiso): limpieza en el ex primeros auxilios; higiene y
+  seguridad + medicina laboral + primeros auxilios + EPP en una oficina de una persona; administración (compras,
+  ventas, RRHH) contra la nave con ventana al pasillo central. Lockers 1 por empleado en bloques de 10 × 3; duchas
+  en su propio local; inodoros, mingitorios, lavabos y duchas cada grupo sobre su pared; sanitario accesible con ducha
+  donde estaba limpieza, por el pasillo PS que termina en la salida SV-2; comedor con las mesas lejos de la puerta y
+  el lavamanos junto a la bacha. Sanitarios de planta sólo H y M.
+- **Fila central**: mantenimiento con su pañol pegado (repuestos y herramental del preventivo), calidad, cuarentena
+  (con las muestras y el archivo de calidad), supervisor en oficina propia y PCP separado, con ventana a la línea.
+- **Compresores y colectores de gases de soldadura** en el área libre (ampliada con el ex pañol): colector de Arcal 21
+  y de humos en el extremo oeste, el más cercano a las soldadoras (largo calculado en la memoria).
+- **Recargas**: recepción y despacho en la misma sala junto a P2; local de calidad IRAM 3517-2 (patrones calibrados,
+  contraste mensual de instrumentos, mufla, cámara, freezer, trazabilidad).
+- **Controles nuevos**: máximo 4 portones, toda puerta con paso libre a una calle o a su local, scrap a ≤ 3 m del
+  puesto, lockers 1 por empleado sin sobredimensionar.
 
 ## Versión 6: red de calles continua, sin calles ciegas
 

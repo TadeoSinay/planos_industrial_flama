@@ -26,6 +26,7 @@ def caja(r, m=0.0):
 def main():
     # 1. cruces entre flujos de MP, SE y PT
     fl = [(f.cat, f.rot, LineString(f.pts)) for f in L.FLUJOS if f.cat in ("MP", "SE", "PT")]
+    muelle = caja(next(s_.rect for s_ in L.SECTORES if s_.cod == "EXP"))
     n = maniobras = 0
     for (c1, r1, a), (c2, r2, b) in itertools.combinations(fl, 2):
         if not a.intersects(b):
@@ -37,12 +38,16 @@ def main():
             if q.geom_type == "Point" and any(q.distance(e) < 0.05 for e in ends):
                 continue
             if c1 == c2 == "MP" and any(caja(p.rect).buffer(0.05).contains(q) for p in L.PASILLOS
-                                        if p.cod in ("A1", "A2", "AN")):
-                maniobras += 1          # un solo autoelevador sirviendo el almacén: no es cruce de tránsito
+                                        if p.cod in ("A1", "A2", "AN", "AT")):
+                maniobras += 1          # un solo autoelevador sirviendo su almacén: no es cruce de tránsito
+                continue
+            if muelle.buffer(0.05).contains(q):
+                maniobras += 1          # muelle único: recepción 7 a 10 h y expedición 13 a 17 h, no coinciden
                 continue
             n += 1
             err(f"cruce de flujos: {c1} {r1} x {c2} {r2}")
-    print(f"cruces entre flujos: {n} (más {maniobras} maniobras del autoelevador dentro del almacén de MP)")
+    print(f"cruces entre flujos: {n} (más {maniobras} maniobras: autoelevador en su almacén y muelle único P3 "
+          "con recepción y expedición en horarios distintos)")
     # 2. hilos de personal: sólo cruzan flujos dentro de sendas
     sendas = [caja(r) for c, r, t in L.SENDAS]
     m = 0
@@ -170,6 +175,57 @@ def main():
                     n_muro += 1
                     err(f"el recorrido {nom} atraviesa el muro {lado} de {cod_l}")
     print(f"flujos y recorridos a través de muros: {n_muro}")
+    # 4g. a lo sumo 4 portones en la nave (uno por frente logístico)
+    portones = [pu.cod for pu in L.PUERTAS if pu.tipo in ("porton", "muelle")]
+    print(f"portones de la nave: {len(portones)} ({', '.join(portones)})")
+    if len(portones) > 4:
+        err(f"hay {len(portones)} portones (máximo 4)")
+    # 4h. toda puerta da a algún lado: 1,0 m libre del lado de adentro que toca una calle o un local
+    obst = [caja(e.rect, -0.02) for e in L.EQUIPOS] + [caja(m.rect, -0.02) for m in L.MOBILIARIO
+                                                         if m.tipo != "rampa"]
+    obst += [caja(p_.rect, -0.02) for p_ in L.PULMONES]
+    calles = [caja(p_.rect) for p_ in L.PASILLOS]
+    recintos = [caja(s_.rect) for s_ in L.SECTORES + L.LOCALES]
+    n_p = 0
+    for pu in L.PUERTAS:
+        a_, b_ = pu.a, pu.b
+        z = {"N": sg.box(a_, L.NAVE_A - 1.0, b_, L.NAVE_A), "S": sg.box(a_, 0.0, b_, 1.0),
+             "O": sg.box(0.0, a_, 1.0, b_), "E": sg.box(L.NAVE_L - 1.0, a_, L.NAVE_L, b_)}.get(pu.muro)
+        if z is None:
+            continue
+        n_p += 1
+        if any(z.buffer(-0.05).intersects(o) for o in obst):
+            err(f"la puerta {pu.cod} está tapada del lado de adentro")
+        # 4 m hacia adentro: tiene que llegar a una calle sin obstáculos, o la puerta es de un local
+        a_calle = False
+        for d in (0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0):
+            zd = {"N": sg.box(a_, L.NAVE_A - d, b_, L.NAVE_A), "S": sg.box(a_, 0.0, b_, d),
+                  "O": sg.box(0.0, a_, d, b_), "E": sg.box(L.NAVE_L - d, a_, L.NAVE_L, b_)}[pu.muro]
+            if any(zd.buffer(-0.05).intersects(o) for o in obst):
+                break
+            if any(zd.intersects(c) for c in calles):
+                a_calle = True
+                break
+        a_local = any(z.intersection(r_).area >= 0.5 * z.area for r_ in recintos)
+        if not (a_calle or a_local):
+            err(f"la puerta {pu.cod} no da a ninguna calle ni local")
+    for x, y, w, muro, abre in L.PUERTAS_INT:
+        for lado in (-1, 1):
+            z = sg.box(x, y + lado * 0.15, x + w, y + lado * 0.75) if muro == "h" else \
+                sg.box(x + lado * 0.15, y, x + lado * 0.75, y + w)
+            n_p += 1
+            if any(z.intersects(o) for o in obst):
+                err(f"la puerta interior en ({x}, {y}) está tapada por un mueble o equipo")
+    print(f"puertas con paso libre revisadas: {n_p}")
+    # 4i. scrap en el puesto que lo genera, nunca en el almacén de MP
+    for maq, cont in (("M04", "SCG"), ("M15", "SCL1"), ("M16", "SCL2"), ("M08", "SCP")):
+        em = next(e for e in L.EQUIPOS if e.cod == maq)
+        ec = next(e for e in L.EQUIPOS if e.cod == cont)
+        if caja(em.rect).distance(caja(ec.rect)) > 3.0:
+            err(f"el contenedor de scrap {cont} está a más de 3 m de {maq}")
+    for s_ in L.SECTORES:
+        if s_.rect.x1 < 12.8 and s_.rect.y0 > 19.0 and ("crap" in s_.nombre or "insumos pesados" in s_.nombre):
+            err(f"el almacén de MP guarda {s_.nombre}")
     # 4d. zona del operario: 1,0 m libre al frente, sin calles de autoelevador ni materiales ajenos
     from planta.simbolos import frente_de
     for e in L.EQUIPOS:
@@ -235,6 +291,12 @@ def main():
     for k in ("inodoros", "lavabos", "orinales", "duchas"):
         if san["proy"]["H"][k] < san["req_H"][k] or san["proy"]["M"][k] < san["req_M"][k]:
             err(f"sanitarios insuficientes: {k}")
+    if san["armarios_proy"]["H"] < san["armarios_req"]["H"] or san["armarios_proy"]["M"] < san["armarios_req"]["M"]:
+        err("faltan lockers (1 por empleado)")
+    if san["armarios_proy"]["H"] > san["armarios_req"]["H"] + 10 or san["armarios_proy"]["M"] > san["armarios_req"]["M"] + 5:
+        err("lockers sobredimensionados")
+    print(f"lockers: H {san['armarios_proy']['H']} para {san['armarios_req']['H']}, "
+          f"M {san['armarios_proy']['M']} para {san['armarios_req']['M']}")
     # 9. extintores
     ex = C.extintores()
     print(f"extintores en la nave: {ex['cant']} (mínimo por superficie {ex['minimo_sup']})")

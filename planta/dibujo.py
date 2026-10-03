@@ -285,6 +285,16 @@ def muros(pl, detalle=True):
             vanos.append(sg.box(-1, p.a, 1, p.b))
         elif p.muro == "E":
             vanos.append(sg.box(X - 1, p.a, X + 1, p.b))
+    for lado, a_, b_, uso in getattr(L, "VENTANAS_NAVE", []):
+        vanos.append({"O": sg.box(-1, a_, 1, b_), "E": sg.box(X - 1, a_, X + 1, b_),
+                      "N": sg.box(a_, Y - 1, b_, Y + 1), "S": sg.box(a_, -1, b_, 1)}[lado])
+        for v in (-0.36, -0.3, -0.24):
+            if lado in "OE":
+                xv = v if lado == "O" else X - v
+                pl.linea((xv, a_), (xv, b_), "A-VENTANA")
+            else:
+                yv = v if lado == "S" else Y - v
+                pl.linea((a_, yv), (b_, yv), "A-VENTANA")
     anillo = anillo.difference(unary_union(vanos))
     # anexos: muros de 0,20 m (medianeros con la nave: se usa el cerramiento de la nave)
     for s in L.ANEXOS:
@@ -418,13 +428,14 @@ def equipos(pl, rotulos=True, h=1.5, fino=False, operarios=True):
     mamparas(pl)
     mobiliario(pl)
     cerrados(pl)
-    entrepiso_pb(pl)
     transportador(pl)
     pulmones(pl, h)
     if rotulos:
         for e in L.EQUIPOS:
             if getattr(e, "paso", ""):
                 globo_paso(pl, e.paso, e.rect.c, h)
+                p = pl.P(*e.rect.c)
+                pl.texto(corto(e.nombre), (p[0], p[1] - h * 1.6), max(h * 0.8, 1.2), A.TOP_CENTER, "A-TEXTO", 0, papel=True)
             else:
                 rot = 90 if e.rect.h > e.rect.w * 1.6 else 0
                 pl.texto(corto(e.nombre), e.rect.c, h * 0.62, A.MIDDLE_CENTER, "A-TEXTO", rot)
@@ -498,55 +509,6 @@ def cerrados(pl):
             elif t == "ventana":
                 for v in (-0.06, 0.0, 0.06):
                     pl.linea(P(a, v), P(b, v), "A-VENTANA")
-
-
-def entrepiso_pb(pl):
-    """Proyección del entrepiso de oficinas sobre la planta baja y escalera con plataforma elevadora."""
-    r = L.ENTREPISO
-    pl.rect(r, "A-ENTREPISO")
-    pl.linea((r.x0, r.y0), (r.x1, r.y1), "A-ENTREPISO")
-    pl.texto(f"ENTREPISO DE OFICINAS +{L.Z_ENTREPISO:.2f} (proyección)".replace(".", ","),
-             (r.c[0], r.y1 - 0.45), 1.2, A.MIDDLE_CENTER, "A-ENTREPISO")
-    esc = next(s.rect for s in L.SECTORES if s.cod == "ESC")
-    escalera(pl, esc)
-
-
-def escalera(pl, r):
-    """Escalera en U de 1,10 m (huellas de 0,28) y plataforma elevadora junto a la llegada."""
-    x0, y0, x1, y1 = r.x0, r.y0, r.x1, r.y1
-    pl.rect(r, "A-TABIQUE")
-    wt = 1.1
-    for k in range(int((y1 - y0 - 1.2) / 0.28)):
-        y = y0 + 0.1 + k * 0.28
-        pl.linea((x0 + 0.05, y), (x0 + wt, y), "A-MOBILIARIO")
-    pl.rect(L.R(x0 + 0.05, y1 - 1.15, x1 - 1.3, y1 - 0.05), "A-MOBILIARIO")       # descanso
-    pl.linea((x0 + wt / 2, y0 + 0.2), (x0 + wt / 2, y1 - 1.3), "A-MOBILIARIO")
-    pl.punta((x0 + wt / 2, y1 - 1.25), (0, 1), 0.9, 0.5, (90, 90, 90), "A-MOBILIARIO") if hasattr(pl, "punta") else None
-    pr = L.R(x1 - 1.25, y0 + 0.2, x1 - 0.1, y0 + 1.6)                                # plataforma elevadora
-    pl.rect(pr, "A-MOBILIARIO")
-    pl.linea((pr.x0, pr.y0), (pr.x1, pr.y1), "A-MOBILIARIO")
-    pl.linea((pr.x0, pr.y1), (pr.x1, pr.y0), "A-MOBILIARIO")
-    pl.texto("SUBE", (x0 + wt / 2, y0 + 1.0), 0.9, A.MIDDLE_CENTER, "A-TEXTO", 90)
-
-
-def planta_alta(pl, rotulos=True):
-    """Entrepiso de oficinas (+3,50): locales, mobiliario, puertas y paños vidriados a la planta."""
-    from . import mobiliario as MB
-    r = L.ENTREPISO
-    pl.rect(r, "A-MURO")
-    for s in L.LOCALES_PA:
-        pl.rect(s.rect, "A-LOCAL")
-        if rotulos and s.cat != "CIRC":
-            pl.texto(s.cod, (s.rect.x0 + 0.15, s.rect.y1 - 0.15), 1.4, A.TOP_LEFT, "A-TEXTO")
-    for v in (-0.06, 0.0, 0.06):                     # vidrio corrido norte (línea) y sur (pasillo central)
-        pl.linea((r.x0 + 2.6, r.y1 + v), (r.x1 - 0.2, r.y1 + v), "A-VENTANA")
-        pl.linea((r.x0 + 0.2, r.y0 + v), (r.x1 - 0.2, r.y0 + v), "A-VENTANA")
-    for mb in L.MOBILIARIO_PA:
-        MB.dibujar(pl, mb)
-    for x, y, w, muro, abre in L.PUERTAS_PA:
-        MB.puerta_int(pl, x, y, w, muro, abre)
-    esc = next(s.rect for s in L.SECTORES if s.cod == "ESC")
-    escalera(pl, esc)
 
 
 SENAL_RGB = {"obl": (0, 90, 170), "adv": (250, 200, 0), "pro": (200, 20, 20), "sal": (0, 140, 70),
@@ -756,11 +718,30 @@ def defensas(pl):
                        (30, 30, 30), "A-DEFENSA")
 
 
+def huecos_locales():
+    """Vanos de las puertas interiores y de anexo: (x0, y0, x1, y1) para cortar los muros de los locales."""
+    v = []
+    for x, y, w, muro, abre in getattr(L, "PUERTAS_INT", []):
+        v.append((x, y - 0.25, x + w, y + 0.25) if muro == "h" else (x - 0.25, y, x + 0.25, y + w))
+    for cod, a, b, tipo, uso in getattr(L, "PUERTAS_ANEXOS", []):
+        if abs(a[0] - b[0]) < 1e-6:
+            v.append((a[0] - 0.25, min(a[1], b[1]), a[0] + 0.25, max(a[1], b[1])))
+        else:
+            v.append((min(a[0], b[0]), a[1] - 0.25, max(a[0], b[0]), a[1] + 0.25))
+    return v
+
+
 def locales(pl, rotulos=True, h=1.6, relleno=False):
+    """Locales con su muro cortado en cada puerta (los pasillos internos quedan abiertos a su corredor)."""
+    vanos = unary_union([sg.box(*b) for b in huecos_locales()])
     for s in L.LOCALES:
         if relleno:
             pl.relleno(s.rect.pts(), RELLENO.get(s.cat, (240, 240, 240)))
-        pl.rect(s.rect, "A-LOCAL")
+        anillo = sg.LineString(s.rect.pts() + [s.rect.pts()[0]]).difference(vanos)
+        for g in getattr(anillo, "geoms", [anillo]):
+            cs = list(g.coords)
+            for a, b in zip(cs, cs[1:]):
+                pl.linea(a, b, "A-LOCAL")
         if rotulos:
             pl.texto(s.cod, s.rect.c, h, A.MIDDLE_CENTER, "A-TEXTO")
 
@@ -878,13 +859,10 @@ def _lineas(g):
 
 
 def vehiculos(pl):
-    """Flota calculada (C.manejo): 1 autoelevador 3 t con pluma, percha y gancho C, 1 apiladora y 3 transpaletas."""
+    """Flota calculada (C.manejo): 3 autoelevadores (uno por frente: MP, carros y recargas, PT) y 2 transpaletas."""
     from . import simbolos as S
-    S.autoelevador(pl, 10.9, 33.0, 270)                       # en A2, con un paquete de hojas
-    S.apiladora(pl, 46.75, 13.0, 90)                          # en T3, rack de alta rotación
-    S.transpaleta(pl, 48.6, 1.3, 0)                           # muelle M2 -> insumos de terminación
-    S.transpaleta(pl, 85.9, 33.2, 270)                        # P3 -> granalla
-    S.transpaleta(pl, 52.0, 18.0, 180)                        # estacionada junto a la carga de baterías
-    # cantiléver de caños: exterior oeste, fuera de la playa de camiones (lo carga el autoelevador desde el norte)
-    ct = next(r for c, n, r, t in L.EXTERIOR if c == "CT")
-    S.dibujar(pl, L.Equipo("CT", "Cantiléver de caños", ct, "CT", 0, tipo="cantilever", frente="N"), False)
+    S.autoelevador(pl, 10.9, 33.0, 270)                       # MP: en A2, con un paquete de hojas
+    S.autoelevador(pl, 30.0, 6.7, 180, carga=False)           # carros y recargas: en la calle PO-C
+    S.autoelevador(pl, 43.0, 13.0, 90)                        # PT: en la calle T2 del rack
+    S.transpaleta(pl, 86.0, 33.2, 270)                        # P4 -> granalla
+    S.transpaleta(pl, 52.0, 3.05, 0)                          # AT: insumos de terminación

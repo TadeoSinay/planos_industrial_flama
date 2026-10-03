@@ -3,7 +3,7 @@
 FL_PI_02  Flujos de materiales y de operaciones (MP, SE, PT, scrap, efluentes; ASME y cursogramas)
 FL_PI_03  Personal, evacuación y señalización (DIR, sendas, medios de escape, IRAM 10005, accesibilidad)
 FL_PI_04  Logística de MP y de PT (detalles 1:50, descarga y carga a máquina, políticas de stock, expedición)
-FL_PI_05  Servicios al personal, oficinas y PCP (planta baja 1:50, entrepiso 1:50, núcleo sanitario de planta)
+FL_PI_05  Servicios, administración y apoyo a la línea (todo en planta baja, 1:50)
 """
 
 import math
@@ -213,7 +213,7 @@ def fl_pi_03(doc, ox):
              ["Salidas de emergencia de 1,10 m con barral antipánico", str(e["salidas_emergencia"])],
              ["Extintores ABC 10 kg (1 cada 200 m², recorrido ≤ 20 m)", str(len(ext['puntos']) + len(FO.EXT_ANEXOS))],
              ["Bocas de incendio equipadas / pulsadores de alarma", f"{len(L.BIE)} / {len(L.PULSADORES)}"],
-             ["Sanitarios accesibles (servicios, planta y entrepiso)", "3"]]
+             ["Sanitario accesible con ducha (bloque de servicios)", "1"]]
     y = pl.tabla(x, y, cols, filas, 4.0, 2.0, "Evacuación y protección contra incendio")
     cols = [("Hilo (grupo de puestos)", 70, "l"), ("Desde PP-1 (m)", 26, "c")]
     filas = [[nom, f(lg, 0)] for nom, lg, main in grupos]
@@ -225,8 +225,8 @@ def fl_pi_03(doc, ox):
     filas3.append(["Armarios (art. 50)", san["armarios_req"]["H"], san["armarios_proy"]["H"], san["armarios_req"]["M"],
                    san["armarios_proy"]["M"]])
     pl.tabla(x + 104, y - 10, cols3, filas3, 4.0, 2.0, f"Sanitarios de vestuarios (art. 49): {san['H']} H y {san['M']} M")
-    pl.parrafo(["Además: núcleo sanitario de planta (este) con 2 inodoros, 2 mingitorios, 2 lavabos H,",
-                "1 inodoro M, sanitario accesible y sala de limpieza, a < 25 m de pintura, terminación y PT.",
+    pl.parrafo(["Además: sanitarios de planta (este) sólo de hombres (2 inodoros, 2 mingitorios, 2 lavabos)",
+                "y de mujeres (1 + 1), a < 25 m de pintura, terminación y PT. Lockers: 1 por empleado.",
                 "Cada operario tiene 1,0 m libre detrás de su puesto: ninguna calle ni material ajeno pasa",
                 "por su espalda (verificado). Mamparas ignífugas en todos los puestos de soldadura."],
                x, yb - 6, 2.0)
@@ -235,30 +235,40 @@ def fl_pi_03(doc, ox):
 
 # ================================================================ FL_PI_04 logística de MP y PT
 PASOS_MP = [
-    (1, "Camión en el alero norte (semi 18,6 m o chasis). Se pesa en la balanza de plataforma y se controla el remito."),
-    (2, "Paquetes de hojas (≤ 2 t): autoelevador 3 t con prolongaciones de horquilla, por el lado largo (c = 0,75 m). "
-        "Sin puente grúa: 1,5 paquetes/día no lo justifican."),
-    (3, "Paquete a su posición de AL-1H (un formato por posición, 4 alturas sobre tacos, FIFO con tarjeta de color)."),
+    (1, "Camión en el alero norte (semi 18,6 m o chasis): entró por G1, se pesó en la báscula y se controla el remito."),
+    (2, "Paquetes de hojas (≤ 2 t): autoelevador de MP (3 t, prolongaciones de horquilla) por el lado largo "
+        "(c = 0,75 m). Sin puente grúa: 1,5 paquetes/día no lo justifican."),
+    (3, "Paquete a su posición: 4 formatos de alto consumo en AL-1H frente a A2; el LAC 4,75 de carros en AL-1L (A1). "
+        "Un formato por posición, 4 alturas sobre tacos, FIFO con tarjeta de color."),
     (4, "Del AL-1H a la mesa elevadora de la guillotina: el autoelevador cruza A2 y apoya el paquete; las hojas se "
         "deslizan sobre la mesa de bolas (no se levantan a mano)."),
-    (5, "Rollos de fleje: pluma del autoelevador con gancho C (ojo vertical) a la cuna de AL-1F, por ancho y espesor."),
-    (6, "Rollo al desbobinador SHIMEQ de 2 mandriles: se carga el mandril libre mientras el otro trabaja (sin parar la prensa)."),
-    (7, "Atados de caño 6 m (≤ 600 kg): el autoelevador sale por P1, gira al oeste y los apoya desde el patio PCT en el "
-        "cantiléver CT (exterior oeste, con techo), fuera de la playa donde maniobran los camiones."),
-    (8, "Carro porta-tubos (2 boguies): 1-2 viajes/día del CT por el portón P7 (muro oeste) a AN, A2 y PO-L hasta los "
-        "caballetes (esquinas AN-A2: 1,7 + 3,6 m -> 7,3 m; A2-PO-L: 3,6 + 1,4 m -> 7,4 m; el carro mide 6,5 m)."),
-    (9, "Insumos pesados (alambre MIG, cuplas, asientos) al rack de PÑ por A1; de ahí, el milk run al pañol de línea."),
-    (10, "Basculantes de scrap de la guillotina y la prensa: el autoelevador los vuelca en el volquete del alero por P2."),
+    (5, "Rollos de fleje: pluma del autoelevador con gancho C (ojo vertical) a la cuna de AL-1F (3 niveles) por A1."),
+    (6, "Rollo al desbobinador SHIMEQ de 2 mandriles: se carga el mandril libre mientras el otro trabaja."),
+    (7, "Atados de caño 6 m (≤ 600 kg): el autoelevador entra por P1 (7,20 m de ancho) con el atado atravesado y lo "
+        "apoya en el cantiléver interior desde AN. El caño nunca queda afuera."),
+    (8, "Carro porta-tubos de 6,5 m: del cantiléver por AN, A2 y PO-L a los caballetes (esquina AN-A2: 5,0 + 3,6 m "
+        "-> 12,1 m; A2-PO-L: 3,6 + 1,4 m -> 6,8 m; ambas > 6,5 m)."),
+    (9, "Cuellos y roscas (cajas) y alambre MAG en la pared oeste (A1); salen con la zorra del milk run a los puestos."),
+    (10, "Arcal 21: baterías a la jaula ventilada AL-GS; la que se conecta va al colector de la sala SC por el patio "
+         "norte (puerta PG). El N₂ no entra acá: va al almacén previo a la carga (SP-1)."),
+    (11, "Scrap: contenedor en cada puesto que lo genera (guillotina, láseres, prensa); el autoelevador de MP lo lleva "
+         "al volquete junto a P1, la salida más cercana a los tres. Nada de scrap queda en el almacén."),
+    (12, "Nafta e insumos del autoelevador de MP en el armario de inflamables al final del pasillo central (AL-1N)."),
 ]
 PASOS_PT = [
     (1, "Palletizado en T08-T10 (fin de terminación) por SKU: 360 u de 1 kg o 84 de 5 kg por pallet."),
     (2, "Envolvedora EDOS PS5 (T11) y etiqueta de pallet con lote y destino."),
-    (3, "Apiladora por T3 al rack RK3 de alta rotación (1 y 5 kg)."),
+    (3, "Autoelevador de PT por T3 al rack RK3 de alta rotación (1 y 5 kg)."),
     (4, "Stock de temporada (oct-nov para diciembre) en RK2 y cara este de RK1, por T1 y T2 desde el pasillo central."),
-    (5, "Pedido del día: se arma en la calle EX frente al muelle asignado (8 pallets por camión)."),
-    (6, "Carga por la rampa niveladora de M1 o M2 con transpaleta / autoelevador (7 camiones por semana en 2035)."),
-    (7, "M3 recibe tercerizados (S4) y casquetes de carros (al rack pasante RK1: se toman desde S3 por la cara oeste)."),
-    (8, "Las recargas no usan estos muelles: entran por RC-1 y salen en utilitarios por RC-2 (milk run)."),
+    (5, "Pedido del día: se arma en la calle EX frente al muelle único P3 (8 pallets por camión)."),
+    (6, "Muelle P3: expedición de 13 a 17 h (7 camiones por semana en 2035) y recepción de 7 a 10 h, así entrada y "
+        "salida no se cruzan en EX."),
+    (7, "Recepción por P3: válvulas, manómetros y pescantes a AL-2; polvos, agentes y N₂ por AT al almacén previo a la "
+        "carga (SP-1); embalaje a EMB; casquetes a RK1 (se toman desde S3); revendidos a S4."),
+    (8, "Carros: salen al pintor y vuelven por la calle PO-C; los terminados salen de S-TC por EX al muelle."),
+    (9, "Embalaje diferenciado: matafuegos nuevos y revendidos en EMB; carros en S-TC; recargas en RC-RD. Precintos "
+        "como insumo de PT en los tres."),
+    (10, "Las recargas no usan el muelle: entran y salen en utilitarios por su portón P2 (milk run)."),
 ]
 
 
@@ -269,15 +279,16 @@ def fl_pi_04(doc, ox):
                 "Detalles 1:50 del almacén de MP y de la expedición, con la secuencia de cada movimiento. "
                 "Flota calculada por métodos y tiempos.")
     # ---- detalle MP
-    win = (-10.5, 23.0, 18.5, 49.0)                     # incluye el cantiléver CT y el portón P7 (oeste)
+    win = (-1.5, 18.8, 23.0, 49.0)                      # almacén de MP, carga a máquina, scrap y alero de P1
     p0 = (h.fx0 + 8, h.fy1 - 36 - (win[3] - win[1]) * 20)
     def _mp(p):
         for fl in L.FLUJOS:
             if fl.cat in ("MP", "SCRAP", "SE"):
                 p.flujo(fl.pts, fl.cat, cada=8.0, largo=3.0, ancho=1.6)
     pm = detalle(h, 50, win, p0, "DETALLE 1 - ALMACÉN DE MP Y CARGA A MÁQUINA - 1:50", extra=_mp)
-    for n, xy in ((1, (8.0, 48.4)), (2, (10.9, 45.2)), (3, (8.2, 39.0)), (4, (11.6, 27.2)), (5, (5.0, 36.5)),
-                  (6, (12.0, 37.0)), (7, (-5.8, 42.6)), (8, (2.0, 42.75)), (9, (3.8, 30.0)), (10, (3.0, 44.0))):
+    for n, xy in ((1, (14.0, 49.5)), (2, (10.9, 45.2)), (3, (8.2, 33.5)), (4, (11.6, 27.2)), (5, (3.8, 31.0)),
+                  (6, (12.0, 36.6)), (7, (7.5, 41.0)), (8, (8.0, 39.6)), (9, (3.0, 29.0)), (10, (3.6, 42.6)),
+                  (11, (20.8, 26.0)), (12, (1.2, 18.4))):
         globo(pm, n, xy, 3.0)
     pm.cota((2.0, 24.0), (5.6, 24.0), -2.0, True, texto="A1 <>")
     pm.cota((9.1, 24.0), (12.7, 24.0), -2.0, True, texto="A2 <>")
@@ -313,9 +324,10 @@ def fl_pi_04(doc, ox):
              for r_ in M_["filas"]]
     y = pt.tabla(xr, y - 6, cols, filas, 3.4, 1.65, "Métodos y tiempos (día pico 2035)")
     oc = M_["ocup"]
-    y = pt.parrafo([f"Autoelevador {f(oc['Autoelevador'] * 100, 0)} % y apiladora {f(oc['Apiladora'] * 100, 0)} % de un turno:",
-                    "1 de cada uno (más 3 transpaletas manuales). El autoelevador lleva",
-                    "prolongaciones, pluma con percha (balancín) y gancho C."], xr, y - 2, 1.9)
+    y = pt.parrafo([f"Ocupación de un turno: autoelevador de MP {f(oc['Autoelevador MP'] * 100, 0)} %, de carros y "
+                    f"recargas {f(oc['Autoelevador carros'] * 100, 0)} %, de PT {f(oc['Autoelevador PT'] * 100, 0)} %.",
+                    "Uno por frente (MP, carros y recargas, PT): ninguno cruza el frente de otro;",
+                    "el de MP lleva prolongaciones, pluma con percha (balancín) y gancho C."], xr, y - 2, 1.9)
     # políticas de stock debajo del detalle 1
     yb = p0[1] - 14
     cols = [("Artículo", 58, "l"), ("Consumo", 26, "c"), ("Unidad de compra", 46, "l"), ("Sistema", 58, "l"),
@@ -325,117 +337,92 @@ def fl_pi_04(doc, ox):
     yb = pm.tabla(p0[0], yb, cols, filas, 3.6, 1.75, "Políticas de stock por tipo de chapa, fleje y caño (2035)")
     pm.parrafo([
         "Distribución en AL-1H (de sur a norte, el más usado junto a la mesa elevadora): 1) LAF 1,6 × 1000 × 2000 (5 kg);",
-        "2) LAF 1,25 × 1220 × 2440 (2,5 kg); 3) LAF 2,0 × 1500 × 3000 (10 kg); 4) LAC 3,2 × 1500 × 3000 (25-50 kg);",
-        "5) LAC 4,75 × 1500 × 3000 (70-100 kg). Un formato por posición: no se mezclan espesores (error de corte).",
+        "2) LAF 1,25 × 1220 × 2440 (2,5 kg); 3) LAF 2,0 × 1500 × 3000 (10 kg); 4) LAC 3,2 × 1500 × 3000 (25-50 kg).",
+        "El LAC 4,75 × 1500 × 3000 (70-100 kg, 1 paquete cada 2 meses) en AL-1L. Un formato por posición.",
         "Entregas quincenales de Pradecon (17,6 t) en lugar de una mensual de 35 t: baja el stock máximo a la mitad.",
         "Flejes de bajo consumo (2,0 × 249 y 2,0 × 300 mm): rollos de 250-300 kg para no tener 5 meses de stock.",
         "Semáforo de antigüedad: verde < 4 semanas, amarillo 4-6, rojo > 6 (se usa primero y se inspecciona óxido)."],
         p0[0], yb - 4, 2.0)
     # flota
     cols = [("Equipo de manipulación", 70, "l"), ("Cant.", 12, "c"), ("Dónde", 60, "l")]
-    filas = [["Autoelevador eléctrico 3 t, mástil triplex", "1", "MP, PT y descarga de camiones"],
-             ["  prolongaciones de horquilla 2,4 m", "1", "Paquetes de hoja por el lado largo"],
-             ["  pluma con percha (balancín 4 m) y gancho C", "1", "Rollos de fleje y atados de caño"],
-             ["Apiladora eléctrica de conductor acompañante 1,2 t", "1", "Rack de alta rotación RK3 (T3)"],
-             ["Transpaletas manuales 2,5 t", "3", "Muelles, insumos y granalla"],
+    filas = [["Autoelevador de MP 3 t a nafta, mástil triplex", "1", "Almacén de MP, carga a máquina, scrap"],
+             ["  prolongaciones 2,4 m, pluma con percha y gancho C", "1", "Hojas, rollos y atados de caño"],
+             ["Autoelevador de carros y recargas 2,5 t a nafta", "1", "Muelle P3, calle PO-C, carros y recargas"],
+             ["Autoelevador de PT 2,5 t a nafta, mástil triplex", "1", "Racks de PT, muelle P3, AL-2 y SP-1"],
+             ["Transpaletas manuales 2,5 t", "2", "P4 (pintura y granalla) y terminación"],
              ["Carros porta-cilindros / zorras / porta-tubos", "26 / 5 / 1", "Línea, milk run y caños"],
-             ["Estación de carga de baterías", "1", "AL-C, sobre el pasillo central"]]
+             ["Carros de scrap 0,5 m³ / contenedor 1 m³", "3 / 1", "Láseres y prensa / guillotina"],
+             ["Armarios de nafta e insumos", "2", "AL-1N (MP) y AL-PN (PT y carros)"]]
     pt.tabla(p02[0], p02[1] - 14, cols, filas, 3.6, 1.75, "Flota (dibujada = calculada)")
     return h
 
 
-# ================================================================ FL_PI_05 servicios, oficinas y PCP
+# ================================================================ FL_PI_05 servicios, oficinas y apoyo a la línea
 def fl_pi_05(doc, ox):
-    h = hoja(doc, "A0", ox, "Servicios, oficinas y PCP", "Planta baja de servicios, entrepiso de oficinas y núcleo "
-             "sanitario de planta", "FL_PI_05", 1, 1, "1:50", "Plano de detalle", "Mampostería / estructura metálica")
-    titulo_hoja(D.Plano(h, 50, (0, 0), (0, 0)), h, "FL_PI_05 - SERVICIOS AL PERSONAL, OFICINAS Y PCP",
-                "Circuito del personal, vestuarios y sanitarios (Dec. 351/79 arts. 49-50), oficinas con vista y acceso "
-                "directo a producción, accesibilidad (Ley 24.314).")
-    # ---- servicios en planta baja
-    win = (-18.6, 18.4, 0.8, 38.4)
+    h = hoja(doc, "A0", ox, "Servicios, oficinas y apoyo", "Bloque de servicios y administración, fila central "
+             "(mantenimiento, calidad, supervisor, PCP), sanitarios de planta y sala de compresores", "FL_PI_05", 1, 1,
+             "1:50", "Plano de detalle", "Mampostería / estructura metálica")
+    titulo_hoja(D.Plano(h, 50, (0, 0), (0, 0)), h, "FL_PI_05 - SERVICIOS AL PERSONAL, OFICINAS Y APOYO A LA LÍNEA",
+                "Todo en planta baja (sin entrepiso). Circuito del personal, vestuarios con 1 locker por empleado y "
+                "sanitarios (Dec. 351/79 arts. 49-50), accesibilidad (Ley 24.314), supervisor y PCP sobre la línea.")
+    # ---- detalle 1: bloque de servicios y administración
+    win = (-18.6, 18.4, 0.8, 35.8)
     p0 = (h.fx0 + 8, h.fy1 - 36 - (win[3] - win[1]) * 20)
-    pl = detalle(h, 50, win, p0, "DETALLE 1 - BLOQUE DE SERVICIOS (PLANTA BAJA) - 1:50", eq_h=2.4, sectores=False)
+    pl = detalle(h, 50, win, p0, "DETALLE 1 - SERVICIOS Y ADMINISTRACIÓN - 1:50", eq_h=2.4, sectores=False)
     for s in L.LOCALES:
         r = s.rect
         if r.x1 < 0.5 and s.cat != "CIRC":
             pl.texto(s.cod, (r.x0 + 0.15, r.y1 - 0.15), 2.6, A.TOP_LEFT)
             pl.texto(f"{f(r.area, 1)} m²", (r.x1 - 0.15, r.y0 + 0.15), 2.2, A.BOTTOM_RIGHT)
+    pl.texto("VENTANA A LA NAVE (vista del pasillo central)", (-0.4, 20.2), 1.9, A.MIDDLE_CENTER, rot=90)
     xs = sorted({round(v, 2) for s in L.LOCALES if s.rect.x1 < 0.5 and s.rect.y0 < 23.0 for v in (s.rect.x0, s.rect.x1)})
     pl.cadena(xs, 19.0, -3.0, True)
     ys = sorted({round(v, 2) for s in L.LOCALES if s.rect.x0 < -17 for v in (s.rect.y0, s.rect.y1)})
     pl.cadena(ys, -18.0, -3.0, False)
-    # ---- entrepiso
-    win2 = (40.8, 24.2, 68.9, 33.8)
+    # ---- detalle 2: fila central (mantenimiento + pañol, calidad, cuarentena, supervisor y PCP)
+    win2 = (40.4, 24.0, 69.0, 33.8)
     p02 = (p0[0] + (win[2] - win[0]) * 20 + 16, h.fy1 - 36 - (win2[3] - win2[1]) * 20)
-    pa = D.Plano(h, 50, (win2[0], win2[1]), p02)
-    antes = D.handles(pa.m)
-    D.planta_alta(pa)
-    for s in L.LOCALES_PA:
-        if s.cat != "CIRC":
-            pa.texto(s.nombre if len(s.nombre) < 34 else s.nombre[:32] + "…", (s.rect.c[0], s.rect.y0 + 0.35), 1.9,
-                     A.MIDDLE_CENTER)
-            pa.texto(f"{f(s.rect.area, 1)} m²", (s.rect.c[0], s.rect.y0 + 0.75), 1.9, A.MIDDLE_CENTER)
-    pa.texto("VIDRIO CORRIDO: VISTA A LA LÍNEA (N4 Y PV)", (55.0, 29.75), 2.4, A.BOTTOM_CENTER)
-    pa.texto("VIDRIO CORRIDO: VISTA AL PASILLO CENTRAL, PT Y TERMINACIÓN", (55.0, 24.55), 2.4, A.TOP_CENTER)
-    pa.texto("Escalera y plataforma: bajan a la calle PO-1 y a la senda (30 s a la línea)", (42.5, 33.4), 2.0,
-             A.TOP_LEFT)
-    pa.cota((win2[0] + 0.4, 24.8), (68.4, 24.8), -6.0, True)
-    pa.cota((68.4, 24.8), (68.4, 29.4), 4.0, False)
-    D.recortar(pa, antes, *win2)
-    a, b = pa.P(win2[0], win2[1]), pa.P(win2[2], win2[3])
-    pa.m.add_lwpolyline([a, (b[0], a[1]), b, (a[0], b[1])], close=True, dxfattribs={"layer": "A-TEXTO"})
-    pa.texto(f"DETALLE 2 - ENTREPISO DE OFICINAS +{f(L.Z_ENTREPISO, 2)} SOBRE LA FILA CENTRAL - 1:50",
-             (a[0], b[1] + 3.0), 4.0, A.BOTTOM_LEFT, papel=True)
-    # ---- núcleo sanitario de planta
+    pa = detalle(h, 50, win2, p02, "DETALLE 2 - FILA CENTRAL: MANTENIMIENTO, PAÑOL, CALIDAD, SUPERVISOR Y PCP - 1:50",
+                 eq_h=2.2)
+    for cod in ("MT", "PÑL", "Q", "QR", "SUP", "PCP"):
+        r = next(s_.rect for s_ in L.SECTORES if s_.cod == cod)
+        pa.texto(f"{f(r.area, 1)} m²", (r.x1 - 0.15, r.y0 + 0.15), 2.0, A.BOTTOM_RIGHT)
+    pa.cota((41.2, 24.8), (68.4, 24.8), -6.0, True)
+    # ---- detalle 3: sanitarios de planta y ducha de emergencia
     win3 = (69.8, 6.2, 75.0, 19.6)
     p03 = (p02[0], p02[1] - 30 - (win3[3] - win3[1]) * 20)
-    ps = detalle(h, 50, win3, p03, "DETALLE 3 - NÚCLEO SANITARIO DE PLANTA - 1:50", eq_h=2.4, sectores=False)
+    ps = detalle(h, 50, win3, p03, "DETALLE 3 - SANITARIOS DE PLANTA (H Y M) - 1:50", eq_h=2.4, sectores=False)
     for s in L.LOCALES:
         if s.cod.startswith("SN-"):
             ps.texto(s.cod, (s.rect.x0 + 0.1, s.rect.y1 - 0.1), 2.4, A.TOP_LEFT)
-    # ---- corte por el entrepiso
-    pc = D.Plano(h, 100, (-2.0, -1.0), (p03[0] + 140, p03[1] + 40))
-    corte_entrepiso(pc)
+    # ---- detalle 4: sala de compresores y colectores
+    win4 = (47.4, 39.2, 66.2, 44.6)
+    p04 = (p03[0] + (win3[2] - win3[0]) * 20 + 70, p02[1] - 30 - (win4[3] - win4[1]) * 20)
+    pc = detalle(h, 50, win4, p04, "DETALLE 4 - COMPRESORES Y COLECTORES DE GASES DE SOLDADURA - 1:50", eq_h=2.2)
+    G = C.colector_gases()
+    pc.texto(f"Colector al extremo oeste: {f(G['sc'], 0)} m de cañería a las 9 soldadoras "
+             f"(en el centro de la sala serían {f(G['centro'], 0)} m)", (47.6, 39.5), 2.0, A.BOTTOM_LEFT)
     # ---- textos
-    xr = p03[0] + 130
-    y = p02[1] - 22
-    y = pasos_papel(pa, xr + 140, y, [
-        (1, "Ingreso por SV-1 desde el estacionamiento; fichado en el hall (reloj biométrico)."),
-        (2, "Pasillo limpio: a la izquierda vestuarios, a la derecha oficinas de servicio y capacitación."),
-        (3, "Vestuario: armario doble (ropa de calle / de trabajo). Duchas y sanitarios sólo desde el vestuario."),
-        (4, "Inodoros, mingitorios y lavabos sobre la misma pared húmeda (montante único de agua y cloaca)."),
-        (5, "PP-1: entrada a la senda peatonal separada del autoelevador por la defensa."),
-        (6, "Comedor a 6 m de PP-1 con lavamanos en la entrada (refrigerio de 30 min en 2 tandas)."),
-        (7, "Administración, PCP y jefatura en el entrepiso: ven toda la línea y bajan a ella en 30 s."),
-        (8, "Supervisión de turno en planta baja (fila central) con ventana a la línea."),
-    ], "Circuito y criterios", ancho=h.fx1 - xr - 150)
-    filas = [[f"{s.cod} {s.nombre}"[:46], f(s.rect.area, 1), s.nota[:70]] for s in L.LOCALES + L.LOCALES_PA
+    xr = p04[0]
+    y = p04[1] - 22
+    y = pasos_papel(pc, xr, y, [
+        (1, "Ingreso por SV-1 (camino peatonal desde G4 y la garita); fichado en el hall."),
+        (2, "Pasillo limpio: al sur limpieza, higiene y seguridad (con EPP y primeros auxilios), hall y administración; "
+            "al norte vestuarios, sanitario accesible y comedor."),
+        (3, "Vestuario: 1 locker por empleado (bloques de 10 columnas × 3 filas). Duchas en su propio local, "
+            "separadas de inodoros y mingitorios; todo sólo desde el vestuario."),
+        (4, "Duchas, inodoros, mingitorios y lavabos: cada grupo alineado sobre una misma pared húmeda."),
+        (5, "Sanitario accesible con ducha a nivel donde estaba limpieza; se entra por el pasillo PS, que termina en "
+            "la salida de emergencia SV-2."),
+        (6, "Comedor: el office (bacha y lavamanos sobre la misma pared) junto a la puerta; las mesas al fondo."),
+        (7, "Administración (compras, ventas, RRHH) contra la nave: ventana a lo largo del pasillo central y PP-1 a 6 m."),
+        (8, "Supervisor en oficina propia y PCP separado, los dos con ventana a la línea; mantenimiento con su pañol "
+            "pegado; calidad y cuarentena (con muestras y archivo) juntas."),
+    ], "Circuito y criterios", ancho=h.fx1 - xr - 10)
+    filas = [[f"{s.cod} {s.nombre}"[:46], f(s.rect.area, 1), s.nota[:70]] for s in L.LOCALES
              if s.cat != "CIRC" and not s.cod.startswith("RC")]
-    pl.tabla(p0[0], p0[1] - 14, [("Local", 74, "l"), ("m²", 14, "r"), ("Equipamiento / criterio", 112, "l")], filas,
-             3.6, 1.75, "Locales de servicios, oficinas y núcleo sanitario")
+    filas += [[f"{s.cod} {s.nombre}"[:46], f(s.rect.area, 1), s.nota[:70]] for s in L.SECTORES
+              if s.cod in ("MT", "PÑL", "Q", "QR", "SUP", "PCP", "SC")]
+    pl.tabla(p0[0], p0[1] - 26, [("Local", 74, "l"), ("m²", 14, "r"), ("Equipamiento / criterio", 112, "l")], filas,
+             3.6, 1.75, "Locales de servicios, administración y apoyo a la línea")
     return h
-
-
-def corte_entrepiso(pc):
-    """Corte transversal B-B por x = 55 m (norte-sur): nave de dos luces, entrepiso de oficinas a +3,50."""
-    W = L.NAVE_A
-    ejes = L.EJES_Y
-    pc.linea((-2.0, 0.0), (W + 2.0, 0.0), "A-EXTERIOR")
-    for x in ejes:
-        pc.rect(L.R(x - 0.2, 0.0, x + 0.2, 8.0), "A-MURO")
-    for a, b in zip(ejes, ejes[1:]):
-        m = (a + b) / 2
-        hl = 1.6 * (b - a) / 25.0
-        pc.pl([(a - 0.3, 8.0), (m, 8.0 + hl), (b + 0.3, 8.0)], "A-MURO")
-    e0, e1 = L.ENTREPISO.y0, L.ENTREPISO.y1
-    pc.rect(L.R(e0, L.Z_ENTREPISO, e1, L.Z_ENTREPISO + 0.25), "A-MURO")
-    pc.rect(L.R(e0, L.Z_ENTREPISO + 0.25, e1, L.Z_ENTREPISO + 2.9), "A-LOCAL")
-    for y_ in (e0, e1):
-        pc.linea((y_, L.Z_ENTREPISO + 1.0), (y_, L.Z_ENTREPISO + 2.4), "A-VENTANA")
-    pc.texto("Oficinas +3,50", ((e0 + e1) / 2, L.Z_ENTREPISO + 1.5), 2.0, A.MIDDLE_CENTER)
-    pc.texto("Q / SUP / EPP (PB)", ((e0 + e1) / 2, 1.5), 1.8, A.MIDDLE_CENTER)
-    pc.cota((e1 + 1.0, 0.0), (e1 + 1.0, L.Z_ENTREPISO), 8.0, False)
-    pc.cota((W, 0.0), (W, 8.0), 6.0, False)
-    pc.texto("CORTE B-B POR EL ENTREPISO (x = 55 m) - 1:100", pc.P(-2.0, 11.5), 3.0, A.BOTTOM_LEFT, papel=True)
-    pc.texto("S", pc.P(0.0, -2.0), 2.5, A.MIDDLE_CENTER, papel=True)
-    pc.texto("N", pc.P(W, -2.0), 2.5, A.MIDDLE_CENTER, papel=True)
