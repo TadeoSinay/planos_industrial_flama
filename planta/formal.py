@@ -135,14 +135,14 @@ def planta(pl, xa, xb, y0, y1):
 
 
 # ================================================================ lámina única
-def fl_pi_04(doc, ox, n=1):
+def fl_pi_01(doc, ox, n=1):
     h = hoja(doc, "2A0", ox, "Plano formal: planta general acotada",
-             "Nave, servicios y recargas con equipos y mobiliario; implantación y corte", "FL_PI_04", 1, TOT,
+             "Nave, servicios y recargas con equipos y mobiliario; implantación y corte", "FL_PI_01", 1, TOT,
              "1:100", "Plano de planta", "Estructura metálica / mampostería")
     xa, xb, y0, y1 = -31.0, 97.0, -13.0, 57.0
     k = 100
     pl = D.Plano(h, k, (xa, y0), (h.fx0 + 4, h.fy1 - 34 - (y1 - y0) * 1000 / k))
-    titulo_hoja(pl, h, "FL_PI_04 - PLANO FORMAL NORMALIZADO: PLANTA GENERAL ACOTADA 1:100",
+    titulo_hoja(pl, h, "FL_PI_01 - PLANO GENERAL FORMAL NORMALIZADO: PLANTA ACOTADA 1:100",
                 "Nave 88 × 44 m, servicios al personal, recargas y sala técnica, con cada máquina, puesto, "
                 "pulmón, mueble y artefacto a escala. Cotas en metros. Ejes 1 a 12 cada 8,00 m y A-B-C.")
     planta(pl, xa, xb, y0, y1)
@@ -150,11 +150,25 @@ def fl_pi_04(doc, ox, n=1):
     # ---- columna derecha: equipos
     xt = pl.P(xb, 0)[0] + 6
     yt = h.fy1 - 12
-    cols = [("Paso", 11, "c"), ("Cód.", 11, "c"), ("Equipo", 70, "l"), ("Medidas m", 23, "c"), ("kW", 10, "c"),
-            ("Op.", 8, "c")]
-    filas = [[e.paso or "-", e.cod, e.nombre[:46], f"{f(e.rect.w, 2)} × {f(e.rect.h, 2)}",
-              f(e.kw, 1) if e.kw else "-", e.op or "-"] for e in L.EQUIPOS]
-    y = pl.tabla(xt, yt, cols, filas, 3.55, 1.6, "Equipos (paso: entero = operación; .1 .2 = máquinas iguales)")
+    G = C.guerchet()
+    gq = {r["cod"]: r for r in G["filas"]}
+    cols = [("Paso", 10, "c"), ("Cód.", 10, "c"), ("Equipo", 64, "l"), ("Medida m", 21, "c"),
+            ("Fuente de la medida", 70, "l"), ("Op.", 7, "c"), ("Ss", 11, "c"), ("St", 11, "c")]
+    filas = []
+    for e in L.EQUIPOS:
+        g = gq.get(e.cod)
+        fu = e.fuente.replace("C ", "Cotiz. ", 1) if e.fuente.startswith("C ") else ("Estimada" + e.fuente[1:])
+        filas.append([e.paso or "-", e.cod, e.nombre[:42], f"{f(e.rect.w, 2)} × {f(e.rect.h, 2)}", fu[:46],
+                      e.op or "-", f(g["ss"], 1) if g else "-", f(g["st"], 1) if g else "-"])
+    y = pl.tabla(xt, yt, cols, filas, 3.3, 1.5, "Equipos: medida cotizada o estimada y superficie de Guerchet (m²)")
+    cols = [("Sector", 18, "l"), ("St Guerchet", 22, "c"), ("Dibujado", 20, "c"), ("Holgura", 20, "c")]
+    filas = [[r["sector"], f(r["st"], 0), f(r["area"], 0), f(r["area"] - r["st"], 0)]
+             for r in sorted(G["sectores"], key=lambda r: r["sector"]) if r["area"]]
+    y = pl.tabla(xt, y - 8, cols, filas, 3.3, 1.5, f"Guerchet por sector: St = Ss + Sg + Se, k = {f(G['k'], 2)}")
+    pl.parrafo(["Sg = Ss × N (lados de operación); Se = k (Ss + Sg), k = h móviles / (2 h fijos)",
+                f"= 1,65 / (2 × {f(G['h_fijo'], 2)}). La holgura incluye pulmones, calles y estanterías:",
+                "donde es grande (N2, N3, AL-3, S-T) queda espacio liberado por las medidas reales",
+                "de las cotizaciones, para debatir (achicar la nave o reservar ampliación)."], xt, y - 4, 1.9)
     # ---- franja inferior: implantación, corte, superficies y locales
     yb = pl.P(0, y0)[1] - 8
     pi = D.Plano(h, 500, (L.TERRENO[0], L.TERRENO[1]), (h.fx0 + 12, h.fy0 + 18))

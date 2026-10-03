@@ -40,6 +40,10 @@ CAPAS_PLANTA = {
     "A-EXTERIOR": (8, 25, "CONTINUOUS", None, "Terreno, calles, playas y veredas"),
     "A-LOCAL": (7, 25, "CONTINUOUS", None, "Tabiques de locales de servicio"),
     "A-MOBILIARIO": (8, 18, "CONTINUOUS", (80, 80, 90), "Mobiliario, artefactos sanitarios y equipamiento menor"),
+    "A-TABIQUE": (7, 50, "CONTINUOUS", None, "Tabiques de locales cerrados dentro de la nave"),
+    "A-VENTANA": (4, 18, "CONTINUOUS", (0, 150, 200), "Ventanas y paños vidriados a la planta"),
+    "A-ENTREPISO": (6, 25, "IRAM-E-TRAZOS", (150, 60, 150), "Entrepiso de oficinas (+3,50) en planta baja"),
+    "S-SENAL": (7, 18, "CONTINUOUS", None, "Señalética IRAM 10005: obligación, advertencia, prohibición, salvamento"),
     "A-MAMPARA": (1, 35, "CONTINUOUS", (200, 40, 40), "Mamparas y cortinas ignífugas de soldadura"),
     "A-ZONA-LOG": (5, 25, "IRAM-F-TRAZO-PUNTO", (40, 90, 200), "Límites de circulación de autoelevador"),
     "A-SANITARIO": (8, 13, "CONTINUOUS", None, "Artefactos sanitarios y mobiliario"),
@@ -413,6 +417,8 @@ def equipos(pl, rotulos=True, h=1.5, fino=False, operarios=True):
         S.dibujar(pl, e, operarios)
     mamparas(pl)
     mobiliario(pl)
+    cerrados(pl)
+    entrepiso_pb(pl)
     transportador(pl)
     pulmones(pl, h)
     if rotulos:
@@ -453,6 +459,129 @@ def zonas_logisticas(pl, h=1.4):
     pl.rect(z, "A-ZONA-LOG")
     pl.texto("ZONA SIN AUTOELEVADOR: CARROS A MANO Y TRANSPALETA", (z.x0 + 26.0, z.y1 - 0.45), h,
              A.MIDDLE_CENTER, "A-ZONA-LOG")
+
+
+
+def cerrados(pl):
+    """Tabiques de los locales cerrados de la nave con sus aberturas: puerta (hoja y arco), portón corredizo,
+    cortina de lamas (trazos), ventanilla (mostrador) y ventana (triple línea)."""
+    from . import calculos as C
+    for (xa, ya), (xb, yb) in C.muros_cerrados(pasos=("puerta", "porton", "cortina", "ventanilla", "ventana")):
+        pl.linea((xa, ya), (xb, yb), "A-TABIQUE")
+    sect = {s.cod: s.rect for s in L.SECTORES}
+    for cod, aberturas in L.CERRADOS.items():
+        r = sect[cod]
+        for lado, a, b, t in aberturas:
+            horiz = lado in "SN"
+            fijo = {"S": r.y0, "N": r.y1, "O": r.x0, "E": r.x1}[lado]
+            hacia = 1 if lado in "SO" else -1           # las puertas abren hacia adentro del local
+            P = (lambda u, v: (u, fijo + v)) if horiz else (lambda u, v: (fijo + v, u))
+            if t == "puerta":
+                w = b - a
+                if horiz:
+                    pl.linea((a, fijo), (a, fijo + hacia * w), "A-ABERTURA")
+                    pl.arco((a, fijo), w, 0 if hacia > 0 else 270, 90 if hacia > 0 else 360, "A-ABERTURA")
+                else:
+                    pl.linea((fijo, a), (fijo + hacia * w, a), "A-ABERTURA")
+                    pl.arco((fijo, a), w, 0 if hacia > 0 else 90, 90 if hacia > 0 else 180, "A-ABERTURA")
+            elif t == "porton":
+                pl.linea(P(a, 0.08), P(b, 0.08), "A-ABERTURA")
+                pl.linea(P(a - (b - a) * 0.5, -0.08), P(a, -0.08), "A-ABERTURA")
+            elif t == "cortina":
+                n = max(2, int((b - a) / 0.25))
+                for k in range(n):
+                    u0 = a + (b - a) * k / n
+                    pl.linea(P(u0 + 0.03, 0.0), P(u0 + (b - a) / n - 0.03, 0.0), "A-ABERTURA")
+            elif t == "ventanilla":
+                pl.linea(P(a, -0.1), P(b, -0.1), "A-TABIQUE")
+                pl.linea(P(a, 0.1), P(b, 0.1), "A-TABIQUE")
+            elif t == "ventana":
+                for v in (-0.06, 0.0, 0.06):
+                    pl.linea(P(a, v), P(b, v), "A-VENTANA")
+
+
+def entrepiso_pb(pl):
+    """Proyección del entrepiso de oficinas sobre la planta baja y escalera con plataforma elevadora."""
+    r = L.ENTREPISO
+    pl.rect(r, "A-ENTREPISO")
+    pl.linea((r.x0, r.y0), (r.x1, r.y1), "A-ENTREPISO")
+    pl.texto(f"ENTREPISO DE OFICINAS +{L.Z_ENTREPISO:.2f} (proyección)".replace(".", ","),
+             (r.c[0], r.y1 - 0.45), 1.2, A.MIDDLE_CENTER, "A-ENTREPISO")
+    esc = next(s.rect for s in L.SECTORES if s.cod == "ESC")
+    escalera(pl, esc)
+
+
+def escalera(pl, r):
+    """Escalera en U de 1,10 m (huellas de 0,28) y plataforma elevadora junto a la llegada."""
+    x0, y0, x1, y1 = r.x0, r.y0, r.x1, r.y1
+    pl.rect(r, "A-TABIQUE")
+    wt = 1.1
+    for k in range(int((y1 - y0 - 1.2) / 0.28)):
+        y = y0 + 0.1 + k * 0.28
+        pl.linea((x0 + 0.05, y), (x0 + wt, y), "A-MOBILIARIO")
+    pl.rect(L.R(x0 + 0.05, y1 - 1.15, x1 - 1.3, y1 - 0.05), "A-MOBILIARIO")       # descanso
+    pl.linea((x0 + wt / 2, y0 + 0.2), (x0 + wt / 2, y1 - 1.3), "A-MOBILIARIO")
+    pl.punta((x0 + wt / 2, y1 - 1.25), (0, 1), 0.9, 0.5, (90, 90, 90), "A-MOBILIARIO") if hasattr(pl, "punta") else None
+    pr = L.R(x1 - 1.25, y0 + 0.2, x1 - 0.1, y0 + 1.6)                                # plataforma elevadora
+    pl.rect(pr, "A-MOBILIARIO")
+    pl.linea((pr.x0, pr.y0), (pr.x1, pr.y1), "A-MOBILIARIO")
+    pl.linea((pr.x0, pr.y1), (pr.x1, pr.y0), "A-MOBILIARIO")
+    pl.texto("SUBE", (x0 + wt / 2, y0 + 1.0), 0.9, A.MIDDLE_CENTER, "A-TEXTO", 90)
+
+
+def planta_alta(pl, rotulos=True):
+    """Entrepiso de oficinas (+3,50): locales, mobiliario, puertas y paños vidriados a la planta."""
+    from . import mobiliario as MB
+    r = L.ENTREPISO
+    pl.rect(r, "A-MURO")
+    for s in L.LOCALES_PA:
+        pl.rect(s.rect, "A-LOCAL")
+        if rotulos and s.cat != "CIRC":
+            pl.texto(s.cod, (s.rect.x0 + 0.15, s.rect.y1 - 0.15), 1.4, A.TOP_LEFT, "A-TEXTO")
+    for v in (-0.06, 0.0, 0.06):                     # vidrio corrido norte (línea) y sur (pasillo central)
+        pl.linea((r.x0 + 2.6, r.y1 + v), (r.x1 - 0.2, r.y1 + v), "A-VENTANA")
+        pl.linea((r.x0 + 0.2, r.y0 + v), (r.x1 - 0.2, r.y0 + v), "A-VENTANA")
+    for mb in L.MOBILIARIO_PA:
+        MB.dibujar(pl, mb)
+    for x, y, w, muro, abre in L.PUERTAS_PA:
+        MB.puerta_int(pl, x, y, w, muro, abre)
+    esc = next(s.rect for s in L.SECTORES if s.cod == "ESC")
+    escalera(pl, esc)
+
+
+SENAL_RGB = {"obl": (0, 90, 170), "adv": (250, 200, 0), "pro": (200, 20, 20), "sal": (0, 140, 70),
+             "inc": (200, 20, 20)}
+
+
+def senales(pl, h=0.9, r=0.42):
+    """Señales de seguridad en planta (forma y color según IRAM 10005-1) con su código."""
+    import math
+    for tipo, cod, x, y, txt in L.SENALES:
+        rgb = SENAL_RGB[tipo]
+        if tipo == "obl":
+            pts = [(x + r * math.cos(t / 12 * math.pi), y + r * math.sin(t / 12 * math.pi)) for t in range(24)]
+            pl.relleno(pts, rgb, "S-SENAL")
+        elif tipo == "adv":
+            pts = [(x - r, y - r * 0.8), (x + r, y - r * 0.8), (x, y + r * 0.9)]
+            pl.relleno(pts, rgb, "S-SENAL")
+            pl.pl(pts, "S-SENAL", True)
+        elif tipo == "pro":
+            pts = [(x + r * math.cos(t / 12 * math.pi), y + r * math.sin(t / 12 * math.pi)) for t in range(24)]
+            pl.pl(pts, "S-INCENDIO", True)
+            pl.linea((x - r * 0.7, y + r * 0.7), (x + r * 0.7, y - r * 0.7), "S-INCENDIO")
+        else:
+            w = max(r * 1.6, 0.18 * len(cod))
+            pl.relleno([(x - w / 2, y - r * 0.6), (x + w / 2, y - r * 0.6), (x + w / 2, y + r * 0.6),
+                        (x - w / 2, y + r * 0.6)], rgb, "S-SENAL")
+        pl.texto(cod, (x, y - r - 0.15), h * 0.45, A.TOP_CENTER, "S-SENAL")
+    for x, y in L.BIE:                                       # boca de incendio equipada
+        pl.relleno([(x - 0.35, y - 0.35), (x + 0.35, y - 0.35), (x + 0.35, y + 0.35), (x - 0.35, y + 0.35)],
+                   (200, 20, 20), "S-INCENDIO")
+        pl.circulo((x, y), 0.22, "S-INCENDIO")
+        pl.texto("BIE", (x, y + 0.5), h * 0.5, A.BOTTOM_CENTER, "S-INCENDIO")
+    for x, y in L.PULSADORES:                                # pulsador manual de alarma
+        pl.rect(L.R(x - 0.18, y - 0.18, x + 0.18, y + 0.18), "S-INCENDIO")
+        pl.circulo((x, y), 0.1, "S-INCENDIO")
 
 
 def corto(nombre):
@@ -734,12 +863,10 @@ def _lineas(g):
 
 
 def vehiculos(pl):
-    """Autoelevadores y transpaletas en sus pasillos (posición típica de trabajo)."""
+    """Flota calculada (C.manejo): 1 autoelevador 3 t con pluma, percha y gancho C, 1 apiladora y 3 transpaletas."""
     from . import simbolos as S
-    S.autoelevador(pl, 11.9, 38.0, 270)
-    S.autoelevador(pl, 40.4, 13.0, 90)
-    S.autoelevador(pl, 46.0, 15.0, 270, carga=False)
-    S.autoelevador(pl, 30.0, 20.4, 180, carga=False)
-    S.autoelevador(pl, 55.0, 21.9, 0)
-    S.transpaleta(pl, 56.0, 3.05, 180)
-    S.transpaleta(pl, 58.0, 17.6, 180)
+    S.autoelevador(pl, 10.9, 33.0, 270)                       # en A2, con un paquete de hojas
+    S.apiladora(pl, 46.75, 13.0, 90)                          # en T3, rack de alta rotación
+    S.transpaleta(pl, 48.6, 1.3, 0)                           # muelle M2 -> insumos de terminación
+    S.transpaleta(pl, 85.9, 33.2, 270)                        # P3 -> granalla
+    S.transpaleta(pl, 52.0, 18.0, 180)                        # estacionada junto a la carga de baterías

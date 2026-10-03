@@ -463,20 +463,20 @@ def circ_pts(c, r, n=16):
 ASME = {}
 for _c in ("M04", "M15", "M16", "M06", "M08", "M09", "M10", "M11", "M12", "C01", "C02", "C03", "C04", "C05", "C08",
            "B01", "B01b", "B02", "B03", "E09a", "E09b", "E09c", "B04", "A06", "B06", "B14", "A11", "B08", "B10",
-           "P01", "P02", "P03", "P04", "P06", "P08", "T01", "T02", "T03", "T04", "T05", "T07", "T08", "T09", "T10",
+           "P01", "P03", "P04", "P06", "P08", "T01", "T02", "T03", "T04", "T05", "T07", "T08", "T09", "T10",
            "T11", "T12", "T13"):
     ASME[_c] = "O"
 for _c in ("C06", "B09", "P09", "T06", "Q01", "C09"):
     ASME[_c] = "I"
 for _c in ("A07", "B07", "C07"):
     ASME[_c] = "OI"
-for _c in ("C12", "P07"):
+for _c in ("C12",):
     ASME[_c] = "D"
-ALMACENES = ("AL-1H", "AL-1R", "PÑ", "AL-2", "QP", "AL-3", "S4", "AL-C", "RC-DP")
+ALMACENES = ("AL-1H", "AL-1F", "PÑ", "AL-2", "QP", "AL-3", "S4", "AL-C", "RC-DP", "GR")
 
 CURSOGRAMAS = {
     "S2 - Matafuegos ABC 2,5 / 5 / 10 kg": [
-        ("A", "Hojas LAF (rack frente a la guillotina)", "AL-1R"), ("O", "1 Corte de cuerpo", "M04"),
+        ("A", "Paquetes de hojas LAF (autoelevador a la mesa elevadora)", "AL-1H"), ("O", "1 Corte de cuerpo", "M04"),
         ("D", "Pulmón de cuerpos cortados", "PU-1"), ("O", "2 Numerado", "B01"), ("D", "Pulmón", "PU-2"),
         ("O", "3 Cilindrado", "B02"), ("D", "Pulmón", "PU-3"), ("O", "4 Soldadura longitudinal", "B03"),
         ("D", "Pulmón", "PU-4"), ("O", "9 Encastre de fondo", "E09"), ("O", "10 Bordoneado", "B04"),
@@ -484,17 +484,17 @@ CURSOGRAMAS = {
         ("OI", "12 Prueba hidráulica 100 %", "A07/B07"), ("D", "Pulmón", "PU-6"), ("O", "13 Secado", "B14/A11"),
         ("D", "Pulmón", "PU-7"), ("O", "14 Granallado", "B08"), ("I", "15 Detección de defectos", "B09"),
         ("O", "16 Corrección (sólo defectuosos)", "B10"), ("D", "Pulmón a pintura", "PU-8"),
-        ("O", "17 Pintura en polvo (lazo)", "P01-P08"), ("D", "Pulmón de pintados", "PU-9"),
+        ("O", "17 Pintura en polvo (cabina + 2 hornos)", "P01-P08"), ("D", "Pulmón de pintados", "PU-9"),
         ("O", "18-23 Terminación (ver S1)", "T01-T10"), ("O", "24 Envolvedora", "T11"),
         ("A", "Almacén de PT", "AL-3"), ("T", "Expedición", "M1/M2")],
     "S1 - Matafuegos ABC 1 kg (fabricados)": [
-        ("A", "Caño en cantiléver (frente al láser)", "AL-1R"), ("O", "5 Corte láser de caño", "M15/M16"),
+        ("A", "Caño en cantiléver del alero (carro porta-tubos)", "CT"), ("O", "5 Corte láser de caño", "M15/M16"),
         ("D", "Pulmón", "PU-L"), ("O", "9-17 Línea común (igual que S2)", "E09-P08"),
         ("O", "18 Carga de polvo", "T01"), ("O", "19 Ensamblaje", "T03/T04"), ("O", "20 Presurización con N₂", "T05"),
         ("I", "21 Hermeticidad", "T06"), ("O", "22 Etiquetado", "T07"), ("O", "23 Embalaje y palletizado", "T08/T09"),
         ("O", "24 Envolvedora", "T11"), ("A", "Almacén de PT", "AL-3"), ("T", "Expedición", "M1/M2")],
     "Subconjunto cúpulas y fondos 1-10 kg": [
-        ("A", "Flejes (porta-flejes frente a la prensa)", "AL-1R"),
+        ("A", "Rollos de fleje (gancho C al desbobinador)", "AL-1F"),
         ("O", "6 Desbobinado, enderezado y embutido", "M06-M08"), ("D", "Fondos al pulmón", "PU-K"),
         ("T", "Fondos al encastre (paso 9)", "-"), ("O", "7 Preparación de cuello", "M09/M10"),
         ("O", "8 Soldadura de cuello en la cúpula", "M11/M12"), ("D", "Cúpulas con cuello", "PU-C"),
@@ -569,9 +569,9 @@ def fl_pi_02(doc, ox):
             pl.texto(s.cod, (s.rect.x0 + 0.4, s.rect.y1 - 0.4), 1.4, A.TOP_LEFT)
     D.rotulos_sector(pl, h=1.7, areas=False)
     # secciones (S1..S4, RC) con recuadro rotulado
-    for cod, nom, r in (("S1", "S1 1 kg (corte de caño)", L.R(16.6, 29.6, 29.5, 35.0)),
-                        ("S2", "S2 2,5-10 kg (cuerpo)", L.R(16.6, 24.6, 39.3, 29.6)),
-                        ("S12", "S1 + S2 línea común", L.R(34.3, 34.9, 87.8, 39.8)),
+    for cod, nom, r in (("S1", "S1 1 kg (corte de caño)", L.R(12.7, 29.6, 29.5, 35.85)),
+                        ("S2", "S2 2,5-10 kg (cuerpo)", L.R(12.7, 24.6, 39.3, 29.6)),
+                        ("S12", "S1 + S2 línea común", L.R(34.3, 34.9, 87.8, 39.35)),
                         ("S3", "S3 rodantes", L.R(18.1, 0.1, 34.2, 19.4)), ("S4", "S4 tercerizados", L.R(34.1, 0.1, 40.1, 6.7)),
                         ("RC", "RC recargas", L.R(0.1, 0.1, 18.1, 19.4))):
         pl.rect(r, "F-TL")

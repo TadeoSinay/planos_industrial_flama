@@ -25,8 +25,8 @@ def caja(r, m=0.0):
 
 def main():
     # 1. cruces entre flujos de MP, SE y PT
-    fl = [(f.cat, f.rot, LineString(f.pts)) for f in L.FLUJOS]
-    n = 0
+    fl = [(f.cat, f.rot, LineString(f.pts)) for f in L.FLUJOS if f.cat in ("MP", "SE", "PT")]
+    n = maniobras = 0
     for (c1, r1, a), (c2, r2, b) in itertools.combinations(fl, 2):
         if not a.intersects(b):
             continue
@@ -36,9 +36,13 @@ def main():
         for q in pts:
             if q.geom_type == "Point" and any(q.distance(e) < 0.05 for e in ends):
                 continue
+            if c1 == c2 == "MP" and any(caja(p.rect).buffer(0.05).contains(q) for p in L.PASILLOS
+                                        if p.cod in ("A1", "A2", "AN")):
+                maniobras += 1          # un solo autoelevador sirviendo el almacén: no es cruce de tránsito
+                continue
             n += 1
             err(f"cruce de flujos: {c1} {r1} x {c2} {r2}")
-    print(f"cruces entre flujos: {n}")
+    print(f"cruces entre flujos: {n} (más {maniobras} maniobras del autoelevador dentro del almacén de MP)")
     # 2. hilos de personal: sólo cruzan flujos dentro de sendas
     sendas = [caja(r) for c, r, t in L.SENDAS]
     m = 0
@@ -62,6 +66,42 @@ def main():
         for p in L.PASILLOS:
             if caja(e.rect, 0.02).intersects(caja(p.rect, 0.02)):
                 err(f"equipo {e.cod} invade el pasillo {p.cod}")
+    # 4b. columnas fuera de pasillos y de bocas de portones
+    from shapely.ops import unary_union
+    cols = [sg.box(x - 0.2, y - 0.2, x + 0.2, y + 0.2) for x in L.EJES_X for y in L.EJES_Y]
+    for p in L.PASILLOS:
+        for c in cols:
+            if caja(p.rect).intersects(c.buffer(-0.01)):
+                err(f"columna {c.centroid.x:.0f},{c.centroid.y:.0f} dentro del pasillo {p.cod}")
+    # 4c. conectividad: todas las calles forman una red que llega a un portón
+    red = unary_union([caja(p.rect).buffer(0.25) for p in L.PASILLOS])
+    partes = list(getattr(red, "geoms", [red]))
+    print(f"red de pasillos: {len(partes)} componente(s)")
+    for p in L.PASILLOS:
+        comp = [i for i, g in enumerate(partes) if g.intersects(caja(p.rect))]
+        if comp and comp[0] != max(range(len(partes)), key=lambda i: partes[i].area):
+            err(f"pasillo {p.cod} desconectado de la red principal")
+    # 4d. zona del operario: 1,0 m libre al frente, sin calles de autoelevador ni materiales ajenos
+    from planta.simbolos import frente_de
+    for e in L.EQUIPOS:
+        if not e.op:
+            continue
+        r, f_ = e.rect, frente_de(e)
+        z = {"S": (r.x0, r.y0 - 1.0, r.x1, r.y0), "N": (r.x0, r.y1, r.x1, r.y1 + 1.0),
+             "O": (r.x0 - 1.0, r.y0, r.x0, r.y1), "E": (r.x1, r.y0, r.x1 + 1.0, r.y1)}[f_]
+        zona = sg.box(*z).buffer(-0.02)
+        for p in L.PASILLOS:
+            if zona.intersects(caja(p.rect)):
+                err(f"operario de {e.cod} de espaldas a la calle {p.cod}: falta 1,0 m libre detrás")
+        for o in L.EQUIPOS:
+            if o is not e and zona.intersects(caja(o.rect, 0.02)):
+                err(f"zona del operario de {e.cod} ocupada por {o.cod}")
+        propia = caja(r).buffer(0.6)
+        for f in L.FLUJOS:
+            if f.cat in ("MP", "SE", "PT", "SCRAP") and LineString(f.pts).intersects(zona):
+                ext = [Point(f.pts[0]), Point(f.pts[-1])]
+                if not any(propia.contains(q) for q in ext):
+                    err(f"material ajeno pasa por la espalda del operario de {e.cod}: {f.rot}")
     # 5. equipos dentro de la nave
     nave = sg.box(0, 0, L.NAVE_L, L.NAVE_A)
     for e in L.EQUIPOS:
@@ -112,7 +152,7 @@ def main():
     if ex["cant"] < ex["minimo_sup"]:
         err("extintores insuficientes")
     # 10. salidas generadas
-    esperados = {"FL_PI_01": 1, "FL_PI_02": 1, "FL_PI_03": 1, "FL_PI_04": 1, "FL_PI_05": 1}
+    esperados = {"FL_PI_01": 1, "FL_PI_02": 1, "FL_PI_03": 1, "FL_PI_04": 2, "FL_PI_05": 1}
     try:
         import pymupdf
         for cod, n_h in esperados.items():

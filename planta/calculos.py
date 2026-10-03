@@ -55,7 +55,7 @@ ENTREGAS = [
     ("Pradecon: hojas + fleje 0,9", 35.26, 18.1, "Semi (máx.) o 2 chasis quincenales", "Alero + P1", "AL-1H, AL-1R"),
     ("Pacheco: flejes 1,25-2,0", 5.05, 29.3, "Chasis 2 ejes", "Alero + P1", "AL-1R"),
     ("Metalprisa: caño Ø76,2", 4.23, 28.9, "Chasis 2 ejes", "Alero + P1", "AL-1R"),
-    ("Casquetes de carros", 5.93, 4.1, "Chasis 2 ejes", "M3", "AL1C"),
+    ("Casquetes de carros", 5.93, 4.1, "Chasis 2 ejes", "M3", "RK1 (cara oeste)"),
     ("Eli-Met: cuplas y asientos", 3.68, 5.6, "Chasis 2 ejes", "Alero + P1", "PÑ"),
     ("Soldadura: alambre y consumibles", 1.89, 8.1, "Chasis 2 ejes", "Alero + P1", "PÑ"),
     ("CYM: granalla", 3.11, 2.0, "Chasis 2 ejes", "P3", "GR"),
@@ -203,12 +203,49 @@ PASO = 0.5
 def _grilla():
     nx, ny = int(L.NAVE_L / PASO), int(L.NAVE_A / PASO)
     libre = [[True] * ny for _ in range(nx)]
-    for e in list(L.EQUIPOS) + [mb for mb in L.MOBILIARIO if mb.rect.x0 >= 0]:
+    for e in list(L.EQUIPOS) + [mb for mb in L.MOBILIARIO if mb.rect.x0 >= 0 and mb.tipo != "jaula"]:
         r = e.rect
         for i in range(max(0, int(r.x0 / PASO)), min(nx, int(math.ceil(r.x1 / PASO)))):
             for j in range(max(0, int(r.y0 / PASO)), min(ny, int(math.ceil(r.y1 / PASO)))):
                 libre[i][j] = False
+    # tabiques de los locales cerrados (salvo sus puertas, portones y cortinas)
+    for (xa, ya), (xb, yb) in muros_cerrados():
+        if abs(ya - yb) < 1e-6:            # tabique horizontal: celdas cuyo centro cae sobre el tramo
+            j = min(ny - 1, int(ya / PASO))
+            for i in range(nx):
+                if min(xa, xb) - 1e-6 <= (i + 0.5) * PASO <= max(xa, xb) + 1e-6:
+                    libre[i][j] = False
+        else:
+            i = min(nx - 1, int(xa / PASO))
+            for j in range(ny):
+                if min(ya, yb) - 1e-6 <= (j + 0.5) * PASO <= max(ya, yb) + 1e-6:
+                    libre[i][j] = False
     return nx, ny, libre
+
+
+def muros_cerrados(pasos=("puerta", "porton", "cortina")):
+    """Segmentos de tabique de los locales cerrados, descontando las aberturas que son paso."""
+    segs = []
+    sect = {s.cod: s.rect for s in L.SECTORES}
+    for cod, aberturas in L.CERRADOS.items():
+        r = sect[cod]
+        lados = {"S": ((r.x0, r.y0), (r.x1, r.y0)), "N": ((r.x0, r.y1), (r.x1, r.y1)),
+                 "O": ((r.x0, r.y0), (r.x0, r.y1)), "E": ((r.x1, r.y0), (r.x1, r.y1))}
+        for lado, ((xa, ya), (xb, yb)) in lados.items():
+            horiz = lado in "SN"
+            fijo = ya if horiz else xa
+            if (horiz and (fijo < 0.6 or fijo > L.NAVE_A - 0.6)) or (not horiz and (fijo < 0.6 or fijo > L.NAVE_L - 0.6)):
+                continue                          # coincide con el cerramiento de la nave
+            a0, a1 = (xa, xb) if horiz else (ya, yb)
+            huecos = sorted((a, b) for l_, a, b, t in aberturas if l_ == lado and t in pasos)
+            t = a0
+            for a, b in huecos:
+                if a > t:
+                    segs.append(((t, fijo), (a, fijo)) if horiz else ((fijo, t), (fijo, a)))
+                t = max(t, b)
+            if t < a1:
+                segs.append(((t, fijo), (a1, fijo)) if horiz else ((fijo, t), (fijo, a1)))
+    return segs
 
 
 def _bfs(fuentes, nx, ny, libre):
@@ -472,3 +509,73 @@ PORTONES = [
      "2 vueltas por día", "Milk run mañana y tarde"),
     ("PP-1", "Personal: vestuarios <-> senda de la nave", "A pie", "63 personas, 2 turnos", "Entrada y salida"),
 ]
+
+
+# ================================================================ superficies por el método de Guerchet
+# St = Ss + Sg + Se;  Sg = Ss · N (lados de operación);  Se = k (Ss + Sg);  k = h_móvil / (2 · h_fijo)
+ALTURAS = {"guillotina": 1.7, "prensa": 3.6, "laser_tubo": 1.2, "granalladora": 2.2, "horno": 2.44, "cabina": 2.44,
+           "estacion_pintura": 3.0, "ph": 1.6, "secadora": 1.5, "rack": 4.5, "cantilever": 1.2, "portaflejes": 2.2,
+           "paquetes": 0.6, "envolvedora": 2.5, "cilindradora": 1.1, "sold_long": 1.6, "sold_circ": 1.6}
+H_MOVIL = 1.65                # operario y carro con cilindros (h media de lo que se mueve)
+
+
+def guerchet():
+    from .simbolos import tipo_de
+    eqs = [e for e in L.EQUIPOS if not e.cod.startswith("R") or not e.cod[1:2].isdigit()]
+    ss_tot = sum(e.rect.area for e in eqs)
+    h_fijo = sum(e.rect.area * ALTURAS.get(tipo_de(e), 1.2) for e in eqs) / ss_tot
+    k = H_MOVIL / (2 * h_fijo)
+    filas, por_sector = [], {}
+    for e in eqs:
+        ss = e.rect.area
+        n = 1 if e.op else 0
+        if e.op and e.op >= 2:
+            n = 2
+        sg = ss * n
+        se = k * (ss + sg)
+        st = ss + sg + se
+        filas.append({"cod": e.cod, "nombre": e.nombre, "ss": ss, "n": n, "sg": sg, "se": se, "st": st,
+                      "sector": e.sector})
+        por_sector[e.sector] = por_sector.get(e.sector, 0.0) + st
+    area = {s.cod: s.rect.area for s in L.SECTORES}
+    sect = [{"sector": c, "st": v, "area": area.get(c, 0.0)} for c, v in por_sector.items()]
+    return {"k": k, "h_fijo": h_fijo, "filas": filas, "sectores": sect,
+            "st_total": sum(f["st"] for f in filas)}
+
+
+# ================================================================ políticas de stock del almacén de MP
+DENS = 7.85                  # kg/dm³ acero
+UNIDADES_2035 = {"1 kg": 32073 + 170548, "2,5 kg": 7425 + 6669, "5 kg": 30751 + 32915, "10 kg": 1841 + 2011}
+
+
+def politicas_stock():
+    """Hojas (kanban de 2 paquetes por formato), flejes (2 rollos por ancho y espesor) y caño (cantiléver del
+    alero, revisión semanal). Consumos 2035 (matafuegos + cilindros vendidos) y lotes del proveedor."""
+    from .chapa import DISCOS, CANO
+    filas = []
+    for r in sobrestock():
+        filas.append({"sku": r["formato"], "consumo": f"{r['hojas_sem']:.1f} hojas/sem".replace(".", ","),
+                      "unidad": f"paquete de {r['hojas_paq']} hojas ({r['kg_paq'] / 1000:.2f} t)".replace(".", ","),
+                      "sistema": "Kanban 2 paquetes: en uso + en espera",
+                      "pedido": "al abrir el paquete en espera", "max": f"{r['cob_max']:.1f} sem".replace(".", ",")})
+    # flejes: kg por pieza = (Ø + 3 mm) × ancho × espesor × densidad
+    sku = {}
+    for nom, d, e, anc in DISCOS:
+        talla = nom.split()[-2] + " " + nom.split()[-1]
+        u = UNIDADES_2035[talla]
+        kg = (d + 3) / 100 * anc / 100 * e / 100 * DENS * u
+        k = f"Fleje {e} × {anc} mm".replace(".", ",")
+        sku[k] = sku.get(k, 0.0) + kg
+    for k, kg in sorted(sku.items(), key=lambda t: -t[1]):
+        sem = kg / SEMANAS
+        rollo = min(1000.0, max(250.0, round(sem * 2 / 50) * 50))      # rollo de ≈ 2 semanas de consumo
+        filas.append({"sku": k, "consumo": f"{sem:.0f} kg/sem", "unidad": f"rollo de {rollo:.0f} kg (DI 508)",
+                      "sistema": "2 cunas: rollo en uso + 1 en espera",
+                      "pedido": "al montar el rollo en espera", "max": f"{2 * rollo / max(sem, 1):.1f} sem".replace(".", ",")})
+    barras = UNIDADES_2035["1 kg"] / CANO["piezas"]
+    atados = barras / 45 / SEMANAS
+    filas.append({"sku": f"Caño Ø{CANO['diam']} × {CANO['esp']} × 6 m".replace(".", ","),
+                  "consumo": f"{barras / SEMANAS:.0f} barras/sem".replace(".", ","),
+                  "unidad": "atado de 45 caños (≤ 600 kg)", "sistema": "Revisión semanal (cantiléver de 12 atados)",
+                  "pedido": "Q = 12 - existencia", "max": f"{12 / atados:.1f} sem".replace(".", ",")})
+    return filas

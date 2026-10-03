@@ -10,18 +10,17 @@ dibujo que [planos_flama-](https://github.com/TadeoSinay/planos_flama-).
 > entre pasos; sectores en rojo. Verificación automática sin errores: **0 cruces entre flujos de MP, SE y PT**, cruces
 > de personal sólo en 9 sendas señalizadas, recorrido máximo a una salida de 24,4 m, 20 extintores por cálculo.
 
-## Planos (`salida/`)
+## Planos (`salida/`): una faceta por lámina
 
-| Código | Plano | Formato y escala | Contenido |
+| Código | Lámina | Formato y escala | Contenido |
 |---|---|---|---|
-| `FL_PI_01` | **DIR: recorrido de hilos del personal** | A0 1:200 | Hilos desde el estacionamiento y los vestuarios hasta cada puesto; longitudes, puestos, sanitarios (art. 49) |
-| `FL_PI_02` | **Flujo de operaciones** | A0 1:200 | Símbolos ASME en cada equipo, flujo de SE por sección y cursogramas sinópticos de S1, S2, S3, S4, subconjunto de cúpulas y recargas |
-| `FL_PI_03` | **Flujo y manejo de materiales** | A0 1:200 | MP (azul), SE (naranja), PT (verde), scrap y efluentes; jerarquía de circulación; tabla de métodos y tiempos (unidad de carga, medio, recorrido, viajes/día, min/día, ocupación); función y frecuencia de cada portón; recepción de MP |
-| `FL_PI_04` | **Plano formal normalizado** (1 hoja 2A0) | 1:100 / 1:200 / 1:500 | Planta general 1:100 de la nave, servicios y recargas con cada máquina, puesto, pulmón, mueble y artefacto; acotada (ejes, vanos, pasillos, anexos); extintores y salidas; implantación 1:500; corte 1:200; cuadros de equipos, locales y superficies |
-| `FL_PI_05` | **Aprovechamiento de chapa** | A1 1:20 / 1:10 | Anidado de cuerpos 2,5-100 kg en hojas estándar, discos de cúpula y fondo en fleje, caño del 1 kg |
+| `FL_PI_01` | **Plano general formal** | 2A0 1:100 (+ 1:500, 1:200) | Planta acotada completa con cada máquina, puesto, pulmón, mueble, tabique, puerta y ventana; implantación; corte; cuadro de equipos con **medida cotizada** y superficie de **Guerchet** por equipo y por sector |
+| `FL_PI_02` | **Flujos y operaciones** | A0 1:200 | MP, SE, PT, scrap y efluentes; símbolos ASME en cada equipo; cursogramas de S1, S2, cúpulas, S3, S4 y recargas |
+| `FL_PI_03` | **Personal, evacuación y señalización** | A0 1:200 | DIR (hilos y sendas), salidas, recorrido máximo, extintores, BIE, pulsadores, señalética IRAM 10005, sanitarios y accesibilidad |
+| `FL_PI_04` | **Logística de MP y PT** (2 hojas) | A0 1:50 + A1 1:20 | Almacén de MP (descarga, distribución por tipo de chapa, carga a cada máquina), almacén de PT y expedición, políticas de stock, métodos y tiempos, flota; hoja 2: aprovechamiento de chapa |
+| `FL_PI_05` | **Servicios, oficinas y PCP** | A0 1:50 | Vestuarios, sanitarios, comedor; entrepiso de oficinas vidriado sobre la línea; núcleo sanitario de planta; corte |
 
-Documentos: [`docs/MEMORIA_DE_CALCULO.md`](docs/MEMORIA_DE_CALCULO.md) (se regenera con el modelo) y
-[`docs/DIAGNOSTICO_REV4.md`](docs/DIAGNOSTICO_REV4.md) (errores del rev4 y cómo se resolvieron).
+Para abrir en AutoCAD y guardar como DWG: ver [`autocad/LEEME.md`](autocad/LEEME.md).
 
 ### Colores de los flujos (iguales en todos los planos)
 
@@ -33,6 +32,26 @@ Documentos: [`docs/MEMORIA_DE_CALCULO.md`](docs/MEMORIA_DE_CALCULO.md) (se regen
 | Personal (hilos) | magenta, trazos | 6 | F-PERSONAL |
 | Scrap y retal | gris, trazo y punto | 8 | F-SCRAP |
 | Efluentes líquidos / gaseosos | marrón / cian, trazos | 34 / 4 | F-EFL-LIQ / F-EFL-GAS |
+
+## Versión 5: medidas cotizadas, logística real y seguridad
+
+- **Medidas de las cotizaciones** (`referencias/INVESTIGACION PROVEEDORES`): guillotina Molinari HG 6 × 3200,
+  láser Leapion 6850 × 800, cilindradora Bästlein 1700 × 700, prensa PHM 300 (mesa 1800 × 1300), desbobinador y
+  alimentador SHIMEQ, bordoneadora SWM-400, soldadoras Promotech/Getweld, granalladora Airblast 4500 × 1300,
+  envolvedora EDOS PS5. **Pintura** según el esquema de Electricolor (22 × 13 m = 286 m², 2 hornos 6 × 2,44,
+  cabina 2 × 1,5): bajó de 421,7 m² y no lleva túnel de pretratamiento (no cotizado; queda a debatir con el DT).
+  Las medidas sin cotización (Firesafer) están marcadas como estimadas.
+- **Superficie liberada**: el cuadro de Guerchet muestra la holgura de cada sector (N2, N3, AL-3, S-T) para debatir.
+- **MP**: un autoelevador 3 t con prolongaciones (paquetes por el lado largo), pluma con percha y gancho C (rollos);
+  calles A1/A2 y cabecera AN; carga directa a la mesa elevadora y al desbobinador; caños en cantiléver bajo el alero y
+  carro porta-tubos a los caballetes de los láseres. Políticas de stock por formato (kanban de 2 paquetes, 2 rollos).
+- **PT**: 3 calles pasantes del pasillo central a la calle de expedición, racks accesibles por ambas caras, muelles y
+  calles sin columnas.
+- **Oficinas**: administración, PCP y jefatura en un entrepiso vidriado sobre la fila central (ven la línea y bajan
+  en 30 s); supervisión en planta baja con ventana.
+- **Seguridad**: tabiques, puertas y ventanas en todos los locales cerrados; 1,0 m libre detrás de cada operario
+  (verificado); señalética IRAM 10005; BIE y pulsadores; tres sanitarios accesibles; núcleo sanitario y sala de
+  limpieza en planta; garita y punto de reunión.
 
 ## Versión 4: logística, métodos y tiempos
 

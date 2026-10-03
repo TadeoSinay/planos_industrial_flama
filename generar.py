@@ -8,16 +8,17 @@ from planta import dibujo as D
 from planta import planos as PL
 from planta import formal as FO
 from planta import chapa as CH
+from planta import laminas5 as L5
 from planta.exportar import preparar_layouts, pdf_hojas
 
 SALIDA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "salida")
 
 PLANOS = {
-    "FL_PI_01": [("FL_PI_01", "A0", PL.fl_pi_01)],
-    "FL_PI_02": [("FL_PI_02", "A0", PL.fl_pi_02)],
-    "FL_PI_03": [("FL_PI_03", "A0", PL.fl_pi_03)],
-    "FL_PI_04": [("FL_PI_04", "2A0", FO.fl_pi_04)],
-    "FL_PI_05": [("FL_PI_05", "A1", CH.lamina)],
+    "FL_PI_01": [("FL_PI_01", "2A0", FO.fl_pi_01)],
+    "FL_PI_02": [("FL_PI_02", "A0", L5.fl_pi_02)],
+    "FL_PI_03": [("FL_PI_03", "A0", L5.fl_pi_03)],
+    "FL_PI_04": [("FL_PI_04-1", "A0", L5.fl_pi_04), ("FL_PI_04-2", "A1", CH.lamina)],
+    "FL_PI_05": [("FL_PI_05", "A0", L5.fl_pi_05)],
 }
 
 

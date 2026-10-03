@@ -1,4 +1,4 @@
-"""FL_PI_05 - Aprovechamiento de chapa por formato (opción D: hojas estándar + fleje a medida + caño).
+"""FL_PI_04 hoja 2 - Aprovechamiento de chapa por formato (opción D: hojas estándar + fleje a medida + caño).
 
 Fuente: referencias/Esquemas_de_corte_cuerpos_guillotina.docx, Comparacion_corte.xlsx (Nesting) y
 MP_Abastecimiento (Corte opción D, Geometría del acero)."""
@@ -35,9 +35,9 @@ CANO = {"barra": 6000, "pieza": 255, "piezas": 23, "diam": 76.2, "esp": 1.25}
 
 def lamina(doc, ox):
     h = hoja(doc, "A1", ox, "Aprovechamiento de chapa", "Cuerpos, discos y caño por formato - opción D",
-             "FL_PI_05", 1, 1, "1:20", "Plano de corte", "SAE 1010 LAF y LAC", unidades="Cotas en mm")
+             "FL_PI_04", 2, 2, "1:20", "Plano de corte", "SAE 1010 LAF y LAC", unidades="Cotas en mm")
     pl = D.Plano(h, 1, (0, 0), (0, 0))
-    titulo_hoja(pl, h, "FL_PI_05 - APROVECHAMIENTO DE LA CHAPA POR FORMATO",
+    titulo_hoja(pl, h, "FL_PI_04 - HOJA 2: APROVECHAMIENTO DE LA CHAPA POR FORMATO",
                 "Cuerpos 2,5-100 kg en hojas estándar cortadas en guillotina 8 × 3200 (esc. 1:20); cúpulas y fondos en "
                 "fleje a medida con troquel de una fila (esc. 1:10); cuerpo de 1 kg en caño Ø76,2 × 6 m (esc. 1:20).")
     m = pl.m

@@ -1,0 +1,6 @@
+; Guarda el DXF abierto como DWG (formato AutoCAD 2018) en la misma carpeta.
+; Uso: abrir FL_PI_0x.dxf en AutoCAD y escribir SCRIPT -> elegir este archivo.
+; Para todos a la vez: ScriptPro (Autodesk) con la lista de los 5 DXF de salida/.
+(vl-load-com)
+_.ZOOM _E
+(command "_.SAVEAS" "2018" (strcat (getvar "DWGPREFIX") (vl-filename-base (getvar "DWGNAME")) ".dwg"))

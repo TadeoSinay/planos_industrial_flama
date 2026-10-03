@@ -1387,6 +1387,18 @@ def autoelevador(pl, x, y, ang, carga=True):
     m.fin()
 
 
+def apiladora(pl, x, y, ang):
+    """Apiladora eléctrica de conductor acompañante 1,2 t: cuerpo, timón, mástil y horquillas."""
+    m = M.centro(pl, x, y, ang, 2.1, 0.85)
+    m.caja(0.0, 0.05, 0.75, 0.8, (255, 230, 150), VEH)
+    m.ci(0.35, 0.425, 0.12, VEH)
+    m.ln((0.0, 0.425), (-0.45, 0.425), VEH)
+    m.caja(0.75, 0.1, 0.88, 0.75, OSCURO, VEH)
+    for s in (0.2, 0.55):
+        m.caja(0.88, s, 2.05, s + 0.1, OSCURO, VEH)
+    m.fin()
+
+
 def transpaleta(pl, x, y, ang):
     m = M.centro(pl, x, y, ang, 1.6, 0.56)
     m.caja(0.0, 0.0, 0.4, 0.56, (255, 230, 150), VEH)
