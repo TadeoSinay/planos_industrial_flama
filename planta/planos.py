@@ -214,6 +214,8 @@ def flujos_materiales(pl):
         pl.flujo(fl.pts, fl.cat, cada=22.0 if fl.cat in ("TL", "SE") else 26.0,
                  largo=2.6 if fl.cat != "TL" else 3.4, ancho=1.3 if fl.cat != "TL" else 1.9)
     pl.flujo(L.RC_FLUJO, "SE", cada=22.0, largo=2.6, ancho=1.3)
+    for t in getattr(L, "RC_FLUJO_PH", []):
+        pl.flujo(t, "SE", cada=8.0, largo=1.6, ancho=0.8)
     for fl in L.EFLUENTES:
         pl.flujo(fl.pts, fl.cat, cada=30.0, largo=2.4, ancho=1.2)
     emisiones(pl)

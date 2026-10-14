@@ -35,7 +35,7 @@ Nave de 88 × 44 m = 3.872 m², puestos en el orden y la disposición de los Wor
 | AL-ID | Identificación (etiquetas, obleas, sellos) | 2,0 | 3,0 | Dimensionamiento_Almacenes_MP_v5: 9 lugares, 3,0 m² netos; estantería de 5 niveles; sellos y obleas numerados bajo llave |
 | AL-MC | Insumos de montaje (carros) | 3,8 | 2,9 | Dimensionamiento_Almacenes_MP_v5: 7 posiciones, 4,8 m² netos; rack de 1 módulo × 2 × 4 niveles: ruedas, válvulas de carro y alambre Ø1,0 |
 | AL-CA | Carros de abastecimiento | 3,9 | - | W-CAR tabla 5: estacionamiento de 3 × 1 m para los 2 carros de abastecimiento diario |
-| AL-CU | Cuarentena de MP (compartida manuales y carros) | 25,0 | 25,0 | W-MAN y W-CAR tabla 5: 10 × 2,5 m, demarcada en amarillo: 7 pallets, mesa de inspección de 1,2 × 0,6 y 1,3 m de circulación; colada, espesor en 3 puntos y etiqueta de lote |
+| AL-CU | Cuarentena de MP (compartida manuales y carros) | 25,0 | 25,0 | W-MAN y W-CAR tabla 5: 10 × 2,5 m, demarcada en amarillo: 7 pallets, mesa de inspección de 1,2 × 0,6 y 1,3 m de circulación; colada, espesor en 3 puntos y etiqueta de lote. X-MAN 2035: 3 operarios de recepción (descarga, control y ubicación) |
 | AL-RE | Retenidos de MP (no conforme) | 6,0 | 6,0 | W-CAR tabla 5: 4 × 1,5 m demarcados en rojo, 3 pallets; se reclama al proveedor |
 | AL-CH | Chapa LAF de manuales (3 formatos) | 18,8 | - | Dimensionamiento_Almacenes_MP_v5 'Chapa y fleje': hojas 1220 × 2440, 1000 × 2000 y 1500 × 3000 en paquetes de 2 alturas (7 lugares); el autoelevador los toma de costado desde A2 (W-MAN) |
 | AL-FL | Flejes LAF de manuales | 10,9 | - | Dimensionamiento_Almacenes_MP_v5: 21 rollos parados en cunas; porta-flejes de 3 niveles (24 cunas, MP Opción D) en vez de 1 nivel a piso: misma capacidad en la tercera parte del frente de calle |
@@ -75,8 +75,8 @@ Nave de 88 × 44 m = 3.872 m², puestos en el orden y la disposición de los Wor
 | S4 | Tercerizados revendidos | 11,4 | 9,6 | Dimensionamiento_Almacenes_MP_v5 'Almacén de producto terminado': 17 posiciones (14,4 m² brutos); rack de 2 módulos × 4 niveles: CO₂, agua, AFFF, clase K y agente limpio |
 | REC | Recepción del muelle: mesa de control | 4,8 | - | Remito contra orden de compra y muestra del lote de polvo al laboratorio (humedad) antes de liberarlo |
 | C-5 | Soldadura longitudinal de carros (5) | 23,0 | 22,0 | W-CAR tabla: ≈ 5,5 × 4,0 = 22 m²; mandril con 1,5 m libres para el cuerpo; no conforme en rojo |
-| C-4 | Punteo del cuerpo ×2 (4) | 34,0 | 27,0 | W-CAR ≈ 6,0 × 4,5 por puesto; X-DT 2035: 2 viradores (comparten banco, cuna y pulmón) |
-| C-3 | Cilindrado de carros (3) | 30,8 | 30,8 | W-CAR ≈ 7,0 × 5,0 = 35 m²: roladora W12 8 × 1500, zona de carga, EFE 600 y mesa móvil, salida axial y pulmón de 1,8 × 1,2 |
+| C-4 | Punteo del cuerpo ×2 (4) | 31,3 | 27,0 | W-CAR ≈ 6,0 × 4,5 por puesto; X-DT 2035: 2 viradores (comparten banco, cuna y pulmón) |
+| C-3 | Cilindrado de carros (3) | 33,6 | 30,8 | W-CAR ≈ 7,0 × 5,0 = 35 m²: roladora W12 8 × 1500, zona de carga, EFE 600 y mesa móvil, salida axial y pulmón de 1,8 × 1,2 |
 | C-6 | Soldadura de cupla en la cúpula (6) | 20,0 | 16,0 | W-CAR ≈ 4,5 × 3,5 = 16 m²; pegado al armado (7); lo hace el operario de punteo |
 | C-7 | Armado y soldadura circunferencial (7) | 28,0 | 27,0 | W-CAR ≈ 6,0 × 4,5 = 27 m²: virador, carro canasto de cúpulas y carro 2 de fondos |
 | C-8 | Soldadura de accesorios e inspección (8) | 25,0 | 20,0 | W-CAR ≈ 5,0 × 4,0 = 20 m²: virador y carro de kits; monta eje y ruedas; inspección de costuras (X-DT) |
@@ -187,38 +187,39 @@ Tiempo por viaje = 2 × distancia / velocidad + tiempo fijo de toma y entrega. D
 |---|---|---|---|---|---|---|
 | Paquete de hojas ≤ 2 t | Autoelevador MP y carros | Alero -> P1 -> A1 -> cuarentena | 0,6 | 24 | 2,0 | 1 |
 | Paquete aprobado | Autoelevador MP y carros | Cuarentena -> A1 -> AN -> A2 -> AL-CH | 0,5 | 29 | 2,1 | 1 |
-| Paquete LAF a la guillotina | Autoelevador MP y carros | AL-CH -> A2, AN y A3 -> mesa elevadora | 0,5 | 40 | 2,4 | 1 |
-| Paquete LAC a la guillotina | Autoelevador MP y carros | AL-CC -> mesa elevadora | 0,1 | 34 | 2,3 | 0 |
+| Paquete LAF a la guillotina y vuelta | Autoelevador MP y carros | AL-CH -> A2, AN y A3 -> mesa elevadora | 1,0 | 40 | 2,4 | 2 |
+| Paquete LAC a la guillotina y vuelta | Autoelevador MP y carros | AL-CC -> mesa elevadora | 0,3 | 34 | 2,3 | 1 |
 | Rollo de fleje 0,5-1,9 t | Autoelevador MP y carros | Porta-flejes -> AN -> desbobinador | 1,1 | 15 | 1,8 | 2 |
 | Atado de caños Ø76,2 | Autoelevador MP y carros | Cantiléver -> cajón del láser (pluma) | 3,3 | 10 | 1,7 | 6 |
-| Barras y caños de carros | Carro a mano | Cantiléver -> PC -> PO-CW -> rack 8.1 (porta-barras) | 1,3 | 32 | 1,8 | 2 |
+| Barras y caños de carros | Carro a mano | Cantiléver -> PC -> PO-CW -> rack 8.1 (porta-barras) | 2,0 | 32 | 1,8 | 4 |
 | Casquetes y cuplas (carros 1 y 2) | Carro a mano | AL-CQ -> puestos 6 y 7 | 2,0 | 32 | 1,8 | 4 |
-| Contenedor de orillas (guillotina) | Autoelevador MP y carros | Guillotina -> volquete (P1) | 0,5 | 54 | 2,7 | 1 |
-| Contenedor de recortes (láser) | Autoelevador MP y carros | Láser -> A3 -> volquete (P1) | 0,5 | 40 | 2,4 | 1 |
+| Contenedor de orillas (guillotina) | Autoelevador MP y carros | Guillotina -> volquete (P1) | 0,2 | 54 | 2,7 | 1 |
+| Contenedor de recortes (láser) | Autoelevador MP y carros | Láser -> A3 -> volquete (P1) | 0,2 | 40 | 2,4 | 0 |
 | Contenedor del esqueleto (ruedas) | Carro a mano | Prensa -> PO-3 -> AN -> volquete | 1,0 | 37 | 2,1 | 2 |
 | Big bag de polvo 1 t / caja de pintura | Autoelevador PT | Muelle P3 -> AT -> depósito DP | 1,7 | 11 | 1,7 | 3 |
-| Big bag de ABC 60 | Autoelevador PT | DP -> estación de la carga (19) | 0,9 | 3 | 1,6 | 1 |
+| Big bag de ABC 60 | Autoelevador PT | DP -> estación de la carga (19) | 1,3 | 3 | 1,6 | 2 |
 | Big bag de ABC 90 | Transpaleta | DP -> AC -> PC -> PO-CN -> carros (C12) | 0,4 | 37 | 2,5 | 1 |
 | Caja de pintura en polvo | Transpaleta | DP -> AC -> PC -> PO-PI -> tolvas | 0,6 | 41 | 2,7 | 2 |
-| Pallet de cilindros vacíos | Transpaleta | Mesa de vacíos -> envolvedora | 2,8 | 10 | 1,4 | 4 |
-| Pallet de terminados | Transpaleta | Mesa de terminados -> envolvedora | 4,4 | 6 | 1,3 | 6 |
-| Pallet de PT | Transpaleta | Envolvedora -> AT -> T2 (pie del rack) | 7,2 | 18 | 1,7 | 13 |
-| Pallet de PT | Autoelevador PT | Ubica en el rack; rack -> T1 -> EX -> muelle P3 | 7,2 | 13 | 1,8 | 13 |
-| Pallet de revendidos | Autoelevador PT | Muelle P3 -> S4 -> muelle P3 | 0,2 | 9 | 1,7 | 0 |
-| Carro rodante (al pintor y terminado) | Carro a mano | C-PP -> PO-C -> EX -> rampa del muelle P3 | 25,8 | 11 | 1,0 | 25 |
-| Carro rodante pintado (rueda) | Carro a mano | Muelle P3 -> EX -> PO-CN -> C-T | 12,9 | 21 | 1,4 | 18 |
-| Carro rodante terminado (rueda) | Carro a mano | C-T -> PO-C -> C-PP | 12,9 | 5 | 0,7 | 9 |
-| Carro de kits (≈ 10 kits) | Carro a mano | Puesto 8.1 -> PO-C -> puesto 8 | 1,3 | 10 | 0,9 | 1 |
-| Carro de cuerpos 2,5-10 kg (24 u) | Carro a mano | PU-V3 -> 9 encastre | 14,0 | 1 | 0,6 | 8 |
-| Carro de tramos 1 kg (80 u) | Carro a mano | PU-T1 -> PU-T2 (encastre) | 12,0 | 5 | 0,7 | 9 |
-| Carro de fondos (150 u) | Carro a mano | PU-K -> zona de fondos | 8,0 | 3 | 0,6 | 5 |
-| Carro de cúpulas con cuello (60 u) | Carro a mano | PU-CC2 -> PU-CC (sold. circ.) | 20,0 | 3 | 0,6 | 12 |
-| Carro de cilindros, 9 tramos 9 -> 17 | Carro a mano | entre pasos (prom. por tramo) | 198,0 | 4 | 0,7 | 131 |
-| Carro de terminados pintados | Carro a mano | Descarga -> PO-PI -> AT2 -> PU-TP | 5,6 | 30 | 1,8 | 10 |
-| Carro de cilindros vacíos | Carro a mano | Descarga -> mesa de vacíos | 16,4 | 11 | 1,0 | 16 |
+| Pallet de cilindros vacíos | Transpaleta | Mesa de vacíos -> envolvedora | 6,0 | 10 | 1,4 | 9 |
+| Pallet de terminados | Transpaleta | Mesa de terminados -> envolvedora | 2,0 | 6 | 1,3 | 2 |
+| Pallet de PT | Transpaleta | Envolvedora -> AT -> T2 (pie del rack) | 8,0 | 18 | 1,7 | 14 |
+| Pallet de PT | Autoelevador PT | Ubica en el rack; rack -> T1 -> EX -> muelle P3 | 8,0 | 14 | 1,8 | 14 |
+| Pallet de revendidos | Autoelevador PT | Muelle P3 -> S4 -> muelle P3 | 0,2 | 19 | 1,9 | 0 |
+| Carro rodante (al pintor y terminado) | Carro a mano | C-PP -> PO-C -> EX -> rampa del muelle P3 | 40,0 | 12 | 1,0 | 40 |
+| Carro rodante pintado (rueda) | Carro a mano | Muelle P3 -> EX -> PO-CN -> C-T | 20,0 | 21 | 1,4 | 28 |
+| Carro rodante terminado (rueda) | Carro a mano | C-T -> PO-C -> C-PP | 20,0 | 5 | 0,7 | 14 |
+| Carro de kits (≈ 10 kits) | Carro a mano | Puesto 8.1 -> PO-C -> puesto 8 | 2,0 | 10 | 0,9 | 2 |
+| FCHP de cuerpos 2,5-10 kg (63 a 120 u) | Carro a mano | PU-V3 -> 9 encastre | 6,0 | 1 | 0,6 | 3 |
+| Carro de 12 cajones de tramos (420 u) | Carro a mano | PU-T1 -> PU-T2 (encastre) | 3,0 | 5 | 0,7 | 2 |
+| Carro de 12 cajones de fondos | Carro a mano | PU-K -> zona de fondos | 2,0 | 3 | 0,6 | 1 |
+| Carro de 12 cajones de cúpulas | Carro a mano | PU-K -> zona de cúpulas | 2,0 | 0 | 0,5 | 1 |
+| Carro de cúpulas con cuello | Carro a mano | PU-CC2 -> PU-CC (sold. circ.) | 3,0 | 3 | 0,6 | 2 |
+| Carro de cilindros, 9 tramos 9 -> 17 | Carro a mano | entre pasos (prom. por tramo) | 126,0 | 4 | 0,7 | 83 |
+| Carro de terminados pintados | Carro a mano | Descarga -> PO-PI -> AT2 -> PU-TP | 3,5 | 30 | 1,8 | 6 |
+| Carro de cilindros vacíos | Carro a mano | Descarga -> mesa de vacíos | 10,5 | 11 | 1,0 | 10 |
 | Zorra de consumibles y cajas (vuelta) | Zorra milk run | AL-CA -> puestos -> AL-CA | 4,0 | 156 | 7,0 | 28 |
 
-Ocupación sobre un turno útil de 408 min: autoelevador de MP y carros 3 %, de PT 4 %, transpaleta 6 %. Entre pasos se mueven 22 carros FCHP20505 por día y por tramo: W-MAN pone un carro entre cada par de puestos y lo empuja el operario que cierra el lote, sin tren logístico; al norte de la senda no entra el autoelevador. El riel aéreo lleva el cilindro de la detección a la descarga de pintura (53 m cargado, 10 m del horno de curado 2 y 36 m de retorno de ganchos vacíos). Los carros rodantes ruedan sobre sus ruedas por PO-C y EX hasta la rampa del muelle. El abastecedor hace el milk run con los 2 carros de abastecimiento (AL-CA, W-CAR) una vez por turno.
+Ocupación sobre un turno útil de 408 min: autoelevador de MP y carros 3 %, de PT 5 %, transpaleta 7 %. Entre pasos se mueven 14 carros FCHP20505 por día y por tramo: W-MAN pone un carro entre cada par de puestos y lo empuja el operario que cierra el lote, sin tren logístico; al norte de la senda no entra el autoelevador. El riel aéreo lleva el cilindro de la detección a la descarga de pintura (53 m cargado, 10 m del horno de curado 2 y 36 m de retorno de ganchos vacíos). Los carros rodantes ruedan sobre sus ruedas por PO-C y EX hasta la rampa del muelle. El abastecedor hace el milk run con los 2 carros de abastecimiento (AL-CA, W-CAR) una vez por turno.
 
 | Portón | Qué entra o sale | Vehículo | Frecuencia | Horario |
 |---|---|---|---|---|
@@ -243,7 +244,7 @@ Gases (W-MAN): packs de 12 cilindros de Arcal 21 y de N₂ con manifold en la ja
 | C08 | 48,0 |
 ## 6. Cruces de flujos y de hilos
 
-Cruces entre flujos de MP, SE y PT (verificación geométrica sobre el modelo): **43**. Cruces de hilos de personal con flujos: todos dentro de las **30** sendas peatonales señalizadas (X1 a X30).
+Cruces entre flujos de MP, SE y PT (verificación geométrica sobre el modelo): **54**. Cruces de hilos de personal con flujos: todos dentro de las **30** sendas peatonales señalizadas (X1 a X30).
 
 ## 7. Sanitarios, vestuarios y servicios (Dec. 351/79 arts. 49 y 50)
 
@@ -349,8 +350,8 @@ Luminaria LED de 150 W y 21.000 lm; factor de utilización 0,65; mantenimiento 0
 | S4 Tercerizados revendidos | 150 | 11 | 1 | 0,15 |
 | REC Recepción del muelle: mesa de control | 750 | 5 | 1 | 0,15 |
 | C-5 Soldadura longitudinal de carros (5) | 300 | 23 | 1 | 0,15 |
-| C-4 Punteo del cuerpo ×2 (4) | 300 | 34 | 1 | 0,15 |
-| C-3 Cilindrado de carros (3) | 300 | 31 | 1 | 0,15 |
+| C-4 Punteo del cuerpo ×2 (4) | 300 | 31 | 1 | 0,15 |
+| C-3 Cilindrado de carros (3) | 300 | 34 | 1 | 0,15 |
 | C-6 Soldadura de cupla en la cúpula (6) | 300 | 20 | 1 | 0,15 |
 | C-7 Armado y soldadura circunferencial (7) | 300 | 28 | 1 | 0,15 |
 | C-8 Soldadura de accesorios e inspección (8) | 300 | 25 | 1 | 0,15 |
@@ -425,7 +426,7 @@ Aire comprimido (anillo, ramales y bajadas de 6 m): 441 m. Potencia instalada de
 | MP | Big bag de ABC 60 a la estación de la carga (autoelevador) | 2,6 |
 | MP | Big bag de ABC 90 a la terminación de carros (AC -> PC -> PO-CN) | 37,0 |
 | MP | Pintura en polvo a las tolvas de la cabina (AC -> PC -> PO-PI) | 41,1 |
-| MP | Revendidos al rack S4 (P3) | 7,6 |
+| MP | Revendidos al rack S4 (P3) | 15,0 |
 | SE | Desarrollos a la rampa | 0,2 |
 | SE | Carro de plataforma con desarrollos al lado de la roladora | 4,9 |
 | SE | Cuerpo de carro al marcado | 0,2 |
@@ -464,8 +465,8 @@ Aire comprimido (anillo, ramales y bajadas de 6 m): 441 m. Potencia instalada de
 | PT | Pallet de cilindros a la envolvedora | 10,1 |
 | PT | Pallet de terminados a la envolvedora | 6,2 |
 | PT | Pallets al almacén de PT y de cilindros (transpaleta por AT y T2) | 17,9 |
-| PT | Expedición (T1 -> muelle P3) | 19,4 |
-| PT | Revendidos a expedición | 13,4 |
+| PT | Expedición (T1 -> muelle P3) | 19,5 |
+| PT | Revendidos a expedición | 15,6 |
 | SE | Cuerpos grabados de carros (EFE 600 / mesa móvil) a la roladora | 10,1 |
 | SE | Cuerpo rolado al pulmón | 0,2 |
 | SE | Punteo (2 viradores) | 6,9 |
@@ -479,8 +480,8 @@ Aire comprimido (anillo, ramales y bajadas de 6 m): 441 m. Potencia instalada de
 | SE | Carro inspeccionado (sobre ruedas) a la PH | 10,2 |
 | SE | PH -> secado | 2,4 |
 | SE | Secado -> pulmón de despacho a pintura | 0,8 |
-| SE | Carros a pintura tercerizada y carros terminados (muelle P3) | 17,0 |
-| SE | Carros pintados (vuelven por P3) a la terminación de carros | 27,1 |
+| SE | Carros a pintura tercerizada y carros terminados (muelle P3) | 18,1 |
+| SE | Carros pintados (vuelven por P3) a la terminación de carros | 27,3 |
 | SE | Carga de polvo -> armado de válvula y manguera | 2,7 |
 | SE | Armado -> presurización y etiquetado | 0,2 |
 | SE | Carro terminado al pulmón del muelle | 5,2 |

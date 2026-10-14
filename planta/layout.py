@@ -243,7 +243,8 @@ SECTORES = [
            "W-CAR tabla 5: estacionamiento de 3 × 1 m para los 2 carros de abastecimiento diario"),
     Sector("AL-CU", "Cuarentena de MP (compartida manuales y carros)", R(6.6, 24.6, 9.1, 34.6), "CAL", "común",
            "W-MAN y W-CAR tabla 5: 10 × 2,5 m, demarcada en amarillo: 7 pallets, mesa de inspección de 1,2 × 0,6 y "
-           "1,3 m de circulación; colada, espesor en 3 puntos y etiqueta de lote", 25.0),
+           "1,3 m de circulación; colada, espesor en 3 puntos y etiqueta de lote. X-MAN 2035: 3 operarios de "
+           "recepción (descarga, control y ubicación)", 25.0),
     Sector("AL-RE", "Retenidos de MP (no conforme)", R(6.6, 34.7, 9.1, 37.1), "CAL", "común",
            "W-CAR tabla 5: 4 × 1,5 m demarcados en rojo, 3 pallets; se reclama al proveedor", 6.0),
     Sector("AL-CH", "Chapa LAF de manuales (3 formatos)", R(9.1, 24.6, 10.6, 37.1), "MP", "S2",
@@ -359,9 +360,9 @@ SECTORES = [
     # ---------------- banda sur: carros (W-CAR, puestos 3 a 9 en U)
     Sector("C-5", "Soldadura longitudinal de carros (5)", R(21.4, 14.2, 26.4, 18.8), "PROD", "S3",
            "W-CAR tabla: ≈ 5,5 × 4,0 = 22 m²; mandril con 1,5 m libres para el cuerpo; no conforme en rojo", 22.0),
-    Sector("C-4", "Punteo del cuerpo ×2 (4)", R(26.6, 14.2, 34.0, 18.8), "PROD", "S3",
+    Sector("C-4", "Punteo del cuerpo ×2 (4)", R(26.6, 14.2, 33.4, 18.8), "PROD", "S3",
            "W-CAR ≈ 6,0 × 4,5 por puesto; X-DT 2035: 2 viradores (comparten banco, cuna y pulmón)", 27.0),
-    Sector("C-3", "Cilindrado de carros (3)", R(34.2, 14.2, 40.9, 18.8), "PROD", "S3",
+    Sector("C-3", "Cilindrado de carros (3)", R(33.6, 14.2, 40.9, 18.8), "PROD", "S3",
            "W-CAR ≈ 7,0 × 5,0 = 35 m²: roladora W12 8 × 1500, zona de carga, EFE 600 y mesa móvil, salida axial "
            "y pulmón de 1,8 × 1,2", 30.8),
     Sector("C-6", "Soldadura de cupla en la cúpula (6)", R(21.4, 8.2, 25.4, 13.2), "PROD", "S3",
@@ -415,6 +416,8 @@ EQUIPOS = [
        fuente="X-ALM: caño de 6 m + 0,4 m por extremo", tipo="cantilever", frente="E"),
     E_("RCQ", "Rack de casquetes y cuplas (2 mód. × 4 niveles)", Rw(18.95, 42.3, 5.4, 1.15), "AL-CQ", 0,
        fuente="X-ALM: 11 posiciones", forma="rack", tipo="rack", frente="S"),
+    E_("BP1", "Balanza de plataforma 1,20 × 1,20 m, 1.500 kg (big bags y remito)", Rw(58.1, 4.7, 1.2, 1.2), "DP", 0,
+       fuente="W-MAN y W-CAR: balanza de plataforma compartida", tipo="balanza", frente="O"),
     # ---------------- N1 corte de chapa (compartido) y marcado de carros
     E_("M02", "Mesa elevadora de tijera 3 t (compartida)", Rw(24.8, 24.9, 1.8, 2.6), "N1", 0, 2.2,
        fuente="W-MAN y W-CAR: 2,6 × 1,8 m", tipo="mesa_tijera", frente="O"),
@@ -834,7 +837,7 @@ FLUJOS = [
           "Big bag de ABC 90 a la terminación de carros (AC -> PC -> PO-CN)", "S3"),
     Flujo("MP", [(55.2, 6.4), (54.6, 6.4), (54.6, 20.4), (75.4, 20.4), (75.4, 17.6), (78.3, 17.6)],
           "Pintura en polvo a las tolvas de la cabina (AC -> PC -> PO-PI)"),
-    Flujo("MP", [(46.0, -6.0), (46.0, 0.0), (46.0, 1.6)], "Revendidos al rack S4 (P3)", "S4"),
+    Flujo("MP", [(51.4, -6.0), (51.4, 0.0), (51.4, 2.6), (46.0, 2.6), (46.0, 1.6)], "Revendidos al rack S4 (P3)", "S4"),
     # ---------------- SE: corte de chapa, tubo y cuerpo (W-MAN)
     Flujo("SE", [(29.7, 27.0), (29.9, 27.0)], "Desarrollos a la rampa"),
     Flujo("SE", [(32.1, 27.6), (36.6, 27.6), (36.9, 27.4)], "Carro de plataforma con desarrollos al lado de la roladora",
@@ -895,8 +898,8 @@ FLUJOS = [
     Flujo("PT", [(67.4, 5.0), (67.4, 5.6), (61.8, 5.6)], "Pallet de terminados a la envolvedora"),
     Flujo("PT", [(60.9, 5.0), (60.9, 2.6), (50.75, 2.6), (50.75, 8.0)],
           "Pallets al almacén de PT y de cilindros (transpaleta por AT y T2)"),
-    Flujo("PT", [(45.2, 9.0), (45.2, 3.6), (49.6, 3.6), (49.6, 0.0), (49.6, -6.0)], "Expedición (T1 -> muelle P3)"),
-    Flujo("PT", [(43.6, 1.6), (43.6, 2.2), (48.2, 2.2), (48.2, 0.0), (48.2, -6.0)], "Revendidos a expedición", "S4"),
+    Flujo("PT", [(45.2, 9.0), (45.2, 3.6), (49.75, 3.6), (49.75, 0.0), (49.75, -6.0)], "Expedición (T1 -> muelle P3)"),
+    Flujo("PT", [(43.6, 1.6), (43.6, 2.2), (50.35, 2.2), (50.35, 0.0), (50.35, -6.0)], "Revendidos a expedición", "S4"),
     # ---------------- SE: carros (W-CAR) en U
     Flujo("SE", [(34.75, 24.9), (34.75, 18.9), (38.6, 18.9), (38.6, 18.6)],
           "Cuerpos grabados de carros (EFE 600 / mesa móvil) a la roladora", "S3"),
@@ -915,9 +918,9 @@ FLUJOS = [
           "Carro inspeccionado (sobre ruedas) a la PH", "S3"),
     Flujo("SE", [(30.0, 2.7), (32.4, 2.7)], "PH -> secado", "S3"),
     Flujo("SE", [(33.8, 2.7), (34.6, 2.7)], "Secado -> pulmón de despacho a pintura", "S3"),
-    Flujo("SE", [(40.8, 2.8), (49.0, 2.8), (49.0, 0.0), (49.0, -6.0)],
+    Flujo("SE", [(40.8, 2.8), (50.05, 2.8), (50.05, 0.0), (50.05, -6.0)],
           "Carros a pintura tercerizada y carros terminados (muelle P3)", "S3"),
-    Flujo("SE", [(49.3, -6.0), (49.3, 0.0), (49.3, 6.6), (40.4, 6.6), (40.4, 10.8), (39.0, 10.8)],
+    Flujo("SE", [(49.45, -6.0), (49.45, 0.0), (49.45, 6.6), (40.4, 6.6), (40.4, 10.8), (39.0, 10.8)],
           "Carros pintados (vuelven por P3) a la terminación de carros", "S3"),
     Flujo("SE", [(37.8, 11.9), (37.4, 11.9), (37.4, 9.6)], "Carga de polvo -> armado de válvula y manguera", "S3"),
     Flujo("SE", [(38.1, 9.0), (38.3, 9.0)], "Armado -> presurización y etiquetado", "S3"),
@@ -1341,6 +1344,16 @@ EFLUENTES = [
 RC_FLUJO = [(2.2, -6.0), (2.2, 0.0), (2.2, 2.4), (7.8, 2.4), (9.4, 4.0), (9.4, 6.2), (5.8, 6.9), (2.6, 7.9),
             (4.6, 9.6), (2.6, 12.6), (6.9, 12.6), (9.8, 12.8), (10.6, 9.8), (11.6, 9.8), (11.6, 2.8), (12.4, 2.8),
             (17.2, 2.8), (17.2, 2.0), (11.6, 2.0), (11.6, 1.2), (6.6, 1.6), (2.2, 1.6), (2.2, 0.0), (2.2, -6.0)]
+
+# pasaplatos del recinto de polvo (W-REC «Recinto de polvo»): (código, centro, orientación del muro, uso)
+PASAPLATOS = [("PP1", (9.4, 4.9), "h", "llega de la inspección visual"),
+              ("PP2", (10.8, 9.8), "v", "va a la PH y a pérdidas"),
+              ("PP3", (10.8, 13.6), "v", "vuelve del secado")]
+# rama de PH y secado de recargas (W-REC 6 y 7: sólo si la PH está vencida o hubo humedad): sale por PP2, pasa por
+# el corredor RC-N a la PH y al secado (zona general) y vuelve por PP3 a la carga
+RC_FLUJO_PH = [[(6.3, 9.3), (6.3, 9.55), (11.4, 9.55), (11.4, 17.55), (13.9, 17.55), (13.9, 17.0)],
+               [(15.2, 15.7), (15.6, 15.7)],
+               [(16.6, 16.2), (16.6, 17.85), (11.8, 17.85), (11.8, 13.6), (10.3, 13.6)]]
 
 EMISIONES = [
     (43.6, 41.9, "Humos de soldadura de cuellos"), (23.5, 17.9, "Humos de soldadura de carros"),

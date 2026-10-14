@@ -451,9 +451,10 @@ def resumen():
 MEDIOS = {"Autoelevador MP y carros": (1.5, 1.5), "Autoelevador PT": (1.5, 1.5), "Transpaleta": (0.8, 1.0),
           "Carro a mano": (0.8, 0.5), "Zorra milk run": (0.8, 0.5)}
 MIN_TURNO = 480.0 * 0.85          # 8 h con 15 % de suplementos (OIT)
-CIL_DIA = 1184                    # cilindros 1-10 kg por día en el mes pico 2035 (Dimensionamiento, hoja 2035)
-CIL_1KG = 0.80                    # participación del 1 kg en los cilindros
-CARROS_DIA = round(CIL_DIA * CIL_1KG / 80 + CIL_DIA * (1 - CIL_1KG) / 24)   # carro: 80 u de 1 kg o 24 u de 5 kg
+# W-MAN, día pico: cilindros por formato y lo que entra en los dos planos de arriba de un FCHP20505
+PICO_DIA = {"1 kg": 1216, "2,5 kg": 78, "5 kg": 350, "10 kg": 21}
+FCHP = {"1 kg": 256, "2,5 kg": 80, "5 kg": 48, "10 kg": 36}
+CARROS_DIA = round(sum(PICO_DIA[k] / FCHP[k] for k in PICO_DIA))   # carros FCHP por tramo y por día
 # carro de abastecimiento (W-CAR tabla 5): AL-CA -> AN -> PO-3 -> PO-7 -> PO-2 -> PO-1 -> PC -> AC -> AT2
 # (terminación) -> PC -> PO-CW -> PO-C (carros) -> PC -> A1 -> AL-CA
 MILK_RUN = [(1.6, 42.0), (4.1, 42.0), (4.1, 39.7), (24.6, 39.7), (24.6, 39.8), (61.6, 39.8), (61.6, 34.1),
@@ -476,11 +477,11 @@ def _lf(desc):
 DIAS_ANIO = SEMANAS * 5
 _ROD = ("25 kg", "50 kg", "70 kg", "100 kg")
 _MAN = ("1 kg", "2,5 kg", "5 kg", "10 kg")
-CARROS_ROD_DIA = sum(sum(DEMANDA[k]) for k in _ROD) / DIAS_ANIO        # carros y cilindros de carros por día
-VACIOS = sum(DEMANDA[k][1] for k in _MAN) / sum(sum(DEMANDA[k]) for k in _MAN)   # cilindros vendidos 1-10 kg
+CARROS_ROD_DIA = 20                # W-CAR, prueba hidráulica: 20 recipientes de carro por día en el pico
+VACIOS = 1252 / (1252 + 413)       # W-MAN, descarga de pintura: 1.252 vacíos y 413 terminados por día en el pico
 # big bags de 1 t por día: ABC 60 a la carga de manuales y ABC 90 a la de carros (kg de carga × matafuegos)
 KG_CARGA = {"1 kg": 1, "2,5 kg": 2.5, "5 kg": 5, "10 kg": 10, "25 kg": 25, "50 kg": 50, "70 kg": 70, "100 kg": 100}
-BB_60 = sum(DEMANDA[k][0] * KG_CARGA[k] for k in _MAN) / 1000 / DIAS_ANIO
+BB_60 = 1.254                      # W-MAN, carga de polvo: 1.254 kg de ABC por día en el pico
 BB_90 = sum(DEMANDA[k][0] * KG_CARGA[k] for k in _ROD) / 1000 / DIAS_ANIO
 
 
@@ -495,9 +496,11 @@ def manejo():
         ("Paquete de hojas ≤ 2 t", "Autoelevador MP y carros", "Alero -> P1 -> A1 -> cuarentena", laf + lac,
          _lf("Recepción")),
         ("Paquete aprobado", "Autoelevador MP y carros", "Cuarentena -> A1 -> AN -> A2 -> AL-CH", laf, _lf("Hojas aprobadas")),
-        ("Paquete LAF a la guillotina", "Autoelevador MP y carros", "AL-CH -> A2, AN y A3 -> mesa elevadora", laf,
+        ("Paquete LAF a la guillotina y vuelta", "Autoelevador MP y carros", "AL-CH -> A2, AN y A3 -> mesa elevadora",
+         2 * laf,
          _lf("Paquete a la mesa")),
-        ("Paquete LAC a la guillotina", "Autoelevador MP y carros", "AL-CC -> mesa elevadora", lac, _lf("Paquete LAC")),
+        ("Paquete LAC a la guillotina y vuelta", "Autoelevador MP y carros", "AL-CC -> mesa elevadora", 2 * lac,
+         _lf("Paquete LAC")),
         ("Rollo de fleje 0,5-1,9 t", "Autoelevador MP y carros", "Porta-flejes -> AN -> desbobinador", rollos, _lf("Rollo de fleje")),
         ("Atado de caños Ø76,2", "Autoelevador MP y carros", "Cantiléver -> cajón del láser (pluma)", atados,
          _lf("Atado de caños")),
@@ -505,9 +508,9 @@ def manejo():
          CARROS_ROD_DIA / 10,
          _lf("Barras y caños")),
         ("Casquetes y cuplas (carros 1 y 2)", "Carro a mano", "AL-CQ -> puestos 6 y 7", 2, _lf("Casquetes y cuplas")),
-        ("Contenedor de orillas (guillotina)", "Autoelevador MP y carros", "Guillotina -> volquete (P1)", 0.5,
+        ("Contenedor de orillas (guillotina)", "Autoelevador MP y carros", "Guillotina -> volquete (P1)", 0.2,
          _lf("Orillas de la guillotina")),
-        ("Contenedor de recortes (láser)", "Autoelevador MP y carros", "Láser -> A3 -> volquete (P1)", 0.5,
+        ("Contenedor de recortes (láser)", "Autoelevador MP y carros", "Láser -> A3 -> volquete (P1)", 0.2,
          _lf("Recortes del láser")),
         ("Contenedor del esqueleto (ruedas)", "Carro a mano", "Prensa -> PO-3 -> AN -> volquete", 1.0,
          _lf("Esqueleto de la prensa")),
@@ -516,12 +519,12 @@ def manejo():
         ("Big bag de ABC 60", "Autoelevador PT", "DP -> estación de la carga (19)", BB_60, _lf("Big bag de ABC 60")),
         ("Big bag de ABC 90", "Transpaleta", "DP -> AC -> PC -> PO-CN -> carros (C12)", BB_90, _lf("Big bag de ABC 90")),
         ("Caja de pintura en polvo", "Transpaleta", "DP -> AC -> PC -> PO-PI -> tolvas", 0.6, _lf("Pintura en polvo")),
-        ("Pallet de cilindros vacíos", "Transpaleta", "Mesa de vacíos -> envolvedora", 2.8,
+        ("Pallet de cilindros vacíos", "Transpaleta", "Mesa de vacíos -> envolvedora", 8 * VACIOS,
          _lf("Pallet de cilindros a la")),
-        ("Pallet de terminados", "Transpaleta", "Mesa de terminados -> envolvedora", 4.4,
+        ("Pallet de terminados", "Transpaleta", "Mesa de terminados -> envolvedora", 8 * (1 - VACIOS),
          _lf("Pallet de terminados a la")),
-        ("Pallet de PT", "Transpaleta", "Envolvedora -> AT -> T2 (pie del rack)", 7.2, _lf("Pallets al almacén")),
-        ("Pallet de PT", "Autoelevador PT", "Ubica en el rack; rack -> T1 -> EX -> muelle P3", 7.2, _lf("Expedición")),
+        ("Pallet de PT", "Transpaleta", "Envolvedora -> AT -> T2 (pie del rack)", 8, _lf("Pallets al almacén")),
+        ("Pallet de PT", "Autoelevador PT", "Ubica en el rack; rack -> T1 -> EX -> muelle P3", 8, _lf("Expedición")),
         ("Pallet de revendidos", "Autoelevador PT", "Muelle P3 -> S4 -> muelle P3", 0.2,
          _lf("Revendidos al rack") + _lf("Revendidos a expedición")),
         ("Carro rodante (al pintor y terminado)", "Carro a mano", "C-PP -> PO-C -> EX -> rampa del muelle P3",
@@ -532,10 +535,11 @@ def manejo():
          _lf("Carro terminado al")),
         ("Carro de kits (≈ 10 kits)", "Carro a mano", "Puesto 8.1 -> PO-C -> puesto 8", CARROS_ROD_DIA / 10,
          _lf("Kits del puesto")),
-        ("Carro de cuerpos 2,5-10 kg (24 u)", "Carro a mano", "PU-V3 -> 9 encastre", 14, _lf("Cuerpos 2,5-10")),
-        ("Carro de tramos 1 kg (80 u)", "Carro a mano", "PU-T1 -> PU-T2 (encastre)", 12, _lf("Carro de tramos")),
-        ("Carro de fondos (150 u)", "Carro a mano", "PU-K -> zona de fondos", 8, _lf("Carro de fondos")),
-        ("Carro de cúpulas con cuello (60 u)", "Carro a mano", "PU-CC2 -> PU-CC (sold. circ.)", 20,
+        ("FCHP de cuerpos 2,5-10 kg (63 a 120 u)", "Carro a mano", "PU-V3 -> 9 encastre", 6, _lf("Cuerpos 2,5-10")),
+        ("Carro de 12 cajones de tramos (420 u)", "Carro a mano", "PU-T1 -> PU-T2 (encastre)", 3, _lf("Carro de tramos")),
+        ("Carro de 12 cajones de fondos", "Carro a mano", "PU-K -> zona de fondos", 2, _lf("Carro de fondos")),
+        ("Carro de 12 cajones de cúpulas", "Carro a mano", "PU-K -> zona de cúpulas", 2, _lf("Carro de cúpulas")),
+        ("Carro de cúpulas con cuello", "Carro a mano", "PU-CC2 -> PU-CC (sold. circ.)", 3,
          _lf("Cúpulas con cuello")),
         (f"Carro de cilindros, {tramos_linea} tramos 9 -> 17", "Carro a mano", "entre pasos (prom. por tramo)",
          CARROS_DIA * tramos_linea, _lf("Línea principal") / tramos_linea),

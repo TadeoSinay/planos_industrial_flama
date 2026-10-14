@@ -431,6 +431,7 @@ def equipos(pl, rotulos=True, h=1.5, fino=False, operarios=True):
     cerrados(pl)
     transportador(pl)
     jaula_gases(pl)
+    pasaplatos(pl)
     pulmones(pl, h)
     if rotulos:
         for e in L.EQUIPOS:
@@ -617,6 +618,16 @@ def transportador(pl):
             pl.circulo((x, y), 0.45, "A-EQUIPO-OCULTO")   # ruedas de desvío en los quiebres
     x, y = L.RIEL[1]
     pl.texto("Riel aéreo de pintura +4,00 m", (x + 0.5, y - 4.0), 1.3, A.MIDDLE_CENTER, "A-TEXTO", 90)
+
+
+def pasaplatos(pl):
+    """Ventanas de paso del recinto de polvo de recargas (W-REC): marco en el tabique y código."""
+    for cod, (x, y), o, uso in getattr(L, "PASAPLATOS", []):
+        r = L.R(x - 0.35, y - 0.15, x + 0.35, y + 0.15) if o == "h" else L.R(x - 0.15, y - 0.35, x + 0.15, y + 0.35)
+        pl.rect(r, "A-EQUIPO")
+        pl.linea((r.x0, r.y0), (r.x1, r.y1), "A-EQUIPO")
+        pl.texto(cod, (x + (0.0 if o == "h" else 0.25), y + (0.25 if o == "h" else 0.0)), 0.08 * pl.s,
+                 A.BOTTOM_CENTER if o == "h" else A.MIDDLE_LEFT, "A-TEXTO")
 
 
 def jaula_gases(pl):

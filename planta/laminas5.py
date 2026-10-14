@@ -248,8 +248,10 @@ PASOS_MP = [
         "Heli + pallet + margen, W-CAR)."),
     (6, "Rollos de fleje en el porta-flejes AL-FL de 3 niveles sobre AN; el espolón lleva el rollo al carro "
         "portabobinas del desbobinador (extremo este de AN)."),
-    (7, "Caño Ø76,2: atados de 16 tubos (≈ 220 kg) al cantiléver AL-CT; con la pluma, al cajón de alimentación del "
-        "láser, cruzando A3 (3,3 atados por día en el pico, X-ALM y W-MAN)."),
+    (7, "Caño Ø76,2: atados de 16 tubos (≈ 220 kg, 6 m). Se bajan del camión con prolongadores, tomados por el centro "
+        "(W-MAN); por P1 (4,4 m) y por las calles de 5 m viajan colgados de la pluma a lo largo del recorrido, y se giran "
+        "con soga guía frente al cantiléver AL-CT. Del cantiléver, con la pluma, al cajón del láser cruzando A3 (3,3 "
+        "atados por día en el pico, X-ALM y W-MAN)."),
     (8, "Barras y caños de carros: del cantiléver al rack del puesto 8.1 en el carro porta-barras, por el pasillo "
         "central y la calle PO-CW."),
     (9, "Insumos de montaje (AL-MM, AL-MC), identificación (AL-ID), soldadura y granalla (AL-SS): salen una vez por "

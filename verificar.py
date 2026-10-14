@@ -174,6 +174,21 @@ def main():
                 if t.intersects(muro):
                     n_muro += 1
                     err(f"el recorrido {nom} atraviesa el muro {lado} de {cod_l}")
+    # 4f'. el muro exterior de la nave sólo se cruza por un portón o una puerta (flujos y recorrido de recargas)
+    huecos = []
+    for pu in L.PUERTAS:
+        huecos.append({"N": sg.box(pu.a, L.NAVE_A - 0.6, pu.b, L.NAVE_A + 0.6), "S": sg.box(pu.a, -0.6, pu.b, 0.6),
+                       "O": sg.box(-0.6, pu.a, 0.6, pu.b), "E": sg.box(L.NAVE_L - 0.6, pu.a, L.NAVE_L + 0.6, pu.b)}[pu.muro])
+    perim = LineString([(0, 0), (L.NAVE_L, 0), (L.NAVE_L, L.NAVE_A), (0, L.NAVE_A), (0, 0)])
+    for h_ in huecos:
+        perim = perim.difference(h_)
+    lineas = [(f.cat, f.rot, f.pts) for f in L.FLUJOS if f.cat in ("MP", "SE", "PT", "SCRAP")]
+    lineas += [("SE", "recorrido de recargas", L.RC_FLUJO)] + [("SE", "rama de PH de recargas", t)
+                                                                for t in getattr(L, "RC_FLUJO_PH", [])]
+    for cat, rot, pts in lineas:
+        if LineString(pts).intersects(perim):
+            n_muro += 1
+            err(f"el flujo {cat} {rot} atraviesa el muro exterior fuera de un portón o puerta")
     print(f"flujos y recorridos a través de muros: {n_muro}")
     # 4g. a lo sumo 4 portones en la nave (uno por frente logístico)
     portones = [pu.cod for pu in L.PUERTAS if pu.tipo in ("porton", "muelle")]
