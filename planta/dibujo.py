@@ -29,7 +29,7 @@ CAPAS_PLANTA = {
     "A-EQUIPO-RELLENO": (9, 13, "CONTINUOUS", None, "Rellenos de cuerpo de equipos"),
     "A-SEGURIDAD": (1, 18, "IRAM-E-TRAZOS", None, "Resguardos, cortinas de luz y zonas de barrido"),
     "A-OPERARIO": (6, 18, "CONTINUOUS", None, "Operarios en su puesto"),
-    "A-VEHICULO": (40, 25, "CONTINUOUS", None, "Autoelevadores, tren logístico y transpaletas"),
+    "A-VEHICULO": (40, 25, "CONTINUOUS", None, "Autoelevadores y transpaletas"),
     "A-SECTOR": (1, 25, "CONTINUOUS", None, "Límite de sector (rojo, como en rev4)"),
     "A-PASILLO": (2, 35, "IRAM-E-TRAZOS", (215, 165, 0), "Demarcación de pasillos (amarillo IRAM 10005)"),
     "A-DEFENSA": (2, 35, "CONTINUOUS", (230, 180, 0), "Defensa entre carril de autoelevador y senda peatonal"),
@@ -55,7 +55,7 @@ CAPAS_PLANTA = {
     "F-PERSONAL": (6, 35, "FLUJO-TRAZOS", None, "Hilos de personal (magenta)"),
     "F-EFL-LIQ": (34, 35, "FLUJO-TRAZOS", None, "Efluentes líquidos (marrón)"),
     "F-EFL-GAS": (4, 35, "FLUJO-TRAZOS", None, "Efluentes gaseosos (cian)"),
-    "F-RET": (8, 18, "FLUJO-TRAZOS", None, "Retorno vacío del tren logístico"),
+    "F-RET": (8, 18, "FLUJO-TRAZOS", None, "Retorno de ganchos vacíos del riel aéreo de pintura"),
     "I-ELEC": (1, 35, "CONTINUOUS", None, "Alimentadores eléctricos"),
     "I-AIRE": (4, 35, "CONTINUOUS", None, "Aire comprimido"),
     "I-N2": (6, 35, "CONTINUOUS", None, "Nitrógeno"),
@@ -134,6 +134,7 @@ class Plano:
 
     def texto(self, s, xy, h=2.5, al=A.MIDDLE_CENTER, capa="A-TEXTO", rot=0, papel=False):
         p = xy if papel else self.P(*xy)
+        s = s.replace("₂", "2")           # la fuente ISO3098 del PDF no tiene subíndices
         t = self.m.add_text(s, height=h, rotation=rot, dxfattribs={"layer": capa, "style": "ISO3098"})
         t.set_placement(p, align=al)
         return t
@@ -429,6 +430,7 @@ def equipos(pl, rotulos=True, h=1.5, fino=False, operarios=True):
     mobiliario(pl)
     cerrados(pl)
     transportador(pl)
+    jaula_gases(pl)
     pulmones(pl, h)
     if rotulos:
         for e in L.EQUIPOS:
@@ -466,7 +468,7 @@ def mamparas(pl):
 
 def zonas_logisticas(pl, h=1.4):
     """Zona sin autoelevador: al norte de la senda sólo circulan carros a mano y transpaletas."""
-    z = L.R(13.8, 24.5, 87.7, 43.7)
+    z = L.ZONA_SIN_AE
     pl.rect(z, "A-ZONA-LOG")
     pl.texto("ZONA SIN AUTOELEVADOR: CARROS A MANO Y TRANSPALETA", (z.x0 + 26.0, z.y1 - 0.45), h,
              A.MIDDLE_CENTER, "A-ZONA-LOG")
@@ -596,25 +598,39 @@ def pulmones(pl, h=1.5):
 
 
 def transportador(pl):
-    """Transportador aéreo del lazo de pintura (+4,0 m): viga en trazos, eje y ganchos cada 1,2 m."""
-    xs = [p[0] for p in L.LAZO]
-    ys = [p[1] for p in L.LAZO]
-    x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
-    lazo = [(x0, y1), (x1, y1), (x1, y0), (x0, y0), (x0, y1)]
-    g = sg.LineString(lazo)
-    for d in (-0.12, 0.12):
-        o = g.parallel_offset(abs(d), "left" if d > 0 else "right", join_style=2)
-        for part in (o.geoms if hasattr(o, "geoms") else [o]):
-            pl.pl(list(part.coords), "A-EQUIPO-OCULTO")
-    pl.pl(lazo, "A-EJE")
-    n = int(g.length / 1.2)
-    for i in range(n):
-        q = g.interpolate(i * 1.2)
-        pl.circulo((q.x, q.y), 0.07, "A-EQUIPO-FINO")
-    for x, y in ((x0, y1), (x1, y1), (x1, y0), (x0, y0)):
-        pl.circulo((x, y), 0.6, "A-EQUIPO-OCULTO")   # ruedas de desvío en las esquinas
-    pl.texto("Transportador aéreo por empuje +4,00 m", (x1 + 0.4, (y0 + y1) / 2), 1.3, A.MIDDLE_CENTER,
-             "A-TEXTO", 90)
+    """Riel aéreo de pintura (+4,0 m, W-MAN): viga en trazos, eje, ganchos cada 1,2 m y ruedas de desvío; tramo
+    cargado (detección -> hornos -> descarga), horno de curado 2 en paralelo y retorno de ganchos vacíos."""
+    for tramo, ganchos in ((L.RIEL, True), (getattr(L, "RIEL_2", []), True), (getattr(L, "RIEL_RET", []), False)):
+        if len(tramo) < 2:
+            continue
+        g = sg.LineString(tramo)
+        for d in (-0.12, 0.12):
+            o = g.parallel_offset(abs(d), "left" if d > 0 else "right", join_style=2)
+            for part in (o.geoms if hasattr(o, "geoms") else [o]):
+                pl.pl(list(part.coords), "A-EQUIPO-OCULTO")
+        pl.pl(tramo, "A-EJE")
+        if ganchos:
+            for i in range(int(g.length / 1.2) + 1):
+                q = g.interpolate(i * 1.2)
+                pl.circulo((q.x, q.y), 0.07, "A-EQUIPO-FINO")
+        for x, y in tramo[1:-1]:
+            pl.circulo((x, y), 0.45, "A-EQUIPO-OCULTO")   # ruedas de desvío en los quiebres
+    x, y = L.RIEL[1]
+    pl.texto("Riel aéreo de pintura +4,00 m", (x + 0.5, y - 4.0), 1.3, A.MIDDLE_CENTER, "A-TEXTO", 90)
+
+
+def jaula_gases(pl):
+    """Packs de gases con su manifold dentro de la jaula exterior JG (W-MAN)."""
+    from . import simbolos as S
+    for nom, r in getattr(L, "JAULA_GASES", []):
+        m = S.M.rect(pl, r, "N")
+        S.bateria_gas(m)
+        m.fin()
+        pl.texto(nom, (r.c[0], r.y0 - 0.1), 0.09 * pl.s, A.TOP_CENTER, "A-TEXTO")
+    if getattr(L, "MANIFOLD_GASES", None):
+        pl.pl(L.MANIFOLD_GASES, "A-EQUIPO")
+        pl.texto("Manifold con conmutación automática -> reguladores CG1 (sala SC)",
+                 (L.MANIFOLD_GASES[1][0] - 0.1, L.MANIFOLD_GASES[1][1] - 0.1), 0.08 * pl.s, A.TOP_RIGHT, "A-TEXTO")
 
 
 def etiqueta(pl, cod, xy, h=1.5):
@@ -859,10 +875,9 @@ def _lineas(g):
 
 
 def vehiculos(pl):
-    """Flota calculada (C.manejo): 3 autoelevadores (uno por frente: MP, carros y recargas, PT) y 2 transpaletas."""
+    """Flota calculada (C.manejo): 2 autoelevadores (MP y carros, W-MAN; PT y muelle) y 2 transpaletas."""
     from . import simbolos as S
-    S.autoelevador(pl, 10.9, 33.0, 270)                       # MP: en A2, con un paquete de hojas
-    S.autoelevador(pl, 30.0, 6.7, 180, carga=False)           # carros y recargas: en la calle PO-C
-    S.autoelevador(pl, 43.0, 13.0, 90)                        # PT: en la calle T2 del rack
-    S.transpaleta(pl, 86.0, 33.2, 270)                        # P4 -> granalla
-    S.transpaleta(pl, 52.0, 3.05, 0)                          # AT: insumos de terminación
+    S.autoelevador(pl, 13.1, 31.0, 270)                       # MP y carros: en A2, con un paquete de hojas
+    S.autoelevador(pl, 50.75, 13.0, 90)                       # PT: en la calle T2 del rack
+    S.transpaleta(pl, 54.3, 17.0, 90)                         # AC: big bags y pintura en polvo del depósito
+    S.transpaleta(pl, 64.0, 3.1, 0)                           # AT: pallets de la envolvedora y del embalaje

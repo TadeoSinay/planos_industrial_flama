@@ -23,7 +23,9 @@ def generar(ruta):
     s.append("# Memoria de cálculo del layout - planta industrial FLAMA S.A. (año 10 = 2035)\n")
     s.append("Se genera desde `planta/calculos.py` y `planta/layout.py` (`python generar.py`). Cada número indica su "
              "fuente: **DT** = Dimensionamiento_TecnicoV2.xlsx, **MP** = MP_Abastecimiento_Almacenamiento_FLAMA_OpcionD.xlsx, "
-             "**CC** = Comparacion_corte.xlsx, **C** = cotización de proveedor, **E** = estimado, **SUP** = supuesto a validar.\n")
+             "**CC** = Comparacion_corte.xlsx, **X-ALM** = Dimensionamiento_Almacenes_MP_v5.xlsx (MRP del grupo), **W-MAN**, "
+             "**W-CAR** y **W-REC** = Word de proceso de manuales, carros y recargas, **C** = cotización de proveedor, "
+             "**E** = estimado, **SUP** = supuesto a validar.\n")
     # 1 demanda
     s.append("## 1. Demanda y tasas de diseño\n")
     s.append(tabla(["Formato", "Matafuegos (u/año)", "Cilindros vendidos (u/año)"],
@@ -35,30 +37,36 @@ def generar(ruta):
     s.append(tabla(["Familia", "Tasa de diseño (u/h)"], [[k, f(v, 1)] for k, v in t.items()]))
     # 2 layout
     s.append("\n## 2. Nave y sectores\n")
-    s.append(f"Nave de {f(L.NAVE_L, 0)} × {f(L.NAVE_A, 0)} m = {f(L.NAVE_L * L.NAVE_A, 0)} m², recorrido en U con una línea "
-             f"que converge paso a paso, pórticos de dos luces (19,40 y 24,60 m) cada {f(L.MODULO, 0)} m, altura libre "
+    s.append(f"Nave de {f(L.NAVE_L, 0)} × {f(L.NAVE_A, 0)} m = {f(L.NAVE_L * L.NAVE_A, 0)} m², puestos en el orden y la "
+             f"disposición de los Word de proceso (W-MAN, W-CAR, W-REC), pórticos de dos luces (19,40 y 24,60 m) cada {f(L.MODULO, 0)} m, altura libre "
              f"{f(L.ALTURA_LIBRE, 2)} m (Dec. 351/79 exige ≥ 3 m). Recargas dentro de la nave (ángulo SO, "
              f"{f(L.ANEXOS[1].rect.area, 0)} m²). Anexos: servicios {f(L.ANEXOS[0].rect.area, 0)} m² y sala técnica "
              f"{f(L.ANEXOS[2].rect.area, 0)} m².\n")
     s.append(tabla(["Código", "Sector", "m² proyectados", "m² requeridos", "Nota"],
                    [[x.cod, x.nombre, f(x.rect.area, 1), f(x.area_req, 1) if x.area_req else "-", x.nota]
                     for x in L.SECTORES]))
-    s.append("\nLos m² requeridos de MP (hoja MP Almacén) suponen almacenamiento a piso o en rack de 3 niveles con medio "
-             "pasillo propio. En el layout el almacén de MP guarda sólo seis rubros, en altura frente a las calles A1/A2 "
-             "del autoelevador de MP: hojas en paquetes sobre tacos (AL-1H, 4 posiciones × 4 alturas, más el LAC 4,75 en "
-             "AL-1L), flejes en porta-flejes de 3 niveles (AL-1F, 24 rollos), caño en el cantiléver interior (AL-1T, 12 "
-             "atados), cuellos y roscas (AL-1C), alambre MAG (AL-1A) y baterías de Arcal 21 (AL-GS). Válvulas, "
-             "manómetros y pescantes van a AL-2 junto a terminación; polvos, agentes y N₂ al almacén previo a la carga "
-             "(SP-1); pintura y granalla a QP y GR. El scrap no se guarda: queda en el contenedor de cada puesto.\n")
+    s.append("\nAlmacenes: los dimensiona el grupo en el MRP (X-ALM v5, con la planilla de plazos de entrega); el plano "
+             "ubica cada sección con al menos su superficie neta o sus posiciones. Una sola recepción de MP con cuarentena "
+             "compartida con carros (W-MAN, W-CAR). Calles de 5,0 m para el Heli CPCD50 (W-CAR tabla 5).\n")
+    s.append(tabla(["Sección (X-ALM)", "Posiciones", "m² netos", "m² brutos", "Sector del plano", "m² en el plano",
+                    "Cómo se guarda"],
+                   [[r["seccion"], r["pos"], f(r["neta"], 1), f(r["bruta"], 1), r["sectores"], f(r["plano"], 1), r["como"]]
+                    for r in C.almacenes_xalm()]))
+    s.append("\nX-ALM redondea cada ítem a lugares enteros (sin compartir columna). Donde el plano tiene menos m² netos "
+             "(fleje, insumos de carros, identificación e insumos de recargas) las posiciones entran igual: el fleje va en "
+             "porta-flejes de 3 niveles en lugar de pallets a piso, y los ítems chicos comparten columna de rack o "
+             "estantería. El área bruta de X-ALM (× 1,5 de circulación) queda reemplazada por las calles de 5 m del "
+             "plano, por eso el almacén de MP ocupa más que la suma de las áreas brutas.\n")
     # 3 recepción
     s.append("\n## 3. Recepción de MP y análisis de peso de la carga\n")
     s.append("Se dimensiona para la carga máxima: un semirremolque de 18,6 m y 30 t o dos chasis de 10 m en el alero "
-             "de descarga norte (32 × 11,6 m), con descarga por ambos lados con autoelevador. La nave tiene sólo cuatro "
-             "portones, uno por frente logístico: P1 (MP de producción, 7,20 m de ancho para que el atado de caño de 6 m "
-             "entre atravesado), P2 (recargas), el muelle único P3 (PT, carros, revendidos, casquetes, válvulas, embalaje, "
-             "polvos, agentes y N₂; recepción 7 a 10 h y expedición 13 a 17 h) y P4 (pintura y granalla). Los camiones "
-             "entran por G1 (garita y báscula) y salen por G3: calle norte al alero de P1, calle sur a la playa del muelle "
-             "P3 y calle este a P4.\n")
+             "de descarga norte (32 × 11,6 m), playos y con el costado libre (W-CAR), con descarga por ambos lados con "
+             "el autoelevador. La nave tiene tres portones: P1 (una sola recepción de MP de manuales y carros, con "
+             "cuarentena, W-MAN), P2 (recargas) y el muelle único P3 (PT y carros; entran polvo, pintura en polvo, "
+             "embalaje y revendidos; recepción 7 a 10 h y expedición 13 a 17 h). El ex P4 se suprimió: la pintura en "
+             "polvo va al depósito de polvo DP (X-ALM) y la granalla al almacén de MP (AL-SS). Los packs de gases se "
+             "cambian desde el patio norte en la jaula exterior JG. Los camiones entran por G1 (garita y báscula) y "
+             "salen por G3.\n")
     s.append(tabla(["Formato", "Largo (m)", "Carga útil (t)", "PBT (t)", "Descarga"],
                    [[a, f(b, 1), f(c, 1), f(d, 1), e] for a, b, c, d, e in C.CAMIONES]))
     s.append("\n" + tabla(["Proveedor / material", "t por entrega", "Entregas/año", "Vehículo", "Portón", "Destino"],
@@ -71,19 +79,18 @@ def generar(ruta):
              "(Q = Qn · (cn + d) / (c + d), d = 0,45 m):\n")
     s.append(tabla(["Nominal (c = 500 mm)", "Por el lado largo (c = 750 mm)", "Por el lado corto (c = 1500 mm)"],
                    [[f"{f(q, 1)} t", f"{f(a, 2)} t", f"{f(b, 2)} t"] for q, a, b in C.analisis_peso()]))
-    s.append("\nSe adopta para MP un autoelevador a nafta de 3,0 t con horquillas de 1,8 m y posicionador: toma el "
-             "paquete por el lado largo (2,37 t > 2 t). El de 2,5 t que proponía el Excel queda justo (1,98 t) y no sirve "
-             "por el lado corto; sí alcanza para los frentes de carros y recargas y de PT.\n")
-    # 4 sobrestock
-    s.append("## 4. Anti-sobrestock de chapa SAE 1010\n")
-    s.append(tabla(["Formato", "Hojas/semana", "Paquete de 2 t cubre (sem)", "Paquete propuesto", "Stock máx. (sem)"],
-                   [[r["formato"], f(r["hojas_sem"], 1), f(r["cob_2t"], 1),
-                     f"{r['hojas_paq']} hojas ({f(r['kg_paq'], 0)} kg)", f(r["cob_max"], 1)] for r in C.sobrestock()]))
-    s.append("\nReglas: una posición de AL-1H por formato con dos paquetes (en uso y en espera) y tope pintado; si "
-             "están ocupadas no se emite pedido (kanban de 2 paquetes). Paquetes chicos en los formatos de bajo consumo "
-             "para que ninguno cubra más de 2 semanas. Tarjeta de color por mes de ingreso y semáforo (verde < 4 semanas, "
-             "amarillo 4 a 6, rojo > 6: se consume primero y se inspecciona óxido). Hoja LAF aceitada con film VCI, "
-             "descargada y guardada siempre bajo techo, lejos de la PH y del lavado.\n")
+    s.append("\nSe adopta el autoelevador de W-MAN: Heli CPCD50 K2 diésel de 5 t, compartido entre la MP de manuales "
+             "y la de carros, con uñas largas, prolongadores para los atados, espolón para los rollos y pluma para los big "
+             "bags y los atados (Mecánica Porta). Con 5 t nominales toma el paquete de 2 t por cualquier lado. El PT y el "
+             "muelle tienen su propio autoelevador (racks de 5 niveles), y el embalaje una transpaleta eléctrica con una "
+             "manual de respaldo (W-MAN).\n")
+    # 4 política de stock (X-ALM)
+    s.append("## 4. Política de stock de chapa, fleje y caño (MRP del grupo)\n")
+    s.append(tabla(["Artículo", "Consumo (día pico)", "Unidad de compra", "Punto de pedido y plazo", "Se pide",
+                    "Stock máximo"],
+                   [[r["sku"], r["consumo"], r["unidad"], r["sistema"], r["pedido"], r["max"]] for r in C.politicas_stock()]))
+    s.append("\nFuente: X-ALM v5, hoja Política de stock (stock máximo = stock de seguridad + una compra). Hoja LAF "
+             "aceitada con film VCI, siempre bajo techo y lejos de la PH; FIFO por tarjeta de color del mes de ingreso.\n")
     # 5 pulmones
     s.append("## 5. Pulmones y manejo de materiales (métodos y tiempos)\n")
     s.append(tabla(["Pulmón", "Tasa (u/h)", "Cobertura (h)", "Unidades", "Carros", "Criterio"],
@@ -96,20 +103,24 @@ def generar(ruta):
                    [[r["carga"], r["medio"], r["ruta"], f(r["viajes"], 1), f(r["dist"], 0), f(r["t_viaje"], 1),
                      f(r["min_dia"], 0)] for r in M_["filas"]]))
     oc = M_["ocup"]
-    s.append(f"\nOcupación sobre un turno útil de 408 min: autoelevador de MP {f(oc['Autoelevador MP'] * 100, 0)} %, de "
-             f"carros y recargas {f(oc['Autoelevador carros'] * 100, 0)} %, de PT {f(oc['Autoelevador PT'] * 100, 0)} %. "
-             "Se asigna uno por frente (MP, carros y recargas, PT) para que ninguno cruce el frente de otro ni la "
-             "línea; los tres a nafta, con su armario de inflamables e insumos en MP (AL-1N) y en PT (AL-PN). "
-             f"Entre pasos se mueven {M_['carros_dia']} carros por día y por tramo: los empuja el operario que "
-             "cierra el lote (< 1 min por viaje), sin tren logístico ni chofer; al norte de la senda no entra el "
-             "autoelevador. Un abastecedor por turno hace el milk run de consumibles desde el pañol de línea y repone "
-             "carros vacíos desde el supermercado PV.\n")
+    s.append(f"\nOcupación sobre un turno útil de 408 min: autoelevador de MP y carros "
+             f"{f(oc['Autoelevador MP y carros'] * 100, 0)} %, de PT {f(oc['Autoelevador PT'] * 100, 0)} %, transpaleta "
+             f"{f(oc['Transpaleta'] * 100, 0)} %. Entre pasos se mueven {M_['carros_dia']} carros FCHP20505 por día y por "
+             "tramo: W-MAN pone un carro entre cada par de puestos y lo empuja el operario que cierra el lote, sin tren "
+             "logístico; al norte de la senda no entra el autoelevador. El riel aéreo lleva el cilindro de la detección a "
+             f"la descarga de pintura ({f(C.riel()['cargado_m'], 0)} m cargado, {f(C.riel()['paralelo_m'], 0)} m del horno "
+             f"de curado 2 y {f(C.riel()['retorno_m'], 0)} m de retorno de ganchos vacíos). Los carros rodantes ruedan "
+             "sobre sus ruedas por PO-C y EX hasta la rampa del muelle. El abastecedor hace el milk run con los 2 carros "
+             "de abastecimiento (AL-CA, W-CAR) una vez por turno.\n")
     s.append(tabla(["Portón", "Qué entra o sale", "Vehículo", "Frecuencia", "Horario"], [list(r) for r in C.PORTONES]))
     G = C.colector_gases()
-    s.append(f"\nColector de Arcal 21 y de humos de soldadura en el extremo oeste de la sala SC: {f(G['sc'], 0)} m de "
-             f"cañería (recorrido ortogonal) a las {G['n']} soldadoras, contra {f(G['centro'], 0)} m si estuviera en el "
-             "centro de la sala.\n")
-    s.append(tabla(["Soldadora", "m desde el colector"], [[c, f(d, 1)] for c, d in G["filas"]]))
+    s.append(f"\nGases (W-MAN): packs de 12 cilindros de Arcal 21 y de N₂ con manifold en la jaula exterior JG, detrás "
+             f"de la sala SC; los reguladores CG1 están en el extremo oeste de la sala: {f(G['sc'], 0)} m de cañería "
+             f"(recorrido ortogonal) a las {G['n']} soldadoras, contra {f(G['centro'], 0)} m desde el centro de la sala. "
+             "Recargas: diagrama de gases de W-REC (equipo de transferencia THB/BP al centro, cilindros de origen a la "
+             "entrada y de destino a la salida, N₂ o argón arriba y bomba de vacío abajo) en el local RC-HA, y "
+             "trasvasadora de CO₂ con manifold en RC-GA.\n")
+    s.append(tabla(["Soldadora", "m desde los reguladores CG1"], [[c, f(d, 1)] for c, d in G["filas"]]))
     # 6 cruces
     s.append("## 6. Cruces de flujos y de hilos\n")
     from shapely.geometry import LineString, Point
@@ -140,7 +151,8 @@ def generar(ruta):
              f"{san['armarios_req']['M']} / {san['armarios_proy']['M']} (vestuario de mujeres al 20 % de la dotación). "
              "Lockers individuales, 1 por empleado, en bloques de 10 columnas × 3 filas. Un sanitario accesible con ducha "
              "en el bloque de servicios (Ley 24.314, Dec. 914/97: círculo libre de Ø 1,50 m, espacio lateral de 0,80 m, "
-             "barras); los sanitarios de planta son sólo de hombres y de mujeres. Espacio de cuidado "
+             "barras); los sanitarios de planta (banda sur, sobre la calle AT2) son de hombres y de mujeres. Espacio de "
+             "cuidado "
              "no obligatorio (Dec. 144/2022 exige 100 o más personas; la dotación es 71). Comedor de 30 plazas en 2 "
              "tandas (DT Servicios).\n")
     s.append(tabla(["Local", "m²"], [[f"{x.cod} {x.nombre}", f(x.rect.area, 1)] for x in L.LOCALES]))
@@ -178,11 +190,12 @@ def generar(ruta):
     s.append("## 11. Redes: longitud de tendidos (criterio 4)\n")
     s.append(tabla(["Tablero seccional", "kW", "Largo desde el TGBT (m)"],
                    [[a, f(b, 1), f(d, 1)] for a, b, c, d in r["elec"]]))
-    for tit, datos in (("Agua de PH y pretratamiento a PTE", r["agua"]), ("Gas natural a hornos", r["gas"]),
+    for tit, datos in (("Agua de PH y pérdidas a PTE", r["agua"]), ("Gas natural a hornos", r["gas"]),
                        ("Nitrógeno", r["n2"]), ("Gas de soldadura", r["sold"])):
         s.append(f"\n**{tit}**: " + ", ".join(f"{a} {f(b, 0)} m" for a, b in datos) +
                  f" (total {f(sum(b for a, b in datos), 0)} m).")
-    s.append(f"\n\nAnillo de aire comprimido: {f(r['aire_anillo_m'], 0)} m. Potencia instalada de equipos: "
+    s.append(f"\n\nAire comprimido (anillo, ramales y bajadas de 6 m): {f(r['aire_anillo_m'], 0)} m. Potencia "
+             "instalada de equipos: "
              f"{f(r['kw_total'], 0)} kW.\n")
     # 12 flujos
     s.append("## 12. Longitud de los flujos\n")

@@ -5,7 +5,9 @@ MP_Abastecimiento_Almacenamiento_FLAMA_OpcionD.xlsx) y de las cotizaciones de eq
 del modelo planta/layout.py. Cada resultado indica su fuente o criterio.
 """
 
+import functools
 import math
+import os
 from collections import deque
 
 from . import layout as L
@@ -42,32 +44,33 @@ def tasas():
 CAMIONES = [
     # formato, largo total (m), carga útil (t), PBT (t), dónde se descarga
     ("Semirremolque playo 3+3 ejes", 18.6, 30.0, 45.0,
-     "Alero de descarga norte: autoelevador por los dos lados; entra al almacén de MP por P1"),
+     "Alero de descarga norte: autoelevador por los dos lados; entra por P1 a la cuarentena (A1)"),
     ("Camión chasis con balancín (3 ejes)", 11.0, 16.0, 26.0,
      "Alero de descarga norte (junto al semi): autoelevador por los dos lados, bajo techo"),
-    ("Camión chasis 2 ejes", 9.5, 9.0, 16.5, "Alero norte (P1), muelle P3 o portón P4 según el material"),
-    ("Utilitario / furgón", 6.0, 1.5, 3.5, "Recargas por P2; pintura por P4"),
+    ("Camión chasis 2 ejes", 9.5, 9.0, 16.5, "Alero norte (P1), muelle P3 o jaula de gases según el material"),
+    ("Utilitario / furgón", 6.0, 1.5, 3.5, "Recargas e insumos de recargas por P2"),
 ]
 # Ley 24.449 y Dec. 779/95: ancho 2,60 m, alto 4,10 m, largo máx. 18,60 m (semi); PBT según ejes
 
 ENTREGAS = [
-    # grupo (proveedor), t por entrega, entregas/año, formato asignado, portón, destino
-    ("Pradecon: hojas + fleje 0,9", 35.26, 18.1, "Semi (máx.) o 2 chasis quincenales", "Alero + P1", "AL-1H, AL-1F"),
-    ("Pacheco: flejes 1,25-2,0", 5.05, 29.3, "Chasis 2 ejes", "Alero + P1", "AL-1F"),
-    ("Metalprisa: caño Ø76,2", 4.23, 28.9, "Chasis 2 ejes", "Alero + P1 (atado atravesado)", "AL-1T cantiléver"),
-    ("Eli-Met: cuellos y roscas", 3.68, 5.6, "Chasis 2 ejes", "Alero + P1", "AL-1C"),
-    ("Soldadura: alambre MAG", 1.89, 8.1, "Chasis 2 ejes", "Alero + P1", "AL-1A"),
-    ("Air Liquide: Arcal 21 (baterías)", 3.8, 15.6, "Chasis 2 ejes", "Alero + P1", "AL-GS -> colector SC"),
-    ("Air Liquide: N₂ (baterías)", 3.8, 15.6, "Chasis 2 ejes", "Muelle P3", "SP-1"),
-    ("Polvo químico (Polvex / DEMSA)", 13.13, 31.0, "Chasis con balancín", "Muelle P3", "SP-1 (y SP-2, recargas)"),
-    ("Válvulas, manómetros y pescantes", 8.16, 8.3, "Chasis con balancín", "Muelle P3", "AL-2 -> buffers"),
-    ("Casquetes de carros", 5.93, 4.1, "Chasis 2 ejes", "Muelle P3", "RK1 (cara este)"),
-    ("Estructuras y ruedas de carros", 5.52, 15.1, "Chasis 2 ejes", "Muelle P3", "S-TC"),
-    ("Embalaje, pallets, etiquetas y precintos", 4.61, 15.3, "Chasis 2 ejes", "Muelle P3", "EMB / S-TC / RC-RD"),
+    # grupo (proveedor), t por entrega, entregas/año, formato asignado, portón, destino (una sola recepción, W-MAN)
+    ("Pradecon: hojas + fleje 0,9", 35.26, 18.1, "Semi (máx.) o 2 chasis quincenales", "Alero + P1",
+     "AL-CU -> AL-CH y AL-FL"),
+    ("Pacheco: flejes 1,25-2,0 y chapa LAC", 5.05, 29.3, "Chasis 2 ejes", "Alero + P1", "AL-CU -> AL-FL y AL-CC"),
+    ("Metalprisa: caño Ø76,2", 4.23, 28.9, "Chasis 2 ejes", "Alero + P1 (atado atravesado)", "AL-CU -> AL-CT"),
+    ("Eli-Met: cuellos y roscas", 3.68, 5.6, "Chasis 2 ejes", "Alero + P1", "AL-CU -> AL-MM"),
+    ("Soldadura: alambre MAG", 1.89, 8.1, "Chasis 2 ejes", "Alero + P1", "AL-CU -> AL-SS"),
+    ("Air Liquide: Arcal 21 (packs)", 3.8, 15.6, "Chasis 2 ejes", "Jaula exterior JG", "JG -> reguladores CG1"),
+    ("Air Liquide: N₂ (packs)", 3.8, 15.6, "Chasis 2 ejes", "Jaula exterior JG", "JG -> reguladores CG1"),
+    ("Polvo químico (Polvex / DEMSA)", 13.13, 31.0, "Chasis con balancín", "Muelle P3", "DP (depósito único)"),
+    ("Válvulas, manómetros y pescantes", 8.16, 8.3, "Chasis con balancín", "Alero + P1", "AL-CU -> AL-MM"),
+    ("Casquetes de carros", 5.93, 4.1, "Chasis 2 ejes", "Alero + P1", "AL-CU -> AL-CQ"),
+    ("Estructuras y ruedas de carros", 5.52, 15.1, "Chasis 2 ejes", "Alero + P1", "AL-CU -> AL-MC"),
+    ("Embalaje, pallets, etiquetas y precintos", 4.61, 15.3, "Chasis 2 ejes", "Muelle P3", "AL-EB y AL-ID"),
     ("Tercerizados revendidos", 3.0, 24.0, "Chasis 2 ejes (SUPUESTO)", "Muelle P3", "S4"),
-    ("Agentes para recargas", 2.87, 8.2, "Chasis 2 ejes", "Muelle P3", "SP-1 -> recargas"),
-    ("CYM: granalla", 3.11, 2.0, "Chasis 2 ejes", "P4", "GR"),
-    ("Pintura electrostática en polvo", 0.79, 8.3, "Utilitario", "P4", "QP"),
+    ("Agentes para recargas", 2.87, 8.2, "Utilitario / chasis 2 ejes", "P2", "RC-IN"),
+    ("CYM: granalla", 3.11, 2.0, "Chasis 2 ejes", "Alero + P1", "AL-CU -> AL-SS"),
+    ("Pintura electrostática en polvo", 0.79, 8.3, "Utilitario", "Muelle P3", "DP"),
 ]
 
 
@@ -120,21 +123,22 @@ def sobrestock():
     return out
 
 
-# ================================================================ 3. pulmones y tren logístico
+# ================================================================ 3. pulmones y riel aéreo de pintura
 def pulmones():
+    """Cobertura de los pulmones principales con carros FCHP20505 (W-MAN): cuántos carros hacen falta."""
     t = tasas()
     filas = [
-        # pulmón, tasa (u/h), cobertura (h), u por carro 1,2 × 0,8, criterio
-        ("PU-G cuerpos 2,5-10 kg y carros", t["2,5-10 kg"] + t["carros"], 8.0, 60,
+        # pulmón, tasa (u/h), cobertura (h), u por carro, criterio
+        ("PU-1 / PU-D desarrollos 2,5-10 kg y carros", t["2,5-10 kg"] + t["carros"], 8.0, 60,
          "La guillotina corta por tandas de un formato: 1 turno de consumo"),
-        ("M17 cuerpos 1 kg (láser)", t["1 kg"], 0.5, 150, "Un viaje del tren logístico + cambio de barra"),
-        ("SM-K cúpulas y fondos (pares)", t["1 kg"] + t["2,5-10 kg"], 4.0, 400,
-         "Cambio de troquel de la prensa (≈ 30 min) cada medio turno"),
-        ("A00 kanban celda 1 kg", t["1 kg"], 0.5, 150, "2 carros: uno en uso y otro en reposición"),
-        ("B00 supermercado celda 2,5-10 kg", t["2,5-10 kg"], 1.0, 60, "2 carros por formato en curso"),
-        ("A08 y B11 a pintura", t["1 kg"] + t["2,5-10 kg"], 0.75, 110,
-         "Parada de cambio de color / limpieza de cabina (≈ 45 min) sin detener las celdas"),
-        ("PU a terminación (tren de descarga)", t["1 kg"] + t["2,5-10 kg"], 0.5, 110, "Carga de polvo por lote"),
+        ("PU-T1 / PU-T2 tramos 1 kg (láser)", t["1 kg"], 0.5, 150, "Carro «en llenado» y «vacío» (W-MAN)"),
+        ("PU-FO / PU-CU cúpulas y fondos (pares)", t["1 kg"] + t["2,5-10 kg"], 4.0, 400,
+         "Cambio de troquel de la prensa (≈ 30 min) cada medio turno: 3 a 5 carros (W-MAN)"),
+        ("PU-CC / PU-CC2 cúpulas con cuello", t["1 kg"] + t["2,5-10 kg"], 1.0, 110,
+         "Carro en llenado en la soldadura de cuello y en consumo en las circunferenciales"),
+        ("PU-6 / PU-7 probados y secos", t["1 kg"] + t["2,5-10 kg"], 0.75, 110,
+         "Secado y granallado sin detener la PH"),
+        ("PU-TP terminados pintados a la carga", t["1 kg"] + t["2,5-10 kg"], 0.5, 110, "Carga de polvo por lote"),
     ]
     out = []
     for nom, tasa, cob, upc, crit in filas:
@@ -144,17 +148,11 @@ def pulmones():
     return out
 
 
-def tren_logistico():
-    xs = L.TL
-    largo = sum(math.dist(a, b) for a, b in zip(xs, xs[1:]))
-    v = 1.0                   # m/s dentro de la nave (3,6 km/h, convive con autoelevador)
-    paradas = 7               # PU-G, M17, SM-K, A, A, B, pintura
-    t_ciclo = largo / v + paradas * 60
+def riel():
+    """Riel aéreo de pintura (W-MAN): cuelga en la detección y descuelga en la descarga."""
     t = tasas()
-    u_h = t["1 kg"] + t["2,5-10 kg"]
-    cap_viaje = 3 * 110       # 3 carros por tren
-    return {"largo_m": largo, "ciclo_min": t_ciclo / 60, "viajes_h_max": 3600 / t_ciclo,
-            "viajes_h_nec": u_h / cap_viaje * 2, "u_h": u_h}
+    return {"cargado_m": largo(L.RIEL), "paralelo_m": largo(L.RIEL_2), "retorno_m": largo(L.RIEL_RET),
+            "u_h": t["1 kg"] + t["2,5-10 kg"]}
 
 
 # ================================================================ 4. sanitarios y vestuarios (Dec. 351/79)
@@ -380,9 +378,20 @@ def iluminacion():
 # ================================================================ 7. redes: longitud de tendidos
 TGBT = (41.0, 44.2)            # sala técnica norte (centro de cargas)
 PTE_P = (70.0, -19.0)
-JGS = (49.5, 41.9)            # colector de Arcal 21 en la sala SC (extremo oeste)
-JGN = (63.4, 10.0)            # baterías de N₂ en el almacén previo a la carga (SP-1)
+JGS = (50.6, 42.4)            # reguladores CG1 de Arcal 21 en la sala SC (packs en la jaula exterior JG)
+JGN = (50.6, 42.4)            # reguladores CG1 de N₂ en la misma sala (W-MAN: packs con manifold)
 ERM = (88.6, 5.5)
+
+
+# aire comprimido (aéreo, +4,5 m): bajada de la sala SC, anillo sobre la banda norte y el pasillo central y
+# ramales a carros (PO-C), terminación (AT2), recargas (RC-N) y almacén de MP
+AIRE = [
+    [(57.0, 41.0), (57.0, 39.8), (87.0, 39.8), (87.0, 19.6), (24.6, 19.6), (24.6, 39.8), (57.0, 39.8)],
+    [(24.6, 19.6), (2.0, 19.6)],
+    [(19.6, 19.6), (19.6, 6.7), (41.0, 6.7)],
+    [(54.3, 19.6), (54.3, 14.3), (74.0, 14.3)],
+    [(11.6, 19.6), (11.6, 1.0)],
+]
 
 
 def _manh(a, b):
@@ -405,7 +414,8 @@ def redes():
     gas = [(e.cod, _manh(e.rect.c, ERM)) for e in L.EQUIPOS if e.gas]
     n2 = [(e.cod, _manh(e.rect.c, JGN)) for e in L.EQUIPOS if e.n2]
     sold = [(e.cod, _manh(e.rect.c, JGS)) for e in L.EQUIPOS if e.polvo and "Soldadura" in e.nombre]
-    aire = 2 * 70.0 + 2 * 24.0 + 14 * 6.0   # anillo sobre el pasillo central + 14 bajadas a la línea
+    bajadas = sum(1 for e in L.EQUIPOS if e.aire or e.n2 or e.polvo) * 6.0   # bajada FRL de 6 m por equipo
+    aire = sum(largo(t) for t in AIRE) + bajadas
     return {"elec": elec, "agua": agua, "gas": gas, "n2": n2, "sold": sold, "aire_anillo_m": aire,
             "kw_total": sum(e.kw for e in L.EQUIPOS)}
 
@@ -429,22 +439,26 @@ def flujos():
 def resumen():
     return {
         "tasas": tasas(), "peso": analisis_peso(), "pradecon": semi_vs_chasis(), "sobrestock": sobrestock(),
-        "pulmones": pulmones(), "tren": tren_logistico(), "sanitarios": sanitarios(), "escape": escape(),
+        "pulmones": pulmones(), "riel": riel(), "sanitarios": sanitarios(), "escape": escape(),
         "iluminacion": iluminacion(), "redes": redes(),
     }
 
 
 # ================================================================ manejo de materiales: métodos y tiempos
 # velocidad media (m/s, ida cargado y vuelta vacío) y tiempo fijo por viaje (min: tomar, dejar, maniobrar)
-MEDIOS = {"Autoelevador MP": (1.5, 1.5), "Autoelevador carros": (1.5, 1.5), "Autoelevador PT": (1.5, 1.5),
-          "Autoelevador": (1.5, 1.5), "Transpaleta": (0.8, 1.0), "Carro a mano": (0.8, 0.5),
-          "Zorra milk run": (0.8, 0.5)}
+# W-MAN: un solo autoelevador Heli CPCD50 de 5 t para la MP de manuales y de carros; transpaleta eléctrica (y una
+# manual de respaldo) del embalaje a la envolvedora y al PT, donde el autoelevador de PT ubica el pallet en el rack
+MEDIOS = {"Autoelevador MP y carros": (1.5, 1.5), "Autoelevador PT": (1.5, 1.5), "Transpaleta": (0.8, 1.0),
+          "Carro a mano": (0.8, 0.5), "Zorra milk run": (0.8, 0.5)}
 MIN_TURNO = 480.0 * 0.85          # 8 h con 15 % de suplementos (OIT)
 CIL_DIA = 1184                    # cilindros 1-10 kg por día en el mes pico 2035 (Dimensionamiento, hoja 2035)
 CIL_1KG = 0.80                    # participación del 1 kg en los cilindros
 CARROS_DIA = round(CIL_DIA * CIL_1KG / 80 + CIL_DIA * (1 - CIL_1KG) / 24)   # carro: 80 u de 1 kg o 24 u de 5 kg
-MILK_RUN = [(40.2, 31.4), (40.2, 39.65), (17.5, 39.65), (17.5, 39.9), (40.4, 39.9), (40.4, 34.0), (82.0, 34.0),
-            (82.0, 40.0), (41.0, 40.0), (40.6, 31.4)]
+# carro de abastecimiento (W-CAR tabla 5): AL-CA -> AN -> PO-3 -> PO-7 -> PO-2 -> PO-1 -> PC -> AC -> AT2
+# (terminación) -> PC -> PO-CW -> PO-C (carros) -> PC -> A1 -> AL-CA
+MILK_RUN = [(1.6, 42.0), (4.1, 42.0), (4.1, 39.7), (24.6, 39.7), (24.6, 39.8), (61.6, 39.8), (61.6, 34.1),
+            (40.5, 34.1), (40.5, 21.0), (54.3, 21.0), (54.3, 14.3), (74.0, 14.3), (54.3, 14.3), (54.3, 21.0),
+            (19.6, 21.0), (19.6, 6.7), (40.5, 6.7), (19.6, 6.7), (19.6, 21.0), (4.1, 21.0), (4.1, 42.0), (1.6, 42.0)]
 
 
 def _largo(pts):
@@ -459,47 +473,77 @@ def _lf(desc):
     return _largo(pts)
 
 
+DIAS_ANIO = SEMANAS * 5
+_ROD = ("25 kg", "50 kg", "70 kg", "100 kg")
+_MAN = ("1 kg", "2,5 kg", "5 kg", "10 kg")
+CARROS_ROD_DIA = sum(sum(DEMANDA[k]) for k in _ROD) / DIAS_ANIO        # carros y cilindros de carros por día
+VACIOS = sum(DEMANDA[k][1] for k in _MAN) / sum(sum(DEMANDA[k]) for k in _MAN)   # cilindros vendidos 1-10 kg
+# big bags de 1 t por día: ABC 60 a la carga de manuales y ABC 90 a la de carros (kg de carga × matafuegos)
+KG_CARGA = {"1 kg": 1, "2,5 kg": 2.5, "5 kg": 5, "10 kg": 10, "25 kg": 25, "50 kg": 50, "70 kg": 70, "100 kg": 100}
+BB_60 = sum(DEMANDA[k][0] * KG_CARGA[k] for k in _MAN) / 1000 / DIAS_ANIO
+BB_90 = sum(DEMANDA[k][0] * KG_CARGA[k] for k in _ROD) / 1000 / DIAS_ANIO
+
+
 def manejo():
     """Tabla de manejo de materiales: unidad de carga, medio, recorrido, viajes por día, tiempo y ocupación."""
     tramos_linea = 9
+    laf, lac = _xalm_dia("Hoja LAF"), _xalm_dia("Hoja LAC")       # paquetes por día del mes pico (X-ALM)
+    rollos = _xalm_dia("Fleje")
+    atados = _xalm_dia("Caño c/costura")                          # atados de 16 barras (W-MAN: 3,3 por día)
     filas = [
-        # unidad de carga, medio (autoelevador de MP / de carros y recargas / de PT), de -> a, viajes/día, m
-        ("Paquete de hojas ≤ 2 t", "Autoelevador MP", "Alero -> P1 -> AL-1H", 1.5, _lf("Hojas")),
-        ("Paquete a la guillotina", "Autoelevador MP", "AL-1H -> mesa elevadora", 1.5, _lf("Paquete a la mesa")),
-        ("Rollo de fleje 0,5-1 t", "Autoelevador MP", "Alero -> P1 -> porta-flejes", 0.8, _lf("Flejes")),
-        ("Rollo al desbobinador", "Autoelevador MP", "Porta-flejes -> desbobinador", 0.8, _lf("Rollo al")),
-        ("Atado de caño 6 m (atravesado)", "Autoelevador MP", "Alero -> P1 -> cantiléver", 0.6, _lf("Caños: el")),
-        ("Carro porta-tubos (6,5 m)", "Carro a mano", "Cantiléver -> AN -> A2 -> PO-L", 1.5, _lf("Caños: carro")),
-        ("Batería de Arcal 21", "Autoelevador MP", "Jaula AL-GS -> patio norte -> SC", 0.2, _lf("Batería")),
-        ("Contenedor de scrap (guillotina)", "Autoelevador MP", "Guillotina -> volquete (P1)", 0.5,
-         _lf("Scrap de la guillotina")),
-        ("Carro de scrap (láseres y prensa)", "Carro a mano", "Puesto -> A2 -> volquete (P1)", 1.5,
+        # unidad de carga, medio, de -> a, viajes/día, m
+        ("Paquete de hojas ≤ 2 t", "Autoelevador MP y carros", "Alero -> P1 -> A1 -> cuarentena", laf + lac,
+         _lf("Recepción")),
+        ("Paquete aprobado", "Autoelevador MP y carros", "Cuarentena -> A1 -> AN -> A2 -> AL-CH", laf, _lf("Hojas aprobadas")),
+        ("Paquete LAF a la guillotina", "Autoelevador MP y carros", "AL-CH -> A2, AN y A3 -> mesa elevadora", laf,
+         _lf("Paquete a la mesa")),
+        ("Paquete LAC a la guillotina", "Autoelevador MP y carros", "AL-CC -> mesa elevadora", lac, _lf("Paquete LAC")),
+        ("Rollo de fleje 0,5-1,9 t", "Autoelevador MP y carros", "Porta-flejes -> AN -> desbobinador", rollos, _lf("Rollo de fleje")),
+        ("Atado de caños Ø76,2", "Autoelevador MP y carros", "Cantiléver -> cajón del láser (pluma)", atados,
+         _lf("Atado de caños")),
+        ("Barras y caños de carros", "Carro a mano", "Cantiléver -> PC -> PO-CW -> rack 8.1 (porta-barras)",
+         CARROS_ROD_DIA / 10,
+         _lf("Barras y caños")),
+        ("Casquetes y cuplas (carros 1 y 2)", "Carro a mano", "AL-CQ -> puestos 6 y 7", 2, _lf("Casquetes y cuplas")),
+        ("Contenedor de orillas (guillotina)", "Autoelevador MP y carros", "Guillotina -> volquete (P1)", 0.5,
+         _lf("Orillas de la guillotina")),
+        ("Contenedor de recortes (láser)", "Autoelevador MP y carros", "Láser -> A3 -> volquete (P1)", 0.5,
+         _lf("Recortes del láser")),
+        ("Contenedor del esqueleto (ruedas)", "Carro a mano", "Prensa -> PO-3 -> AN -> volquete", 1.0,
          _lf("Esqueleto de la prensa")),
-        ("Big bag de polvo 1 t", "Autoelevador PT", "Muelle P3 -> AT -> SP-1", 1.7, _lf("Polvos, agentes")),
-        ("Pallet de válvulas / manómetros", "Autoelevador PT", "Muelle P3 -> AL-2", 1.3, _lf("Válvulas, manómetros")),
-        ("Pallet de embalaje", "Autoelevador PT", "Muelle P3 -> EMB", 0.7, _lf("Embalaje")),
-        ("Pallet de PT", "Autoelevador PT", "Envolvedora -> rack AL-3", 7.2, _lf("Almacén de PT")),
-        ("Pallet de PT", "Autoelevador PT", "Rack AL-3 -> muelle P3", 7.2, _lf("Expedición (RK2")),
-        ("Pallet de cilindros vacíos", "Autoelevador PT", "AL-C -> rack AL-3", 2.8, _lf("Cilindros vendidos")),
-        ("Pallet de casquetes", "Autoelevador carros", "Muelle P3 -> rack pasante RK1", 0.2, _lf("Casquetes de carros")),
-        ("Carros pintados / polvo / estructuras", "Autoelevador carros", "Muelle P3 -> PO-C -> SP-2 y S-TC", 0.6,
+        ("Big bag de polvo 1 t / caja de pintura", "Autoelevador PT", "Muelle P3 -> AT -> depósito DP", 1.7,
+         _lf("Big bags de polvo")),
+        ("Big bag de ABC 60", "Autoelevador PT", "DP -> estación de la carga (19)", BB_60, _lf("Big bag de ABC 60")),
+        ("Big bag de ABC 90", "Transpaleta", "DP -> AC -> PC -> PO-CN -> carros (C12)", BB_90, _lf("Big bag de ABC 90")),
+        ("Caja de pintura en polvo", "Transpaleta", "DP -> AC -> PC -> PO-PI -> tolvas", 0.6, _lf("Pintura en polvo")),
+        ("Pallet de cilindros vacíos", "Transpaleta", "Mesa de vacíos -> envolvedora", 2.8,
+         _lf("Pallet de cilindros a la")),
+        ("Pallet de terminados", "Transpaleta", "Mesa de terminados -> envolvedora", 4.4,
+         _lf("Pallet de terminados a la")),
+        ("Pallet de PT", "Transpaleta", "Envolvedora -> AT -> T2 (pie del rack)", 7.2, _lf("Pallets al almacén")),
+        ("Pallet de PT", "Autoelevador PT", "Ubica en el rack; rack -> T1 -> EX -> muelle P3", 7.2, _lf("Expedición")),
+        ("Pallet de revendidos", "Autoelevador PT", "Muelle P3 -> S4 -> muelle P3", 0.2,
+         _lf("Revendidos al rack") + _lf("Revendidos a expedición")),
+        ("Carro rodante (al pintor y terminado)", "Carro a mano", "C-PP -> PO-C -> EX -> rampa del muelle P3",
+         2 * CARROS_ROD_DIA, _lf("Carros a pintura")),
+        ("Carro rodante pintado (rueda)", "Carro a mano", "Muelle P3 -> EX -> PO-CN -> C-T", CARROS_ROD_DIA,
          _lf("Carros pintados")),
-        ("Carro terminado 25-100 kg", "Autoelevador carros", "S-TC -> muelle P3", 1.0, _lf("Carros terminados")),
-        ("Pallet de bolsas de polvo y agentes", "Autoelevador carros", "SP-1 -> AT -> EX -> PO-C -> recargas", 1.0,
-         _lf("Polvos, agentes") + 45.0),
-        ("Caja de pintura / bolsa de granalla", "Transpaleta", "P4 -> QP y GR", 0.6, _lf("Granalla")),
-        ("Carro de cuerpos 2,5-10 kg (24 u)", "Carro a mano", "PU-4 -> 9 encastre", 14, _lf("Cuerpos 2,5-10")),
-        ("Carro de cuerpos 1 kg (80 u)", "Carro a mano", "PU-L2 -> 9 encastre", 12, _lf("Cuerpos 1 kg al")),
-        ("Carro de fondos (150 u)", "Carro a mano", "PU-K -> 9 encastre", 8, _lf("Fondos al encastre")),
-        ("Carro de cúpulas con cuello (60 u)", "Carro a mano", "PU-C -> 11 sold. circ.", 20,
-         _lf("Cúpulas a la soldadura circ")),
-        (f"Carro de cilindros, {tramos_linea} tramos 9 -> 16", "Carro a mano", "entre pasos (prom. por tramo)",
+        ("Carro rodante terminado (rueda)", "Carro a mano", "C-T -> PO-C -> C-PP", CARROS_ROD_DIA,
+         _lf("Carro terminado al")),
+        ("Carro de kits (≈ 10 kits)", "Carro a mano", "Puesto 8.1 -> PO-C -> puesto 8", CARROS_ROD_DIA / 10,
+         _lf("Kits del puesto")),
+        ("Carro de cuerpos 2,5-10 kg (24 u)", "Carro a mano", "PU-V3 -> 9 encastre", 14, _lf("Cuerpos 2,5-10")),
+        ("Carro de tramos 1 kg (80 u)", "Carro a mano", "PU-T1 -> PU-T2 (encastre)", 12, _lf("Carro de tramos")),
+        ("Carro de fondos (150 u)", "Carro a mano", "PU-K -> zona de fondos", 8, _lf("Carro de fondos")),
+        ("Carro de cúpulas con cuello (60 u)", "Carro a mano", "PU-CC2 -> PU-CC (sold. circ.)", 20,
+         _lf("Cúpulas con cuello")),
+        (f"Carro de cilindros, {tramos_linea} tramos 9 -> 17", "Carro a mano", "entre pasos (prom. por tramo)",
          CARROS_DIA * tramos_linea, _lf("Línea principal") / tramos_linea),
-        ("Carro de cilindros controlados", "Carro a mano", "PU-8 -> 17 carga de pintura", CARROS_DIA,
-         _lf("A la carga de pintura")),
-        ("Carro de cilindros pintados", "Carro a mano", "PU-9 -> 18 carga de polvo", CARROS_DIA,
-         _lf("A la carga de polvo")),
-        ("Zorra de consumibles y cajas (vuelta)", "Zorra milk run", "Pañol y AL-1 -> puestos -> pañol", 4,
+        ("Carro de terminados pintados", "Carro a mano", "Descarga -> PO-PI -> AT2 -> PU-TP", CARROS_DIA * (1 - VACIOS),
+         _lf("Terminados pintados")),
+        ("Carro de cilindros vacíos", "Carro a mano", "Descarga -> mesa de vacíos", CARROS_DIA * VACIOS,
+         _lf("Cilindros vacíos")),
+        ("Zorra de consumibles y cajas (vuelta)", "Zorra milk run", "AL-CA -> puestos -> AL-CA", 4,
          _largo(MILK_RUN) / 2),
     ]
     out, uso = [], {}
@@ -514,14 +558,16 @@ def manejo():
 
 PORTONES = [
     # portón, qué pasa, vehículo, frecuencia (2035), horario
-    ("P1 + alero", "Entran hojas, flejes, caños, cuellos, alambre MAG y Arcal 21; sale el scrap al volquete",
-     "Semi / chasis", "≈ 2,4 camiones + 0,6 gases por semana", "7 a 10 h"),
-    ("P2", "Recargas: los utilitarios dejan y retiran equipos de clientes", "Utilitarios de reparto (8)",
-     "2 vueltas por día", "Milk run mañana y tarde"),
-    ("P3 (muelle)", "Sale PT y carros (terminados y al pintor); entran revendidos, casquetes, válvulas, "
-     "embalaje, polvos, agentes y N₂", "Semi / chasis", "7 PT + ≈ 3 recepciones por semana",
+    ("P1 + alero", "Entran hojas, flejes, caños y barras, casquetes, insumos de montaje, alambre y granalla (una sola "
+     "recepción con cuarentena, W-MAN); sale el scrap al volquete", "Semi / chasis",
+     "≈ 2,4 camiones por semana", "7 a 10 h"),
+    ("Jaula JG (PG)", "Cambio de packs de Arcal 21 y N₂ y de cilindros de CO₂ de recargas desde el patio norte",
+     "Chasis 2 ejes", "≈ 0,6 por semana", "7 a 10 h"),
+    ("P2", "Recargas: los utilitarios dejan y retiran equipos de clientes y traen insumos de recargas",
+     "Utilitarios de reparto (8)", "2 vueltas por día", "Milk run mañana y tarde"),
+    ("P3 (muelle)", "Sale PT y carros (terminados y al pintor); entran revendidos, polvo, pintura en polvo y "
+     "embalaje", "Semi / chasis", "7 PT + ≈ 3 recepciones por semana",
      "Recepción 7 a 10 h; expedición 13 a 17 h"),
-    ("P4", "Entran pintura electrostática y granalla", "Utilitario / chasis", "≈ 0,2 por semana", "7 a 10 h"),
     ("PP-1", "Personal: vestuarios <-> senda de la nave", "A pie", "63 personas, 2 turnos", "Entrada y salida"),
 ]
 
@@ -561,48 +607,50 @@ def guerchet():
 # ================================================================ políticas de stock del almacén de MP
 DENS = 7.85                  # kg/dm³ acero
 UNIDADES_2035 = {"1 kg": 32073 + 170548, "2,5 kg": 7425 + 6669, "5 kg": 30751 + 32915, "10 kg": 1841 + 2011}
+XALM = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "referencias",
+                    "Dimensionamiento_Almacenes_MP_v5.xlsx")
+
+
+@functools.lru_cache(maxsize=1)
+def stock_xalm():
+    """Hoja «Política de stock» de X-ALM (datos del MRP del grupo): una fila por material con consumo, plazo,
+    punto de pedido, unidad de compra, ciclo de pedido, stock máximo y almacén."""
+    import openpyxl
+    ws = openpyxl.load_workbook(XALM, data_only=True, read_only=True)["Política de stock"]
+    filas = list(ws.iter_rows(values_only=True))
+    enc = list(filas[3])
+    return [dict(zip(enc, r)) for r in filas[4:] if r and r[0] and str(r[0]).startswith("P")]
 
 
 def politicas_stock():
-    """Hojas (kanban de 2 paquetes por formato), flejes (2 rollos por ancho y espesor) y caño (cantiléver
-    interior, revisión semanal). Consumos 2035 (matafuegos + cilindros vendidos) y lotes del proveedor."""
-    from .chapa import DISCOS, CANO
+    """Chapa, fleje y caño: política del MRP (X-ALM), no se recalcula acá."""
     filas = []
-    for r in sobrestock():
-        filas.append({"sku": r["formato"], "consumo": f"{r['hojas_sem']:.1f} hojas/sem".replace(".", ","),
-                      "unidad": f"paquete de {r['hojas_paq']} hojas ({r['kg_paq'] / 1000:.2f} t)".replace(".", ","),
-                      "sistema": "Kanban 2 paquetes: en uso + en espera",
-                      "pedido": "al abrir el paquete en espera", "max": f"{r['cob_max']:.1f} sem".replace(".", ",")})
-    # flejes: kg por pieza = (Ø + 3 mm) × ancho × espesor × densidad
-    sku = {}
-    for nom, d, e, anc in DISCOS:
-        talla = nom.split()[-2] + " " + nom.split()[-1]
-        u = UNIDADES_2035[talla]
-        kg = (d + 3) / 100 * anc / 100 * e / 100 * DENS * u
-        k = f"Fleje {e} × {anc} mm".replace(".", ",")
-        sku[k] = sku.get(k, 0.0) + kg
-    for k, kg in sorted(sku.items(), key=lambda t: -t[1]):
-        sem = kg / SEMANAS
-        rollo = min(1000.0, max(250.0, round(sem * 2 / 50) * 50))      # rollo de ≈ 2 semanas de consumo
-        filas.append({"sku": k, "consumo": f"{sem:.0f} kg/sem", "unidad": f"rollo de {rollo:.0f} kg (DI 508)",
-                      "sistema": "2 cunas: rollo en uso + 1 en espera",
-                      "pedido": "al montar el rollo en espera", "max": f"{2 * rollo / max(sem, 1):.1f} sem".replace(".", ",")})
-    barras = UNIDADES_2035["1 kg"] / CANO["piezas"]
-    atados = barras / 45 / SEMANAS
-    filas.append({"sku": f"Caño Ø{CANO['diam']} × {CANO['esp']} × 6 m".replace(".", ","),
-                  "consumo": f"{barras / SEMANAS:.0f} barras/sem".replace(".", ","),
-                  "unidad": "atado de 45 caños (≤ 600 kg)", "sistema": "Revisión semanal (cantiléver interior de 12 atados)",
-                  "pedido": "Q = 12 - existencia", "max": f"{12 / atados:.1f} sem".replace(".", ",")})
+    for r in stock_xalm():
+        mat = r["Material"]
+        if not any(mat.startswith(k) for k in ("Hoja", "Fleje", "Caño c/costura")):
+            continue
+        um = r["UM"]
+        filas.append({"sku": mat.split(" (")[0], "consumo": f"{r['Consumo por día, mes pico']:.1f} {um}/día".replace(".", ","),
+                      "unidad": r["Unidad de compra"],
+                      "sistema": f"Punto de pedido {r['Punto de pedido']:.0f} {um}; plazo {r['Plazo máximo (días hábiles)']:.0f} d",
+                      "pedido": f"cada {r['Cada cuántos días se pide']:.0f} días: {r['Cantidad por pedido (unidades de compra)']} u.",
+                      "max": f"{r['Stock máximo']:.0f} {um}"})
     return filas
 
 
+def _xalm_dia(prefijo, contenido=True):
+    """Unidades de compra por día del mes pico (paquetes, rollos o atados) de los materiales `prefijo`."""
+    return sum(r["Consumo por día, mes pico"] / (r["Contenido de la unidad de compra"] if contenido else 1)
+               for r in stock_xalm() if r["Material"].startswith(prefijo))
+
+
 # ================================================================ colector de gases y humos de soldadura
-SOLDADORAS = ("B03", "A06", "B06", "M11", "M12", "C02", "C03", "C04", "C05")
+SOLDADORAS = ("B03", "M11", "A06", "B06", "C02s", "C04", "C06", "C05", "C08")
 
 
 def colector_gases():
-    """Largo de cañería (recorrido ortogonal) del colector de Arcal 21 y de humos a las 9 soldadoras, desde el
-    extremo oeste de la sala SC (donde está) y desde el centro de la sala, para justificar la ubicación."""
+    """Largo de cañería (recorrido ortogonal) de Arcal 21 y de humos a las 9 soldadoras, desde los reguladores CG1
+    (extremo oeste de la sala SC, detrás de la jaula exterior JG) y desde el centro de la sala."""
     eq = {e.cod: e for e in L.EQUIPOS}
     sold = [eq[c].rect.c for c in SOLDADORAS]
     cg = eq["CG1"].rect.c
@@ -612,3 +660,40 @@ def colector_gases():
         return sum(abs(p[0] - x) + abs(p[1] - y) for x, y in sold)
     return {"sc": suma(cg), "centro": suma(sc), "n": len(sold),
             "filas": [(c, abs(cg[0] - eq[c].rect.c[0]) + abs(cg[1] - eq[c].rect.c[1])) for c in SOLDADORAS]}
+
+
+# ================================================================ almacenes: plano contra X-ALM (MRP del grupo)
+SECCIONES_XALM = [
+    # sección de X-ALM (hoja Resumen), sectores del plano, cómo se guarda en el plano
+    ("Chapa y fleje (manuales)", ("AL-CH", "AL-FL"), "hojas a piso (2 alturas); fleje en porta-flejes de 3 niveles"),
+    ("Calle de chapa (carros)", ("AL-CC",), "pilas a piso de 2 alturas, acceso de costado desde A2"),
+    ("Cantilever de caños y barras", ("AL-CT",), "cantiléver de 3 niveles frente a A3"),
+    ("Rack de casquetes y cuplas (carros)", ("AL-CQ",), "rack de 2 módulos × 4 niveles frente a AN"),
+    ("Insumos de montaje (manuales)", ("AL-MM",), "rack de 4 módulos × 4 niveles frente a A1"),
+    ("Rack de insumos de montaje (carros)", ("AL-MC",), "rack de 1 módulo × 4 niveles frente a A1"),
+    ("Identificación", ("AL-ID",), "estantería de 5 niveles, sellos bajo llave"),
+    ("Insumos de soldadura y superficie", ("AL-SS",), "rack de 3 pallets × 4 niveles frente a AN"),
+    ("Depósito de polvo químico", ("DP",), "local cerrado y seco junto a la carga"),
+    ("Embalaje", ("AL-EB",), "rack de 6 módulos × 4 niveles sobre AT"),
+    ("Almacén de producto terminado", ("S4",), "revendidos: rack de 2 módulos × 4 niveles"),
+    ("Insumos de recargas", ("RC-IN",), "rack de recargas (fuera de línea)"),
+    ("Jaula de gases", ("JG",), "jaula exterior con packs y manifold (W-MAN)"),
+    ("Procesado: cuerpos cortados y cúpulas y fondos embutidos", ("AL-PR", "AL-PT", "AL-PK", "PU-FO", "PU-CU"),
+     "pallets a piso junto a la guillotina, al láser y al embutido"),
+]
+
+
+def almacenes_xalm():
+    """Posiciones y m² de cada sección de X-ALM contra los m² que ocupa en el plano."""
+    import openpyxl
+    ws = openpyxl.load_workbook(XALM, data_only=True, read_only=True)["Resumen"]
+    res = {r[0]: r for r in ws.iter_rows(values_only=True) if r and r[0]}
+    area = {s.cod: s.rect.area for s in L.SECTORES + L.LOCALES}
+    area.update({c: r.area for c, n, r, t in L.EXTERIOR})
+    area.update({p.cod: p.rect.area for p in L.PULMONES})
+    out = []
+    for sec, cods, como in SECCIONES_XALM:
+        r = res[sec]
+        out.append({"seccion": sec, "pos": r[3], "neta": r[4], "bruta": r[5], "sectores": " + ".join(cods),
+                    "plano": sum(area[c] for c in cods), "como": como})
+    return out

@@ -11,7 +11,7 @@ Capas:
     A-EQUIPO-RELLENO  rellenos de cuerpo (acero, motores, agua)
     A-SEGURIDAD       resguardos, cortinas de luz y zonas de barrido (rojo, trazos)
     A-OPERARIO        operarios en su puesto
-    A-VEHICULO        autoelevadores, tren logístico y transpaletas
+    A-VEHICULO        autoelevadores y transpaletas
 """
 
 import math
@@ -1363,6 +1363,15 @@ def contenedores(m):
             m.rc(u0 + (u1 - u0) * k - 0.12, 0.1, u0 + (u1 - u0) * k + 0.12, 0.3, OC)
 
 
+def jaula(m):
+    """Jaula de malla con puerta y cilindros adentro (jaulas «a corregir», «a re-granallar» y «descarte», W-MAN)."""
+    U, V = m.Lu, m.Lv
+    m.caja(0, 0, U, V, (245, 245, 245), CONT)
+    m.malla(0.05, 0.05, U - 0.05, V - 0.05, paso=0.25, e=0.03)
+    m.cilindros(0.15, 0.15, U - 0.15, V * 0.6, 0.18)
+    m.ln((U * 0.25, 0), (U * 0.75, 0), OC)
+
+
 def bateria_gas(m):
     """Batería de cilindros de gas en marco (12 × 50 L) con colector y cadenas; varias si el largo da."""
     U, V = m.Lu, m.Lv
@@ -1482,7 +1491,7 @@ SIMBOLOS = {
     "mesa_rodillos": mesa_rodillos, "mesa_control": mesa_control, "pluma": pluma,
     "cabina_muestras": cabina_muestras, "rack": rack, "kanban": kanban, "pulmon": pulmon, "carros": carros,
     "paquetes": paquetes, "cantilever": cantilever, "portaflejes": portaflejes, "estanteria": estanteria,
-    "contenedores": contenedores, "bateria_gas": bateria_gas, "compresor": compresor, "tanque": tanque,
+    "contenedores": contenedores, "jaula": jaula, "bateria_gas": bateria_gas, "compresor": compresor, "tanque": tanque,
 }
 
 CLAVES = [
@@ -1556,7 +1565,7 @@ def area_trabajo(m, n_op):
         m.ln((x, v0), (u1, v0), AREA)
 
 
-SIN_PUESTO = ("rack", "kanban", "pulmon", "carros", "pluma", "paquetes", "cantilever", "portaflejes",
+SIN_PUESTO = ("rack", "kanban", "pulmon", "carros", "pluma", "paquetes", "cantilever", "portaflejes", "jaula",
               "estanteria", "contenedores", "bateria_gas", "compresor", "tanque")
 
 

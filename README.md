@@ -5,10 +5,11 @@ sobre un modelo en código (`planta/layout.py`, coordenadas en metros). De ahí 
 PDF, con rótulo IRAM 4508, formato IRAM 4504 y acotación IRAM 4513, más la memoria de cálculo. Usa la misma base de
 dibujo que [planos_flama-](https://github.com/TadeoSinay/planos_flama-).
 
-> Estado: **versión 3: línea convergente paso a paso** (nave 88 × 44 m) según el diagrama de bloques de FLAMA, con
-> el lenguaje gráfico del rev4: cada máquina con su número de paso, operario y área de trabajo; pulmones (PU) con carros
-> entre pasos; sectores en rojo. Verificación automática sin errores: **0 cruces entre flujos de MP, SE y PT**, cruces
-> de personal sólo en 9 sendas señalizadas, recorrido máximo a una salida de 24,4 m, 20 extintores por cálculo.
+> Estado: **versión 8: procesos de los Word** (nave 88 × 44 m). Puestos en el orden y la disposición de los Word de
+> proceso de manuales, carros y recargas; máquinas según los dimensionamientos; almacenes según el MRP del grupo
+> (Dimensionamiento_Almacenes_MP_v5). Verificación automática sin errores: **0 cruces entre flujos de MP, SE y PT**,
+> cruces de personal sólo en 30 sendas señalizadas, ninguna calle sin salida, recorrido máximo a una salida de 36,9 m,
+> 20 extintores por cálculo, 3 portones.
 
 ## Planos (`salida/`): una faceta por lámina
 
@@ -32,6 +33,38 @@ Para abrir en AutoCAD y guardar como DWG: ver [`autocad/LEEME.md`](autocad/LEEME
 | Personal (hilos) | magenta, trazos | 6 | F-PERSONAL |
 | Scrap y retal | gris, trazo y punto | 8 | F-SCRAP |
 | Efluentes líquidos / gaseosos | marrón / cian, trazos | 34 / 4 | F-EFL-LIQ / F-EFL-GAS |
+
+## Versión 8: procesos de los Word, almacenes del MRP y riel aéreo
+
+Fuentes: W-MAN, W-CAR y W-REC (Word de proceso de manuales, carros y recargas), X-MAN (Dimensionamiento_Manuales,
+Resumen Capacidad 2035), X-DT (Dimensionamiento_TecnicoV2: carros, recargas y almacén de PT) y X-ALM
+(`referencias/Dimensionamiento_Almacenes_MP_v5.xlsx`, MRP del grupo).
+
+- **Orden y disposición de los Word**: banda norte de manuales en el orden de W-MAN (corte compartido con carros,
+  tubo, embutido, celda de cuello, cilindrado + soldadura longitudinal con FCHP entre las dos, encastre, bordoneado,
+  2 soldaduras circ., espesor y retenidos, 2 PH con decantación, 4 secadoras, granallado de rodillos, detección y 3
+  jaulas, corrección). Carros en U según W-CAR (puestos 3 a 9, 2 viradores de punteo, 8.1 accesorios, PH, secado,
+  terminación y pulmón al muelle). Recargas según W-REC: zona general, recinto de polvo con antecámara y 3
+  pasaplatos, fuera de línea (laboratorio, inutilización, insumos) y gases.
+- **Máquinas = dimensionamiento**: 34 puestos de manuales (X-MAN 2035), 9 de carros y 22 de recargas (X-DT).
+- **Una sola recepción de MP** (P1) con cuarentena compartida de 10 × 2,5 m y retenidos; calles de 5 m para el Heli
+  CPCD50 de 5 t (W-CAR tabla 5), que es **uno solo para la MP de manuales y de carros** (W-MAN). Polvo, pintura en
+  polvo, embalaje y revendidos entran por el muelle P3. **3 portones** (se suprimió P4).
+- **Almacenes del MRP (X-ALM v5)**: cada sección con su superficie o sus posiciones (tabla en la memoria): chapa,
+  porta-flejes de 3 niveles, cantiléver de 31 m², casquetes, insumos, identificación, soldadura y granalla, depósito de
+  polvo único (12,6 m²), embalaje, revendidos y procesado (42 pallets junto a la guillotina, el láser y el embutido).
+  La política de stock de chapa, fleje y caño de FL_PI_04 se lee de la hoja «Política de stock». Las calles de 5 m
+  hacen que el almacén de MP ocupe más que la suma de las áreas brutas de X-ALM.
+- **Gases** (W-MAN y diagrama de W-REC): jaula exterior JG detrás de la sala SC con packs de 12 cilindros de Arcal 21
+  y de N₂ (en uso y de reserva) y manifold; reguladores CG1 en la sala. En recargas, el circuito cerrado de
+  halogenados (THB/BP al centro, origen a la entrada, destino a la salida, N₂/argón arriba, vacío abajo) y la
+  trasvasadora de CO₂ con manifold.
+- **Movimientos y transportadores**: riel aéreo de pintura que cuelga en la detección (precalentamiento, cabina,
+  curado con 2 hornos en paralelo, descarga) y retorno de ganchos vacíos; carros FCHP20505 y de 12 cajones entre
+  cada par de puestos (W-MAN); estaciones de big bag con transportador neumático (ABC 60 y ABC 90); transpaleta
+  eléctrica del embalaje al PT; carros rodantes que ruedan hasta la rampa del muelle; 2 carros de abastecimiento.
+- **Pasillos**: toda calle remata en otra calle o en una puerta (verificado); se sumaron PO-8 y PO-9 para el procesado.
+- **Libres a debatir**: LB-1 (98 m², al norte de pintura) y LB-2 (70 m², sobre la calle norte).
 
 ## Versión 7: cuatro portones, almacén de MP de seis rubros y servicios sin entrepiso
 

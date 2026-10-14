@@ -38,7 +38,7 @@ def main():
             if q.geom_type == "Point" and any(q.distance(e) < 0.05 for e in ends):
                 continue
             if c1 == c2 == "MP" and any(caja(p.rect).buffer(0.05).contains(q) for p in L.PASILLOS
-                                        if p.cod in ("A1", "A2", "AN", "AT")):
+                                        if p.cod in ("A1", "A2", "A3", "AN", "AT")):
                 maniobras += 1          # un solo autoelevador sirviendo su almacén: no es cruce de tránsito
                 continue
             if muelle.buffer(0.05).contains(q):
@@ -218,7 +218,7 @@ def main():
                 err(f"la puerta interior en ({x}, {y}) está tapada por un mueble o equipo")
     print(f"puertas con paso libre revisadas: {n_p}")
     # 4i. scrap en el puesto que lo genera, nunca en el almacén de MP
-    for maq, cont in (("M04", "SCG"), ("M15", "SCL1"), ("M16", "SCL2"), ("M08", "SCP")):
+    for maq, cont in (("M04", "SCG"), ("M16", "SCL"), ("M08", "SCP")):
         em = next(e for e in L.EQUIPOS if e.cod == maq)
         ec = next(e for e in L.EQUIPOS if e.cod == cont)
         if caja(em.rect).distance(caja(ec.rect)) > 3.0:

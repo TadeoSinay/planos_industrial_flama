@@ -43,7 +43,8 @@ def detalle(h, k, win, p0, titulo, eq_h=2.2, exterior=True, sectores=True, extra
             if r.x1 < xa or r.x0 > xb or r.y1 < ya or r.y0 > yb:
                 continue
             pl.rect(r, "A-EXTERIOR")
-            pl.texto(f"{cod} {nom}", (r.c[0], r.c[1]), eq_h * 0.8, A.MIDDLE_CENTER)
+            corto_ = nom.split(":")[0].split(" (")[0]
+            pl.texto(f"{cod} {corto_}", (r.x0 + 0.2, r.y1 - 0.2), eq_h * 0.8, A.TOP_LEFT)
     for s in L.SECTORES + L.LOCALES:
         r = s.rect
         if xa <= r.x0 and r.x1 <= xb + 2 and ya - 2 <= r.y0 and r.y1 <= yb + 2:
@@ -103,7 +104,7 @@ def fl_pi_02(doc, ox):
         globo(pl, n, xy)
     col = Columna(h, pl)
     x, y = col.x, col.y
-    y = leyenda_flujos(pl, x, y, ["MP", "SE", "RET", "PT", "SCRAP", "EFL-L", "EFL-G"])
+    y = leyenda_flujos(pl, x, y, ["MP", "SE", "TL", "RET", "PT", "SCRAP", "EFL-L", "EFL-G"])
     y -= 3
     pl.texto("Flujos numerados", (x, y), 3.2, A.BOTTOM_LEFT, papel=True)
     y -= 5.0
@@ -121,10 +122,10 @@ def fl_pi_02(doc, ox):
         pl.texto(txt, (xx + 8, y), 2.2, A.MIDDLE_LEFT, papel=True)
         if i % 3 == 2:
             y -= 5.5
-    y = pl.parrafo(["Criterio: cada MP entra por el portón más cercano a la máquina que la transforma; recorrido en U",
-                    "con 0 cruces entre MP, SE y PT (verificado sobre el modelo). Las líneas de MP que se tocan dentro",
-                    "del almacén son maniobras del mismo autoelevador, no cruces de tránsito. Pintura según el esquema",
-                    "cotizado por Electricolor (carga, cabina, 2 hornos, descarga); no lleva túnel de pretratamiento."],
+    y = pl.parrafo(["Criterio: orden y disposición de los Word de proceso (W-MAN, W-CAR, W-REC); una sola recepción",
+                    "de MP con cuarentena; 0 cruces entre MP, SE y PT (verificado sobre el modelo). Las líneas de MP que",
+                    "se tocan dentro del almacén son maniobras del mismo autoelevador. Pintura con riel aéreo (W-MAN):",
+                    "precalentamiento, cabina con recuperación, curado 180-220 °C (2 hornos en el pico) y descarga."],
                    x, y - 1, 2.0)
     y -= 6
     xx, fila_alta = x, 0
@@ -225,8 +226,8 @@ def fl_pi_03(doc, ox):
     filas3.append(["Armarios (art. 50)", san["armarios_req"]["H"], san["armarios_proy"]["H"], san["armarios_req"]["M"],
                    san["armarios_proy"]["M"]])
     pl.tabla(x + 104, y - 10, cols3, filas3, 4.0, 2.0, f"Sanitarios de vestuarios (art. 49): {san['H']} H y {san['M']} M")
-    pl.parrafo(["Además: sanitarios de planta (este) sólo de hombres (2 inodoros, 2 mingitorios, 2 lavabos)",
-                "y de mujeres (1 + 1), a < 25 m de pintura, terminación y PT. Lockers: 1 por empleado.",
+    pl.parrafo(["Además: sanitarios de planta (banda sur, calle AT2) de hombres (2 inodoros, 2 mingitorios, 2",
+                "lavabos) y de mujeres (1 + 1), a < 25 m de pintura, terminación, embalaje y PT. Lockers: 1 por empleado.",
                 "Cada operario tiene 1,0 m libre detrás de su puesto: ninguna calle ni material ajeno pasa",
                 "por su espalda (verificado). Mamparas ignífugas en todos los puestos de soldadura."],
                x, yb - 6, 2.0)
@@ -235,40 +236,43 @@ def fl_pi_03(doc, ox):
 
 # ================================================================ FL_PI_04 logística de MP y PT
 PASOS_MP = [
-    (1, "Camión en el alero norte (semi 18,6 m o chasis): entró por G1, se pesó en la báscula y se controla el remito."),
-    (2, "Paquetes de hojas (≤ 2 t): autoelevador de MP (3 t, prolongaciones de horquilla) por el lado largo "
-        "(c = 0,75 m). Sin puente grúa: 1,5 paquetes/día no lo justifican."),
-    (3, "Paquete a su posición: 4 formatos de alto consumo en AL-1H frente a A2; el LAC 4,75 de carros en AL-1L (A1). "
-        "Un formato por posición, 4 alturas sobre tacos, FIFO con tarjeta de color."),
-    (4, "Del AL-1H a la mesa elevadora de la guillotina: el autoelevador cruza A2 y apoya el paquete; las hojas se "
-        "deslizan sobre la mesa de bolas (no se levantan a mano)."),
-    (5, "Rollos de fleje: pluma del autoelevador con gancho C (ojo vertical) a la cuna de AL-1F (3 niveles) por A1."),
-    (6, "Rollo al desbobinador SHIMEQ de 2 mandriles: se carga el mandril libre mientras el otro trabaja."),
-    (7, "Atados de caño 6 m (≤ 600 kg): el autoelevador entra por P1 (7,20 m de ancho) con el atado atravesado y lo "
-        "apoya en el cantiléver interior desde AN. El caño nunca queda afuera."),
-    (8, "Carro porta-tubos de 6,5 m: del cantiléver por AN, A2 y PO-L a los caballetes (esquina AN-A2: 5,0 + 3,6 m "
-        "-> 12,1 m; A2-PO-L: 3,6 + 1,4 m -> 6,8 m; ambas > 6,5 m)."),
-    (9, "Cuellos y roscas (cajas) y alambre MAG en la pared oeste (A1); salen con la zorra del milk run a los puestos."),
-    (10, "Arcal 21: baterías a la jaula ventilada AL-GS; la que se conecta va al colector de la sala SC por el patio "
-         "norte (puerta PG). El N₂ no entra acá: va al almacén previo a la carga (SP-1)."),
-    (11, "Scrap: contenedor en cada puesto que lo genera (guillotina, láseres, prensa); el autoelevador de MP lo lleva "
-         "al volquete junto a P1, la salida más cercana a los tres. Nada de scrap queda en el almacén."),
-    (12, "Nafta e insumos del autoelevador de MP en el armario de inflamables al final del pasillo central (AL-1N)."),
+    (1, "Camión en el alero norte (semi 18,6 m o chasis playo, W-CAR): entró por G1, se pesó en la báscula y se "
+        "controla el remito."),
+    (2, "Descarga con el autoelevador Heli CPCD50 de 5 t (W-MAN, compartido con carros): uñas largas para los "
+        "paquetes, espolón para los rollos y prolongadores o pluma para los atados; entra por P1 a la calle A1."),
+    (3, "Cuarentena AL-CU (10 × 2,5 m, amarilla, compartida con carros): colada, espesor en 3 puntos y etiqueta de lote "
+        "(W-MAN); lo no conforme va a retenidos AL-RE (rojo) y se reclama al proveedor."),
+    (4, "Hojas aprobadas: por A1, AN y A2 a AL-CH (3 formatos LAF, paquetes de 2 alturas); el LAC de carros a la calle "
+        "de chapa AL-CC, del otro lado de A2."),
+    (5, "Paquete a la mesa elevadora de la guillotina: de costado por A2, AN y A3 (calles de 5 m: radio de giro del "
+        "Heli + pallet + margen, W-CAR)."),
+    (6, "Rollos de fleje en el porta-flejes AL-FL de 3 niveles sobre AN; el espolón lleva el rollo al carro "
+        "portabobinas del desbobinador (extremo este de AN)."),
+    (7, "Caño Ø76,2: atados de 16 tubos (≈ 220 kg) al cantiléver AL-CT; con la pluma, al cajón de alimentación del "
+        "láser, cruzando A3 (3,3 atados por día en el pico, X-ALM y W-MAN)."),
+    (8, "Barras y caños de carros: del cantiléver al rack del puesto 8.1 en el carro porta-barras, por el pasillo "
+        "central y la calle PO-CW."),
+    (9, "Insumos de montaje (AL-MM, AL-MC), identificación (AL-ID), soldadura y granalla (AL-SS): salen una vez por "
+        "turno en los 2 carros de abastecimiento (AL-CA, W-CAR)."),
+    (10, "Gases: no entran al almacén; los packs de 12 cilindros de Arcal 21 y N₂ van a la jaula exterior JG, detrás de "
+         "la sala SC (puerta PG), con manifold y cañería a los puestos (W-MAN)."),
+    (11, "Scrap: contenedor en cada puesto que lo genera (guillotina, láser, prensa); el autoelevador lo lleva al "
+         "volquete junto a P1 por A3, AN y A1. Nada de scrap queda en el almacén."),
+    (12, "Gasoil e insumos del autoelevador en el armario de inflamables al final del pasillo central (AL-1N)."),
 ]
 PASOS_PT = [
-    (1, "Palletizado en T08-T10 (fin de terminación) por SKU: 360 u de 1 kg o 84 de 5 kg por pallet."),
-    (2, "Envolvedora EDOS PS5 (T11) y etiqueta de pallet con lote y destino."),
-    (3, "Autoelevador de PT por T3 al rack RK3 de alta rotación (1 y 5 kg)."),
-    (4, "Stock de temporada (oct-nov para diciembre) en RK2 y cara este de RK1, por T1 y T2 desde el pasillo central."),
-    (5, "Pedido del día: se arma en la calle EX frente al muelle único P3 (8 pallets por camión)."),
-    (6, "Muelle P3: expedición de 13 a 17 h (7 camiones por semana en 2035) y recepción de 7 a 10 h, así entrada y "
-        "salida no se cruzan en EX."),
-    (7, "Recepción por P3: válvulas, manómetros y pescantes a AL-2; polvos, agentes y N₂ por AT al almacén previo a la "
-        "carga (SP-1); embalaje a EMB; casquetes a RK1 (se toman desde S3); revendidos a S4."),
-    (8, "Carros: salen al pintor y vuelven por la calle PO-C; los terminados salen de S-TC por EX al muelle."),
-    (9, "Embalaje diferenciado: matafuegos nuevos y revendidos en EMB; carros en S-TC; recargas en RC-RD. Precintos "
-        "como insumo de PT en los tres."),
-    (10, "Las recargas no usan el muelle: entran y salen en utilitarios por su portón P2 (milk run)."),
+    (1, "Encajonado en EMB (W-MAN): los terminados al final de la terminación y los vacíos junto a la descarga de "
+        "pintura, con la armadora de cajas AC1 y las cajas del rack AL-EB."),
+    (2, "Transpaleta a la envolvedora EDOS PS5 (T11) y etiqueta de pallet con lote y destino."),
+    (3, "Transpaleta por AT hasta el pie del rack (calle T2); el autoelevador de PT lo ubica: racks RK1 a RK3 de "
+        "4 módulos × 5 niveles = 160 posiciones (X-DT Almacén PT 2035: 128)."),
+    (4, "Pedido del día: se arma en la calle EX frente al muelle único P3 (8 pallets por camión)."),
+    (5, "Muelle P3: expedición de 13 a 17 h y recepción de 7 a 10 h, así entrada y salida no se cruzan en EX. "
+        "Las recargas no usan el muelle: entran y salen por su portón P2."),
+    (6, "Recepción por P3: big bags de polvo y pintura en polvo por AT al depósito DP; embalaje al rack AL-EB; "
+        "revendidos a S4, con control en la mesa REC."),
+    (7, "Carros: el pulmón C-PP junta los 6 que van al pintor (W-CAR) y los terminados; ruedan por PO-C y EX hasta la "
+        "rampa del muelle; los pintados vuelven por PO-CN a la terminación de carros (C-T)."),
 ]
 
 
@@ -279,31 +283,32 @@ def fl_pi_04(doc, ox):
                 "Detalles 1:50 del almacén de MP y de la expedición, con la secuencia de cada movimiento. "
                 "Flota calculada por métodos y tiempos.")
     # ---- detalle MP
-    win = (-1.5, 18.8, 23.0, 49.0)                      # almacén de MP, carga a máquina, scrap y alero de P1
+    win = (-1.5, 18.8, 30.5, 49.0)                      # almacén de MP, carga a máquina, scrap y alero de P1
     p0 = (h.fx0 + 8, h.fy1 - 36 - (win[3] - win[1]) * 20)
     def _mp(p):
         for fl in L.FLUJOS:
             if fl.cat in ("MP", "SCRAP", "SE"):
                 p.flujo(fl.pts, fl.cat, cada=8.0, largo=3.0, ancho=1.6)
     pm = detalle(h, 50, win, p0, "DETALLE 1 - ALMACÉN DE MP Y CARGA A MÁQUINA - 1:50", extra=_mp)
-    for n, xy in ((1, (14.0, 49.5)), (2, (10.9, 45.2)), (3, (8.2, 33.5)), (4, (11.6, 27.2)), (5, (3.8, 31.0)),
-                  (6, (12.0, 36.6)), (7, (7.5, 41.0)), (8, (8.0, 39.6)), (9, (3.0, 29.0)), (10, (3.6, 42.6)),
-                  (11, (20.8, 26.0)), (12, (1.2, 18.4))):
+    for n, xy in ((1, (14.0, 49.5)), (2, (8.0, 45.5)), (3, (4.1, 29.0)), (4, (12.4, 35.0)), (5, (21.2, 34.5)),
+                  (6, (17.0, 40.6)), (7, (22.0, 30.5)), (8, (16.5, 21.0)), (9, (3.0, 38.5)), (10, (28.0, 46.5)),
+                  (11, (3.5, 47.0)), (12, (2.4, 20.0))):
         globo(pm, n, xy, 3.0)
-    pm.cota((2.0, 24.0), (5.6, 24.0), -2.0, True, texto="A1 <>")
-    pm.cota((9.1, 24.0), (12.7, 24.0), -2.0, True, texto="A2 <>")
+    for c_ in ("A1", "A2", "A3"):
+        r = next(p for p in L.PASILLOS if p.cod == c_).rect
+        pm.cota((r.x0, 24.0), (r.x1, 24.0), -2.0, True, texto=f"{c_} <>")
     # ---- detalle PT
-    win2 = (33.5, -3.0, 51.5, 20.0)
+    win2 = (40.5, -3.0, 62.0, 20.0)
     p02 = (p0[0] + (win[2] - win[0]) * 20 + 14, h.fy1 - 36 - (win2[3] - win2[1]) * 20)
     def _pt(p):
         for fl in L.FLUJOS:
             if fl.cat in ("PT", "MP"):
                 p.flujo(fl.pts, fl.cat, cada=8.0, largo=3.0, ancho=1.6)
     pt = detalle(h, 50, win2, p02, "DETALLE 2 - ALMACÉN DE PT Y EXPEDICIÓN - 1:50", extra=_pt)
-    for n, xy in ((1, (51.0, 7.0)), (2, (49.0, 12.0)), (3, (46.75, 15.5)), (4, (37.1, 15.5)), (5, (44.0, 4.6)),
-                  (6, (42.1, -1.5)), (7, (35.9, -1.5)), (8, (34.5, 19.4))):
+    for n, xy in ((1, (60.5, 8.0)), (2, (59.0, 3.1)), (3, (50.75, 16.0)), (4, (45.0, 4.6)), (5, (50.8, -1.5)),
+                  (6, (55.3, 6.0)), (7, (41.7, 9.0))):
         globo(pt, n, xy, 3.0)
-    for c_ in ("T1", "T2", "T3", "EX"):
+    for c_ in ("T1", "T2", "EX", "AT"):
         p = next(p for p in L.PASILLOS if p.cod == c_)
         r = p.rect
         if r.w < r.h:
@@ -324,35 +329,37 @@ def fl_pi_04(doc, ox):
              for r_ in M_["filas"]]
     y = pt.tabla(xr, y - 6, cols, filas, 3.4, 1.65, "Métodos y tiempos (día pico 2035)")
     oc = M_["ocup"]
-    y = pt.parrafo([f"Ocupación de un turno: autoelevador de MP {f(oc['Autoelevador MP'] * 100, 0)} %, de carros y "
-                    f"recargas {f(oc['Autoelevador carros'] * 100, 0)} %, de PT {f(oc['Autoelevador PT'] * 100, 0)} %.",
-                    "Uno por frente (MP, carros y recargas, PT): ninguno cruza el frente de otro;",
-                    "el de MP lleva prolongaciones, pluma con percha (balancín) y gancho C."], xr, y - 2, 1.9)
+    y = pt.parrafo([f"Ocupación de un turno: autoelevador de MP y carros {f(oc['Autoelevador MP y carros'] * 100, 0)} %, "
+                    f"de PT {f(oc['Autoelevador PT'] * 100, 0)} %, transpaleta {f(oc['Transpaleta'] * 100, 0)} %.",
+                    "W-MAN: un solo Heli CPCD50 para la MP de manuales y de carros, con uñas largas,",
+                    "prolongadores, espolón y pluma; el de PT ubica los pallets en los racks de 5 niveles."], xr, y - 2, 1.9)
     # políticas de stock debajo del detalle 1
     yb = p0[1] - 14
-    cols = [("Artículo", 58, "l"), ("Consumo", 26, "c"), ("Unidad de compra", 46, "l"), ("Sistema", 58, "l"),
-            ("Se pide", 44, "l"), ("Stock máx.", 18, "c")]
+    cols = [("Artículo", 58, "l"), ("Consumo (pico)", 28, "c"), ("Unidad de compra", 40, "l"),
+            ("Punto de pedido y plazo", 56, "l"), ("Se pide", 40, "l"), ("Stock máx.", 22, "c")]
     filas = [[r_["sku"], r_["consumo"], r_["unidad"], r_["sistema"], r_["pedido"], r_["max"]]
              for r_ in C.politicas_stock()]
-    yb = pm.tabla(p0[0], yb, cols, filas, 3.6, 1.75, "Políticas de stock por tipo de chapa, fleje y caño (2035)")
+    yb = pm.tabla(p0[0], yb, cols, filas, 3.6, 1.75,
+                  "Política de stock de chapa, fleje y caño (MRP del grupo: X-ALM v5, hoja Política de stock)")
     pm.parrafo([
-        "Distribución en AL-1H (de sur a norte, el más usado junto a la mesa elevadora): 1) LAF 1,6 × 1000 × 2000 (5 kg);",
-        "2) LAF 1,25 × 1220 × 2440 (2,5 kg); 3) LAF 2,0 × 1500 × 3000 (10 kg); 4) LAC 3,2 × 1500 × 3000 (25-50 kg).",
-        "El LAC 4,75 × 1500 × 3000 (70-100 kg, 1 paquete cada 2 meses) en AL-1L. Un formato por posición.",
-        "Entregas quincenales de Pradecon (17,6 t) en lugar de una mensual de 35 t: baja el stock máximo a la mitad.",
-        "Flejes de bajo consumo (2,0 × 249 y 2,0 × 300 mm): rollos de 250-300 kg para no tener 5 meses de stock.",
-        "Semáforo de antigüedad: verde < 4 semanas, amarillo 4-6, rojo > 6 (se usa primero y se inspecciona óxido)."],
+        "Los almacenes los dimensiona el grupo en el MRP (X-ALM v5) con los plazos de su planilla de lead times;",
+        "el plano ubica cada sección con su superficie: chapa LAF (AL-CH, el formato más usado junto a A2), calle de",
+        "chapa LAC de carros (AL-CC), porta-flejes de 3 niveles (AL-FL: misma capacidad en la tercera parte del frente),",
+        "cantiléver de caños y barras (AL-CT), casquetes (AL-CQ), insumos (AL-MM, AL-MC, AL-ID, AL-SS) y procesado",
+        "(AL-PR). Las calles de 5 m (W-CAR) hacen que el almacén ocupe más que la superficie bruta de X-ALM."],
         p0[0], yb - 4, 2.0)
     # flota
     cols = [("Equipo de manipulación", 70, "l"), ("Cant.", 12, "c"), ("Dónde", 60, "l")]
-    filas = [["Autoelevador de MP 3 t a nafta, mástil triplex", "1", "Almacén de MP, carga a máquina, scrap"],
-             ["  prolongaciones 2,4 m, pluma con percha y gancho C", "1", "Hojas, rollos y atados de caño"],
-             ["Autoelevador de carros y recargas 2,5 t a nafta", "1", "Muelle P3, calle PO-C, carros y recargas"],
-             ["Autoelevador de PT 2,5 t a nafta, mástil triplex", "1", "Racks de PT, muelle P3, AL-2 y SP-1"],
-             ["Transpaletas manuales 2,5 t", "2", "P4 (pintura y granalla) y terminación"],
-             ["Carros porta-cilindros / zorras / porta-tubos", "26 / 5 / 1", "Línea, milk run y caños"],
-             ["Carros de scrap 0,5 m³ / contenedor 1 m³", "3 / 1", "Láseres y prensa / guillotina"],
-             ["Armarios de nafta e insumos", "2", "AL-1N (MP) y AL-PN (PT y carros)"]]
+    fchp = sum(p_.carros for p_ in L.PULMONES if "FCHP" in p_.guarda)
+    caj = sum(p_.carros for p_ in L.PULMONES if "cajones" in p_.guarda)
+    filas = [["Autoelevador Heli CPCD50 5 t diésel (W-MAN)", "1", "MP de manuales y carros, carga a máquina, scrap"],
+             ["  uñas largas, prolongadores, espolón y pluma", "1", "Paquetes, atados, rollos y big bags"],
+             ["Autoelevador de PT y muelle, mástil triplex", "1", "Racks de 5 niveles, muelle P3 y depósito DP"],
+             ["Transpaleta eléctrica + manual de respaldo (W-MAN)", "2", "Embalaje, envolvedora, PT y big bags"],
+             ["Carros FCHP20505 / de 12 cajones (en pulmones)", f"{fchp} / {caj}", "Entre puestos; reserva en PV"],
+             ["Carros de abastecimiento / porta-barras", "2 / 1", "Milk run (W-CAR) y barras al puesto 8.1"],
+             ["Contenedores de scrap 1.000 L", "3", "Guillotina, láser y prensa"],
+             ["Armario de inflamables (gasoil e insumos)", "2", "AL-1N (MP) y expedición (PT)"]]
     pt.tabla(p02[0], p02[1] - 14, cols, filas, 3.6, 1.75, "Flota (dibujada = calculada)")
     return h
 
@@ -389,18 +396,18 @@ def fl_pi_05(doc, ox):
         pa.texto(f"{f(r.area, 1)} m²", (r.x1 - 0.15, r.y0 + 0.15), 2.0, A.BOTTOM_RIGHT)
     pa.cota((41.2, 24.8), (68.4, 24.8), -6.0, True)
     # ---- detalle 3: sanitarios de planta y ducha de emergencia
-    win3 = (69.8, 6.2, 75.0, 19.6)
+    win3 = (60.5, 15.4, 72.8, 19.2)
     p03 = (p02[0], p02[1] - 30 - (win3[3] - win3[1]) * 20)
     ps = detalle(h, 50, win3, p03, "DETALLE 3 - SANITARIOS DE PLANTA (H Y M) - 1:50", eq_h=2.4, sectores=False)
     for s in L.LOCALES:
         if s.cod.startswith("SN-"):
             ps.texto(s.cod, (s.rect.x0 + 0.1, s.rect.y1 - 0.1), 2.4, A.TOP_LEFT)
     # ---- detalle 4: sala de compresores y colectores
-    win4 = (47.4, 39.2, 66.2, 44.6)
+    win4 = (47.4, 39.2, 66.2, 47.8)
     p04 = (p03[0] + (win3[2] - win3[0]) * 20 + 70, p02[1] - 30 - (win4[3] - win4[1]) * 20)
-    pc = detalle(h, 50, win4, p04, "DETALLE 4 - COMPRESORES Y COLECTORES DE GASES DE SOLDADURA - 1:50", eq_h=2.2)
+    pc = detalle(h, 50, win4, p04, "DETALLE 4 - COMPRESORES, COLECTOR Y JAULA EXTERIOR DE GASES - 1:50", eq_h=2.2)
     G = C.colector_gases()
-    pc.texto(f"Colector al extremo oeste: {f(G['sc'], 0)} m de cañería a las 9 soldadoras "
+    pc.texto(f"Reguladores CG1 al extremo oeste, detrás de la jaula JG: {f(G['sc'], 0)} m de cañería a las 9 soldadoras "
              f"(en el centro de la sala serían {f(G['centro'], 0)} m)", (47.6, 39.5), 2.0, A.BOTTOM_LEFT)
     # ---- textos
     xr = p04[0]
