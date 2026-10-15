@@ -396,16 +396,50 @@ def estante(m):
     S.estanteria(m)
 
 
+def bigbag(m):
+    """Pila de 2 big bags de 1 t (vista superior): bolsa con sus 4 asas y la marca «×2»."""
+    U, V = m.Lu, m.Lv
+    m.caja(0.03, 0.03, U - 0.03, V - 0.03, (250, 238, 200), CONT)
+    m.rc(0.1, 0.1, U - 0.1, V - 0.1)
+    m.ln((0.1, 0.1), (U - 0.1, V - 0.1))
+    m.ln((0.1, V - 0.1), (U - 0.1, 0.1))
+    for p in ((0.1, 0.1), (U - 0.1, 0.1), (U - 0.1, V - 0.1), (0.1, V - 0.1)):
+        m.ci(p[0], p[1], 0.06)
+    m.ci(U / 2, V / 2, min(U, V) * 0.16, CONT)
+    m.ci(U / 2, V / 2, min(U, V) * 0.08)
+
+
+def rechazo(m):
+    """Cajón de rechazos identificado (rojo, tarjeta roja): cajón plástico con cruz."""
+    U, V = m.Lu, m.Lv
+    m.caja(0, 0, U, V, (245, 205, 200), "A-DEM-RO")
+    m.ln((0.04, 0.04), (U - 0.04, V - 0.04), "A-DEM-RO")
+    m.ln((0.04, V - 0.04), (U - 0.04, 0.04), "A-DEM-RO")
+
+
+def transpaleta(m):
+    """Lugar demarcado de dos transpaletas (eléctrica y manual): cuerpo, timón y dos uñas cada una."""
+    U, V = m.Lu, m.Lv
+    m.rc(0, 0, U, V, "A-DEM-AM")
+    for k in range(2):
+        u0, u1 = k * U / 2 + 0.06, (k + 1) * U / 2 - 0.06
+        m.caja(u0, V - 0.42, u1, V - 0.06, (250, 200, 60), CONT)
+        m.ci((u0 + u1) / 2, V - 0.24, 0.07)
+        for f in (0.22, 0.78):
+            uu = u0 + (u1 - u0) * f
+            m.caja(uu - 0.08, 0.06, uu + 0.08, V - 0.42, GRIS, FINO)
+
+
 NUEVOS = {"efe": efe, "mesa_movil": mesa_movil, "carro_plat": carro_plat, "fchp": fchp, "carro_caj": carro_caj,
           "canasto": canasto, "cuna": cuna, "soldadora": soldadora, "chiller": chiller, "tablero_herr": tablero_herr,
           "cajonera": cajonera, "cajones": cajones, "dobladora": dobladora, "taladro": taladro, "prensa_h": prensa_h,
           "caballetes": caballetes, "pantalla": pantalla, "bandeja": bandeja, "canaleta": canaleta, "pozo": pozo,
           "bomba": bomba, "planilla": planilla, "tarima": tarima, "cambio_juego": cambio_juego, "lugar": lugar,
           "nc": nc, "zona_carga": zona_carga, "bastidor": bastidor, "split": split, "colector10": colector10,
-          "recinto": recinto}
+          "recinto": recinto, "bigbag": bigbag, "rechazo": rechazo, "transpaleta": transpaleta}
 S.SIMBOLOS.update(NUEVOS)
 S.SIN_PUESTO = tuple(S.SIN_PUESTO) + ("efe", "mesa_movil", "carro_plat", "fchp", "carro_caj", "canasto", "cuna",
                                       "soldadora", "chiller", "tablero_herr", "cajonera", "cajones", "pantalla",
                                       "canaleta", "pozo", "bomba", "tarima", "nc", "zona_carga", "bastidor", "split",
-                                      "colector10", "recinto", "bandeja")
+                                      "colector10", "recinto", "bandeja", "bigbag", "rechazo", "transpaleta")
 _ = math

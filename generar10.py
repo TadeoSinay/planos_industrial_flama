@@ -11,7 +11,7 @@ from planta10.verificar import verificar
 
 SALIDA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "salida", "v10")
 PLANOS = [("FL_PI10_01", "A0", L10.fl_01), ("FL_PI10_02", "A0", L10.fl_02), ("FL_PI10_03", "A0", L10.fl_03),
-          ("FL_PI10_04", "A0", L10.fl_04), ("FL_PI10_05", "A0", L10.fl_05)]
+          ("FL_PI10_04", "A0", L10.fl_04), ("FL_PI10_05", "A0", L10.fl_05), ("FL_PI10_06", "A0", L10.fl_06)]
 
 
 def generar(sel):

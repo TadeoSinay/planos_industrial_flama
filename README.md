@@ -302,8 +302,9 @@ norte). Se genera con `python3 generar10.py` (primero corre el verificador; si h
 | `FL_PI10_01` | Planta general e implantación | A0 1:200 | Nave, anexo, playas y calle; todas las zonas con código, nombre y m² (tabla) y superficies por destino |
 | `FL_PI10_02` | Puestos y equipos | A0 1:100 | Cada máquina de X-MAN y X-CAR con su medida y fuente, operario al frente, pulmones de W-MAN y W-CAR |
 | `FL_PI10_03` | Circulación y flujos | A0 1:100 | Carriles del autoelevador, sendas, pasillos de operarios con su ancho; flujos de MP, SE y PT; hilos del personal |
-| `FL_PI10_04` | Almacén de MP y recepción | A0 1:50 | Racks, cantiléver, chapa, fleje, polvo, cuarentena de W-CAR y locales del ángulo SO |
-| `FL_PI10_05` | Administración y servicios al personal | A0 1:50 | Anexo norte dimensionado con la dotación 2035 sin recargas (X-DT) y el Dec. 351/79 art. 49 |
+| `FL_PI10_04` | Almacén de MP y recepción | A0 1:50 | Secciones de X-ALM v5 con su color, espacios de W-CAR 1 (cuarentena, retenidos, calle de chapa, racks de carros, franja de descarga), portón P1 y locales del ángulo SO |
+| `FL_PI10_05` | Administración y servicios al personal | A0 1:50 | Anexo norte con las marcas del croquis del usuario (accesos, rampas, relojes, ventanillas, matafuegos, baranda y cruces) y los 12 circuitos del personal con su largo |
+| `FL_PI10_06` | Cortes de la nave | A0 1:100 | Cortes A-A y C-C (longitudinales) y B-B y D-D (transversales) con las alturas que dan las fuentes; «s/d» donde no hay dato |
 
 `salida/v10/Layout_v10_zonas_y_equipos.xlsx`: cada zona, local, equipo y puerta con coordenadas, medidas, m² y fuente.
 
@@ -320,7 +321,24 @@ con la disposición del croquis del usuario (27,6 × 14,3 m).
 Lugares de carros rodantes (`STOCK_CARROS` en el modelo y hoja «Lugares de carros» de la planilla), literales de las
 tablas de espacios de W-CAR: pulmón de despacho 120, pulmón de pintados 120, sala de pérdidas 30, retenidos 180 y
 liberados 100, en filas demarcadas con los carros uno detrás del otro. PT de manuales (W-MAN, embalaje): rack de PT y
-rack de cilindros sobre un pasillo de 5,0 m, 80 posiciones de pallet (7,9 pallets por día en el pico).
+rack de cilindros sobre un pasillo de 5,0 m, 100 posiciones de pallet (70 de PT por 7,9 pallets por día en el pico y
+el stock de diciembre, más los 17 revendidos de la sección «almacén de producto terminado» de X-ALM).
+
+Versión 12 (revisión al pie de la letra de W-CAR, W-MAN y el croquis de oficinas):
+* Almacén por secciones de X-ALM v5: R1 con 80 posiciones (embalaje 41, montaje de manuales 27, soldadura 12, cada
+  columna de pallets pintada con el color de su sección), racks propios de carros de W-CAR (casquetes y cuplas 7,3 ×
+  1,2 m con 12 posiciones; insumos 4,9 × 1,2 m con 8), retenidos de 4 × 1,5 m, calle de chapa de 10 × 2 m con el
+  paquete tomado por el lado de 3 m, 7 pilas de pallets vacíos, estantería de identificación, 3 carros de
+  abastecimiento (2 de carros y 1 de manuales) y franja de descarga de 15 × 5 m frente a P1.
+* Depósito de polvo según W-CAR 1: big bags en el piso apilados de a 2 (4 pilas) y 1 pila de pallets de pintura.
+* Manuales (W-MAN): posiciones de tramos al lado de la cortadora y del encastre, carro porta-matrices, cajones de
+  rechazos en la prueba hidráulica y en pérdidas, rejilla de goteo, estantes de ensamblaje y etiquetado, lugar de las
+  transpaletas y zona delimitada de la armadora y la envolvedora; laboratorio de calidad (ensayo de rotura).
+* Portones de 5,0 m (P1, P3, P4 y P6) y 4,0 m (P2) dibujados con jambas, hoja y rótulo; predio con cerco, portones de
+  entrada y salida de camiones, estacionamiento y accesos peatonales.
+* Oficinas con las marcas del croquis (rampas con descanso, plataforma, cajón accesible, relojes, ventanillas,
+  matafuegos, baranda con cruces, puertas exteriores hacia afuera) y los 12 circuitos del personal.
+* Lámina de cortes FL_PI10_06 y recorte de ventanas que conserva el orden de dibujo (`planta/dibujo.recortar`).
 
 Verificador (`python3 -m planta10.verificar`): zonas sin superposición y sin superficie sin nombre; cada equipo dentro
 de su zona y sin tocar otro; 0,95 m libres al frente de cada operario; equipos que se cargan con autoelevador junto a un

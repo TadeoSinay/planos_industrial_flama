@@ -77,6 +77,16 @@ def generar(ruta):
               p.tipo, p.uso) for p in M.PUERTAS]
     hoja(wb.create_sheet("Puertas"), "Puertas de la nave", ["a y b: coordenadas sobre el muro (x en N y S, y en E y O)."],
          ["Código", "Muro", "a", "b", "Ancho (m)", "Alto (m)", "Tipo", "Uso"], filas, [8, 8, 7, 7, 9, 8, 12, 80])
+    filas = [(k, v[0], v[1], v[2]) for k, v in M.SECCIONES_ALM.items()]
+    hoja(wb.create_sheet("Secciones del almacén"), "Secciones del almacén de MP (X-ALM v5)",
+         ["Posiciones: stock máximo de la política del MRP redondeado por ítem (hoja Dimensionamiento de X-ALM)."],
+         ["Código", "Sección", "Posiciones X-ALM", "Dónde va en el plano"], filas, [8, 45, 16, 90])
+    filas = [(c, a, b, round(b - a, 2), u) for c, a, b, u in M.PORTONES_PREDIO]
+    hoja(wb.create_sheet("Portones del predio"), "Portones del predio (cerco norte)", ["a y b: x sobre el cerco (m)."],
+         ["Código", "a", "b", "Ancho (m)", "Uso"], filas, [8, 7, 7, 9, 70])
+    filas = [(k, v[0], v[1]) for k, v in M.ALTURAS.items()]
+    hoja(wb.create_sheet("Alturas"), "Alturas usadas en los cortes (FL_PI10_06)", [], ["Elemento", "Alto (m)", "Fuente"],
+         filas, [14, 9, 100])
     wb.save(ruta)
 
 

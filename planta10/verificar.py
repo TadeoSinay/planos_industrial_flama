@@ -158,12 +158,11 @@ def verificar(silencioso=False):
         for e, g in eqs:
             if barrido.intersection(g).area > 0.005:
                 err.append(f"La puerta en ({x:.1f}, {y:.1f}) barre sobre el equipo {e.cod}")
-    for cod, muro, a_, b_, uso in M.PUERTAS_EXT_ADMIN:
-        barrido = {"N": sg.box(a_, M.YA1 - (b_ - a_) / 2, b_, M.YA1), "E": sg.box(M.XA1 - (b_ - a_), a_, M.XA1, b_),
-                   "O": sg.box(M.XA0, a_, M.XA0 + (b_ - a_), b_)}[muro]
-        for t, g, fr, n in mobs:
-            if barrido.intersection(g).area > 0.005:
-                err.append(f"La puerta {cod} barre sobre {t}")
+    for cod, muro, a_, b_, uso in M.PUERTAS_EXT_ADMIN:   # abren hacia afuera: el barrido no puede caer en un local
+        barrido = {"N": sg.box(a_, M.YA1, b_, M.YA1 + (b_ - a_) / 2), "E": sg.box(M.XA1, a_, M.XA1 + (b_ - a_), b_),
+                   "O": sg.box(M.XA0 - (b_ - a_), a_, M.XA0, b_)}[muro]
+        if barrido.intersection(anexo).area > 0.005:
+            err.append(f"La puerta {cod} barre dentro del anexo")
     for z in M.ZONAS:
         if z.tipo == "local":
             r = z.rect

@@ -821,6 +821,16 @@ def recortar(pl, antes, xa, ya, xb, yb):
     p0, p1 = pl.P(xa, ya), pl.P(xb, yb)
     caja = sg.box(p0[0], p0[1], p1[0], p1[1])
     nuevos = [e for e in msp if e.dxf.handle not in antes]
+
+    def mantener(e):
+        """Lo que queda dentro de la ventana se vuelve a agregar al final, en su orden: así un relleno recortado (que
+        también se agrega al final) no tapa lo que se dibujó encima de él."""
+        try:
+            msp.add_entity(e.copy())
+            msp.delete_entity(e)
+        except Exception:  # noqa: BLE001 - lo que no se puede copiar (cotas) queda donde estaba
+            pass
+
     for e in nuevos:
         t = e.dxftype()
         at = {"layer": e.dxf.layer}
@@ -831,6 +841,7 @@ def recortar(pl, antes, xa, ya, xb, yb):
             if t == "LINE":
                 g = sg.LineString([(e.dxf.start.x, e.dxf.start.y), (e.dxf.end.x, e.dxf.end.y)])
                 if caja.contains(g):
+                    mantener(e)
                     continue
                 r = g.intersection(caja)
                 for gg in _lineas(r):
@@ -841,9 +852,11 @@ def recortar(pl, antes, xa, ya, xb, yb):
                 if e.closed:
                     pts.append(pts[0])
                 if len(pts) < 2:
+                    mantener(e)
                     continue
                 g = sg.LineString(pts)
                 if caja.contains(g):
+                    mantener(e)
                     continue
                 r = g.intersection(caja)
                 for gg in _lineas(r):
@@ -855,11 +868,13 @@ def recortar(pl, antes, xa, ya, xb, yb):
                     if hasattr(path, "vertices"):
                         polys.append(sg.Polygon([(v[0], v[1]) for v in path.vertices]))
                 if not polys:
+                    mantener(e)
                     continue
                 g = polys[0]
                 for q in polys[1:]:
                     g = g.difference(q)
                 if caja.contains(g):
+                    mantener(e)
                     continue
                 r = g.intersection(caja)
                 for gg in (r.geoms if hasattr(r, "geoms") else [r]):
@@ -883,14 +898,20 @@ def recortar(pl, antes, xa, ya, xb, yb):
                 p = e.dxf.align_point if (t == "TEXT" and e.dxf.hasattr("align_point")) else e.dxf.insert
                 if not caja.contains(sg.Point(p.x, p.y)):
                     msp.delete_entity(e)
+                else:
+                    mantener(e)
             elif t in ("CIRCLE", "ARC"):
                 if not caja.contains(sg.Point(e.dxf.center.x, e.dxf.center.y)):
                     msp.delete_entity(e)
+                else:
+                    mantener(e)
             elif t == "DIMENSION":
                 ok = all(caja.contains(sg.Point(e.dxf.get(k).x, e.dxf.get(k).y))
                          for k in ("defpoint2", "defpoint3") if e.dxf.hasattr(k))
                 if not ok:
                     msp.delete_entity(e)
+            else:
+                mantener(e)
         except Exception as ex:  # noqa: BLE001 - una entidad rara no debe frenar la lámina
             print("recortar:", t, ex)
             continue
