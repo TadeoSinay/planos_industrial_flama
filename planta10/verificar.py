@@ -139,7 +139,7 @@ def verificar(silencioso=False):
         for j in range(i + 1, len(mobs)):
             if mobs[i][1].intersection(mobs[j][1]).area > 0.01:
                 err.append(f"Superposición de muebles {mobs[i][0]} y {mobs[j][0]} en {mobs[i][1].bounds[:2]}")
-    pedido = {("AD-SH", "inodoro"): 2, ("AD-SH", "mingitorios"): 3, ("AD-SH", "lavabos"): 4, ("AD-SH", "duchas"): 3,
+    pedido = {("AD-VH", "inodoro"): 2, ("AD-VH", "mingitorios"): 3, ("AD-VH", "lavabos"): 4, ("AD-VH", "duchas"): 3,
               ("AD-VH", "armarios"): 34, ("AD-VM", "inodoro"): 1, ("AD-VM", "lavabos"): 1, ("AD-VM", "duchas"): 1,
               ("AD-VM", "armarios"): 4}
     for k, v in pedido.items():
@@ -159,7 +159,8 @@ def verificar(silencioso=False):
             if barrido.intersection(g).area > 0.005:
                 err.append(f"La puerta en ({x:.1f}, {y:.1f}) barre sobre el equipo {e.cod}")
     for cod, muro, a_, b_, uso in M.PUERTAS_EXT_ADMIN:
-        barrido = sg.box(a_, M.YA1 - (b_ - a_) / 2, b_, M.YA1) if muro == "N" else sg.box(M.XA1 - (b_ - a_), a_, M.XA1, b_)
+        barrido = {"N": sg.box(a_, M.YA1 - (b_ - a_) / 2, b_, M.YA1), "E": sg.box(M.XA1 - (b_ - a_), a_, M.XA1, b_),
+                   "O": sg.box(M.XA0, a_, M.XA0 + (b_ - a_), b_)}[muro]
         for t, g, fr, n in mobs:
             if barrido.intersection(g).area > 0.005:
                 err.append(f"La puerta {cod} barre sobre {t}")
@@ -172,6 +173,23 @@ def verificar(silencioso=False):
                         for x, y, w, muro, abre in M.PUERTAS_LOCALES)
             if not tiene:
                 err.append(f"El local {z.cod} no tiene puerta")
+    # mobiliario de los locales de la nave: dentro de su local y sin pisar el barrido de las puertas
+    zon = {z.cod: z for z in M.ZONAS}
+    mn = [(t, box(r), fr, n, zc) for t, r, fr, n, zc, fu in M.MOB_NAVE]
+    for t, g, fr, n, zc in mn:
+        if not box(zon[zc].rect, TOL).contains(g):
+            err.append(f"Mueble {t} fuera de su local {zc}")
+        for o in mn:
+            if o[1] is not g and o[1].intersection(g).area > 0.01:
+                err.append(f"Superposición de muebles {t} y {o[0]} en {zc}")
+    for x, y, w, muro, abre in M.PUERTAS_LOCALES:
+        if w > 2.0:
+            continue
+        barrido = (sg.box(x, y, x + w, y + abre * w) if abre > 0 else sg.box(x, y - w, x + w, y)) if muro == "h" else \
+            (sg.box(x, y, x + abre * w, y + w) if abre > 0 else sg.box(x - w, y, x, y + w))
+        for t, g, fr, n, zc in mn:
+            if barrido.intersection(g).area > 0.005:
+                err.append(f"La puerta en ({x:.1f}, {y:.1f}) barre sobre {t} de {zc}")
     sillas = sum(n for (c, t), n in cuenta.items() if c == "AD-CO" and t == "mesa")
     if sillas < 18:
         err.append(f"Comedor: {sillas} plazas contra 18 (X-DT)")

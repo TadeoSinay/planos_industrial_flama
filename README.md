@@ -308,14 +308,23 @@ norte). Se genera con `python3 generar10.py` (primero corre el verificador; si h
 `salida/v10/Layout_v10_zonas_y_equipos.xlsx`: cada zona, local, equipo y puerta con coordenadas, medidas, m² y fuente.
 
 Concepto (croquis del usuario): almacén de MP al oeste con P1 sobre el pasillo principal; manuales al norte en tres
-filas que salen del almacén (embutido, corte de tubo y corte de chapa) hasta la soldadura circunferencial y el ala este
-(espesor, prueba hidráulica, secado, granallado, detección); pintura al este de norte a sur (cuelgue al norte, descarga
-al sur); terminación hacia el pasillo principal y PT de manuales al otro lado, con despacho por P4; carros en el centro
-(fila de fabricación entre manuales y el pasillo, puestos 11 a 17 y su depósito al sur); mantenimiento, calidad,
-compresores y libre en el ángulo SO; administración y servicios al personal en un anexo al norte.
+filas que salen del almacén (embutido, corte de tubo y corte de chapa) hasta una columna este que baja de la soldadura
+circunferencial al control de espesor, la prueba hidráulica y el secado; el granallado, la detección y el cuelgue siguen
+hacia el este hasta la pintura, cuyo riel sale a buscar las piezas y las descarga junto a la terminación; PT de
+manuales al otro lado del pasillo, con despacho por P4; carros en el centro (fila de fabricación entre manuales y el
+pasillo con todos los elementos de la tabla de espacios de cada puesto de W-CAR; puestos 11 a 17 y su depósito al sur,
+con P2 de despacho, P3 al camión de la pintura tercerizada y P6 de regreso de los pintados); mantenimiento, pañol,
+calidad, tablero y compresores equipados en el ángulo SO; administración y servicios al personal en un anexo al norte
+con la disposición del croquis del usuario (27,6 × 14,3 m).
+
+Lugares de carros rodantes (`STOCK_CARROS` en el modelo y hojas «Demanda de carros» y «Lugares de carros» de la
+planilla): demanda pico 2035 de X-CAR, 279 recipientes por mes (163 matafuegos y 116 cilindros) = 70 por semana y 14
+por día. Pulmón de despacho 48 (3 días), pintados 25 (3 días de matafuegos), sala de pérdidas 20, retenidos 80
+(1,75 semanas de matafuegos) y liberados 80 (una semana).
 
 Verificador (`python3 -m planta10.verificar`): zonas sin superposición y sin superficie sin nombre; cada equipo dentro
 de su zona y sin tocar otro; 0,95 m libres al frente de cada operario; equipos que se cargan con autoelevador junto a un
 carril; ninguna columna dentro de un equipo ni de un carril; puertas sin columnas en el vano ni equipos detrás; cada
-local con puerta y ninguna puerta que barra sobre un mueble o un equipo; anexo sin huecos, sanitarios y armarios según el
+local con puerta y ninguna puerta que barra sobre un mueble o un equipo (también el mobiliario de los locales de la
+nave); anexo sin huecos, sanitarios y armarios según el
 Dec. 351/79 art. 49 con las fórmulas de la X-DT; m² de cada zona contra los que pide su fuente.
