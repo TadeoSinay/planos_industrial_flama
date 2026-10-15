@@ -317,10 +317,10 @@ con P2 de despacho, P3 al camión de la pintura tercerizada y P6 de regreso de l
 calidad, tablero y compresores equipados en el ángulo SO; administración y servicios al personal en un anexo al norte
 con la disposición del croquis del usuario (27,6 × 14,3 m).
 
-Lugares de carros rodantes (`STOCK_CARROS` en el modelo y hojas «Demanda de carros» y «Lugares de carros» de la
-planilla): demanda pico 2035 de X-CAR, 279 recipientes por mes (163 matafuegos y 116 cilindros) = 70 por semana y 14
-por día. Pulmón de despacho 48 (3 días), pintados 25 (3 días de matafuegos), sala de pérdidas 20, retenidos 80
-(1,75 semanas de matafuegos) y liberados 80 (una semana).
+Lugares de carros rodantes (`STOCK_CARROS` en el modelo y hoja «Lugares de carros» de la planilla), literales de las
+tablas de espacios de W-CAR: pulmón de despacho 120, pulmón de pintados 120, sala de pérdidas 30, retenidos 180 y
+liberados 100, en filas demarcadas con los carros uno detrás del otro. PT de manuales (W-MAN, embalaje): rack de PT y
+rack de cilindros sobre un pasillo de 5,0 m, 80 posiciones de pallet (7,9 pallets por día en el pico).
 
 Verificador (`python3 -m planta10.verificar`): zonas sin superposición y sin superficie sin nombre; cada equipo dentro
 de su zona y sin tocar otro; 0,95 m libres al frente de cada operario; equipos que se cargan con autoelevador junto a un

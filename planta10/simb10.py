@@ -56,6 +56,36 @@ def rodantes(m, nu, nv, capa="A-DEM-AM", n=None):
             m.ln((0, (j + 1) * dv), (U, (j + 1) * dv), capa)
 
 
+def rodante_u(m, u, v, s=1.0):
+    """Carro visto desde arriba con la manija hacia -u (para filas de carros uno detrás del otro)."""
+    r = 0.16 * s
+    m.fc(u, v, r, (240, 120, 110))
+    m.ci(u, v, r, CONT)
+    m.ci(u, v, 0.045 * s)
+    for k in (-1, 1):
+        m.caja(u - 0.12 * s, v + k * (r + 0.04 * s) - 0.025 * s, u + 0.12 * s, v + k * (r + 0.04 * s) + 0.025 * s,
+               OSCURO, FINO)
+    m.pl([(u - r, v - 0.11 * s), (u - r - 0.1 * s, v - 0.11 * s), (u - r - 0.1 * s, v + 0.11 * s),
+          (u - r, v + 0.11 * s)], CONT)
+
+
+def filas(m, por_fila, n_filas, capa="A-DEM-AM", n=None):
+    """Filas demarcadas de carros uno detrás del otro (a lo largo de u), apiladas en v; la manija hacia u = 0."""
+    U, V = m.Lu, m.Lv
+    m.rc(0, 0, U, V, capa)
+    du, dv = U / por_fila, V / n_filas
+    s = min(1.0, dv / 0.62, du / 0.6)
+    k = 0
+    for j in range(n_filas):
+        if j:
+            m.ln((0, j * dv), (U, j * dv), capa)
+        for i in range(por_fila):
+            if n is not None and k >= n:
+                break
+            rodante_u(m, (i + 0.55) * du, (j + 0.5) * dv, s)
+            k += 1
+
+
 def rodante_inv(m, u, v, s=1.0):
     r = 0.17 * s
     m.fc(u, v, r, (240, 120, 110))

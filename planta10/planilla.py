@@ -68,22 +68,10 @@ def generar(ruta):
          ["Frente: lado del operario (0,95 m libres verificados). AE: necesita el autoelevador (toca un carril)."],
          ["Código", "Equipo", "Zona", "Símbolo", "x0", "y0", "x1", "y1", "Medida x (m)", "Medida y (m)", "Frente",
           "Operarios", "AE", "Fuente de la medida"], filas, [11, 60, 9, 14, 7, 7, 7, 7, 10, 10, 7, 9, 5, 70])
-    filas = []
-    for k, (mat, cil) in M.PICO_MES.items():
-        filas.append((k, mat, cil, round(mat + cil, 2), round((mat + cil) / M.SEMANAS_MES, 1),
-                      round((mat + cil) / M.DIAS_MES, 2)))
-    tm = sum(v[0] for v in M.PICO_MES.values())
-    tc = sum(v[1] for v in M.PICO_MES.values())
-    filas.append(("TOTAL", round(tm, 2), round(tc, 2), round(tm + tc, 2), round((tm + tc) / M.SEMANAS_MES, 1),
-                  round((tm + tc) / M.DIAS_MES, 2)))
-    hoja(wb.create_sheet("Demanda de carros"), "Demanda pico 2035 de carros (X-CAR, hoja Plan mensual)",
-         ["Mes pico: marzo a mayo, julio y agosto. 20 días hábiles por mes = 4 semanas (X-CAR, parametros_carros)."],
-         ["Modelo", "Matafuegos por mes", "Cilindros por mes", "Total por mes", "Por semana", "Por día"], filas,
-         [12, 18, 18, 14, 12, 10])
     filas = [(k[0], k[1], k[2], k[3], k[4], k[5]) for k in M.STOCK_CARROS]
     hoja(wb.create_sheet("Lugares de carros"), "Lugares de carros rodantes en planta",
-         ["Cada lugar: carro parado sobre sus ruedas y su pata, 0,68 × 0,75 m, en filas enfrentadas de a dos."],
-         ["Zona", "Puesto", "Qué guarda", "Criterio", "Cuenta (pico 2035)", "Lugares dibujados"], filas,
+         ["Cantidades del Word de carros (W-CAR, tablas de espacios de los puestos 11, 12, 14 y 16)."],
+         ["Zona", "Puesto", "Qué guarda", "Criterio de W-CAR", "Medida de W-CAR", "Carros"], filas,
          [8, 30, 45, 70, 22, 10])
     filas = [(p.cod, {"N": "Norte", "S": "Sur", "E": "Este", "O": "Oeste"}[p.muro], p.a, p.b, round(p.b - p.a, 2), p.alto,
               p.tipo, p.uso) for p in M.PUERTAS]
