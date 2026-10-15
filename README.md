@@ -5,7 +5,10 @@ sobre un modelo en código (`planta/layout.py`, coordenadas en metros). De ahí 
 PDF, con rótulo IRAM 4508, formato IRAM 4504 y acotación IRAM 4513, más la memoria de cálculo. Usa la misma base de
 dibujo que [planos_flama-](https://github.com/TadeoSinay/planos_flama-).
 
-> Estado: **versión 9: sin recargas, oficinas al SO, administración al este, P1 de 7 m** (nave 88 × 44 m). Puestos
+> **Versión 10 (rediseño desde cero, `planta10/`, láminas en `salida/v10/`)**: ver la sección
+> [Layout v10](#layout-v10-rediseño-desde-cero-sobre-el-croquis-del-usuario). La versión 9 queda debajo como antecedente.
+
+> Estado v9: **versión 9: sin recargas, oficinas al SO, administración al este, P1 de 7 m** (nave 88 × 44 m). Puestos
 > en el orden de los Word de proceso de manuales y de carros; máquinas según X-MAN y X-CAR; pulmones sólo los de los
 > Word. Verificación automática sin errores: **0 cruces entre flujos de MP, SE y PT** (más 2 cruces a mano declarados
 > dentro de su senda), cruces de personal sólo en 37 sendas, toda calle remata en otra calle, puerta o destino (1
@@ -287,3 +290,32 @@ autocad/            conversión a DWG
 - Medidas de los equipos marcados como estimados en las tablas de FL_PI_04 (el resto sale de cotizaciones).
 - Recargas se incluye aunque no estaba en la lista de secciones del pedido, porque está en el dimensionamiento
   técnico con 16 operarios y 22 máquinas.
+
+
+## Layout v10: rediseño desde cero sobre el croquis del usuario
+
+Modelo nuevo en `planta10/modelo.py` (coordenadas en metros, origen en la esquina SO interior de la nave, calle al
+norte). Se genera con `python3 generar10.py` (primero corre el verificador; si hay un error no genera nada).
+
+| Código | Lámina | Formato y escala | Contenido |
+|---|---|---|---|
+| `FL_PI10_01` | Planta general e implantación | A0 1:200 | Nave, anexo, playas y calle; todas las zonas con código, nombre y m² (tabla) y superficies por destino |
+| `FL_PI10_02` | Puestos y equipos | A0 1:100 | Cada máquina de X-MAN y X-CAR con su medida y fuente, operario al frente, pulmones de W-MAN y W-CAR |
+| `FL_PI10_03` | Circulación y flujos | A0 1:100 | Carriles del autoelevador, sendas, pasillos de operarios con su ancho; flujos de MP, SE y PT; hilos del personal |
+| `FL_PI10_04` | Almacén de MP y recepción | A0 1:50 | Racks, cantiléver, chapa, fleje, polvo, cuarentena de W-CAR y locales del ángulo SO |
+| `FL_PI10_05` | Administración y servicios al personal | A0 1:50 | Anexo norte dimensionado con la dotación 2035 sin recargas (X-DT) y el Dec. 351/79 art. 49 |
+
+`salida/v10/Layout_v10_zonas_y_equipos.xlsx`: cada zona, local, equipo y puerta con coordenadas, medidas, m² y fuente.
+
+Concepto (croquis del usuario): almacén de MP al oeste con P1 sobre el pasillo principal; manuales al norte en tres
+filas que salen del almacén (embutido, corte de tubo y corte de chapa) hasta la soldadura circunferencial y el ala este
+(espesor, prueba hidráulica, secado, granallado, detección); pintura al este de norte a sur (cuelgue al norte, descarga
+al sur); terminación hacia el pasillo principal y PT de manuales al otro lado, con despacho por P4; carros en el centro
+(fila de fabricación entre manuales y el pasillo, puestos 11 a 17 y su depósito al sur); mantenimiento, calidad,
+compresores y libre en el ángulo SO; administración y servicios al personal en un anexo al norte.
+
+Verificador (`python3 -m planta10.verificar`): zonas sin superposición y sin superficie sin nombre; cada equipo dentro
+de su zona y sin tocar otro; 0,95 m libres al frente de cada operario; equipos que se cargan con autoelevador junto a un
+carril; ninguna columna dentro de un equipo ni de un carril; puertas sin columnas en el vano ni equipos detrás; cada
+local con puerta y ninguna puerta que barra sobre un mueble o un equipo; anexo sin huecos, sanitarios y armarios según el
+Dec. 351/79 art. 49 con las fórmulas de la X-DT; m² de cada zona contra los que pide su fuente.
