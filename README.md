@@ -318,9 +318,12 @@ con P2 de despacho, P3 al camión de la pintura tercerizada y P6 de regreso de l
 calidad, tablero y compresores equipados en el ángulo SO; administración y servicios al personal en un anexo al norte
 con la disposición del croquis del usuario (27,6 × 14,3 m).
 
-Lugares de carros rodantes (`STOCK_CARROS` en el modelo y hoja «Lugares de carros» de la planilla), literales de las
-tablas de espacios de W-CAR: pulmón de despacho 120, pulmón de pintados 120, sala de pérdidas 30, retenidos 180 y
-liberados 100, en filas demarcadas con los carros uno detrás del otro. PT de manuales (W-MAN, embalaje): rack de PT y
+Lugares de carros rodantes (`STOCK_CARROS` en el modelo y hoja «Lugares de carros» de la planilla): la regla de cada
+pulmón de W-CAR aplicada al mes pico de 2035 de X-CAR (279 recipientes = 14 por día, 70 por semana: 41 matafuegos y
+29 cilindros vendidos vacíos), no el escenario de 20 carros por día del Word: pulmón de despacho 84 (1 semana + 1 día),
+pintados 49 (lo que va al puesto 13), sala de pérdidas 17 (muestra de la tabla del Word con los lotes de 2035),
+retenidos 74 (1,8 semanas de matafuegos), liberados 70 (1 semana) y rechazados 23 (el lote de 50 kg), en filas
+demarcadas con los carros uno detrás del otro; lo que no se usa queda libre (RV-C1 a RV-C3). PT de manuales (W-MAN, embalaje): rack de PT y
 rack de cilindros sobre un pasillo de 5,0 m, 100 posiciones de pallet (70 de PT por 7,9 pallets por día en el pico y
 el stock de diciembre, más los 17 revendidos de la sección «almacén de producto terminado» de X-ALM).
 
@@ -339,6 +342,13 @@ Versión 12 (revisión al pie de la letra de W-CAR, W-MAN y el croquis de oficin
 * Oficinas con las marcas del croquis (rampas con descanso, plataforma, cajón accesible, relojes, ventanillas,
   matafuegos, baranda con cruces, puertas exteriores hacia afuera) y los 12 circuitos del personal.
 * Lámina de cortes FL_PI10_06 y recorte de ventanas que conserva el orden de dibujo (`planta/dibujo.recortar`).
+
+Versión 13 (carros con la demanda 2035 y revisión de las láminas):
+* Lugares de carros recalculados (317 en lugar de 550): la banda sur libera 88 m² (RV-C1 a RV-C3); sala de
+  pérdidas de 4 × 4 m con 3 filas mirando a un pasillo; entrada de los cilindros pintados al depósito 16 por C-16A.
+* Flujos de los puestos 11 a 17 redibujados (incluye los cilindros vendidos vacíos a liberados); corte A-A por y = 6,0 m.
+* Rótulos de zonas sin pisar equipos (si no entra el nombre va el código; el nombre está en la tabla) y franjas sin uso
+  unidas al puesto vecino (C-03, C-05, C-06 y C-10).
 
 Verificador (`python3 -m planta10.verificar`): zonas sin superposición y sin superficie sin nombre; cada equipo dentro
 de su zona y sin tocar otro; 0,95 m libres al frente de cada operario; equipos que se cargan con autoelevador junto a un

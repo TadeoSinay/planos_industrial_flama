@@ -70,8 +70,10 @@ def generar(ruta):
           "Operarios", "AE", "Fuente de la medida"], filas, [11, 60, 9, 14, 7, 7, 7, 7, 10, 10, 7, 9, 5, 70])
     filas = [(k[0], k[1], k[2], k[3], k[4], k[5]) for k in M.STOCK_CARROS]
     hoja(wb.create_sheet("Lugares de carros"), "Lugares de carros rodantes en planta",
-         ["Cantidades del Word de carros (W-CAR, tablas de espacios de los puestos 11, 12, 14 y 16)."],
-         ["Zona", "Puesto", "Qué guarda", "Criterio de W-CAR", "Medida de W-CAR", "Carros"], filas,
+         ["Reglas del Word de carros (W-CAR, puestos 11, 12, 14 y 16) aplicadas al mes pico de 2035 (X-CAR, Plan "
+          "mensual): %s recipientes por semana (%s matafuegos y %s cilindros vendidos vacíos), %s por día."
+          % (M.f1(M.SEMANA), M.f1(M.MATAF), M.f1(M.SEMANA - M.MATAF), M.f1(M.DIA))],
+         ["Zona", "Puesto", "Qué guarda", "Regla de W-CAR aplicada a 2035", "Medida en planta", "Carros"], filas,
          [8, 30, 45, 70, 22, 10])
     filas = [(p.cod, {"N": "Norte", "S": "Sur", "E": "Este", "O": "Oeste"}[p.muro], p.a, p.b, round(p.b - p.a, 2), p.alto,
               p.tipo, p.uso) for p in M.PUERTAS]

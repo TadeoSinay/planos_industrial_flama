@@ -91,7 +91,8 @@ def rotulo(pl, z, h=1.8, areas=True, nombres=True):
     if len(lineas) > max_l:
         lineas = lineas[:max_l]
         if max_l == 1 and nombres:
-            lineas = [(z.cod + " " + _corto(z.nombre, 60))[:n_car]]
+            # una sola línea con el código y el nombre: se escribe con la altura del código (hh, no 0,8 hh)
+            lineas = [(z.cod + " " + _corto(z.nombre, 60))[:int(n_car * 0.8)]]
     paso = hh * 1.45 / pl.s
     if vert:
         occ = _ocupado(z)
@@ -102,7 +103,7 @@ def rotulo(pl, z, h=1.8, areas=True, nombres=True):
                 abajo, arriba = max(0.0, b[1] - r.y0), max(0.0, r.y1 - b[3])
         arr = arriba > abajo and abajo < 2.0
         libre = max(abajo, arriba) if max(abajo, arriba) > 1.0 else r.h
-        n_v = max(6, int((libre - 0.3) * pl.s / (hh * 0.8 * 0.62)))
+        n_v = max(6, int((libre - 0.3) * pl.s / (hh * 0.8 * 0.63)))
         lineas = ([z.cod] + (_cortar(_corto(z.nombre, 90), n_v) if nombres else []))[:max_l]
         for i, ln in enumerate(lineas):
             if arr:
@@ -112,26 +113,39 @@ def rotulo(pl, z, h=1.8, areas=True, nombres=True):
                 pl.texto(ln, (r.x0 + 0.15 + i * paso, r.y0 + 0.15), hh if i == 0 else hh * 0.8, A.TOP_LEFT,
                          "A-SECTOR-TXT", 90)
         return
-    ancho_txt = max(len(ln) for ln in lineas) * hh * 0.8 * 0.62 / pl.s + 0.1
-    alto_txt = len(lineas) * paso + 0.1
     occ = _ocupado(z)
+
+    def caja_de(lns, k):
+        """Rectángulo que ocupa el rótulo lns en la posición k (esquinas o centro de los lados largos)."""
+        an = max(len(ln) * (hh if i == 0 and len(lns) > 1 else hh * (1.0 if len(lns) == 1 else 0.8))
+                 for i, ln in enumerate(lns)) * 0.63 / pl.s + 0.1
+        al_ = len(lns) * paso + 0.1
+        x0 = {"L": r.x0 + 0.1, "R": r.x1 - 0.1 - an, "C": r.c[0] - an / 2}[k[1]]
+        y1 = r.y1 - 0.1 if k[0] == "T" else r.y0 + 0.1 + al_
+        return sg.box(x0, y1 - al_, x0 + an, y1)
+
     mejor, esquina = None, "TL"
-    for k in ("TL", "TR", "BL", "BR"):
-        x0 = r.x0 + 0.1 if k[1] == "L" else r.x1 - 0.1 - ancho_txt
-        y1 = r.y1 - 0.1 if k[0] == "T" else r.y0 + 0.1 + alto_txt
-        caja = sg.box(x0, y1 - alto_txt, x0 + ancho_txt, y1)
-        a = caja.intersection(occ).area if occ is not None else 0.0
-        if mejor is None or a < mejor - 1e-6:
-            mejor, esquina = a, k
-        if a <= 1e-6:
+    for lns in (lineas, [z.cod]):
+        for k in ("TL", "TR", "BL", "BR", "TC", "BC"):
+            a = caja_de(lns, k).intersection(occ).area if occ is not None else 0.0
+            if mejor is None or a < mejor - 1e-6:
+                mejor, esquina, elegidas = a, k, lns
+            if a <= 1e-6:
+                break
+        if mejor <= 1e-6:
             break
+    lineas = elegidas
     izq, arriba = esquina[1] == "L", esquina[0] == "T"
+    centro = esquina[1] == "C"
     for i, ln in enumerate(lineas):
         hi = hh if i == 0 else hh * 0.8
-        x = r.x0 + 0.15 if izq else r.x1 - 0.15
+        x = r.c[0] if centro else r.x0 + 0.15 if izq else r.x1 - 0.15
         y = (r.y1 - 0.15 - i * paso) if arriba else (r.y0 + 0.15 + (len(lineas) - 1 - i) * paso)
-        al = {(True, True): A.TOP_LEFT, (False, True): A.TOP_RIGHT, (True, False): A.BOTTOM_LEFT,
-              (False, False): A.BOTTOM_RIGHT}[(izq, arriba)]
+        if centro:
+            al = A.TOP_CENTER if arriba else A.BOTTOM_CENTER
+        else:
+            al = {(True, True): A.TOP_LEFT, (False, True): A.TOP_RIGHT, (True, False): A.BOTTOM_LEFT,
+                  (False, False): A.BOTTOM_RIGHT}[(izq, arriba)]
         pl.texto(ln, (x, y), hi, al, "A-SECTOR-TXT")
     if areas and r.w > 2.0 and r.h > 2.0 and r.w * r.h >= 6.0:
         xy, al = ((r.x1 - 0.15, r.y0 + 0.15), A.BOTTOM_RIGHT) if arriba else ((r.x1 - 0.15, r.y1 - 0.15), A.TOP_RIGHT)
@@ -175,7 +189,7 @@ def pasillos(pl, rotulos=True, h=1.6):
             pl.rect(r, "A-SENDA")
         if rotulos and max(r.w, r.h) > 6:
             ang = 0 if r.w >= r.h else 90
-            txt = f"{z.cod}  {_corto(z.nombre, 40)}  {f(min(r.w, r.h), 1)} m"
+            txt = f"{z.cod}  {_corto(z.nombre, 60 if max(r.w, r.h) > 9 else 40)}  {f(min(r.w, r.h), 1)} m"
             pl.texto(txt, r.c, h, A.MIDDLE_CENTER, "A-TEXTO", ang)
     # baranda entre el carril del autoelevador y la senda del pasillo principal, con cruces
     cruces = [(3.0, 4.6), (12.4, 14.0), (16.4, 18.0), (35.3, 36.8), (61.0, 62.4), (70.0, 71.6)]
@@ -761,10 +775,13 @@ def fl_01(doc, ox):
         "15 × 5 m y la cuarentena pegada), P4 PT de manuales 5,0 m (este), P2 despacho de carros 4,0 m, P3 camión",
         "a la pintura 5,0 m y P6 regreso de los pintados 5,0 m (sur); P5 patio de ensayos; PE de emergencia.",
         "Predio con cerco: PC-1 entrada y PC-2 salida de camiones (circuito de una mano), PC-3 estacionamiento y",
-        "PC-4 a PC-6 accesos peatonales del croquis de oficinas. Cortes A-A y B-B en FL_PI10_06.",
-        "Carros en planta según el Word de carros: 120 en el pulmón de despacho, 120 pintados, 30 en la sala de",
-        "pérdidas, 180 retenidos y 100 liberados. PT de manuales en racks (W-MAN): 100 posiciones de pallet",
-        "(70 de PT y 17 revendidos de X-ALM). Almacén de MP por secciones de X-ALM (FL_PI10_04).",
+        "PC-4 a PC-6 accesos peatonales del croquis de oficinas. Cortes A-A a D-D en FL_PI10_06.",
+        "Carros: reglas del Word de carros con la demanda pico 2035 (X-CAR: 14 recipientes por día, 70 por",
+        "semana): %d en el pulmón de despacho, %d pintados, %d en la sala de pérdidas, %d retenidos, %d liberados"
+        % tuple(k[5] for k in M.STOCK_CARROS[:5]),
+        "y %d rechazados; lo que no se usa queda libre (RV-C1 a C3). PT de manuales en racks (W-MAN): 100"
+        % M.STOCK_CARROS[5][5],
+        "posiciones de pallet (70 de PT y 17 revendidos de X-ALM). Almacén de MP por secciones de X-ALM.",
         "Reservas (RV y LB): lugar para la máquina siguiente de los puestos de manuales al 92-97 % en 2035",
         "(X-MAN) y el espacio libre del croquis. El largo de la nave lo fijan la fila de carros más la",
         "terminación y la pintura (norte) y los puestos 11 a 17 de carros más el PT (sur).",
@@ -802,10 +819,12 @@ def fl_02(doc, ox):
                       _corto(e.fuente, 40)])
     c.tabla([("Cód.", 13, "l"), ("Zona", 13, "l"), ("Equipo", 98, "l"), ("Planta (m)", 22, "c"),
              ("Fuente de la medida", 80, "l")], filas, 4.3, 2.0, "Equipos principales y su medida en planta")
-    c.tabla([("Zona", 13, "l"), ("Lugares de carros", 50, "l"), ("Criterio del Word de carros", 120, "l"),
+    c.y -= 5.0
+    c.tabla([("Zona", 13, "l"), ("Lugares de carros", 48, "l"), ("Regla de W-CAR aplicada a la demanda 2035", 150, "l"),
              ("Medida", 20, "c"), ("Carros", 14, "r")],
             [[k[0], k[1], k[3], k[4], str(k[5])] for k in M.STOCK_CARROS], 4.3, 2.0,
-            "Carros en planta según W-CAR (20 carros por día en el pico, 100 por semana)")
+            "Carros en planta: reglas de W-CAR con el mes pico de 2035 (X-CAR: %s por día, %s por semana)"
+            % (M.f1(M.DIA), M.f1(M.SEMANA)))
     c.tabla([("Almacén de PT de manuales (W-MAN 25: rack de PT y rack de cilindros, pallets en altura)", 160, "l"),
              ("Pallets", 20, "r")],
             [["Pallets por día en el pico (tabla de embalaje de la BOM)", f(M.PT_MAN["pallets_dia"], 1)],
@@ -832,7 +851,7 @@ def fl_02(doc, ox):
         "-> secado, y hacia el este granallado -> detección -> cuelgue; el riel de la pintura sale a buscar las",
         "piezas al cuelgue y las devuelve a la descarga, al lado de la terminación.",
         "Carros 11 y 12: el camión de la pintura carga por P3 y descarga por P6, con la tarima de W-CAR 11.",
-        "Carros rodantes en filas demarcadas, uno detrás del otro, con la cantidad de cada tabla de W-CAR (arriba).",
+        "Carros rodantes en filas demarcadas, uno detrás del otro, con los lugares de la tabla de arriba.",
         "Fila de fabricación con todos los elementos de la tabla de espacios de cada puesto de W-CAR.",
         "PT de manuales: rack de PT (con los revendidos) y rack de cilindros de 5 módulos, pasillo de 5,0 m.",
         "Sin medida en ningún presupuesto (criterio, marcado): desbobinador, alimentador Cena PRE-1, soldadora",
@@ -881,17 +900,19 @@ FLUJOS = [
             (34.8, 22.4), (39.6, 22.4), (46.0, 22.4), (48.8, 22.6), (53.0, 25.6), (53.3, 21.2)], "Carros"),
     ("SE", [(38.5, 26.6), (38.5, 24.6)], "Cúpula con cupla"),
     ("SE", [(47.0, 25.4), (47.0, 24.6)], "Kits"),
-    ("SE", [(56.0, 20.4), (56.0, 19.2), (61.9, 19.2), (61.9, 4.0), (62.4, 4.0)], "Secos al pulmón de despacho"),
-    ("SE", [(61.9, 3.0), (64.0, 2.2), (64.0, -1.5)], "A la pintura (P3)"),
-    ("SE", [(57.6, -1.5), (57.6, 1.0), (60.8, 3.0), (60.8, 8.0), (60.4, 8.0)], "Pintados (P6)"),
-    ("SE", [(55.3, 9.25), (55.0, 9.25)], ""),
+    ("SE", [(56.0, 20.4), (56.0, 19.2), (62.1, 19.2), (62.1, 6.0), (62.6, 6.0)], "Secos al pulmón de despacho"),
+    ("SE", [(62.1, 3.0), (64.0, 2.2), (64.0, -1.5)], "A la pintura (P3)"),
+    ("SE", [(57.6, -1.5), (57.6, 1.0), (60.6, 3.0), (60.6, 6.0), (59.9, 6.0)], "Pintados (P6)"),
+    ("PT", [(59.0, 1.6), (61.65, 1.6), (61.65, 15.8), (38.7, 15.8), (38.7, 10.0), (27.0, 10.0), (27.0, 8.8)],
+     "Cilindros vendidos vacíos a liberados"),
+    ("SE", [(55.3, 7.8), (53.8, 7.8), (53.8, 8.3)], ""),
     ("SE", [(52.5, 9.25), (51.7, 9.25)], ""),
     ("SE", [(48.5, 9.25), (47.6, 9.25)], "A -> B -> C"),
-    ("SE", [(46.3, 8.2), (46.3, 5.7), (44.0, 5.7)], "Muestra a pérdidas"),
-    ("SE", [(44.8, 5.9), (53.0, 5.9), (53.0, 1.6)], "Ensayos de lote"),
-    ("SE", [(45.1, 10.0), (44.4, 11.0)], ""),
-    ("SE", [(42.3, 11.0), (41.6, 12.0), (39.6, 12.9), (33.0, 12.9)], "Etiquetado -> retenidos"),
-    ("PT", [(33.0, 3.5), (33.0, 3.0), (29.0, 3.0), (29.0, 3.5)], "Lote liberado"),
+    ("SE", [(46.3, 8.2), (46.3, 5.55), (43.8, 5.55)], "Muestra a pérdidas"),
+    ("SE", [(43.9, 6.05), (53.0, 6.05), (53.0, 1.6)], "Ensayos de lote"),
+    ("SE", [(45.1, 10.0), (43.6, 11.3)], ""),
+    ("SE", [(41.5, 10.8), (40.6, 9.5), (36.5, 9.5), (36.5, 8.8)], "Etiquetado -> retenidos"),
+    ("PT", [(33.5, 8.8), (33.5, 9.05), (29.0, 9.05), (29.0, 8.8)], "Lote liberado"),
     ("PT", [(27.7, 3.5), (27.7, 2.3), (27.7, -1.0)], "Despacho de carros (P2)"),
 ]
 HILOS = [
@@ -1344,7 +1365,7 @@ def fl_06(doc, ox):
                 "Alturas con fuente (ET, cotizaciones, W-CAR, hoja de especificaciones); lo que no tiene alto en "
                 "ninguna fuente va marcado «s/d». Ubicación de los cortes en la planta de la derecha y en FL_PI10_01.")
     usados = {}
-    lam = [("A", -9.0, 80.0, (22, 640), "CORTE A-A  (longitudinal por y = 12,5 m, mirando al norte)"),
+    lam = [("A", -9.0, 80.0, (22, 640), "CORTE A-A  (longitudinal por y = 6,0 m, mirando al norte)"),
            ("C", -9.0, 80.0, (22, 470), "CORTE C-C  (longitudinal por y = 37,65 m, mirando al norte)"),
            ("B", -5.0, 77.5, (22, 300), "CORTE B-B  (transversal por x = 38,4 m, mirando al oeste; el norte a la derecha)"),
            ("D", -5.0, 50.0, (22, 130), "CORTE D-D  (transversal por x = 68,3 m, mirando al oeste; el norte a la derecha)")]
