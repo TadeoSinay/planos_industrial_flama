@@ -17,17 +17,22 @@ DEMANDA = {  # matafuegos terminados y cilindros vendidos (u/año) - DT_2035
     "1 kg": (32073, 170548), "2,5 kg": (7425, 6669), "5 kg": (30751, 32915), "10 kg": (1841, 2011),
     "25 kg": (453, 322), "50 kg": (997, 708), "70 kg": (218, 155), "100 kg": (145, 102),
 }
-RECARGAS = 128800            # recargas en la planta industrial (DT Análisis de recargas)
+RECARGAS = 128800            # recargas (DT Análisis de recargas): desde la v9 se hacen fuera de esta planta
 TERCERIZADOS = 10700         # SUPUESTO: 12,7 % no ABC sobre las ventas de equipos (sin dato en los Excel)
 PICO = 1.40                  # diciembre-enero sobre el promedio mensual (DT Parámetros)
 DIAS, TURNOS, H_TURNO, EFIC = 22, 2, 8.0, 0.85
 H_MES = DIAS * TURNOS * H_TURNO * EFIC   # horas productivas del mes pico
 
-PERSONAL = {  # DT Servicios y oficinas, año 2035
-    "turno mañana": {"H": 47, "M": 6, "total": 53},
-    "turno tarde": {"H": 9, "M": 1, "total": 10},
-    "choferes": 8, "armarios": {"H": 56, "M": 7},
-    "total": 71,
+# DT Servicios y oficinas y Dotación planta, año 2035, sin recargas (v9: el proceso va fuera de esta planta):
+# turno mañana 53 - 16 operarios propios de recargas - 1 atención de recargas = 36; turno tarde 10 - 2 = 8;
+# ambos turnos 63 - 19 = 44. Mujeres: 10 % redondeado hacia arriba, como la DT (53 -> 6, 63 -> 7).
+# Choferes de reparto: 8 (DT Almacén PT, 1 por vehículo), arrancan y terminan la jornada en planta.
+PERSONAL = {
+    "turno mañana": {"H": 32, "M": 4, "total": 36},
+    "turno tarde": {"H": 7, "M": 1, "total": 8},
+    "choferes": 8, "armarios": {"H": 39, "M": 5},
+    "total": 52,
+    "dt_con_recargas": 71,
 }
 
 
@@ -47,8 +52,8 @@ CAMIONES = [
      "Alero de descarga norte: autoelevador por los dos lados; entra por P1 a la cuarentena (A1)"),
     ("Camión chasis con balancín (3 ejes)", 11.0, 16.0, 26.0,
      "Alero de descarga norte (junto al semi): autoelevador por los dos lados, bajo techo"),
-    ("Camión chasis 2 ejes", 9.5, 9.0, 16.5, "Alero norte (P1), muelle P3 o jaula de gases según el material"),
-    ("Utilitario / furgón", 6.0, 1.5, 3.5, "Recargas e insumos de recargas por P2"),
+    ("Camión chasis 2 ejes", 9.5, 9.0, 16.5, "Alero norte (P1) o jaula de gases según el material"),
+    ("Utilitario de reparto", 6.0, 1.5, 3.5, "Expedición de PT por el muelle P3 (rampa; DT Almacén PT: 8 vehículos)"),
 ]
 # Ley 24.449 y Dec. 779/95: ancho 2,60 m, alto 4,10 m, largo máx. 18,60 m (semi); PBT según ejes
 
@@ -62,15 +67,14 @@ ENTREGAS = [
     ("Soldadura: alambre MAG", 1.89, 8.1, "Chasis 2 ejes", "Alero + P1", "AL-CU -> AL-SS"),
     ("Air Liquide: Arcal 21 (packs)", 3.8, 15.6, "Chasis 2 ejes", "Jaula exterior JG", "JG -> reguladores CG1"),
     ("Air Liquide: N₂ (packs)", 3.8, 15.6, "Chasis 2 ejes", "Jaula exterior JG", "JG -> reguladores CG1"),
-    ("Polvo químico (Polvex / DEMSA)", 13.13, 31.0, "Chasis con balancín", "Muelle P3", "DP (depósito único)"),
+    ("Polvo químico (Polvex / DEMSA)", 13.13, 31.0, "Chasis con balancín", "Alero + P1", "AL-CU -> DP"),
     ("Válvulas, manómetros y pescantes", 8.16, 8.3, "Chasis con balancín", "Alero + P1", "AL-CU -> AL-MM"),
     ("Casquetes de carros", 5.93, 4.1, "Chasis 2 ejes", "Alero + P1", "AL-CU -> AL-CQ"),
     ("Estructuras y ruedas de carros", 5.52, 15.1, "Chasis 2 ejes", "Alero + P1", "AL-CU -> AL-MC"),
-    ("Embalaje, pallets, etiquetas y precintos", 4.61, 15.3, "Chasis 2 ejes", "Muelle P3", "AL-EB y AL-ID"),
-    ("Tercerizados revendidos", 3.0, 24.0, "Chasis 2 ejes (SUPUESTO)", "Muelle P3", "S4"),
-    ("Agentes para recargas", 2.87, 8.2, "Utilitario / chasis 2 ejes", "P2", "RC-IN"),
+    ("Embalaje, pallets, etiquetas y precintos", 4.61, 15.3, "Chasis 2 ejes", "Alero + P1", "AL-CU -> AL-EB y AL-ID"),
+    ("Tercerizados revendidos", 3.0, 24.0, "Chasis 2 ejes (SUPUESTO)", "Alero + P1", "AL-CU -> S4"),
     ("CYM: granalla", 3.11, 2.0, "Chasis 2 ejes", "Alero + P1", "AL-CU -> AL-SS"),
-    ("Pintura electrostática en polvo", 0.79, 8.3, "Utilitario", "Muelle P3", "DP"),
+    ("Pintura electrostática en polvo", 0.79, 8.3, "Chasis 2 ejes", "Alero + P1", "AL-CU -> DP"),
 ]
 
 
@@ -124,34 +128,37 @@ def sobrestock():
 
 
 # ================================================================ 3. pulmones y riel aéreo de pintura
+FUENTE_PULMON = {  # pulmones e intermedios que figuran en los Word de procesos (W-MAN y W-CAR); no hay otros
+    "PU-1": "W-MAN 1 y W-CAR 2", "PU-M": "W-CAR 2.1", "PU-D": "W-MAN 1", "PU-V1": "W-MAN 6", "PU-V2": "W-MAN 7",
+    "PU-V3": "W-MAN 7", "PU-FX": "W-MAN 7 (cambio de formato)", "PU-T1": "W-MAN 2", "PU-T2": "W-MAN 2",
+    "PU-K": "W-MAN 3", "PU-FO": "W-MAN 3 (3 a 5 carros)", "PU-CU": "W-MAN 3 (3 a 5 carros)", "PU-CC2": "W-MAN 8",
+    "PU-CC": "W-MAN 8", "PU-E": "W-MAN 9", "PU-B": "W-MAN 10", "PU-S": "W-MAN 12", "PU-RT": "W-MAN 12",
+    "PU-6": "W-MAN 13", "PU-7": "W-MAN 14", "PU-CO": "W-MAN 16 y 17", "PU-TP": "W-MAN 18", "PU-CI": "W-CAR 2.1",
+    "PU-CR": "W-CAR 3", "PU-CP": "W-CAR 4", "PU-NC5": "W-CAR 5", "PU-K1": "W-CAR 6", "PU-C6": "W-CAR 6",
+    "PU-F7": "W-CAR 7", "PU-C7": "W-CAR 7", "PU-NC7": "W-CAR 7", "PU-CK": "W-CAR 8.1", "PU-JP": "W-CAR 8",
+    "PU-S8": "W-CAR 8", "PU-10": "W-CAR 9 y 10", "PU-11": "W-CAR 11", "PU-RP": "W-CAR 12", "PU-12": "W-CAR 12",
+    "PU-14": "W-CAR 14", "PU-15": "W-CAR 15", "PU-NC15": "W-CAR 15", "PU-16R": "W-CAR 16", "PU-16X": "W-CAR 16",
+    "PU-16L": "W-CAR 16",
+}
+
+
 def pulmones():
-    """Cobertura de los pulmones principales con carros FCHP20505 (W-MAN): cuántos carros hacen falta."""
-    t = tasas()
-    filas = [
-        # pulmón, tasa (u/h), cobertura (h), u por carro, criterio
-        ("PU-1 / PU-D desarrollos 2,5-10 kg y carros", t["2,5-10 kg"] + t["carros"], 8.0, 60,
-         "La guillotina corta por tandas de un formato: 1 turno de consumo"),
-        ("PU-T1 / PU-T2 tramos 1 kg (láser)", t["1 kg"], 0.5, 150, "Carro «en llenado» y «vacío» (W-MAN)"),
-        ("PU-FO / PU-CU cúpulas y fondos (pares)", t["1 kg"] + t["2,5-10 kg"], 4.0, 400,
-         "Cambio de troquel de la prensa (≈ 30 min) cada medio turno: 3 a 5 carros (W-MAN)"),
-        ("PU-CC / PU-CC2 cúpulas con cuello", t["1 kg"] + t["2,5-10 kg"], 1.0, 110,
-         "Carro en llenado en la soldadura de cuello y en consumo en las circunferenciales"),
-        ("PU-6 / PU-7 probados y secos", t["1 kg"] + t["2,5-10 kg"], 0.75, 110,
-         "Secado y granallado sin detener la PH"),
-        ("PU-TP terminados pintados a la carga", t["1 kg"] + t["2,5-10 kg"], 0.5, 110, "Carga de polvo por lote"),
-    ]
+    """Pulmones e intermedios del plano: sólo los que figuran en W-MAN y W-CAR, con su capacidad (carros o
+    unidades de manejo) y su superficie en el plano. Los PU-F1 a F5 son los FCHP entre los pasos 13 a 17
+    (W-MAN: un carro entre cada par de puestos)."""
     out = []
-    for nom, tasa, cob, upc, crit in filas:
-        u = tasa * cob
-        out.append({"pulmon": nom, "tasa": tasa, "cob_h": cob, "u": u, "carros": math.ceil(u / upc) + 1,
-                    "criterio": crit})
+    for p in L.PULMONES:
+        fuente = FUENTE_PULMON.get(p.cod) or ("W-MAN 13 a 17 (un carro entre cada par)" if p.cod.startswith("PU-F")
+                                               else "")
+        out.append({"pulmon": p.cod, "guarda": p.guarda, "viene": p.viene, "va": p.va, "carros": p.carros,
+                    "m2": p.rect.area, "fuente": fuente})
     return out
 
 
 def riel():
     """Riel aéreo de pintura (W-MAN): cuelga en la detección y descuelga en la descarga."""
     t = tasas()
-    return {"cargado_m": largo(L.RIEL), "paralelo_m": largo(L.RIEL_2), "retorno_m": largo(L.RIEL_RET),
+    return {"cargado_m": largo(L.RIEL), "retorno_m": largo(L.RIEL_RET),
             "u_h": t["1 kg"] + t["2,5-10 kg"]}
 
 
@@ -360,7 +367,7 @@ def extintores():
 
 # ================================================================ 6. iluminación (método de los lúmenes)
 LUX = {  # nivel medio de servicio (lx): docx Dimensionamiento Técnico / Dec. 351/79 anexo IV
-    "MP": 150, "PROD": 300, "PINT": 500, "TERM": 300, "PT": 150, "CAL": 750, "AUX": 300, "RC": 300,
+    "MP": 150, "PROD": 300, "PINT": 500, "TERM": 300, "PT": 150, "CAL": 750, "AUX": 300,
 }
 LUX_ESPECIAL = {"B09": 750, "C06": 500, "C04": 500, "C05": 500, "A06": 500, "B03": 500, "B06": 500}
 LUMINARIA = {"flujo_lm": 21000, "potencia_w": 150, "UF": 0.65, "MF": 0.80}
@@ -384,13 +391,12 @@ ERM = (88.6, 5.5)
 
 
 # aire comprimido (aéreo, +4,5 m): bajada de la sala SC, anillo sobre la banda norte y el pasillo central y
-# ramales a carros (PO-C), terminación (AT2), recargas (RC-N) y almacén de MP
+# ramales a la carga de carros (13), terminación (AT2) y almacén de MP
 AIRE = [
     [(57.0, 41.0), (57.0, 39.8), (87.0, 39.8), (87.0, 19.6), (24.6, 19.6), (24.6, 39.8), (57.0, 39.8)],
     [(24.6, 19.6), (2.0, 19.6)],
-    [(19.6, 19.6), (19.6, 6.7), (41.0, 6.7)],
+    [(24.45, 19.6), (24.45, 5.0)],
     [(54.3, 19.6), (54.3, 14.3), (74.0, 14.3)],
-    [(11.6, 19.6), (11.6, 1.0)],
 ]
 
 
@@ -446,20 +452,21 @@ def resumen():
 
 # ================================================================ manejo de materiales: métodos y tiempos
 # velocidad media (m/s, ida cargado y vuelta vacío) y tiempo fijo por viaje (min: tomar, dejar, maniobrar)
-# W-MAN: un solo autoelevador Heli CPCD50 de 5 t para la MP de manuales y de carros; transpaleta eléctrica (y una
-# manual de respaldo) del embalaje a la envolvedora y al PT, donde el autoelevador de PT ubica el pallet en el rack
-MEDIOS = {"Autoelevador MP y carros": (1.5, 1.5), "Autoelevador PT": (1.5, 1.5), "Transpaleta": (0.8, 1.0),
-          "Carro a mano": (0.8, 0.5), "Zorra milk run": (0.8, 0.5)}
+# W-MAN y W-CAR: un solo autoelevador Heli CPCD50 de 5 t, compartido por manuales y carros (MP, PT, muelle y depósito);
+# transpaleta eléctrica (y una manual de respaldo) del embalaje a la envolvedora y al pie del rack de PT
+MEDIOS = {"Autoelevador": (1.5, 1.5), "Transpaleta": (0.8, 1.0),
+          "Carro a mano": (0.8, 0.5), "A mano": (0.8, 0.5), "Zorra milk run": (0.8, 0.5)}
 MIN_TURNO = 480.0 * 0.85          # 8 h con 15 % de suplementos (OIT)
 # W-MAN, día pico: cilindros por formato y lo que entra en los dos planos de arriba de un FCHP20505
 PICO_DIA = {"1 kg": 1216, "2,5 kg": 78, "5 kg": 350, "10 kg": 21}
 FCHP = {"1 kg": 256, "2,5 kg": 80, "5 kg": 48, "10 kg": 36}
 CARROS_DIA = round(sum(PICO_DIA[k] / FCHP[k] for k in PICO_DIA))   # carros FCHP por tramo y por día
-# carro de abastecimiento (W-CAR tabla 5): AL-CA -> AN -> PO-3 -> PO-7 -> PO-2 -> PO-1 -> PC -> AC -> AT2
-# (terminación) -> PC -> PO-CW -> PO-C (carros) -> PC -> A1 -> AL-CA
-MILK_RUN = [(1.6, 42.0), (4.1, 42.0), (4.1, 39.7), (24.6, 39.7), (24.6, 39.8), (61.6, 39.8), (61.6, 34.1),
-            (40.5, 34.1), (40.5, 21.0), (54.3, 21.0), (54.3, 14.3), (74.0, 14.3), (54.3, 14.3), (54.3, 21.0),
-            (19.6, 21.0), (19.6, 6.7), (40.5, 6.7), (19.6, 6.7), (19.6, 21.0), (4.1, 21.0), (4.1, 42.0), (1.6, 42.0)]
+# carro de abastecimiento (W-CAR tabla 5): AL-CA -> PC -> A3 -> PO-3 -> PO-7 -> PO-2 -> PO-1 -> PC -> AC -> AT2
+# (terminación) -> PC -> calle T -> T-PT (carga y armado de carros, 13) -> calle T -> PC -> AL-CA
+MILK_RUN = [(1.6, 21.0), (22.0, 21.0), (22.0, 39.8), (61.6, 39.8), (61.6, 34.1), (37.5, 34.1), (37.5, 21.0),
+            (54.3, 21.0), (54.3, 14.3), (74.0, 14.3), (54.3, 14.3), (54.3, 21.0), (52.0, 21.0), (52.0, 4.0),
+            (31.0, 4.0), (52.0, 4.0), (52.0, 21.0), (1.6, 21.0)]
+BARRAS_DIA = 5.6 + 1.0 + 0.6 + 1.4  # W-CAR 8.1, pico: barras de caño 1" y 1¼" y trefiladas 3/4" y 1" por día
 
 
 def _largo(pts):
@@ -493,48 +500,52 @@ def manejo():
     atados = _xalm_dia("Caño c/costura")                          # atados de 16 barras (W-MAN: 3,3 por día)
     filas = [
         # unidad de carga, medio, de -> a, viajes/día, m
-        ("Paquete de hojas ≤ 2 t", "Autoelevador MP y carros", "Alero -> P1 -> A1 -> cuarentena", laf + lac,
+        ("Paquete de hojas ≤ 2 t", "Autoelevador", "Alero -> P1 -> A1 -> cuarentena", laf + lac,
          _lf("Recepción")),
-        ("Paquete aprobado", "Autoelevador MP y carros", "Cuarentena -> A1 -> AN -> A2 -> AL-CH", laf, _lf("Hojas aprobadas")),
-        ("Paquete LAF a la guillotina y vuelta", "Autoelevador MP y carros", "AL-CH -> A2, AN y A3 -> mesa elevadora",
+        ("Paquete aprobado", "Autoelevador", "Cuarentena -> A1 -> AN -> A2 -> AL-CH", laf, _lf("Hojas aprobadas")),
+        ("Paquete LAF a la guillotina y vuelta", "Autoelevador", "AL-CH -> A2, AN y A3 -> mesa elevadora",
          2 * laf,
          _lf("Paquete a la mesa")),
-        ("Paquete LAC a la guillotina y vuelta", "Autoelevador MP y carros", "AL-CC -> mesa elevadora", 2 * lac,
+        ("Paquete LAC a la guillotina y vuelta", "Autoelevador", "AL-CC -> mesa elevadora", 2 * lac,
          _lf("Paquete LAC")),
-        ("Rollo de fleje 0,5-1,9 t", "Autoelevador MP y carros", "Porta-flejes -> AN -> desbobinador", rollos, _lf("Rollo de fleje")),
-        ("Atado de caños Ø76,2", "Autoelevador MP y carros", "Cantiléver -> cajón del láser (pluma)", atados,
+        ("Rollo de fleje 0,5-1,9 t", "Autoelevador", "Porta-flejes -> AN -> desbobinador", rollos, _lf("Rollo de fleje")),
+        ("Atado de caños Ø76,2", "Autoelevador", "Cantiléver -> cajón del láser (pluma)", atados,
          _lf("Atado de caños")),
-        ("Barras y caños de carros", "Carro a mano", "Cantiléver -> PC -> PO-CW -> rack 8.1 (porta-barras)",
-         CARROS_ROD_DIA / 10,
-         _lf("Barras y caños")),
+        ("Barra de 6 m de carros (≤ 23,9 kg)", "A mano", "Cantiléver -> PP -> rack del puesto 8.1 (de a una, W-CAR)",
+         BARRAS_DIA, _lf("Barras y caños")),
         ("Casquetes y cuplas (carros 1 y 2)", "Carro a mano", "AL-CQ -> puestos 6 y 7", 2, _lf("Casquetes y cuplas")),
-        ("Contenedor de orillas (guillotina)", "Autoelevador MP y carros", "Guillotina -> volquete (P1)", 0.2,
+        ("Contenedor de orillas (guillotina)", "Autoelevador", "Guillotina -> volquete (P1)", 0.2,
          _lf("Orillas de la guillotina")),
-        ("Contenedor de recortes (láser)", "Autoelevador MP y carros", "Láser -> A3 -> volquete (P1)", 0.2,
+        ("Contenedor de recortes (láser)", "Autoelevador", "Láser -> A3 -> volquete (P1)", 0.2,
          _lf("Recortes del láser")),
         ("Contenedor del esqueleto (ruedas)", "Carro a mano", "Prensa -> PO-3 -> AN -> volquete", 1.0,
          _lf("Esqueleto de la prensa")),
-        ("Big bag de polvo 1 t / caja de pintura", "Autoelevador PT", "Muelle P3 -> AT -> depósito DP", 1.7,
-         _lf("Big bags de polvo")),
-        ("Big bag de ABC 60", "Autoelevador PT", "DP -> estación de la carga (19)", BB_60, _lf("Big bag de ABC 60")),
-        ("Big bag de ABC 90", "Transpaleta", "DP -> AC -> PC -> PO-CN -> carros (C12)", BB_90, _lf("Big bag de ABC 90")),
+        ("Big bag de polvo 1 t / pintura / embalaje", "Autoelevador", "P1 -> cuarentena -> PC -> calle T -> DP y AL-EB",
+         1.7, _lf("Polvo y pintura en big bags")),
+        ("Big bag de ABC 60", "Autoelevador", "DP -> estación de la carga (19)", BB_60, _lf("Big bag de ABC 60")),
+        ("Big bag de ABC 90", "Autoelevador", "DP -> AT -> calle T -> T-PT -> bastidor de carros (13)", BB_90,
+         _lf("Big bag de ABC 90")),
         ("Caja de pintura en polvo", "Transpaleta", "DP -> AC -> PC -> PO-PI -> tolvas", 0.6, _lf("Pintura en polvo")),
         ("Pallet de cilindros vacíos", "Transpaleta", "Mesa de vacíos -> envolvedora", 8 * VACIOS,
          _lf("Pallet de cilindros a la")),
         ("Pallet de terminados", "Transpaleta", "Mesa de terminados -> envolvedora", 8 * (1 - VACIOS),
          _lf("Pallet de terminados a la")),
-        ("Pallet de PT", "Transpaleta", "Envolvedora -> AT -> T2 (pie del rack)", 8, _lf("Pallets al almacén")),
-        ("Pallet de PT", "Autoelevador PT", "Ubica en el rack; rack -> T1 -> EX -> muelle P3", 8, _lf("Expedición")),
-        ("Pallet de revendidos", "Autoelevador PT", "Muelle P3 -> S4 -> muelle P3", 0.2,
-         _lf("Revendidos al rack") + _lf("Revendidos a expedición")),
-        ("Carro rodante (al pintor y terminado)", "Carro a mano", "C-PP -> PO-C -> EX -> rampa del muelle P3",
-         2 * CARROS_ROD_DIA, _lf("Carros a pintura")),
-        ("Carro rodante pintado (rueda)", "Carro a mano", "Muelle P3 -> EX -> PO-CN -> C-T", CARROS_ROD_DIA,
+        ("Pallet de PT", "Transpaleta", "Envolvedora -> AT -> calle T -> T-PT (pie del rack)", 8,
+         _lf("Pallets al almacén")),
+        ("Pallet de PT", "Autoelevador", "Ubica en el rack; rack -> T-PT -> calle T -> muelle P3", 8, _lf("Expedición")),
+        ("Pallet de revendidos", "Autoelevador", "S4 -> calle T -> muelle P3", 0.2, _lf("Revendidos a expedición")),
+        ("Carro rodante seco (rueda)", "Carro a mano", "Secado -> pulmón de despacho PU-11", CARROS_ROD_DIA,
+         _lf("Secado -> pulmón de despacho")),
+        ("Carro rodante al pintor (rueda)", "Carro a mano", "PU-11 -> senda del PC -> calle T -> muelle P3",
+         CARROS_ROD_DIA, _lf("Lote aprobado a pintura")),
+        ("Carro rodante pintado (rueda)", "Carro a mano", "Muelle P3 -> calle T -> cambio de juego (12)", CARROS_ROD_DIA,
          _lf("Carros pintados")),
-        ("Carro rodante terminado (rueda)", "Carro a mano", "C-T -> PO-C -> C-PP", CARROS_ROD_DIA,
-         _lf("Carro terminado al")),
-        ("Carro de kits (≈ 10 kits)", "Carro a mano", "Puesto 8.1 -> PO-C -> puesto 8", CARROS_ROD_DIA / 10,
-         _lf("Kits del puesto")),
+        ("Carro rodante terminado (rueda)", "Carro a mano", "13 -> etiquetado (15) -> retenidos (16)", CARROS_ROD_DIA,
+         _lf("Carro terminado al") + _lf("Etiquetado a retenidos")),
+        ("Carro rodante liberado (rueda)", "Carro a mano", "Retenidos -> liberados -> calle T -> muelle P3",
+         CARROS_ROD_DIA, _lf("Lote aceptado") + _lf("Despacho de carros liberados")),
+        ("Carro de kits (≈ 10 kits)", "Carro a mano", "Puesto 8.1 -> puesto 8", CARROS_ROD_DIA / 10,
+         _lf("Kits del 8.1")),
         ("FCHP de cuerpos 2,5-10 kg (63 a 120 u)", "Carro a mano", "PU-V3 -> 9 encastre", 6, _lf("Cuerpos 2,5-10")),
         ("Carro de 12 cajones de tramos (420 u)", "Carro a mano", "PU-T1 -> PU-T2 (encastre)", 3, _lf("Carro de tramos")),
         ("Carro de 12 cajones de fondos", "Carro a mano", "PU-K -> zona de fondos", 2, _lf("Carro de fondos")),
@@ -560,19 +571,18 @@ def manejo():
     return {"filas": out, "min": uso, "ocup": ocup, "carros_dia": CARROS_DIA}
 
 
+_RECEP_P1 = sum(n for g, t, n, v, p, d in ENTREGAS if p.startswith("Alero"))
 PORTONES = [
     # portón, qué pasa, vehículo, frecuencia (2035), horario
-    ("P1 + alero", "Entran hojas, flejes, caños y barras, casquetes, insumos de montaje, alambre y granalla (una sola "
-     "recepción con cuarentena, W-MAN); sale el scrap al volquete", "Semi / chasis",
-     "≈ 2,4 camiones por semana", "7 a 10 h"),
-    ("Jaula JG (PG)", "Cambio de packs de Arcal 21 y N₂ y de cilindros de CO₂ de recargas desde el patio norte",
-     "Chasis 2 ejes", "≈ 0,6 por semana", "7 a 10 h"),
-    ("P2", "Recargas: los utilitarios dejan y retiran equipos de clientes y traen insumos de recargas",
-     "Utilitarios de reparto (8)", "2 vueltas por día", "Milk run mañana y tarde"),
-    ("P3 (muelle)", "Sale PT y carros (terminados y al pintor); entran revendidos, polvo, pintura en polvo y "
-     "embalaje", "Semi / chasis", "7 PT + ≈ 3 recepciones por semana",
-     "Recepción 7 a 10 h; expedición 13 a 17 h"),
-    ("PP-1", "Personal: vestuarios <-> senda de la nave", "A pie", "63 personas, 2 turnos", "Entrada y salida"),
+    ("P1 (7,0 m) + alero", "Entra toda la MP: hojas, flejes, caños y barras de 6 m (atravesados), casquetes, insumos, "
+     "alambre, granalla, polvo, pintura, embalaje y revendidos (una sola recepción con cuarentena); sale el scrap",
+     "Semi / chasis", f"≈ {_RECEP_P1 / SEMANAS:.1f} camiones por semana".replace(".", ","), "7 a 10 h"),
+    ("Jaula JG (PG)", "Cambio de packs de Arcal 21 y N₂ desde el patio norte", "Chasis 2 ejes", "≈ 0,6 por semana",
+     "7 a 10 h"),
+    ("P3 (muelle)", "Sale el PT (pallets y carros liberados) y los carros al pintor; vuelven los carros pintados. "
+     "No entra MP", "Semi / chasis / utilitarios de reparto", "7 PT + 2 viajes de carros por semana (W-CAR 11)",
+     "13 a 17 h"),
+    ("PP-1", "Personal: vestuarios <-> senda de la nave", "A pie", "44 personas, 2 turnos", "Entrada y salida"),
 ]
 
 
@@ -671,7 +681,7 @@ SECCIONES_XALM = [
     # sección de X-ALM (hoja Resumen), sectores del plano, cómo se guarda en el plano
     ("Chapa y fleje (manuales)", ("AL-CH", "AL-FL"), "hojas a piso (2 alturas); fleje en porta-flejes de 3 niveles"),
     ("Calle de chapa (carros)", ("AL-CC",), "pilas a piso de 2 alturas, acceso de costado desde A2"),
-    ("Cantilever de caños y barras", ("AL-CT",), "cantiléver de 3 niveles frente a A3"),
+    ("Cantilever de caños y barras", ("AL-CT",), "cantiléver de 3 niveles al fondo de A1, frente a P1"),
     ("Rack de casquetes y cuplas (carros)", ("AL-CQ",), "rack de 2 módulos × 4 niveles frente a AN"),
     ("Insumos de montaje (manuales)", ("AL-MM",), "rack de 4 módulos × 4 niveles frente a A1"),
     ("Rack de insumos de montaje (carros)", ("AL-MC",), "rack de 1 módulo × 4 niveles frente a A1"),
@@ -680,10 +690,9 @@ SECCIONES_XALM = [
     ("Depósito de polvo químico", ("DP",), "local cerrado y seco junto a la carga"),
     ("Embalaje", ("AL-EB",), "rack de 6 módulos × 4 niveles sobre AT"),
     ("Almacén de producto terminado", ("S4",), "revendidos: rack de 2 módulos × 4 niveles"),
-    ("Insumos de recargas", ("RC-IN",), "rack de recargas (fuera de línea)"),
     ("Jaula de gases", ("JG",), "jaula exterior con packs y manifold (W-MAN)"),
-    ("Procesado: cuerpos cortados y cúpulas y fondos embutidos", ("AL-PR", "AL-PT", "AL-PK", "PU-FO", "PU-CU"),
-     "pallets a piso junto a la guillotina, al láser y al embutido"),
+    ("Procesado: cuerpos cortados y cúpulas y fondos embutidos", ("PU-FO", "PU-CU"),
+     "sólo los pulmones de W-MAN (zonas de fondos y de cúpulas); el resto del procesado no se agrega (v9)"),
 ]
 
 

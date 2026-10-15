@@ -27,7 +27,8 @@ def main():
     # 1. cruces entre flujos de MP, SE y PT
     fl = [(f.cat, f.rot, LineString(f.pts)) for f in L.FLUJOS if f.cat in ("MP", "SE", "PT")]
     muelle = caja(next(s_.rect for s_ in L.SECTORES if s_.cod == "EXP"))
-    n = maniobras = 0
+    n = maniobras = declarados = 0
+    sendas = {c_: caja(r_).buffer(0.05) for c_, r_, _n in L.SENDAS}
     for (c1, r1, a), (c2, r2, b) in itertools.combinations(fl, 2):
         if not a.intersects(b):
             continue
@@ -42,12 +43,16 @@ def main():
                 maniobras += 1          # un solo autoelevador sirviendo su almacén: no es cruce de tránsito
                 continue
             if muelle.buffer(0.05).contains(q):
-                maniobras += 1          # muelle único: recepción 7 a 10 h y expedición 13 a 17 h, no coinciden
+                maniobras += 1          # calle T: el único autoelevador lleva MP al depósito (mañana) y PT (tarde)
+                continue
+            if any(((r1.startswith(k1) and r2.startswith(k2)) or (r1.startswith(k2) and r2.startswith(k1)))
+                   and sendas[sx].contains(q) for k1, k2, sx, _m in getattr(L, "CRUCES_DECLARADOS", [])):
+                declarados += 1         # cruce declarado, a mano y dentro de su senda
                 continue
             n += 1
             err(f"cruce de flujos: {c1} {r1} x {c2} {r2}")
-    print(f"cruces entre flujos: {n} (más {maniobras} maniobras: autoelevador en su almacén y muelle único P3 "
-          "con recepción y expedición en horarios distintos)")
+    print(f"cruces entre flujos: {n} (más {maniobras} maniobras del único autoelevador en su almacén y en la calle T, "
+          f"y {declarados} cruces declarados a mano dentro de su senda)")
     # 2. hilos de personal: sólo cruzan flujos dentro de sendas
     sendas = [caja(r) for c, r, t in L.SENDAS]
     m = 0
@@ -108,6 +113,7 @@ def main():
         ab_muro.append(sg.box(x, y - 0.3, x + w, y + 0.3) if o == "h" else sg.box(x - 0.3, y, x + 0.3, y + w))
     fondos = getattr(L, "FONDOS", {})
     recorridos = [LineString(f.pts) for f in L.FLUJOS] + [LineString(m_) for _n, m_, _b in L.HILOS]
+    recorridos += [LineString([(a_, b_), (c_, d_)]) for _n, _m, br_ in L.HILOS for a_, b_, c_, d_ in br_]
     n_ext = 0
     for i, p in enumerate(L.PASILLOS):
         r = p.rect
@@ -125,7 +131,7 @@ def main():
             if any(seg.intersects(g) for g in recorridos):
                 continue                     # la calle entra a su destino abierto (pintura, puesto): pasa el flujo
             err(f"la calle {p.cod} termina en su extremo {lado} sin otra calle ni puerta")
-    print(f"extremos de calle revisados: {n_ext} ({len(fondos)} fondos de calle de rack declarados)")
+    print(f"extremos de calle revisados: {n_ext} ({len(fondos)} fondos de calle declarados con su motivo)")
     # 4e. recorridos del personal y flujos de material que atraviesan una máquina que no es su origen o destino
     n_atr = 0
     tramos_h = []
@@ -183,13 +189,36 @@ def main():
     for h_ in huecos:
         perim = perim.difference(h_)
     lineas = [(f.cat, f.rot, f.pts) for f in L.FLUJOS if f.cat in ("MP", "SE", "PT", "SCRAP")]
-    lineas += [("SE", "recorrido de recargas", L.RC_FLUJO)] + [("SE", "rama de PH de recargas", t)
-                                                                for t in getattr(L, "RC_FLUJO_PH", [])]
     for cat, rot, pts in lineas:
         if LineString(pts).intersects(perim):
             n_muro += 1
             err(f"el flujo {cat} {rot} atraviesa el muro exterior fuera de un portón o puerta")
     print(f"flujos y recorridos a través de muros: {n_muro}")
+    # 4f''. todo local cerrado, anexo o construcción del terreno tiene al menos una puerta o portón
+    recintos = {s_.cod: s_.rect for s_ in L.LOCALES}
+    recintos.update({c: next(s_.rect for s_ in L.SECTORES if s_.cod == c) for c in L.CERRADOS})
+    recintos.update({s_.cod: s_.rect for s_ in L.ANEXOS})
+    recintos.update({c: r for c, n, r, t in L.EXTERIOR if t in ("gas", "garita", "elec", "incendio", "efluentes")})
+    vanos = [LineString([(x, y), (x + w, y)]) if o == "h" else LineString([(x, y), (x, y + w)])
+             for x, y, w, o, ab in L.PUERTAS_INT]
+    for c, ab in L.CERRADOS.items():
+        r = recintos[c]
+        for lado, a_, b_, t in ab:
+            if t in ("puerta", "porton", "cortina"):
+                vanos.append({"S": LineString([(a_, r.y0), (b_, r.y0)]), "N": LineString([(a_, r.y1), (b_, r.y1)]),
+                              "O": LineString([(r.x0, a_), (r.x0, b_)]), "E": LineString([(r.x1, a_), (r.x1, b_)])}[lado])
+    for pu in L.PUERTAS:
+        vanos.append({"S": LineString([(pu.a, 0), (pu.b, 0)]), "N": LineString([(pu.a, L.NAVE_A), (pu.b, L.NAVE_A)]),
+                      "O": LineString([(0, pu.a), (0, pu.b)]), "E": LineString([(L.NAVE_L, pu.a), (L.NAVE_L, pu.b)])}[pu.muro])
+    vanos += [LineString([a_, b_]) for c, a_, b_, t, u in L.PUERTAS_ANEXOS]
+    sin_puerta = []
+    for c, r in recintos.items():
+        borde = sg.box(r.x0, r.y0, r.x1, r.y1).exterior
+        if not any(v.distance(borde) < 0.25 and v.intersects(sg.box(r.x0 - 0.3, r.y0 - 0.3, r.x1 + 0.3, r.y1 + 0.3))
+                   for v in vanos):
+            sin_puerta.append(c)
+            err(f"{c} no tiene puerta")
+    print(f"locales, anexos y construcciones con puerta: {len(recintos) - len(sin_puerta)} de {len(recintos)}")
     # 4g. a lo sumo 4 portones en la nave (uno por frente logístico)
     portones = [pu.cod for pu in L.PUERTAS if pu.tipo in ("porton", "muelle")]
     print(f"portones de la nave: {len(portones)} ({', '.join(portones)})")
@@ -279,6 +308,8 @@ def main():
             if caja(mb.rect, 0.01).intersects(caja(p.rect, 0.01)):
                 err(f"mueble {mb.tipo} {mb.rect} pisa el pulmón {p.cod}")
         for p in L.PASILLOS:
+            if mb.tipo == "rampa":
+                continue                # rampa niveladora del muelle: piso transitable al pie del portón
             if caja(mb.rect, 0.02).intersects(caja(p.rect, 0.02)):
                 err(f"mueble {mb.tipo} {mb.rect} invade el pasillo {p.cod}")
     for a, b in itertools.combinations(L.MOBILIARIO, 2):

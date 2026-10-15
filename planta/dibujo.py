@@ -579,6 +579,9 @@ def pulmones(pl, h=1.5):
         pl.rect(r, "A-PULMON")
         pl.texto(p.cod, (r.x0 + 0.15, r.y1 - 0.15), h * 0.7, A.TOP_LEFT, "A-PULMON")
         n = max(1, p.carros)
+        if n > 12:
+            _pulmon_grilla(pl, p, n, S)
+            continue
         horiz = p.orient == "h"
         largo = (r.w if horiz else r.h) - 0.3
         paso_ = largo / n
@@ -598,9 +601,30 @@ def pulmones(pl, h=1.5):
             m.fin()
 
 
+def _pulmon_grilla(pl, p, n, S):
+    """Pulmón de muchos carros rodantes (W-CAR: 0,5 m² por carro): filas de círculos (cilindro visto desde arriba)."""
+    r = p.rect
+    w, hh = r.w - 0.3, r.h - 0.6
+    paso_ = math.sqrt(w * hh / n)
+    while True:
+        nc, nf = max(1, int(w / paso_)), max(1, int(hh / paso_))
+        if nc * nf >= n:
+            break
+        paso_ *= 0.97
+    k = 0
+    for j in range(nf):
+        for i in range(nc):
+            if k >= n:
+                break
+            c = (r.x0 + 0.15 + paso_ * (i + 0.5), r.y0 + 0.15 + paso_ * (j + 0.5))
+            pl.circulo(c, paso_ * 0.36, "A-PULMON")
+            k += 1
+    pl.texto(f"{n} carros", (r.x1 - 0.15, r.y1 - 0.15), 1.1, A.TOP_RIGHT, "A-PULMON")
+
+
 def transportador(pl):
     """Riel aéreo de pintura (+4,0 m, W-MAN): viga en trazos, eje, ganchos cada 1,2 m y ruedas de desvío; tramo
-    cargado (detección -> hornos -> descarga), horno de curado 2 en paralelo y retorno de ganchos vacíos."""
+    cargado (detección -> horno -> cabina -> horno -> descarga: un solo horno, dos pasadas) y retorno de vacíos."""
     for tramo, ganchos in ((L.RIEL, True), (getattr(L, "RIEL_2", []), True), (getattr(L, "RIEL_RET", []), False)):
         if len(tramo) < 2:
             continue
@@ -886,9 +910,8 @@ def _lineas(g):
 
 
 def vehiculos(pl):
-    """Flota calculada (C.manejo): 2 autoelevadores (MP y carros, W-MAN; PT y muelle) y 2 transpaletas."""
+    """Flota calculada (C.manejo): 1 autoelevador para toda la planta (W-MAN y W-CAR) y 2 transpaletas."""
     from . import simbolos as S
-    S.autoelevador(pl, 13.1, 31.0, 270)                       # MP y carros: en A2, con un paquete de hojas
-    S.autoelevador(pl, 50.75, 13.0, 90)                       # PT: en la calle T2 del rack
+    S.autoelevador(pl, 13.1, 31.0, 270)                       # único: en A2, con un paquete de hojas
     S.transpaleta(pl, 54.3, 17.0, 90)                         # AC: big bags y pintura en polvo del depósito
     S.transpaleta(pl, 64.0, 3.1, 0)                           # AT: pallets de la envolvedora y del embalaje

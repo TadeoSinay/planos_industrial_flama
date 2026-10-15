@@ -32,6 +32,13 @@ def salida(pl, p, d, texto="SALIDA"):
 EXT_ANEXOS = [(-0.6, 21.6), (-5.6, 30.0), (-12.0, 23.8), (-17.4, 32.0), (41.0, 47.0), (52.0, 46.4)]
 
 
+def _ofi():
+    """m² de las oficinas de planta (SO) y de administración (E), dentro de la nave."""
+    cods = ("MT", "PÑL", "QR", "OF-C", "Q", "PCP", "SUP")
+    return (sum(s.rect.area for s in L.SECTORES if s.cod in cods)
+            + sum(s.rect.area for s in L.LOCALES if s.cod.startswith("AD-")))
+
+
 def _ext(cod):
     return next(r for c, n, r, t in L.EXTERIOR if c == cod)
 
@@ -139,13 +146,13 @@ def planta(pl, xa, xb, y0, y1):
 # ================================================================ lámina única
 def fl_pi_01(doc, ox, n=1):
     h = hoja(doc, "2A0", ox, "Plano formal: planta general acotada",
-             "Nave, servicios y recargas con equipos y mobiliario; implantación y corte", "FL_PI_01", 1, TOT,
+             "Nave, servicios, oficinas y administración con equipos y mobiliario; implantación y corte", "FL_PI_01", 1, TOT,
              "1:100", "Plano de planta", "Estructura metálica / mampostería")
     xa, xb, y0, y1 = -31.0, 97.0, -13.0, 57.0
     k = 100
     pl = D.Plano(h, k, (xa, y0), (h.fx0 + 4, h.fy1 - 34 - (y1 - y0) * 1000 / k))
     titulo_hoja(pl, h, "FL_PI_01 - PLANO GENERAL FORMAL NORMALIZADO: PLANTA ACOTADA 1:100",
-                "Nave 88 × 44 m, servicios al personal, recargas y sala técnica, con cada máquina, puesto, "
+                "Nave 88 × 44 m (sin recargas), servicios al personal, oficinas y sala técnica, con cada máquina, puesto, "
                 "pulmón, mueble y artefacto a escala. Cotas en metros. Ejes 1 a 12 cada 8,00 m y A-B-C.")
     planta(pl, xa, xb, y0, y1)
     PL.norte(pl, (xb - 5.0, y1 - 6.0))
@@ -169,9 +176,9 @@ def fl_pi_01(doc, ox, n=1):
              for r in sorted(G["sectores"], key=lambda r: r["sector"]) if r["area"]]
     y = pl.tabla(xt, y - 8, cols, filas, 3.3, 1.5, f"Guerchet por sector: St = Ss + Sg + Se, k = {f(G['k'], 2)}")
     pl.parrafo(["Sg = Ss × N (lados de operación); Se = k (Ss + Sg), k = h móviles / (2 h fijos)",
-                f"= 1,65 / (2 × {f(G['h_fijo'], 2)}). La holgura incluye pulmones, calles y estanterías:",
-                "donde es grande (N2, N3, AL-3, S-T) queda espacio liberado por las medidas reales",
-                "de las cotizaciones, para debatir (achicar la nave o reservar ampliación)."], xt, y - 4, 1.9)
+                f"= 1,65 / (2 × {f(G['h_fijo'], 2)}). La holgura incluye los pulmones de los Word (W-MAN,",
+                "W-CAR), calles y estanterías; Guerchet no los cuenta. En los sectores de carros 11 y 16 el área",
+                "es casi toda pulmón (120 y 180 carros a 0,5 m² por carro, W-CAR)."], xt, y - 4, 1.9)
     # ---- franja inferior: implantación, corte, superficies y locales
     yb = pl.P(0, y0)[1] - 8
     pi = D.Plano(h, 500, (L.TERRENO[0], L.TERRENO[1]), (h.fx0 + 12, h.fy0 + 18))
@@ -181,14 +188,16 @@ def fl_pi_01(doc, ox, n=1):
     x0_, y0_, x1_, y1_ = L.TERRENO
     sup_t = (x1_ - x0_) * (y1_ - y0_)
     nave = L.NAVE_L * L.NAVE_A
-    anex = sum(s.rect.area for s in L.ANEXOS if s.cod != "RC")
+    anex = sum(s.rect.area for s in L.ANEXOS)
+    sv_a = next(s.rect.area for s in L.ANEXOS if s.cod == "SV")
+    st_a = next(s.rect.area for s in L.ANEXOS if s.cod == "ST")
     cub = nave + anex + _ext("PL-N").area
     cols = [("Concepto", 64, "l"), ("m²", 20, "r"), ("%", 14, "r")]
     filas = [["Terreno 170,00 × 125,00", f(sup_t, 0), "100,0"],
              ["Nave industrial 88,00 × 44,00", f(nave, 0), f(nave / sup_t * 100, 1)],
-             ["  incluye recargas (ángulo SO)", f(L.ANEXOS[1].rect.area, 0), ""],
-             ["Servicios al personal y oficinas", f(L.ANEXOS[0].rect.area, 0), f(L.ANEXOS[0].rect.area / sup_t * 100, 1)],
-             ["Sala técnica norte", f(L.ANEXOS[2].rect.area, 0), f(L.ANEXOS[2].rect.area / sup_t * 100, 1)],
+             ["  incluye oficinas de planta (SO) y administración (E)", f(_ofi(), 0), ""],
+             ["Servicios al personal", f(sv_a, 0), f(sv_a / sup_t * 100, 1)],
+             ["Sala técnica norte", f(st_a, 0), f(st_a / sup_t * 100, 1)],
              ["Alero de descarga de MP", f(_ext("PL-N").area, 0), f(_ext("PL-N").area / sup_t * 100, 1)],
              ["Superficie cubierta total", f(cub, 0), f(cub / sup_t * 100, 1)],
              ["FOS = cubierta / terreno", "", f(cub / sup_t, 2)]]
@@ -199,7 +208,7 @@ def fl_pi_01(doc, ox, n=1):
                 "zócalo de bloque 2,40 m y chapa; anexos de mampostería. Pisos de hormigón llaneado con",
                 "demarcación IRAM 10005; sanitarios con revestimiento hasta 2,10 m (Dec. 351/79 cap. 5)."],
                xs2, y2 - 3, 2.0)
-    # locales (servicios, recargas y apoyo)
+    # locales (servicios, oficinas y apoyo)
     cols = [("Local", 70, "l"), ("m²", 14, "r"), ("Equipamiento / función", 128, "l")]
     sel = [s for s in L.LOCALES if s.cat != "CIRC"] + [s for s in L.SECTORES if s.cat in ("AUX", "CAL")]
     filas = [[f"{s.cod} {s.nombre}"[:44], f(s.rect.area, 1), s.nota[:84]] for s in sel]
@@ -240,8 +249,8 @@ def corte(pc):
     pc.texto("NPT ±0,00", (0.6, 0.4), 2.2, A.BOTTOM_LEFT)
     pc.texto("Altura libre bajo cercha 8,00 m", (ejes[1] / 2, 5.0), 2.5, A.MIDDLE_CENTER)
     pc.texto("Pasillo central", (21.5, 0.4), 2.0, A.BOTTOM_CENTER)
-    pc.texto("Banda sur: recargas, carros, PT, terminación", (ejes[1] / 2, 2.0), 2.0, A.MIDDLE_CENTER)
-    pc.texto("Banda norte: MP, corte y línea", ((ejes[1] + W) / 2 + 2, 2.0), 2.0, A.MIDDLE_CENTER)
+    pc.texto("Banda sur: oficinas, carros 12-17, PT y terminación", (ejes[1] / 2, 2.0), 2.0, A.MIDDLE_CENTER)
+    pc.texto("Banda norte: MP, corte, línea y carros 3-11", ((ejes[1] + W) / 2 + 2, 2.0), 2.0, A.MIDDLE_CENTER)
     pc.texto("CORTE TRANSVERSAL A-A (por eje 4) - 1:200", pc.P(0.0, 11.5), 3.0, A.BOTTOM_LEFT, papel=True)
     pc.texto("S", pc.P(0.0, -2.5), 2.5, A.MIDDLE_CENTER, papel=True)
     pc.texto("N", pc.P(W, -2.5), 2.5, A.MIDDLE_CENTER, papel=True)

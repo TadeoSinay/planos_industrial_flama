@@ -56,10 +56,6 @@ def base_planta(pl, relleno=True, eq_rotulos=True, fino=True, ejes=True, h_eq=1.
     """Nave, anexos, sectores, pasillos, equipos y aberturas (fondo común de los planos de flujo)."""
     D.sectores(pl, relleno=relleno)
     D.locales(pl, rotulos=False, relleno=relleno)
-    if relleno:
-        for s in L.ANEXOS:
-            if s.cod == "RC":
-                pass
     D.pasillos(pl, demarcacion=True, h=1.6)
     D.equipos(pl, rotulos=eq_rotulos, h=h_eq, fino=fino)
     D.muros(pl)
@@ -146,6 +142,13 @@ def sitio(pl, rotulos=True, estacionamiento=True):
         # camino peatonal desde G4 (garita) al hall de servicios (SV-1), sin cruzar calles de camiones
         pl.pl(L.CAMINO_PEATONAL, "A-PASILLO")
         pl.texto("Camino peatonal G4 -> SV-1", (L.CAMINO_PEATONAL[0][0] + 1.0, -40.0), 1.6, A.MIDDLE_LEFT, rot=90)
+        pl.pl(L.CAMINO_OFICINAS, "A-PASILLO")
+        pl.texto("-> OF-1 oficinas", (-3.0, 14.0), 1.4, A.MIDDLE_LEFT)
+        pl.pl(L.CAMINO_ADMIN, "A-PASILLO")
+        pl.texto("Camino peatonal de visitas a administración (AD-1, fachada este)", (40.0, -26.6), 1.6,
+                 A.BOTTOM_CENTER)
+    pl.pl(L.CIRCUITO, "A-PASILLO")
+    pl.texto("Circuito de remolque (W-CAR 17)", (22.0, -7.0), 1.6, A.MIDDLE_CENTER)
     pl.texto("Calle de camiones al muelle P3 (entra por G1, sale por G3)", (75.0, -12.5), 2.0,
              A.MIDDLE_CENTER)
     norte(pl, (112.0, -50.0))
@@ -182,24 +185,24 @@ class Columna:
 
 # ================================================================ FL_PI_03 flujo de materiales
 MARCAS_03 = [
-    (1, (8.5, 50.0), "MP-1 una sola recepción: alero norte -> P1 -> cuarentena AL-CU -> calles A1, A2 y A3"),
-    (2, (55.0, -8.0), "MP-2 muelle P3 (7 a 10 h): polvo, pintura en polvo, embalaje y revendidos"),
-    (3, (55.5, 45.8), "Gases: packs de Arcal 21 y N₂ y CO₂ de recargas en la jaula exterior JG -> reguladores CG1"),
-    (4, (57.5, 3.1), "Big bags y pintura: muelle -> AT -> depósito DP -> carga, carros (PO-CN) y tolvas (PO-PI)"),
+    (1, (5.4, 50.0), "MP: una sola recepción para todo: alero norte -> P1 (7,0 m) -> cuarentena AL-CU -> calles A1, A2 y A3"),
+    (2, (6.0, 30.0), "Atado de caños de 6 m: entra atravesado por P1 y se apoya en el cantiléver AL-CT sin girar"),
+    (3, (55.5, 45.8), "Gases: packs de Arcal 21 y N₂ en la jaula exterior JG -> reguladores CG1 (sala SC)"),
+    (4, (48.4, 21.6), "Polvo, pintura, embalaje y revendidos: P1 -> cuarentena -> PC -> calle T -> DP, AL-EB y S4"),
     (5, (16.0, 46.6), "Scrap: contenedor en cada puesto que lo genera -> volquete junto a P1"),
-    (6, (37.5, 25.5), "SE chapa: guillotina (rampa trasera) -> cilindrado -> sold. longitudinal (FCHP)"),
+    (6, (31.0, 25.5), "SE chapa: guillotina (rampa trasera) -> cilindrado -> sold. longitudinal (FCHP)"),
     (7, (30.0, 38.3), "SE láser 1 kg: carros de cajones «en llenado» / «vacío» -> encastre"),
-    (8, (40.0, 39.8), "SE embutido -> cúpulas -> muesca, numerado y soldadura de cuello -> sold. circ.; fondos al encastre"),
-    (9, (57.0, 34.1), "SE línea principal: encastre -> bordoneado -> sold. circ. -> espesor -> PH -> secado -> granallado"),
-    (10, (83.0, 29.0), "Riel aéreo: detección -> precalentamiento -> cabina -> curado (2 hornos) -> descarga"),
-    (11, (77.5, 12.0), "Descarga: vacíos a su mesa de encajonado; terminados por PO-PI y AT2 a la carga"),
-    (12, (66.0, 14.3), "Terminación: carga -> ensamblaje -> presurización -> pérdidas -> etiquetado -> encajonado"),
-    (13, (30.0, 13.7), "SE carros: marcado -> U de carros (puestos 3 a 8) -> PH -> secado -> pulmón al muelle"),
-    (14, (41.7, 12.5), "Carros pintados: vuelven por P3 y PO-CN a la terminación -> pulmón del muelle"),
-    (15, (45.2, 13.0), "PT: envolvedora -> AT -> T2 -> racks de 5 niveles -> T1 -> EX -> muelle P3 (13 a 17 h)"),
-    (16, (19.6, 13.0), "Barras de carros: cantiléver -> PC -> PO-CW -> rack del puesto 8.1"),
+    (8, (40.0, 41.6), "SE embutido -> cúpulas -> muesca, numerado y soldadura de cuello -> sold. circ.; fondos al encastre"),
+    (9, (57.0, 35.9), "SE línea principal: encastre -> bordoneado -> sold. circ. -> espesor -> PH -> secado -> granallado"),
+    (10, (85.0, 37.8), "Riel aéreo: detección -> horno único (precalentamiento) -> cabina -> horno (curado) -> descarga"),
+    (11, (77.5, 6.0), "Descarga: vacíos a su mesa de encajonado; terminados por PO-PI y AT2 a la carga"),
+    (12, (66.0, 11.8), "Terminación: carga -> ensamblaje -> presurización -> pérdidas -> etiquetado -> encajonado"),
+    (13, (44.0, 31.5), "Carros 2.1 a 11: marcado -> fila central (puestos 3 a 10) -> pulmón de despacho PU-11"),
+    (14, (54.6, 22.0), "Carros a pintura tercerizada por la calle T y el muelle P3; vuelven pintados al cambio de juego (12)"),
+    (15, (21.0, 13.0), "Carros 12 a 16: cambio de juego -> carga y armado (13) -> etiquetado (15) -> retenidos y liberados (16)"),
+    (16, (8.0, 6.0), "Muestras del lote: sala de pérdidas (14) y ensayos de lote (17) con patio de rodadura"),
     (17, (73.0, -30.0), "Efluentes líquidos a tratamiento PTE y colectora"),
-    (18, (-5.0, 3.0), "Recargas: P2 -> recepción -> inspección -> recinto de polvo -> PH -> armado -> despacho -> P2"),
+    (18, (44.0, 9.0), "PT: envolvedora -> AT -> calle T-PT -> racks RK1 y RK2 -> calle T -> muelle P3"),
     (19, (72.0, 41.5), "Corregidos y a re-granallar: de las jaulas vuelven a los rodillos de la granalladora"),
 ]
 
@@ -207,15 +210,11 @@ MARCAS_03 = [
 def flujos_materiales(pl):
     camion(pl, (3.5, 48.2), 18.6, "Semi 30 t", horiz=True)
     camion(pl, (3.5, 52.6), 10.0, "Chasis 16 t", horiz=True)
-    camion(pl, (40.9, -20.0), 18.6, "Semi PT / chasis", horiz=False)
+    camion(pl, (50.35, -20.0), 18.6, "Semi PT / chasis", horiz=False)
     camion(pl, (54.0, 48.6), 9.5, "Packs de gases", horiz=True)
-    camion(pl, (1.0, -6.4), 6.0, "Utilitario", horiz=False)
     for fl in L.FLUJOS:
         pl.flujo(fl.pts, fl.cat, cada=22.0 if fl.cat in ("TL", "SE") else 26.0,
                  largo=2.6 if fl.cat != "TL" else 3.4, ancho=1.3 if fl.cat != "TL" else 1.9)
-    pl.flujo(L.RC_FLUJO, "SE", cada=22.0, largo=2.6, ancho=1.3)
-    for t in getattr(L, "RC_FLUJO_PH", []):
-        pl.flujo(t, "SE", cada=8.0, largo=1.6, ancho=0.8)
     for fl in L.EFLUENTES:
         pl.flujo(fl.pts, fl.cat, cada=30.0, largo=2.4, ancho=1.2)
     emisiones(pl)
@@ -239,8 +238,8 @@ def fl_pi_03(doc, ox):
         globo_papel(pl, n, (x + 3, y))
         pl.texto(txt, (x + 8, y), 2.2, A.MIDDLE_LEFT, papel=True)
         y -= 5.0
-    y = pl.parrafo(["Criterios: una sola recepción de MP con cuarentena (P1); polvo, embalaje y revendidos por",
-                    "el muelle P3; recorrido en el orden de los procesos con 0 cruces entre MP, SE y PT (verificado",
+    y = pl.parrafo(["Criterios: una sola recepción de MP con cuarentena (P1, 7,0 m); polvo, embalaje y revendidos por",
+                    "P1 también; P3 sólo despacha; recorrido en el orden de los procesos con 0 cruces (verificado",
                     "por cálculo); scrap a volquete exterior junto a P1. Jerarquía de circulación:",
                     "1) pasillo central PC 3,80 m y calles de MP de 5,0 m: autoelevador doble sentido;",
                     "2) senda peatonal PP 1,20 m separada por defensa, cruces sólo en cebras X1, X2...;",
@@ -266,7 +265,7 @@ def fl_pi_03(doc, ox):
     cols = [("Portón", 20, "l"), ("Qué entra o sale", 84, "l"), ("Vehículo", 34, "l"), ("Frecuencia", 40, "l"),
             ("Horario", 34, "l")]
     y = pl.tabla(x, y - 12, cols, [list(r) for r in C.PORTONES], 4.0, 1.9,
-                 "Portones: función y frecuencia (3 portones: el ex P4 se suprimió, la pintura en polvo va al depósito DP)")
+                 "Portones: función y frecuencia (2 portones: P1 recepción de MP y P3 muelle de expedición)")
     cols = [("Proveedor / material", 58, "l"), ("t/entr.", 14, "c"), ("Entr./año", 15, "c"),
             ("Vehículo", 56, "l"), ("Portón", 36, "c"), ("Destino", 25, "c")]
     filas = [[g, f(t, 1), f(n, 1), v, p, d] for g, t, n, v, p, d in C.ENTREGAS]
@@ -316,17 +315,16 @@ def fl_pi_03b(doc, ox):
                       ("I-AIRE", "Aire comprimido: anillo con bajadas FRL cada 8 m"),
                       ("I-SOLD", "Gas de soldadura Ar/CO₂ (ARCAL 21): pack en la jaula JG -> CG1"),
                       ("I-N2", "Nitrógeno para presurización: pack en la jaula JG -> CG1"),
-                      ("I-GAS", "Gas natural a los hornos desde la regulación ERM"),
+                      ("I-GAS", "Gas natural al horno y a las secadoras desde la regulación ERM"),
                       ("F-EFL-LIQ", "Efluentes líquidos a PTE (enterrado, por gravedad)"),
                       ("F-EFL-GAS", "Captación localizada y salida por techo")):
         pl.m.add_lwpolyline([(x, y), (x + 16, y)], dxfattribs={"layer": capa})
         pl.texto(txt, (x + 20, y), 2.3, A.MIDDLE_LEFT, papel=True)
         y -= 5.5
-    y = pl.parrafo(["Criterio 4 (minimizar tendidos): la sala técnica ST (transformador, TGBT y compresores) está en",
+    y = pl.parrafo(["Criterio 4 (minimizar tendidos): la sala técnica ST (transformador y TGBT) está en",
                     "el centro de cargas, sobre la fachada norte; la jaula exterior de gases JG, detrás de la sala SC",
                     "(reguladores CG1); la PTE, al sur junto a la colectora. Los procesos con efluente líquido (PH,",
-                    "ensayo de pérdidas y recargas) van a la cámara de decantación y por cañería enterrada a la PTE.",
-                    "Recargas tiene tablero propio y manifold de CO₂ (trasvasadora, W-REC).",
+                    "PH de carros y ensayo de pérdidas) van a la cámara de decantación y por cañería enterrada a la PTE.",
                     f"Potencia instalada de equipos: {f(R_['kw_total'], 0)} kW; con simultaneidad 0,6 -> transformador de",
                     "315 kVA (verificar con el relevamiento de cargas definitivo)."], x, y - 3, 2.2)
     cols = [("Tablero seccional", 44, "l"), ("kW", 16, "c"), ("Largo desde TGBT m", 34, "c")]
@@ -335,7 +333,7 @@ def fl_pi_03b(doc, ox):
     yb = pl.tabla(x, y - 12, cols, filas, 4.3, 2.1, "Alimentadores (recorrido ortogonal)")
     x2 = x + 104
     yy = y - 12
-    for tit, datos in (("Agua de PH y pérdidas a PTE", R_["agua"]), ("Gas natural a hornos", R_["gas"]),
+    for tit, datos in (("Agua de PH y pérdidas a PTE", R_["agua"]), ("Gas natural al horno y secadoras", R_["gas"]),
                        ("Nitrógeno", R_["n2"]), ("Gas de soldadura", R_["sold"])):
         yy = pl.tabla(x2, yy, [("Punto", 36, "l"), ("Largo m", 22, "c")],
                       [[c_, f(l_, 1)] for c_, l_ in datos] + [["Total", f(sum(l_ for c_, l_ in datos), 1)]],
@@ -349,12 +347,12 @@ def fl_pi_03b(doc, ox):
 # ================================================================ FL_PI_01 DIR
 TRONCOS = {
     # garita (G4) -> hall y fichado -> pasillo limpio -> vestuario -> duchas o sanitarios -> PP-1
-    "hombres": list(L.CAMINO_PEATONAL) + [(-9.0, 20.0), (-8.0, 20.0), (-8.0, 23.75), (-14.15, 23.75),
-                                          (-14.15, 27.0), (-12.0, 27.0), (-12.0, 29.5)],
-    "a planta": [(-12.0, 27.3), (-14.4, 27.3), (-14.4, 24.1), (0.0, 24.1)],
-    "mujeres": [(-8.0, 23.75), (-8.0, 26.6), (-9.65, 26.6), (-9.65, 28.6)],
-    "comedor": [(-6.3, 24.1), (-6.3, 25.75), (-3.0, 25.75), (-3.0, 28.0)],
-    "administración": [(-8.0, 20.35), (-6.0, 20.35)],
+    "hombres": list(L.CAMINO_PEATONAL) + [(-3.4, 21.0), (-4.95, 21.0), (-4.95, 23.75), (-14.15, 23.75),
+                                          (-14.15, 26.4), (-12.0, 26.4), (-12.0, 29.5)],
+    "a planta": [(-12.0, 26.8), (-13.8, 26.8), (-13.8, 24.1), (0.0, 24.1)],
+    "mujeres": [(-7.95, 23.75), (-7.95, 26.6), (-9.85, 26.6), (-9.85, 29.6)],
+    "comedor": [(-6.15, 23.75), (-6.15, 26.0), (-3.0, 26.0), (-3.0, 28.0)],
+    "oficinas": list(L.CAMINO_OFICINAS),
 }
 
 
@@ -410,8 +408,8 @@ def fl_pi_01(doc, ox):
         "Donde un hilo corta un flujo (cuerpos de carros, cúpulas, láser, riel de pintura) hay una",
         "senda peatonal X demarcada (cebra amarilla IRAM 10005, espejo y prioridad peatonal).",
         f"Cruces de hilos con flujos verificados por cálculo sobre el modelo: todos en {len(L.SENDAS)} sendas.",
-        "Recargas ocupa el ángulo SO de la nave: su personal entra por el PC y el corredor RC-N y usa los",
-        "sanitarios del bloque de servicios. Los utilitarios usan su portón P2: el público no entra a la planta.",
+        "Las oficinas de planta (ángulo SO) tienen su entrada OF-1 desde el camino peatonal; administración,",
+        "al este, recibe a las visitas por AD-1 sin que entren a la planta.",
     ], x, y - 2, 2.2)
     cols = [("Hilo (grupo de puestos)", 64, "l"), ("Desde PP-1 (m)", 26, "c"), ("A sanitario (m)", 26, "c")]
     filas = []
@@ -443,8 +441,8 @@ def fl_pi_01(doc, ox):
     yb = pl.tabla(x, y - 12, cols3, filas3, 4.3, 2.1,
                   f"Sanitarios (Dec. 351/79 art. 49): {san['H']} H y {san['M']} M en el turno más numeroso")
     pl.parrafo([
-        "Turno mañana: 53 personas + 8 choferes que inician",
-        "y terminan en planta; 10 % mujeres (DT 2035).",
+        "Turno mañana: 36 personas (DT 2035 sin las 17 de",
+        "recargas) + 8 choferes; 10 % mujeres (DT).",
         "Núcleo sanitario en servicios, junto a PP-1, con",
         "H, M y sanitario accesible (Ley 24.314, Dec. 914/97);",
         "el PC lleva a todos los puestos sin cruzar flujos",
@@ -453,7 +451,7 @@ def fl_pi_01(doc, ox):
         "condicionar la incorporación de personal femenino.",
         "Lactario (Ley 26.873) y primeros auxilios en servicios.",
         "Espacio de cuidado (Dec. 144/2022): no obligatorio",
-        "con menos de 100 personas (dotación 71).",
+        "con menos de 100 personas (dotación 52).",
     ], x + 112, y - 12, 2.1)
     return h
 
@@ -465,18 +463,18 @@ def circ_pts(c, r, n=16):
 # ================================================================ FL_PI_02 flujo de operaciones
 ASME = {}
 for _c in ("M04", "M16", "M06", "M07", "M08", "M09a", "M09b", "M10", "M11", "B02", "B03", "E09", "B04", "A06", "B06",
-           "B14a", "B14b", "B14c", "B14d", "B08", "B10", "P01", "P04", "P03", "P06", "P08", "T01", "T03", "T05", "T07",
-           "T09", "T08", "T11", "MK1", "C01", "C02a", "C02b", "C04", "C06", "C05", "C08", "C81", "C10", "T02", "T12",
+           "B14a", "B14b", "B14c", "B14d", "B08", "B10", "P02", "P04", "P03", "P08", "T01", "T03", "T05", "T07",
+           "T09", "T08", "T11", "MK1", "C01", "C02a", "C02s", "C04", "C06", "C05", "C08", "C81", "C10", "T02", "T12",
            "T13"):
     ASME[_c] = "O"
-for _c in ("Q01", "B09", "P09", "T06", "C09"):
+for _c in ("Q01", "B09", "P09", "T06", "T15", "C14", "C17R"):
     ASME[_c] = "I"
 for _c in ("A07", "B07", "C07"):
     ASME[_c] = "OI"
-for _c in ("C12",):
+for _c in ("C12J",):
     ASME[_c] = "D"
-ALMACENES = ("AL-MM", "AL-ID", "AL-MC", "AL-CU", "AL-CH", "AL-FL", "AL-SS", "AL-CC", "AL-CT", "AL-CQ", "AL-PR", "AL-PT", "AL-PK", "DP",
-             "AL-EB", "AL-3", "S4")
+ALMACENES = ("AL-MM", "AL-ID", "AL-MC", "AL-CU", "AL-CH", "AL-FL", "AL-SS", "AL-CC", "AL-CT", "AL-CQ", "DP",
+             "AL-EB", "AL-3", "S4", "C-16R", "C-16L")
 
 CURSOGRAMAS = {
     "S2 - Matafuegos ABC 2,5 / 5 / 10 kg": [
@@ -489,7 +487,7 @@ CURSOGRAMAS = {
         ("OI", "13 Prueba hidráulica", "A07/B07"), ("D", "Probados en sus carros", "PU-6"),
         ("O", "14 Secado", "B14a-d"), ("D", "Secos con tapón", "PU-7"), ("O", "15 Granallado de rodillos", "B08"),
         ("I", "16 Detección de defectos", "B09"), ("O", "17 Corrección (jaula «a corregir»)", "B10"),
-        ("T", "Riel aéreo (cuelga en la detección)", "-"), ("O", "18 Pintura en polvo y descarga", "P01-P08"),
+        ("T", "Riel aéreo (cuelga en la detección)", "-"), ("O", "18 Horno, cabina, horno y descarga", "P02-P08"),
         ("D", "Terminados pintados", "PU-TP"), ("O", "19-23 Terminación (ver S1)", "T01-T07"),
         ("O", "24 Encajonado y envolvedora", "T09/T11"), ("A", "Almacén de PT", "AL-3"),
         ("T", "Expedición por el muelle", "P3")],
@@ -497,7 +495,7 @@ CURSOGRAMAS = {
         ("A", "Caño Ø76,2 en el cantiléver", "AL-CT"), ("T", "Atado al cajón de alimentación (pluma)", "CJ1"),
         ("O", "2 Corte láser de tubo", "M16"), ("D", "Carros de cajones «en llenado» / «vacío»", "PU-T1"),
         ("T", "Carro de tramos al encastre", "PU-T2"), ("O", "9-17 Línea común (igual que S2)", "E09-B10"),
-        ("O", "18 Pintura en polvo (riel aéreo)", "P01-P08"), ("D", "Terminados pintados", "PU-TP"),
+        ("O", "18 Pintura en polvo (riel aéreo)", "P02-P08"), ("D", "Terminados pintados", "PU-TP"),
         ("O", "19 Carga de polvo (big bag ABC 60)", "BB1/T01"), ("O", "20 Ensamblaje", "T03"),
         ("O", "21 Presurización con N₂", "T05"), ("I", "22 Ensayo de pérdidas", "T06"), ("O", "23 Etiquetado", "T07"),
         ("O", "24 Encajonado (armadora de cajas)", "AC1/T09"), ("O", "Envolvedora", "T11"),
@@ -509,28 +507,22 @@ CURSOGRAMAS = {
         ("D", "Zona de cúpulas", "PU-CU"), ("O", "4 Preparación de cuello: muesca", "M09a/b"),
         ("O", "5 Numerado de la cúpula", "M10"), ("O", "8 Soldadura de cuello", "M11"),
         ("D", "Cúpulas con cuello", "PU-CC2/CC"), ("T", "A la soldadura circ. (paso 11)", "-")],
-    "S3 - Matafuegos ABC rodantes 25 / 50 / 70 / 100 kg": [
-        ("A", "Chapa LAC (calle de chapa)", "AL-CC"), ("O", "1 Corte (guillotina compartida)", "M04"),
-        ("O", "C2.1 Marcado del cuerpo", "MK1"), ("D", "EFE 600 / mesa móvil", "PU-M/CI"),
-        ("O", "C3 Cilindrado", "C01"), ("D", "Cuerpos rolados", "PU-CR"), ("O", "C4 Punteo (2 viradores)", "C02a/b"),
-        ("D", "Cuerpos punteados", "PU-CP"), ("O", "C5 Soldadura longitudinal", "C04"),
-        ("O", "C6 Soldadura de cupla en la cúpula", "C06"), ("O", "C7 Armado y soldadura circ.", "C05"),
-        ("O", "C8.1 Fabricación de accesorios", "C81"), ("O", "C8 Soldadura de accesorios", "C08"),
-        ("I", "Inspección de costuras", "C09"), ("OI", "C9 Prueba hidráulica", "C07"), ("O", "Secado", "C10"),
-        ("D", "Pulmón de despacho a pintura", "C12"), ("T", "Pintura tercerizada (muelle P3)", "-"),
-        ("O", "Carga de polvo (big bag ABC 90)", "BB2/T02"), ("O", "Armado de válvula y manguera", "T12"),
-        ("O", "Presurización y etiquetado", "T13"), ("T", "Expedición por el muelle", "P3")],
+    "S3 - Matafuegos ABC rodantes 25 / 50 / 70 / 100 kg (W-CAR)": [
+        ("A", "Chapa LAC (calle de chapa)", "AL-CC"), ("O", "2 Corte (guillotina compartida)", "M04"),
+        ("O", "2.1 Marcado del cuerpo", "MK1"), ("D", "EFE 600 / mesa móvil", "PU-M/CI"),
+        ("O", "3 Cilindrado", "C01"), ("D", "Cuerpos rolados", "PU-CR"), ("O", "4 Punteo del cuerpo", "C02a"),
+        ("D", "Cuerpos punteados", "PU-CP"), ("O", "5 Soldadura longitudinal", "C04"),
+        ("O", "6 Soldadura de cupla en la cúpula", "C06"), ("O", "7 Armado y soldadura circ.", "C05"),
+        ("O", "8.1 Fabricación de accesorios", "C81"), ("O", "8 Soldadura de accesorios", "C08"),
+        ("OI", "9 Prueba hidráulica", "C07"), ("O", "10 Secado", "C10"),
+        ("D", "11 Pulmón de despacho a pintura", "PU-11"), ("T", "12 Pintura tercerizada (muelle P3)", "P3"),
+        ("O", "12 Cambio de juego (ruedas definitivas)", "C12J"), ("O", "13 Carga, armado y presurización", "T12-T13"),
+        ("I", "14 Sala de pérdidas (muestras)", "C14"), ("I", "15 Etiquetado e inspección final", "T15"),
+        ("A", "16 Retenidos -> liberados", "C-16R/L"), ("I", "17 Ensayos de lote (muestras)", "C17R"),
+        ("T", "Despacho por el muelle", "P3")],
     "S4 - Tercerizados revendidos (CO₂, agua, AFFF, K, agente limpio)": [
-        ("T", "Recepción por el muelle", "P3"), ("I", "Control de recepción y sello IRAM", "REC"), ("A", "Stock", "S4"),
+        ("T", "Recepción por P1", "P1"), ("I", "Control de recepción en la cuarentena", "AL-CU"), ("A", "Stock", "S4"),
         ("T", "Expedición con el pedido", "P3")],
-    "RC - Recargas (servicio, W-REC)": [
-        ("T", "Recepción y registro (portón P2)", "R01"), ("I", "R2 Inspección visual", "R19a/b"),
-        ("O", "R3 Descarga (recinto de polvo)", "R02a-e"), ("O", "R4 Desarme y limpieza", "R04a-c"),
-        ("I", "R5 Laboratorio: Puffer y mufla", "R23"), ("OI", "R6 Prueba hidráulica", "R07"),
-        ("O", "R7 Secado y cámara", "R08"), ("O", "R8 Pintura (retoque)", "R20a/b"), ("O", "R9 Carga", "R09a-c"),
-        ("O", "R10 Ensamblaje y marbete", "R10a-c"), ("O", "R11 Presurización", "R11a/b"),
-        ("I", "R12 Ensayo de pérdidas", "R12"), ("I", "R13 Peso, precinto y etiquetado", "R22/R21"),
-        ("A", "Para entregar", "RC-RD"), ("T", "Despacho (portón P2)", "R17a/b")],
 }
 
 
@@ -568,7 +560,6 @@ def fl_pi_02(doc, ox):
     for fl in L.FLUJOS:
         if fl.cat in ("SE", "TL", "PT"):
             pl.flujo(fl.pts, fl.cat, cada=24.0, largo=2.4, ancho=1.2)
-    pl.flujo(L.RC_FLUJO, "SE", cada=24.0, largo=2.4, ancho=1.2)
     for e in L.EQUIPOS:
         t = ASME.get(e.cod)
         if t:
@@ -579,16 +570,14 @@ def fl_pi_02(doc, ox):
             simbolo(pl, ASME[s.cod], s.rect.c, 1.5)
         if s.cod in ALMACENES:
             simbolo(pl, "A", s.rect.c, 1.6)
-    for s in L.LOCALES:
-        if s.cat == "RC":
-            pl.texto(s.cod, (s.rect.x0 + 0.4, s.rect.y1 - 0.4), 1.4, A.TOP_LEFT)
     D.rotulos_sector(pl, h=1.7, areas=False)
-    # secciones (S1..S4, RC) con recuadro rotulado
+    # secciones (S1..S4) con recuadro rotulado
     for cod, nom, r in (("S1", "S1 1 kg (corte de tubo)", L.R(24.6, 29.7, 28.9, 37.2)),
-                        ("S2", "S2 2,5-10 kg (cuerpo)", L.R(24.6, 24.5, 39.9, 29.7)),
+                        ("S2", "S2 2,5-10 kg (cuerpo)", L.R(24.6, 24.5, 36.7, 33.7)),
                         ("S12", "S1 + S2 línea común", L.R(33.5, 34.6, 79.1, 39.3)),
-                        ("S3", "S3 rodantes", L.R(18.0, 0.2, 41.0, 19.2)), ("S4", "S4 tercerizados", L.R(41.0, 0.2, 46.8, 2.4)),
-                        ("RC", "RC recargas", L.R(0.3, 0.3, 18.0, 19.0))):
+                        ("S3", "S3 rodantes 3 a 11", L.R(38.3, 24.5, 74.5, 33.7)),
+                        ("S3b", "S3 rodantes 12 a 17", L.R(0.2, 0.2, 34.7, 17.5)),
+                        ("S4", "S4 tercerizados", L.R(48.5, 11.1, 50.0, 16.9))):
         pl.rect(r, "F-TL")
         pl.texto(nom, (r.x1 - 0.4, r.y0 + 0.5), 2.2, A.BOTTOM_RIGHT, "F-TL")
     col = Columna(h, pl)
@@ -603,7 +592,7 @@ def fl_pi_02(doc, ox):
         y -= 6.0
     y = leyenda_flujos(pl, x + 140, col.y, ["SE", "PT"], "Flujos")
     y = pl.parrafo(["Secciones: S1 1 kg fabricado; S2 manuales 2,5-10 kg;", "S3 rodantes 25-100 kg; S4 tercerizados revendidos",
-                    "(sin transformación); RC recargas (servicio, ángulo SO).",
+                    "(sin transformación). Recargas va fuera de esta planta.",
                     "Pintura y terminación son comunes a S1 y S2; los carros",
                     "se pintan afuera. El 1 kg no se granalla."], x + 140, y - 3, 2.1)
     y = col.y - 46

@@ -5,21 +5,21 @@ sobre un modelo en código (`planta/layout.py`, coordenadas en metros). De ahí 
 PDF, con rótulo IRAM 4508, formato IRAM 4504 y acotación IRAM 4513, más la memoria de cálculo. Usa la misma base de
 dibujo que [planos_flama-](https://github.com/TadeoSinay/planos_flama-).
 
-> Estado: **versión 8: procesos de los Word** (nave 88 × 44 m). Puestos en el orden y la disposición de los Word de
-> proceso de manuales, carros y recargas; máquinas según los dimensionamientos; almacenes según el MRP del grupo
-> (Dimensionamiento_Almacenes_MP_v5). Verificación automática sin errores: **0 cruces entre flujos de MP, SE y PT**,
-> cruces de personal sólo en 30 sendas señalizadas, ninguna calle sin salida, recorrido máximo a una salida de 36,9 m,
-> 20 extintores por cálculo, 3 portones.
+> Estado: **versión 9: sin recargas, oficinas al SO, administración al este, P1 de 7 m** (nave 88 × 44 m). Puestos
+> en el orden de los Word de proceso de manuales y de carros; máquinas según X-MAN y X-CAR; pulmones sólo los de los
+> Word. Verificación automática sin errores: **0 cruces entre flujos de MP, SE y PT** (más 2 cruces a mano declarados
+> dentro de su senda), cruces de personal sólo en 37 sendas, toda calle remata en otra calle, puerta o destino (1
+> fondo declarado), recorrido máximo a una salida de 33,2 m, 20 extintores por cálculo, 2 portones.
 
 ## Planos (`salida/`): una faceta por lámina
 
 | Código | Lámina | Formato y escala | Contenido |
 |---|---|---|---|
 | `FL_PI_01` | **Plano general formal** | 2A0 1:100 (+ 1:500, 1:200) | Planta acotada completa con cada máquina, puesto, pulmón, mueble, tabique, puerta y ventana; implantación; corte; cuadro de equipos con **medida cotizada** y superficie de **Guerchet** por equipo y por sector |
-| `FL_PI_02` | **Flujos y operaciones** | A0 1:200 | MP, SE, PT, scrap y efluentes; símbolos ASME en cada equipo; cursogramas de S1, S2, cúpulas, S3, S4 y recargas |
+| `FL_PI_02` | **Flujos y operaciones** | A0 1:200 | MP, SE, PT, scrap y efluentes; símbolos ASME en cada equipo; cursogramas de S1, S2, cúpulas, S3 (carros 1 a 17) y S4 |
 | `FL_PI_03` | **Personal, evacuación y señalización** | A0 1:200 | DIR (hilos y sendas), salidas, recorrido máximo, extintores, BIE, pulsadores, señalética IRAM 10005, sanitarios y accesibilidad |
 | `FL_PI_04` | **Logística de MP y PT** (2 hojas) | A0 1:50 + A1 1:20 | Almacén de MP (descarga, distribución por tipo de chapa, carga a cada máquina), almacén de PT y expedición, políticas de stock, métodos y tiempos, flota; hoja 2: aprovechamiento de chapa |
-| `FL_PI_05` | **Servicios, oficinas y apoyo** | A0 1:50 | Todo en planta baja: servicios y administración (lockers 1 por empleado, duchas e inodoros en locales separados, sanitario accesible con ducha, comedor); fila central (mantenimiento + pañol, calidad, cuarentena, supervisor, PCP); sanitarios de planta H y M; sala de compresores y colectores |
+| `FL_PI_05` | **Servicios, oficinas y apoyo** | A0 1:50 | Todo en planta baja: servicios al personal (lockers 1 por empleado, duchas e inodoros en locales separados, sanitario accesible con ducha, comedor); oficinas de planta en el ángulo SO (mantenimiento + pañol, calidad y retenidos, supervisor, PCP); administración al este; sanitarios de planta H y M; sala de compresores y colectores |
 
 Para abrir en AutoCAD y guardar como DWG: ver [`autocad/LEEME.md`](autocad/LEEME.md).
 
@@ -33,6 +33,34 @@ Para abrir en AutoCAD y guardar como DWG: ver [`autocad/LEEME.md`](autocad/LEEME
 | Personal (hilos) | magenta, trazos | 6 | F-PERSONAL |
 | Scrap y retal | gris, trazo y punto | 8 | F-SCRAP |
 | Efluentes líquidos / gaseosos | marrón / cian, trazos | 34 / 4 | F-EFL-LIQ / F-EFL-GAS |
+
+## Versión 9: sin recargas, oficinas al SO, administración al este y P1 de 7 m
+
+Fuentes: W-MAN, W-CAR v9 (`PROCESO_CARRO_EN_LIMPIO`, puestos 1 a 17), X-MAN y X-CAR (Resumen Capacidad 2035), X-DT
+(dotación, servicios y almacén de PT) y X-ALM.
+
+- **Recargas fuera de la planta**: se quitaron el sector, sus equipos, su portón P2, sus insumos, su atención y su
+  dotación (16 + 2 operarios y 1 administrativo: el turno mañana pasa de 53 a 36 personas y los lockers de 60 a 42).
+- **Oficinas de planta en el ángulo SO** (donde estaba recargas): mantenimiento con portón al pasillo central y pañol
+  pegado, calidad y retenidos (QR), laboratorio de calidad, supervisor y PCP, con pasillo OF-C y entrada OF-1 desde el
+  camino peatonal. **Administración** (compras, ventas, RRHH) al **este**, lejos de P1, con entrada de visitas AD-1
+  por la fachada este, hall y sanitario accesible propio.
+- **P1 de 7,00 m** entre los ejes 1 y 2 (sin columna en el vano): el atado de 6 m entra atravesado, baja por la calle
+  A1 de 7,50 m y se apoya en el cantiléver, al fondo de A1 y paralelo a P1, sin girar. **Toda la MP entra por P1** y
+  la cuarentena; el muelle P3 sólo despacha (PT, carros al pintor y liberados).
+- **Horno único**: el riel aéreo pasa dos veces por el mismo horno (precalentamiento y curado), con la cabina en el
+  medio y la descarga al final.
+- **Pulmones sólo de los Word** (tabla con la fuente en la memoria): se quitaron el almacén de procesado y el de vacíos;
+  zona de cúpulas y de fondos de 3 a 5 carros (W-MAN), PU-11 de 120 carros, retenidos 180, liberados 100 (W-CAR).
+- **Carros según W-CAR v9 y X-CAR**: puestos 2.1 a 11 en la franja central (U) y 12 a 17 en la banda sur (cambio de
+  juego, carga y armado, sala de pérdidas, etiquetado, depósito de retenidos y liberados y ensayos de lote con patio de
+  rodadura); un virador de punteo y sin mesa de inspección de costuras (X-CAR). El rack de barras del 8.1 da a la
+  senda: las barras de 6 m llegan a mano (W-CAR) y entran sin girar.
+- **Un solo autoelevador** (W-MAN y W-CAR) para MP, PT, muelle y depósito.
+- **Menos superficie ociosa**: sin libres ni locales vacíos; la nave sigue en 88 × 44 m porque lo que libera
+  recargas (≈ 330 m²) lo ocupan los puestos 10 a 17 de carros (≈ 520 m², W-CAR) y la calle de PT de 5 m.
+- **Cruces declarados** (`CRUCES_DECLARADOS`): barras a mano × carros al muelle (senda X19) y casquetes × cuerpos
+  grabados (senda X11), los dos manuales y de baja frecuencia; el verificador comprueba que caigan en su senda.
 
 ## Versión 8: procesos de los Word, almacenes del MRP y riel aéreo
 
