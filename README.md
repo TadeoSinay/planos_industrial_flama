@@ -316,7 +316,7 @@ manuales al otro lado del pasillo, con despacho por P4; carros en el centro (fil
 pasillo con todos los elementos de la tabla de espacios de cada puesto de W-CAR; puestos 11 a 17 y su depósito al sur,
 con P2 de despacho, P3 al camión de la pintura tercerizada y P6 de regreso de los pintados); mantenimiento, pañol,
 calidad, tablero y compresores equipados en el ángulo SO; administración y servicios al personal en un anexo al norte
-con la disposición del croquis del usuario (27,6 × 14,3 m).
+con la disposición del plano del usuario (23,6 × 14,3 m, v15).
 
 Lugares de carros rodantes (`STOCK_CARROS` en el modelo y hoja «Lugares de carros» de la planilla): la regla de cada
 pulmón de W-CAR aplicada al mes pico de 2035 de X-CAR (279 recipientes = 14 por día, 70 por semana: 41 matafuegos y
@@ -342,6 +342,31 @@ Versión 12 (revisión al pie de la letra de W-CAR, W-MAN y el croquis de oficin
 * Oficinas con las marcas del croquis (rampas con descanso, plataforma, cajón accesible, relojes, ventanillas,
   matafuegos, baranda con cruces, puertas exteriores hacia afuera) y los 12 circuitos del personal.
 * Lámina de cortes FL_PI10_06 y recorte de ventanas que conserva el orden de dibujo (`planta/dibujo.recortar`).
+
+Versión 15 (pedidos del usuario sobre la v14):
+* Prueba hidráulica de carros (C-09) al lado de la de manuales (M-14) y secado de carros (C-10) al lado del de
+  manuales (M-15), pegado a su prueba como pide W-CAR 10; el resto de la disposición sigue igual. Granallado arriba,
+  detección a la salida de la granalladora con un ramal aéreo del transportador (W-MAN: «si está bien, colgarlo en el
+  transportador»), corrección con las tres jaulas debajo, cuelgue y descarga de la pintura frente al embalaje.
+* Pulmones de carros con el dato del usuario (pico de 48 carros por semana a la pintura, 2 envíos): lotes de media
+  semana, pulmón de despacho 48, pintados 28, sala de pérdidas 18, retenidos 62, liberados 70 y rechazados 12. Las dos
+  tarimas de W-CAR 11 quedan en la recepción de pintados (W-CAR 12: «la descarga usa la tarima del 11»).
+* Pasillos más angostos: AL-B de 3,6 m (antes 5,0) y en el despacho de PT PT-MA de 3,0 m y PT-MA2 de 3,6 m (P4 de
+  3,6 m). Para apilar a 90° en 3,6 m se agrega un autoelevador eléctrico Heli CPD15 (ficha Heli: 3.315 a 3.515 mm); el
+  Heli CPCD50 necesitaría 4,96 m y sigue para chapa, big bags y camiones. Con lo que se ganó, la terminación de manuales
+  pasa de 74 a 112 m² con el embalaje compartido de terminados y cilindros vacíos y el pulmón del 2.º turno (X-MAN:
+  pintura en 2 turnos, carga y embalaje en 1).
+* Administración copiada del plano del usuario (23,6 × 14,3 m ≈ 337 m²), medida con su escala gráfica: locales,
+  muebles, puertas (corrediza en el baño accesible), relojes, ventanilla, matafuegos, rampas, cajón reservado y cruces.
+  Sanitarios contados por sexo (vestuario, sanitarios y baño de oficinas): varones 3 inodoros, 5 orinales, 4 lavabos y
+  4 duchas; mujeres 3, 3 y 2; 42 y 18 lockers. Higiene y Seguridad y medicina laboral son externos (X-DT, Notas M29).
+* Accesorios del Word que faltaban: extracción de humos en los puestos de soldadura de carros (4, 5, 6, 7 y 8) y de
+  manuales (cuello, longitudinal, circunferencial con mamparas) y en el láser; carros de traslado de columnas de la
+  guillotina; ciclón, bolsones y tablero de la granalladora; balanza de verificación y extracción de la carga;
+  descarga de la pintura con cambio de tapón y control de película; precalentamiento en la línea de pintura.
+* Rótulos de zona: buscan un lugar libre en toda la zona (también fuera del barrido de las puertas); si no hay, van
+  sobre fondo blanco para que nunca queden tapados.
+* Lo que sobra de la nave de 76 m con la demanda 2035 (un vano de 7,6 m) sigue en RV-S (108 m²) y LB-1 (28 m²).
 
 Versión 14 (redistribución del ala este pedida por el usuario):
 * Prueba hidráulica y secado de carros (C-09 y C-10) al lado de los de manuales (M-14 y M-15), donde estaban el

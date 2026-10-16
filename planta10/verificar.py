@@ -13,6 +13,24 @@ def box(r, d=0.0):
     return sg.box(r.x0 - d, r.y0 - d, r.x1 + d, r.y1 + d)
 
 
+# Dec. 351/79 art. 49 con las fórmulas de la X-DT (turno mañana 2035: 32 varones y 4 mujeres); armarios = personal de
+# planta de los dos turnos (34 y 4). Locales de cada sexo del plano del usuario: sanitarios, vestuario y baño de oficinas.
+PEDIDO_SAN = {"varones": (("AD-SH", "AD-VH", "AD-BH"),
+                          {"inodoro": 2, "mingitorios": 3, "lavabos": 4, "duchas": 3, "armarios": 34}),
+              "mujeres": (("AD-SM", "AD-VM", "AD-BM"), {"inodoro": 1, "lavabos": 1, "duchas": 1, "armarios": 4})}
+
+
+def artefactos(cuenta, locs):
+    """Artefactos de un grupo de locales; los lockers del plano son módulos de 3 niveles (3 armarios por módulo)."""
+    hay = {}
+    for (c, t), n in cuenta.items():
+        if c in locs:
+            if t == "lockers":
+                t, n = "armarios", 3 * n
+            hay[t] = hay.get(t, 0) + n
+    return hay
+
+
 def frente(e, prof=0.95):
     r = e.rect
     return {"S": sg.box(r.x0, r.y0 - prof, r.x1, r.y0), "N": sg.box(r.x0, r.y1, r.x1, r.y1 + prof),
@@ -139,12 +157,11 @@ def verificar(silencioso=False):
         for j in range(i + 1, len(mobs)):
             if mobs[i][1].intersection(mobs[j][1]).area > 0.01:
                 err.append(f"Superposición de muebles {mobs[i][0]} y {mobs[j][0]} en {mobs[i][1].bounds[:2]}")
-    pedido = {("AD-VH", "inodoro"): 2, ("AD-VH", "mingitorios"): 3, ("AD-VH", "lavabos"): 4, ("AD-VH", "duchas"): 3,
-              ("AD-VH", "armarios"): 34, ("AD-VM", "inodoro"): 1, ("AD-VM", "lavabos"): 1, ("AD-VM", "duchas"): 1,
-              ("AD-VM", "armarios"): 4}
-    for k, v in pedido.items():
-        if cuenta.get(k, 0) < v:
-            err.append(f"{k[0]}: {cuenta.get(k, 0)} {k[1]} contra {v} pedidos (Dec. 351/79 art. 49 / X-DT)")
+    for sexo, (locs, pide) in PEDIDO_SAN.items():
+        hay = artefactos(cuenta, locs)
+        for t, v in pide.items():
+            if hay.get(t, 0) < v:
+                err.append(f"Sanitarios {sexo}: {hay.get(t, 0)} {t} contra {v} pedidos (Dec. 351/79 art. 49 / X-DT)")
     for x, y, w, muro, abre in M.PUERTAS_ADMIN + M.PUERTAS_LOCALES:
         if w > 2.0:
             continue

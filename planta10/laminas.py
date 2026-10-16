@@ -68,12 +68,26 @@ def _ocupado(z):
         q = e.rect
         if q.x1 > r.x0 and q.x0 < r.x1 and q.y1 > r.y0 and q.y0 < r.y1:
             out.append(sg.box(q.x0, q.y0, q.x1, q.y1 + (0.3 if e.cod in ROTULO_BLOQUE else 0.0)))
+        if e.op > 0:                     # el operario dibujado al frente (0,95 m)
+            fr = {"S": sg.box(q.x0, q.y0 - 0.95, q.x1, q.y0), "N": sg.box(q.x0, q.y1, q.x1, q.y1 + 0.95),
+                  "E": sg.box(q.x1, q.y0, q.x1 + 0.95, q.y1), "O": sg.box(q.x0 - 0.95, q.y0, q.x0, q.y1)}[e.frente]
+            if fr.intersects(sg.box(r.x0, r.y0, r.x1, r.y1)):
+                out.append(fr)
     for t, q, fr, n in M.MOB:
         if q.x1 > r.x0 and q.x0 < r.x1 and q.y1 > r.y0 and q.y0 < r.y1:
             out.append(sg.box(q.x0, q.y0, q.x1, q.y1))
     for t, q, fr, n, zc, fu in M.MOB_NAVE:
         if zc == z.cod:
             out.append(sg.box(q.x0, q.y0, q.x1, q.y1))
+    for x, y, w, muro, abre in M.PUERTAS_ADMIN + M.PUERTAS_LOCALES:      # barrido de las puertas
+        if w > 2.0:
+            continue
+        if muro == "h":
+            b = sg.box(x, y, x + w, y + abre * w) if abre > 0 else sg.box(x, y - w, x + w, y)
+        else:
+            b = sg.box(x, y, x + abre * w, y + w) if abre > 0 else sg.box(x - w, y, x, y + w)
+        if b.intersects(sg.box(r.x0, r.y0, r.x1, r.y1)):
+            out.append(b)
     return unary_union(out) if out else None
 
 
@@ -105,6 +119,14 @@ def rotulo(pl, z, h=1.8, areas=True, nombres=True):
         libre = max(abajo, arriba) if max(abajo, arriba) > 1.0 else r.h
         n_v = max(6, int((libre - 0.3) * pl.s / (hh * 0.8 * 0.63)))
         lineas = ([z.cod] + (_cortar(_corto(z.nombre, 90), n_v) if nombres else []))[:max_l]
+        largo_t = max(len(ln) for ln in lineas) * hh * 0.63 / pl.s + 0.1
+        ancho_t = len(lineas) * paso + 0.05
+        caja = (sg.box(r.x0 + 0.1, r.y1 - 0.15 - largo_t, r.x0 + 0.15 + ancho_t, r.y1 - 0.1) if arr else
+                sg.box(r.x0 + 0.1, r.y0 + 0.1, r.x0 + 0.15 + ancho_t, r.y0 + 0.15 + largo_t))
+        if occ is not None and caja.intersection(occ).area > 1e-6:     # fondo blanco: el nombre no queda tapado
+            q = list(caja.exterior.coords)[:-1]
+            pl.relleno(q, (255, 255, 255), "A-SECTOR-TXT")
+            pl.pl(q, "A-SECTOR-TXT", True)
         for i, ln in enumerate(lineas):
             if arr:
                 pl.texto(ln, (r.x0 + 0.15 + i * paso, r.y1 - 0.15), hh if i == 0 else hh * 0.8, A.TOP_RIGHT,
@@ -115,43 +137,62 @@ def rotulo(pl, z, h=1.8, areas=True, nombres=True):
         return
     occ = _ocupado(z)
 
-    def caja_de(lns, k):
-        """Rectángulo que ocupa el rótulo lns en la posición k (esquinas o centro de los lados largos)."""
+    def medida(lns):
         an = max(len(ln) * (hh if i == 0 and len(lns) > 1 else hh * (1.0 if len(lns) == 1 else 0.8))
                  for i, ln in enumerate(lns)) * 0.63 / pl.s + 0.1
-        al_ = len(lns) * paso + 0.1
-        x0 = {"L": r.x0 + 0.1, "R": r.x1 - 0.1 - an, "C": r.c[0] - an / 2}[k[1]]
-        y1 = r.y1 - 0.1 if k[0] == "T" else r.y0 + 0.1 + al_
-        return sg.box(x0, y1 - al_, x0 + an, y1)
+        return an, len(lns) * paso + 0.1
 
-    mejor, esquina = None, "TL"
+    def tapa(x0, y1, lns):
+        an, al_ = medida(lns)
+        return sg.box(x0, y1 - al_, x0 + an, y1).intersection(occ).area if occ is not None else 0.0
+
+    def lugares(lns):
+        """Esquinas, centro de los lados largos y después una grilla de 0,25 m dentro de la zona."""
+        an, al_ = medida(lns)
+        xs = [r.x0 + 0.1, r.x1 - 0.1 - an, r.c[0] - an / 2]
+        ys = [r.y1 - 0.1, r.y0 + 0.1 + al_]
+        for y1 in ys:
+            for x0 in xs:
+                yield x0, y1
+        k = 0.25
+        y1 = r.y1 - 0.1
+        while y1 - al_ >= r.y0 + 0.05:
+            x0 = r.x0 + 0.1
+            while x0 + an <= r.x1 - 0.05:
+                yield x0, y1
+                x0 += k
+            y1 -= k
+
+    mejor = None
     for lns in (lineas, [z.cod]):
-        for k in ("TL", "TR", "BL", "BR", "TC", "BC"):
-            a = caja_de(lns, k).intersection(occ).area if occ is not None else 0.0
-            if mejor is None or a < mejor - 1e-6:
-                mejor, esquina, elegidas = a, k, lns
+        for x0, y1 in lugares(lns):
+            a = tapa(x0, y1, lns)
+            if mejor is None or a < mejor[0] - 1e-6:
+                mejor = (a, x0, y1, lns)
             if a <= 1e-6:
                 break
-        if mejor <= 1e-6:
+        if mejor[0] <= 1e-6:
             break
-    lineas = elegidas
-    izq, arriba = esquina[1] == "L", esquina[0] == "T"
-    centro = esquina[1] == "C"
+    a, x0, y1, lineas = mejor
+    an, al_ = medida(lineas)
+    if a > 1e-6:          # no hay lugar libre: fondo blanco para que el nombre no quede tapado
+        caja = [(x0 - 0.05, y1 - al_), (x0 + an, y1 - al_), (x0 + an, y1 + 0.05), (x0 - 0.05, y1 + 0.05)]
+        pl.relleno(caja, (255, 255, 255), "A-SECTOR-TXT")
+        pl.pl(caja, "A-SECTOR-TXT", True)
     for i, ln in enumerate(lineas):
-        hi = hh if i == 0 else hh * 0.8
-        x = r.c[0] if centro else r.x0 + 0.15 if izq else r.x1 - 0.15
-        y = (r.y1 - 0.15 - i * paso) if arriba else (r.y0 + 0.15 + (len(lineas) - 1 - i) * paso)
-        if centro:
-            al = A.TOP_CENTER if arriba else A.BOTTOM_CENTER
-        else:
-            al = {(True, True): A.TOP_LEFT, (False, True): A.TOP_RIGHT, (True, False): A.BOTTOM_LEFT,
-                  (False, False): A.BOTTOM_RIGHT}[(izq, arriba)]
-        pl.texto(ln, (x, y), hi, al, "A-SECTOR-TXT")
+        pl.texto(ln, (x0 + 0.05, y1 - 0.05 - i * paso), hh if i == 0 else hh * 0.8, A.TOP_LEFT, "A-SECTOR-TXT")
     if areas and r.w > 2.0 and r.h > 2.0 and r.w * r.h >= 6.0:
-        xy, al = ((r.x1 - 0.15, r.y0 + 0.15), A.BOTTOM_RIGHT) if arriba else ((r.x1 - 0.15, r.y1 - 0.15), A.TOP_RIGHT)
-        if not arriba and not izq:
-            xy, al = (r.x0 + 0.15, r.y1 - 0.15), A.TOP_LEFT
-        pl.texto(f"{f(r.w * r.h)} m²", xy, hh * 0.8, al, "A-SECTOR-TXT")
+        t = f"{f(r.w * r.h)} m²"
+        aw, ah = len(t) * hh * 0.8 * 0.63 / pl.s + 0.1, hh * 0.8 / pl.s * 1.3
+        for (xx, yy, al) in ((r.x1 - 0.15, r.y0 + 0.15, A.BOTTOM_RIGHT), (r.x1 - 0.15, r.y1 - 0.15, A.TOP_RIGHT),
+                             (r.x0 + 0.15, r.y0 + 0.15, A.BOTTOM_LEFT)):
+            bx = sg.box(xx - aw if al != A.BOTTOM_LEFT else xx, yy - ah if al == A.TOP_RIGHT else yy,
+                        xx if al != A.BOTTOM_LEFT else xx + aw, yy if al == A.TOP_RIGHT else yy + ah)
+            libre = (occ is None or bx.intersection(occ).area < 1e-6) and \
+                not bx.intersects(sg.box(x0, y1 - al_, x0 + an, y1))
+            if libre:
+                pl.texto(t, (xx, yy), hh * 0.8, al, "A-SECTOR-TXT")
+                break
 
 
 def zonas(pl, rellenos=True, rotulos=True, h=1.8, cats=None, areas=True, lista=None, nombres=True):
@@ -192,7 +233,7 @@ def pasillos(pl, rotulos=True, h=1.6):
             txt = f"{z.cod}  {_corto(z.nombre, 60 if max(r.w, r.h) > 9 else 40)}  {f(min(r.w, r.h), 1)} m"
             pl.texto(txt, r.c, h, A.MIDDLE_CENTER, "A-TEXTO", ang)
     # baranda entre el carril del autoelevador y la senda del pasillo principal, con cruces
-    cruces = [(3.0, 4.6), (12.4, 14.0), (16.4, 18.0), (35.3, 36.8), (55.0, 58.8), (70.0, 71.6)]
+    cruces = [(3.0, 4.6), (12.4, 14.0), (16.4, 18.0), (35.3, 36.8), (53.2, 57.3), (60.9, 62.5), (64.8, 66.4)]
     x = 0.4
     for a, b in cruces:
         if a > x:
@@ -282,6 +323,9 @@ def tabiques(pl, lista, e=0.10):
     vanos = []
     for x, y, w, muro, abre in M.PUERTAS_ADMIN + M.PUERTAS_LOCALES:
         vanos.append(sg.box(x, y - 0.2, x + w, y + 0.2) if muro == "h" else sg.box(x - 0.2, y, x + 0.2, y + w))
+    for x, y, w, muro in M.CORREDIZAS_ADMIN + M.ABIERTOS_ADMIN:
+        vanos.append(sg.box(x + 0.06, y - 0.2, x + w - 0.06, y + 0.2) if muro == "h" else
+                     sg.box(x - 0.2, y + 0.06, x + 0.2, y + w - 0.06))
     t = t.difference(unary_union(vanos)) if vanos else t
     _macizo(pl, t, "A-TABIQUE", (110, 110, 110))
 
@@ -362,6 +406,9 @@ def puertas(pl, h=1.6, etiquetas=True):
                 pl.linea((x - 0.05 * abre, y), (x - 0.05 * abre, y + w), "A-ABERTURA")
         else:
             MO.puerta_int(pl, x, y, w, muro, abre)
+    for x, y, w, muro in M.CORREDIZAS_ADMIN:              # hoja corrediza dentro del muro (plano del usuario)
+        pl.rect(M.R(x, y - 0.04, x + w, y + 0.04), "A-ABERTURA")
+        pl.linea((x + w, y), (x + 1.9 * w, y), "A-EQUIPO-OCULTO")
     for cod, muro, a, b, uso in M.PUERTAS_EXT_ADMIN:      # abren hacia afuera (croquis)
         w = b - a
         if muro == "N" and w > 1.4:                          # doble hoja
@@ -405,28 +452,38 @@ def _pallets(pl, e, pt=False):
 
 
 def pintura(pl, h=1.6):
-    """Línea Firesafer vertical: el cuelgue arriba, a la altura del granallado y la detección; cabina, horno y
-    enfriamiento hacia el sur y la descarga en la punta sur, frente a la terminación (cruzando el pasillo principal)."""
+    """Línea Firesafer vertical (W-MAN 19): el cuelgue arriba, a la altura del granallado y la detección; el
+    transportador pasa por el horno de precalentamiento, la cabina, el horno de curado y el enfriamiento hacia el sur y
+    vuelve a la descarga en la punta sur, frente a la terminación (cruzando el pasillo principal)."""
     e = next(q for q in M.EQUIPOS if q.cod == "M19-1")
     r = e.rect
     pl.relleno(r.pts(), (255, 248, 240), "A-EQUIPO-RELLENO")
     pl.rect(r, "A-EQUIPO")
-    partes = [("Cabina de polvo y recuperación", 39.0, 44.4, (232, 238, 222)),
-              ("Horno de curado", 26.8, 38.6, (250, 215, 200)), ("Enfriamiento", 22.4, 26.4, (220, 235, 250))]
+    partes = [("Horno de precalentamiento", 42.0, 44.6, (250, 228, 210)),
+              ("Cabina de polvo y recuperación", 36.6, 41.6, (232, 238, 222)),
+              ("Horno de curado a gas, 180-220 °C", 26.8, 36.2, (250, 215, 200)),
+              ("Enfriamiento", 22.4, 26.4, (220, 235, 250))]
     for nom, y0, y1, rgb in partes:
         q = M.R(r.x0 + 1.6, y0, r.x1 - 1.6, y1)
         pl.relleno(q.pts(), rgb, "A-EQUIPO-RELLENO")
         pl.rect(q, "A-EQUIPO-FINO")
-        pl.texto(nom, q.c, h, A.MIDDLE_CENTER, "A-TEXTO", 90)
+        pl.texto(nom, q.c, h * (0.8 if y1 - y0 < 3 else 1.0), A.MIDDLE_CENTER, "A-TEXTO", 90)
     xc = r.x0 - 2.0                      # punta del ramal del cuelgue (sobre el puesto M19-C)
-    lazo = [(r.x0 + 0.8, 41.0), (xc, 41.0), (xc, 42.0), (r.x0 + 0.8, 42.0), (r.x0 + 0.8, 45.4), (r.x1 - 0.8, 45.4),
-            (r.x1 - 0.8, 21.6), (r.x0 + 0.8, 21.6), (r.x0 + 0.8, 41.0)]
+    xd = r.x0 - 1.8                      # punta del ramal de la descarga (sobre el puesto M19-D)
+    xi = 53.7                            # punta del ramal de la detección (W-MAN: «si está bien, colgarlo en el
+    #                                      transportador»; cruza el pasillo PO-N2 por arriba)
+    lazo = [(r.x0 + 0.8, 41.0), (xc, 41.0), (xc, 42.0), (r.x0 + 0.8, 42.0), (r.x0 + 0.8, 43.6), (xi, 43.6), (xi, 44.4),
+            (r.x0 + 0.8, 44.4), (r.x0 + 0.8, 45.4), (r.x1 - 0.8, 45.4),
+            (r.x1 - 0.8, 21.6), (r.x0 + 0.8, 21.6), (r.x0 + 0.8, 22.0), (xd, 22.0), (xd, 23.0), (r.x0 + 0.8, 23.0),
+            (r.x0 + 0.8, 41.0)]
     pl.pl(lazo, "A-EQUIPO-OCULTO")
-    for xy in ((xc, 41.5), (r.c[0], 21.6)):
+    for xy in ((xc, 41.5), (xd, 22.5), (xi, 44.0)):
         pl.circulo(xy, 0.35, "A-EQUIPO")
+    pl.texto("Ramal aéreo del transportador hasta la detección (sobre el pasillo PO-N2)", (60.5, 44.6), h * 0.7,
+             A.BOTTOM_CENTER, "A-TEXTO")
     pl.texto("Cuelgue", (xc, 42.3), h * 0.8, A.BOTTOM_CENTER, "A-TEXTO")
-    pl.texto("Descarga (a la terminación)", (r.c[0] + 0.6, 21.6), h * 0.8, A.MIDDLE_LEFT, "A-TEXTO")
-    pl.texto("Riel aéreo en lazo (ganchos)", (r.c[0], 45.0), h * 0.8, A.MIDDLE_CENTER, "A-TEXTO")
+    pl.texto("Descarga", (xd - 0.5, 23.9), h * 0.8, A.BOTTOM_CENTER, "A-TEXTO")
+    pl.texto("Transportador aéreo en lazo (ganchos)", (r.c[0], 45.0), h * 0.8, A.MIDDLE_CENTER, "A-TEXTO")
 
 
 def equipos(pl, rotulos=True, h=1.1, operarios=True, win=None):
@@ -711,7 +768,7 @@ def leyenda_cats(c, cats, w=7.0):
             hh.paths.add_polyline_path([(x, y), (x + w, y), (x + w, y - 3.5), (x, y - 3.5)], is_closed=True)
             c.pl.m.add_lwpolyline([(x, y), (x + w, y), (x + w, y - 3.5), (x, y - 3.5)], close=True,
                                   dxfattribs={"layer": "A-SECTOR"})
-        nom = {"AE": "Carril del autoelevador (5,0 m)", "SP": "Senda peatonal demarcada",
+        nom = {"AE": "Carril del autoelevador (3,0 a 5,0 m)", "SP": "Senda peatonal demarcada",
                "PO": "Pasillo de operarios y carros a mano"}.get(cat, NOMBRE_CAT.get(cat, cat))
         c.pl.texto(nom, (x + w + 2.5, y - 1.75), 2.3, A.MIDDLE_LEFT, papel=True)
         c.y -= 5.2
@@ -800,21 +857,24 @@ def fl_01(doc, ox):
         "Nave de " + f(M.LX) + " × " + f(M.LY) + " m, 10 vanos de 7,6 m; pórticos de 18,5 + 28,5 m con la fila de",
         "columnas en el borde norte del carril del autoelevador (ninguna columna dentro de un carril).",
         "Pasillo principal: carril de 5,0 m (Heli CPCD50, W-CAR) + senda de 1,5 m con baranda y cruces.",
-        "Almacén con dos pasillos de 5,0 m (AL-A junto a las máquinas de corte, AL-B entre racks).",
+        "Almacén: AL-A de 5,0 m (CPCD50: chapa, atados y bobinas) y AL-B de 3,6 m entre racks (pedido del usuario);",
+        "los racks R1 y de PT los atiende un Heli CPD15 eléctrico (apilado a 90° en 3,3 a 3,5 m, ficha Heli).",
         "Portones de la nave: P1 MP 5,0 m (oeste, con la franja de descarga de 15 × 5 m y la cuarentena), P3",
-        "camión de la pintura 5,0 m y P4 PT de manuales 5,0 m (este), P2 despacho de carros 3,5 m con rampa y",
+        "camión de la pintura 5,0 m y P4 PT de manuales 3,6 m (este), P2 despacho de carros 3,5 m con rampa y",
         "furgón (sur), P7 scrap 4,0 m (norte del almacén, playa con volquete); P5 patio de ensayos; PE emergencia.",
         "Predio con cerco: PC-1 entrada y PC-2 salida de camiones (circuito de una mano), PC-3 estacionamiento y",
-        "PC-4 a PC-6 accesos peatonales del croquis de oficinas. Cortes A-A a D-D en FL_PI10_06.",
-        "Carros: reglas del Word de carros con la demanda pico 2035 (X-CAR: 14 recipientes por día, 70 por",
-        "semana): %d en el pulmón de despacho, %d pintados, %d en la sala de pérdidas, %d retenidos, %d liberados"
+        "PC-4 a PC-6 accesos peatonales del plano de oficinas. Cortes A-A a D-D en FL_PI10_06.",
+        "Carros: pico de %d por semana a la pintura con 2 envíos (dato del usuario) -> lotes de media semana:"
+        % M.PICO_PINTURA,
+        "%d en el pulmón de despacho, %d pintados, %d en la sala de pérdidas, %d retenidos, %d liberados"
         % tuple(k[5] for k in M.STOCK_CARROS[:5]),
         "y %d rechazados. PT unificado de manuales y carros contra el muro sur, debajo de la terminación"
         % M.STOCK_CARROS[5][5],
         "compartida (carga y presurización de manuales y carros), que queda debajo de la pintura, cruzando el",
         "pasillo; racks de manuales de %d posiciones (70 de PT y 17 revendidos de X-ALM)." % M.PT_MAN["posiciones"],
-        "Prueba hidráulica y secado de carros al lado de los de manuales; granallado, detección y cuelgue arriba,",
-        "en la fila de la cabina de la pintura (sin reservas). Lo que sobra de la nave queda en RV-S y LB-1.",
+        "Prueba hidráulica de carros al lado de la de manuales y secado de carros al lado del de manuales (y",
+        "pegado a su prueba, W-CAR 10); granallado, detección, corrección y cuelgue arriba; descarga de la pintura",
+        "frente al embalaje. Lo que sobra de la nave (un vano de 7,6 m con la demanda 2035) queda en RV-S y LB-1.",
     ], 2.15)
     return h
 
@@ -825,6 +885,7 @@ TABLA_EQ = ["M4-1", "M4-2", "M4-3", "M3-2", "M5-1", "M6-1", "M7-1", "M8-1", "M9-
             "M23-1", "M24-1", "M25-3", "M25-4", "C2-1", "C2-2", "C21-1", "C21-2", "C21-3", "C3-1", "C3-4", "C4-1",
             "C4-2", "C5-1", "C5-3", "C5-4", "C6-1", "C7-1", "C8-1", "C8-4", "C81-2", "C81-3", "C81-4", "C81-6",
             "C9-6", "C9-7", "C10-2", "C11-T", "C12-1", "C13-2", "C13-3", "C13-5", "C17-1", "C17-2", "RE-1", "CA-1",
+            "M16-2", "M18-2", "M19-D", "M20-4",
             "RC-1", "RC-2", "RT-1", "PQ-1", "PTM-1", "M4-6", "M25-7"]
 
 
@@ -851,11 +912,11 @@ def fl_02(doc, ox):
     c.tabla([("Cód.", 13, "l"), ("Zona", 13, "l"), ("Equipo", 98, "l"), ("Planta (m)", 22, "c"),
              ("Fuente de la medida", 80, "l")], filas, 4.3, 2.0, "Equipos principales y su medida en planta")
     c.y -= 5.0
-    c.tabla([("Zona", 13, "l"), ("Lugares de carros", 48, "l"), ("Regla de W-CAR aplicada a la demanda 2035", 150, "l"),
+    c.tabla([("Zona", 13, "l"), ("Lugares de carros", 48, "l"), ("Regla aplicada (W-CAR y dato del usuario)", 150, "l"),
              ("Medida", 20, "c"), ("Carros", 14, "r")],
             [[k[0], k[1], k[3], k[4], str(k[5])] for k in M.STOCK_CARROS], 4.3, 2.0,
-            "Carros en planta: reglas de W-CAR con el mes pico de 2035 (X-CAR: %s por día, %s por semana)"
-            % (M.f1(M.DIA), M.f1(M.SEMANA)))
+            "Carros en planta: %d por semana a la pintura en 2 envíos (usuario) y reglas de W-CAR (X-CAR: %s por semana)"
+            % (M.PICO_PINTURA, M.f1(M.SEMANA)))
     c.tabla([("Almacén de PT de manuales (W-MAN 25: rack de PT y rack de cilindros, pallets en altura)", 160, "l"),
              ("Pallets", 20, "r")],
             [["Pallets por día en el pico (tabla de embalaje de la BOM)", f(M.PT_MAN["pallets_dia"], 1)],
@@ -870,7 +931,9 @@ def fl_02(doc, ox):
         "Carro FCHP20505 (1280 × 610 mm, W-MAN 6) o carro de 12 cajones (1200 × 800 mm, W-MAN 2), en violeta.",
         "PU-K, PU-CU, PU-FO cúpulas y fondos (W-MAN 3); PU-T tramos de 1 kg (W-MAN 2); PU-D, PU-V1 a V3 y PU-FX",
         "cuerpos (W-MAN 6 y 7); PU-CC2 y PU-CC cúpulas con cuello (W-MAN 8); PU-E, PU-B (W-MAN 9 y 10); PU-S y PU-RT",
-        "(W-MAN 12); PU-6 y PU-7 (W-MAN 13 y 14); PU-CO (W-MAN 16); PU-TP y PU-F1 a F5 (W-MAN 18 a 24).",
+        "(W-MAN 12); PU-6 y PU-7 (W-MAN 13 y 14); PU-GE (W-MAN 15); PU-G y PU-CO (W-MAN 16); PU-D1 a D3 (descarga,",
+        "W-MAN 19); PU-TP y PU-F1 a F5 (W-MAN 19 a 24); PU-T2, PU-V2T y PU-V3T: pulmón del 2.º turno (X-MAN 2035:",
+        "pintura en 2 turnos, carga y embalaje en 1; 12,5 cargas de carro por día en el pico -> la mitad).",
     ], 2.0)
     c.titulo("Notas", 3.0)
     c.parrafo([
@@ -878,17 +941,20 @@ def fl_02(doc, ox):
         "desarrollos de manuales hacia el norte (C-02N) y los cuerpos de carros al marcado (2.1, pegado a la rampa).",
         "Corte de tubo norte-sur: el cajón del atado mira al pasillo AL-A, frente al cantiléver (atado con la pluma).",
         "Desbobinador contra AL-A (bobina con el espolón). Contenedores de scrap del corte y del láser contra AL-A.",
-        "Granalladora Airblast G-100: los rodillos de entrada y salida están dentro de los 4,5 m (cotización).",
+        "Granalladora Airblast G-100: los rodillos de entrada y salida están dentro de los 4,5 m (cotización);",
+        "ciclón y filtros de cartucho de su extractor al lado (memoria Airblast; lugar: criterio).",
         "Columna este de manuales (croquis de bloques): soldadura circunferencial -> espesor -> prueba hidráulica",
-        "-> secado, y hacia el este granallado -> detección -> cuelgue; el riel de la pintura sale a buscar las",
-        "piezas al cuelgue (arriba) y las devuelve a la descarga (punta sur), frente a la terminación.",
-        "Carros 11 y 12: el camión de la pintura entra por P3 (muro este); el autoelevador lleva la tarima de",
-        "W-CAR 11 por el pasillo principal. Despacho de carros por P2 con rampa TRAN-IN-240 y furgón (rev 6).",
+        "-> secado; al lado, la prueba hidráulica y el secado de carros. Arriba: granallado -> detección (con la",
+        "corrección y las jaulas debajo) -> cuelgue; el transportador sale a buscar las piezas al cuelgue y las",
+        "devuelve a la descarga (punta sur), frente al embalaje compartido de terminados y cilindros vacíos.",
+        "Carros 11 y 12: el camión de la pintura entra por P3 (muro este); las dos tarimas de W-CAR 11 quedan en la",
+        "recepción de pintados (W-CAR 12: la descarga usa la tarima del 11). Despacho de carros por P2 (rev 6).",
         "Carros rodantes en filas demarcadas, uno detrás del otro, con los lugares de la tabla de arriba.",
         "Fila de fabricación con todos los elementos de la tabla de espacios de cada puesto de W-CAR.",
-        "PT de manuales: rack de 5 módulos (con los revendidos) y rack de 4 (cilindros), pasillo de 5,0 m a P4.",
+        "PT de manuales: rack de 5 módulos (con los revendidos) y rack de 4 (cilindros), pasillo de 3,6 m a P4.",
         "Sin medida en ningún presupuesto (criterio, marcado): desbobinador, alimentador Cena PRE-1, soldadora",
-        "circunferencial FS-SWH, jaulas, estación de big bag; armadora de cajas sin cotizar (referencia FS-DDP50).",
+        "circunferencial FS-SWH, jaulas, estación de big bag, extracciones localizadas, ciclón de la granalladora;",
+        "armadora de cajas sin cotizar (referencia FS-DDP50).",
     ], 2.0)
     return h
 
@@ -901,14 +967,14 @@ def _p(cod):
 
 FLUJOS = [
     # materia prima (autoelevador)
-    ("MP", [(-6.0, 16.0), (3.7, 16.0), (3.7, 30.0)], "MP a racks (AL-B)"),
-    ("MP", [(3.7, 16.0), (12.9, 16.0), (12.9, 44.5)], "Chapa, atados y bobinas (AL-A)"),
+    ("MP", [(-6.0, 16.0), (3.0, 16.0), (3.0, 30.0)], "MP a racks (AL-B)"),
+    ("MP", [(3.0, 16.0), (11.5, 16.0), (11.5, 44.5)], "Chapa, atados y bobinas (AL-A)"),
     ("MP", [(4.2, 16.0), (4.2, 13.6)], "Cuarentena"),
-    ("MP", [(12.9, 16.6), (18.3, 16.6), (18.3, 19.9)], "Chapa a la guillotina"),
-    ("MP", [(12.9, 33.0), (15.4, 33.0)], "Atado"),
-    ("MP", [(12.9, 43.3), (15.5, 43.3)], "Bobina"),
+    ("MP", [(11.5, 16.6), (18.3, 16.6), (18.3, 19.9)], "Chapa a la guillotina"),
+    ("MP", [(11.5, 33.0), (15.4, 33.0)], "Atado"),
+    ("MP", [(11.5, 43.3), (15.5, 43.3)], "Bobina"),
     ("MP", [(15.4, 13.6), (15.4, 14.6), (51.4, 14.6), (51.4, 13.5)], "Big bag"),
-    ("MP", [(51.4, 14.6), (75.1, 14.6), (75.1, 13.4)], "Big bag"),
+    ("MP", [(51.4, 14.6), (68.35, 14.6), (68.35, 13.4)], "Big bag"),
     ("MP", [(21.3, 16.0), (21.3, 13.6)], "Fleje y polvo"),
     # manuales (semielaborado)
     ("SE", [(21.6, 42.3), (31.4, 42.3)], "Cúpulas"),
@@ -919,24 +985,27 @@ FLUJOS = [
     ("SE", [(22.7, 38.0), (28.4, 38.0)], ""),
     ("SE", [(30.2, 38.0), (31.8, 38.0), (31.8, 36.0)], ""),
     ("SE", [(33.6, 36.0), (36.0, 36.0), (36.0, 41.8), (38.3, 41.8), (38.3, 42.3)], "A la soldadura circunferencial"),
-    ("SE", [(42.6, 41.9), (43.4, 41.9), (43.4, 30.2), (44.5, 30.2), (44.5, 40.25), (46.2, 40.25)],
+    ("SE", [(42.6, 41.9), (43.4, 41.9), (43.4, 30.2), (44.5, 30.2), (44.5, 41.55), (46.9, 41.55)],
      "Soldados -> espesor -> PH -> secado -> granallado"),
-    ("SE", [(50.9, 40.25), (52.4, 40.25)], ""),
-    ("SE", [(53.8, 39.4), (63.0, 39.4), (64.5, 40.6)], "Detección -> cuelgue"),
-    ("SE", [(70.8, 21.2), (70.8, 13.4)], "Pintados -> terminación"),
-    ("SE", [(72.0, 12.4), (64.0, 12.4), (63.2, 11.4), (63.2, 10.4), (72.6, 10.0), (74.3, 9.6)], "Terminación"),
-    ("PT", [(74.7, 7.9), (74.7, 3.9), (76.6, 3.9)], "Al rack de PT o directo al camión (P4)"),
+    ("SE", [(51.5, 41.3), (52.5, 41.3)], ""),
+    ("SE", [(53.2, 40.9), (53.2, 35.9)], "A corregir"),
+    ("SE", [(52.7, 33.6), (51.9, 38.6), (46.0, 39.5), (46.0, 40.85)], "Corregidos a re-granallar"),
+    ("SE", [(54.6, 41.7), (54.6, 42.8), (63.0, 42.8), (64.5, 41.8)], "Aprobados -> cuelgue"),
+    ("SE", [(61.5, 20.1), (61.5, 12.3)], "Vacíos al embalaje"),
+    ("SE", [(63.0, 20.1), (63.0, 17.0), (65.6, 17.0), (65.6, 13.45)], "Terminados a la carga"),
+    ("SE", [(67.0, 12.2), (74.6, 12.2), (74.9, 10.6), (74.9, 8.5), (72.0, 8.3), (66.4, 9.0)], "Terminación"),
+    ("PT", [(62.1, 6.2), (62.1, 3.2), (76.6, 3.2)], "Al rack de PT o directo al camión (P4)"),
     # carros
     ("SE", [(20.6, 25.8), (22.3, 27.0), (24.0, 26.6), (24.0, 23.0), (26.6, 22.9), (32.3, 26.0), (32.3, 23.0),
-            (34.8, 22.4), (39.6, 22.4), (46.0, 22.4), (51.9, 22.4), (51.9, 31.35), (50.6, 31.35)], "Carros"),
-    ("SE", [(51.6, 30.4), (53.4, 32.0)], ""),
-    ("SE", [(54.2, 33.1), (55.6, 32.3)], "PH -> secado"),
-    ("SE", [(56.6, 31.0), (58.05, 31.0), (58.05, 33.0), (59.0, 33.0)], "Secos al pulmón 11"),
-    ("SE", [(58.05, 23.2), (58.05, 21.0), (64.6, 20.6)], ""),
-    ("SE", [(65.3, 20.0), (65.3, 16.2), (76.6, 16.2)], "A la pintura (P3)"),
+            (34.8, 22.4), (39.6, 22.4), (46.0, 22.4), (51.9, 22.4), (51.9, 35.7), (50.3, 35.7)], "Carros"),
+    ("SE", [(50.75, 34.5), (50.75, 33.3)], ""),
+    ("SE", [(49.9, 32.7), (49.7, 31.9)], "PH -> secado"),
+    ("SE", [(49.0, 31.2), (49.0, 30.6), (51.9, 30.6), (51.9, 29.6), (58.05, 29.6), (59.0, 29.6)], "Secos al pulmón 11"),
+    ("SE", [(58.05, 26.0), (58.05, 20.6), (55.2, 20.6)], "A la tarima"),
+    ("SE", [(54.55, 19.9), (54.55, 16.2), (76.6, 16.2)], "A la pintura (P3)"),
     ("SE", [(76.6, 15.2), (53.2, 15.2), (53.2, 19.9)], "Pintados (P3)"),
-    ("SE", [(56.25, 22.9), (56.25, 23.8)], ""),
-    ("SE", [(57.0, 24.2), (57.2, 20.0), (57.2, 11.0), (56.3, 10.4)], "Pintados a la carga"),
+    ("SE", [(56.25, 22.9), (56.25, 24.3)], ""),
+    ("SE", [(57.0, 24.4), (57.2, 20.0), (57.2, 11.0), (56.3, 10.4)], "Pintados a la carga"),
     ("SE", [(53.8, 10.4), (53.0, 10.4)], ""),
     ("SE", [(49.8, 10.4), (47.7, 10.4)], "A -> B -> C"),
     ("SE", [(45.9, 9.2), (45.9, 8.7), (42.0, 8.7), (42.0, 9.4)], "Muestra a pérdidas"),
@@ -944,16 +1013,16 @@ FLUJOS = [
     ("SE", [(39.25, 7.9), (39.25, -1.0)], "Rodadura (P5)"),
     ("SE", [(44.9, 9.2), (43.0, 8.1), (43.0, 6.9)], "Etiquetado"),
     ("SE", [(43.6, 6.0), (44.2, 7.4), (46.0, 7.4), (46.0, 6.9)], "Etiquetado -> retenidos"),
-    ("PT", [(49.5, 6.9), (49.5, 7.4), (53.0, 7.4), (53.0, 6.9)], "Lote liberado"),
+    ("PT", [(48.0, 6.9), (48.0, 7.4), (53.0, 7.4), (53.0, 6.9)], "Lote liberado"),
     ("PT", [(57.4, 24.2), (57.4, 7.6), (56.8, 7.0)], "Cilindros vendidos vacíos a liberados"),
     ("PT", [(55.25, 1.6), (55.25, -1.0), (55.25, -8.0)], "Despacho de carros (P2, rampa y furgón)"),
 ]
 HILOS = [
-    [(M.XA0 + 26.7, M.YA0 + 2.0), (M.XA0 + 26.7, 46.0), (36.0, 46.0), (36.0, 20.0), (36.0, 13.5)],
-    [(M.XA0 + 26.7, 46.0), (58.0, 46.0), (58.0, 19.2)],
-    [(M.XA0 + 0.8, M.YA0 + 1.0), (M.XA0 + 0.8, 46.0)],
-    [(M.XA0 + 5.55, M.YA0 + 1.0), (M.XA0 + 5.55, 46.0)],
-    [(M.XA0 + 15.65, M.YA0 + 1.0), (M.XA0 + 15.65, 46.0)],
+    [(M.XA0 + 22.6, M.YA0 + 1.0), (M.XA0 + 22.6, 46.0), (58.0, 46.0), (58.0, 19.2)],
+    [(M.XA0 + 22.6, 46.0), (44.5, 46.0), (44.5, 29.5)],
+    [(44.5, 46.0), (36.0, 46.0), (36.0, 20.0), (36.0, 13.5)],
+    [(M.XA0 + 0.45, M.YA0 + 1.0), (M.XA0 + 0.45, 46.0)],
+    [(M.XA0 + 11.6, M.YA0 + 1.0), (M.XA0 + 11.6, 46.0)],
 ]
 
 
@@ -992,10 +1061,12 @@ def fl_03(doc, ox):
             filas, 4.3, 2.0, "Pasillos (m)")
     c.titulo("Criterios de circulación", 3.0)
     c.parrafo([
-        "Un solo autoelevador (Heli CPCD50, W-MAN y W-CAR): circula sólo por A2, AL-A y AL-B (5,0 m) y entra a los",
-        "puestos únicamente donde la máquina mira al carril: mesa elevadora, cajón del atado, desbobinador,",
-        "contenedores de scrap (a P7), big bags (terminación y carro 13), envolvedora y racks de PT (pasillo",
-        "PT-MA); las tarimas de los carros 11 y 12 las lleva por el pasillo principal a P3.",
+        "Heli CPCD50 (W-MAN y W-CAR): circula por A2 y AL-A (5,0 m) y entra a los puestos únicamente donde la",
+        "máquina mira al carril: mesa elevadora, cajón del atado, desbobinador, contenedores de scrap (a P7), big",
+        "bags (terminación y carro 13); las tarimas de los carros 11 y 12 las lleva por el pasillo principal a P3.",
+        "Heli CPD15 eléctrico (agregado por los pasillos angostos que pidió el usuario): racks R1 por AL-B (3,6 m),",
+        "racks de PT por PT-MA (3,0 m, un sentido) y PT-MA2 (3,6 m), envolvedora y camión de P4. Apilado a 90°:",
+        "3.315 a 3.515 mm según el pallet (ficha Heli CPD15-20); el CPCD50 necesitaría 4,96 m.",
         "Los operarios caminan por las sendas (amarillas) y por los pasillos de operarios de 1,5 a 2,0 m;",
         "cruzan el carril sólo por los cruces demarcados de la baranda.",
         "Atados de 6 m: se mueven colgados de la pluma (W-MAN 1 y 2), a lo largo del pasillo.",
@@ -1045,7 +1116,7 @@ def fl_04(doc, ox):
     win1 = (-1.0, 18.0, 16.0, 48.0)
     pl1 = D.Plano(h, 50, (win1[0], win1[1]), (h.fx0 + 15, h.fy0 + 25))
     _ventana(pl1, win1, dib)
-    pl1.texto("Almacén de MP (x 0 a 15,4; y 20 a 47)", pl1.P(win1[0], win1[3]), 4.0, A.BOTTOM_LEFT, papel=True)
+    pl1.texto("Almacén de MP (x 0 a 14,0; y 20 a 47)", pl1.P(win1[0], win1[3]), 4.0, A.BOTTOM_LEFT, papel=True)
     win2 = (-6.5, -1.0, 26.0, 19.0)
 
     def dib2(pl):
@@ -1088,7 +1159,8 @@ def fl_04(doc, ox):
     c2 = Col(pl2, h.fx0 + 395, c.y)
     leyenda_secciones(c2)
     c2.parrafo([
-        "Pasillos de 5,0 m para el Heli CPCD50 (W-CAR 1). Los racks de carros, los retenidos, las pilas de pallets",
+        "AL-A de 5,0 m para el Heli CPCD50 (W-CAR 1) y AL-B de 3,6 m para el Heli CPD15 (pedido del usuario; ficha",
+        "Heli: 3,3 a 3,5 m para apilar a 90°). Los racks de carros, los retenidos, las pilas de pallets",
         "y la estantería miran a AL-B; el rack de chapas, la calle de chapa y el cantiléver miran a AL-A (W-CAR 1:",
         "«la calle de chapa y los racks quedan del otro lado del pasillo»). El procesado de X-ALM no va al almacén:",
         "W-MAN lo guarda en los carros de 12 cajones al lado de cada puesto. Los insumos de recargas no van.",
@@ -1097,9 +1169,9 @@ def fl_04(doc, ox):
 
 
 def cotas_alm(pl):
-    pl.cadena([0, 1.2, 6.2, 7.4, 8.4, 10.4, 15.4], 47.0, 6.0, True)
+    pl.cadena([0, 1.2, 4.8, 6.0, 7.2, 9.0, 14.0], 47.0, 6.0, True)
     pl.cadena([20.0, 23.7, 36.15, 40.3, 44.8, 47.0], 0.0, -6.0, False)
-    pl.cadena([20.0, 24.5, 34.5, 47.0], 15.4, 3.0, False)
+    pl.cadena([20.0, 24.5, 34.3, 47.0], 14.0, 3.0, False)
     pl.cadena([0, 10.0, 11.5, 13.0, 18.4, 24.7], 0.0, -4.0, True)
     pl.cadena([0, 8.4, 9.9, 13.5, 18.5, 20.0], 0.0, -8.0, False)
 
@@ -1158,8 +1230,8 @@ def fl_05(doc, ox):
              "Layout 2035 v10 - croquis del usuario y dotación de la X-DT", "FL_PI10_05", 5, 6, "1:50",
              "Plano de detalle")
     titulo_hoja(D.Plano(h, 50, (0, 0), (0, 0)), h, "FL_PI10_05 - ADMINISTRACIÓN Y SERVICIOS AL PERSONAL (ANEXO NORTE)",
-                "Disposición y marcas del croquis del usuario (27,6 × 14,3 m, calle al norte, planta al sur): accesos, "
-                "rampas, relojes, ventanillas, matafuegos, baranda con cruces y los 12 circuitos del personal.")
+                "Copia del plano del usuario (23,6 × 14,3 m ≈ 337 m², calle al norte, planta al sur): locales, muebles, "
+                "accesos, rampas, relojes, ventanilla, matafuegos, baranda con cruces y los circuitos del personal.")
     win = (M.XA0 - 4.0, 43.5, M.XA1 + 4.0, 70.5)
     pl = D.Plano(h, 50, (win[0], win[1]), (h.fx0 + 15, h.fy0 + 230))
 
@@ -1170,6 +1242,7 @@ def fl_05(doc, ox):
         pasillos(p, h=2.0)
         equipos(p, rotulos=False, win=win)
         muebles(p)
+        rampas(p, 2.0)
         muros(p)
         puertas(p, h=2.2)
         for cod, nom, r in M.EXTERIOR:
@@ -1178,7 +1251,6 @@ def fl_05(doc, ox):
                 if cod == "CALLE":
                     p.relleno(r.pts(), (215, 215, 215), "A-EXTERIOR")
                 p.texto(_corto(nom, 60), (r.x1 - 0.4, r.y1 - 0.4), 2.2, A.TOP_RIGHT, "A-TEXTO")
-        rampas(p, 2.0)
         predio(p, 2.2)
         for xy in M.MATAFUEGOS_ADMIN:
             _disco(p, xy, 0.17, (215, 30, 30))
@@ -1212,16 +1284,20 @@ def fl_05(doc, ox):
     c.tabla([("Dotación 2035 sin recargas", 200, "l"), ("Personas", 22, "r"), ("Fuente", 110, "l")], filas, 5.2, 2.6,
             "Dotación")
     c2 = Col(pl, c.x, c.y - 4)
-    hay = lambda loc, t: str(cuenta.get((loc, t), 0))
-    filas = [["Inodoros", "2", hay("AD-VH", "inodoro"), "1", hay("AD-VM", "inodoro")],
-             ["Orinales", "3", hay("AD-VH", "mingitorios"), "-", "-"],
-             ["Lavabos", "4", hay("AD-VH", "lavabos"), "1", hay("AD-VM", "lavabos")],
-             ["Duchas", "3", hay("AD-VH", "duchas"), "1", hay("AD-VM", "duchas")],
-             ["Armarios dobles", "34", hay("AD-VH", "armarios"), "4", hay("AD-VM", "armarios")],
-             ["Lugares del comedor (2 tandas)", "18", hay("AD-CO", "mesa"), "", ""]]
-    c2.tabla([("Vestuarios de planta y comedor", 80, "l"), ("Pide H", 22, "r"), ("Hay H", 22, "r"),
+    from .verificar import PEDIDO_SAN, artefactos
+    H = artefactos(cuenta, PEDIDO_SAN["varones"][0])
+    Mu = artefactos(cuenta, PEDIDO_SAN["mujeres"][0])
+    pH, pM = PEDIDO_SAN["varones"][1], PEDIDO_SAN["mujeres"][1]
+    filas = [["Inodoros", str(pH["inodoro"]), str(H.get("inodoro", 0)), str(pM["inodoro"]), str(Mu.get("inodoro", 0))],
+             ["Orinales", str(pH["mingitorios"]), str(H.get("mingitorios", 0)), "-", "-"],
+             ["Lavabos", str(pH["lavabos"]), str(H.get("lavabos", 0)), str(pM["lavabos"]), str(Mu.get("lavabos", 0))],
+             ["Duchas", str(pH["duchas"]), str(H.get("duchas", 0)), str(pM["duchas"]), str(Mu.get("duchas", 0))],
+             ["Armarios (lockers de 3 niveles)", str(pH["armarios"]), str(H.get("armarios", 0)), str(pM["armarios"]),
+              str(Mu.get("armarios", 0))],
+             ["Lugares del comedor (2 tandas)", "18", str(cuenta.get(("AD-CO", "mesa"), 0)), "", ""]]
+    c2.tabla([("Sanitarios, vestuarios y baños de oficinas", 80, "l"), ("Pide H", 22, "r"), ("Hay H", 22, "r"),
               ("Pide M", 22, "r"), ("Hay M", 22, "r")], filas, 5.2, 2.6,
-             "Sanitarios y vestuarios (Dec. 351/79 art. 49, fórmulas X-DT)")
+             "Sanitarios y vestuarios (Dec. 351/79 art. 49, fórmulas X-DT); más el baño accesible")
     filas = [["", txt, f"≈ {f(_largo(pts), 0)} m"] for n, txt, rgb, pts in M.CIRCUITOS]
     x0, y0 = h.fx0 + 15, h.fy0 + 218
     pl.tabla(x0, y0, [("N.º", 10, "c"), ("Circuito (croquis del usuario)", 170, "l"), ("Largo en el plano", 30, "r")],
@@ -1233,15 +1309,16 @@ def fl_05(doc, ox):
         t.rgb = (255, 255, 255)
     norte_escala(pl, h.fx0 + 260, h.fy0 + 150)
     c2.parrafo([
-        "Además: baño accesible (Ley 24.314) y baños de mujeres y de varones de oficinas, del croquis.",
-        "Accesos separados (croquis): visitas, gerencia y oficinas por el hall (H1, rampa norte y plataforma a",
-        "nivel, cajón accesible de 3,50 × 5,00 m); operarios por el vestíbulo lateral este (H3, rampa, reloj) ->",
-        "vestuarios -> paso de personal -> planta (PN-4); supervisión, PCP, calidad y HyS por el ingreso oeste",
-        "(H4, rampa y reloj). Sala técnica (PN-1), enfermería (PN-2, 1,10 m) y comedor (PN-3) con puerta directa",
-        "a la senda norte; pañol de EPP y RRHH con ventanilla. Pasillo de emergencia de 1,5 m a la calle (H2) y",
-        "salida del paso de personal (H5); las puertas exteriores abren hacia afuera. Dos matafuegos en el pasillo",
-        "único. Senda norte con baranda y cruces pintados frente a cada puerta a la planta. Plenum sanitario único.",
-        "Rampas: " + M.NOTA_RAMPA.lower() + ". Portones del predio PC-4 a PC-6: accesos peatonales del croquis.",
+        "Copia del plano del usuario, medido con su escala gráfica. Accesos: visitas, gerencia y oficinas por el",
+        "hall (H1 de doble hoja, plataforma a nivel, rampa norte y cajón reservado de 3,50 × 5,00 m); operarios por",
+        "el vestíbulo lateral este (H3, rampa, reloj y cartelera de HyS) -> vestuarios -> paso de personal -> planta",
+        "(PN-3, doble hoja); supervisión por el ingreso oeste (H4, rampa y reloj del pasillo). Sala técnica (PN-1,",
+        "con vidrio a la planta) y comedor (PN-2) con puerta directa a la senda norte; como en el plano, a la sala",
+        "técnica se entra por la gerencia. RRHH con ventanilla al vestíbulo. Pasillo de emergencia de 1,5 m a la",
+        "calle (H2) y salida del paso de personal (H5); las puertas exteriores abren hacia afuera. Baño accesible",
+        "con puerta corrediza (Ley 24.314). Dos matafuegos en el pasillo único. Plenum sanitario único.",
+        "Higiene y Seguridad y medicina laboral son servicios externos (X-DT, Notas M29): no hay enfermería ni pañol",
+        "de EPP en el plano. Rampas: " + M.NOTA_RAMPA.lower() + ".",
     ], 2.6)
     return h
 
@@ -1399,7 +1476,7 @@ def fl_06(doc, ox):
                 "Alturas con fuente (ET, cotizaciones, W-CAR, hoja de especificaciones); lo que no tiene alto en "
                 "ninguna fuente va marcado «s/d». Ubicación de los cortes en la planta de la derecha y en FL_PI10_01.")
     usados = {}
-    lam = [("A", -9.0, 80.0, (22, 640), "CORTE A-A  (longitudinal por y = 6,6 m, mirando al norte)"),
+    lam = [("A", -9.0, 80.0, (22, 640), "CORTE A-A  (longitudinal por y = 5,6 m, mirando al norte)"),
            ("C", -9.0, 80.0, (22, 470), "CORTE C-C  (longitudinal por y = 37,65 m, mirando al norte)"),
            ("B", -5.0, 77.5, (22, 300), "CORTE B-B  (transversal por x = 38,4 m, mirando al oeste; el norte a la derecha)"),
            ("D", -5.0, 50.0, (22, 130), "CORTE D-D  (transversal por x = 68,3 m, mirando al oeste; el norte a la derecha)")]
@@ -1424,8 +1501,8 @@ def fl_06(doc, ox):
     c.tabla([("Elemento", 34, "l"), ("Alto (m)", 16, "r"), ("Fuente", 300, "l")], filas, 4.4, 2.2,
             "Alturas dibujadas y su fuente")
     c.parrafo([
-        "Portones: 4,5 m de alto (criterio: caja de camión de hasta 4,1 m, Ley 24.449 art. 53); P1, P3 y P4 de",
-        "5,0 m de ancho, P7 de 4,0 m y P2 de 3,5 m (plano de carros del usuario, rev 6).",
+        "Portones: 4,5 m de alto (criterio: caja de camión de hasta 4,1 m, Ley 24.449 art. 53); P1 y P3 de",
+        "5,0 m de ancho, P4 de 3,6 m (pasillo de los racks), P7 de 4,0 m y P2 de 3,5 m (plano de carros, rev 6).",
         "Los equipos sin alto en ninguna fuente (guillotina, roladora W12, viradores, soldadoras, bobinas, carros de",
         "planta, pallets en piso) se marcan «s/d»: se completan con el plano del fabricante.",
     ], 2.4)
