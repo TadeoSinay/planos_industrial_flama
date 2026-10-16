@@ -7,10 +7,15 @@ fórmula; negro y grises.
 import os
 import sys
 
-from openpyxl import Workbook
-from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
-from openpyxl.utils import get_column_letter as L
-from openpyxl.worksheet.datavalidation import DataValidation
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt                       # noqa: E402
+from matplotlib.patches import Rectangle             # noqa: E402
+from openpyxl import Workbook                         # noqa: E402
+from openpyxl.drawing.image import Image as XLImage  # noqa: E402
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side  # noqa: E402
+from openpyxl.utils import get_column_letter as L     # noqa: E402
+from openpyxl.worksheet.datavalidation import DataValidation  # noqa: E402
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SALIDA = os.path.join(RAIZ, "salida")
@@ -715,6 +720,286 @@ fila(ws, 23, "¿Entra en la carga útil?", "", ['=IF(C22<=F20,"sí","no")'], Non
 celda(ws, 25, 1, "Fuentes: Iveco, 9 jaulas A, 8 jaulas B, 2 pallets de rodantes, unas 2 t y pico de 1,2 t (" + WORD_REC +
       "). Camión chico y sider: hojas Datos y Camion. Máximo de 3 viajes por día: dato del usuario.")
 ws.merge_cells(start_row=25, start_column=1, end_row=25, end_column=7)
+
+# ================================================================== Vistas: vista superior de los vehículos por escenario
+# Dibujadas con los valores base del libro (año 2035); las cuentas de las otras hojas se recalculan, los dibujos no.
+IMG = os.path.join(SALIDA, "palletizado_img")
+os.makedirs(IMG, exist_ok=True)
+IA = ANIOS.index(2035)
+GRV = ["#f2f2f2", "#d9d9d9", "#bfbfbf", "#a6a6a6", "#8c8c8c"]
+
+
+def rnd(x):
+    return int(x + 0.5)                                # ROUND de Excel (mitad hacia arriba)
+
+
+def caja_py(k):
+    L_, A_, H_ = CAJA["L"][k], CAJA["A"][k], CAJA["H"][k]
+    pc = CAJA["u"][k] * CAJA["masa"][k] + CAJA["tara"][k]
+    cc = max((1200 // L_) * (1000 // A_), (1200 // A_) * (1000 // L_))
+    ca = min((1600 - 145) // H_, int(1100 // (cc * pc)))
+    return cc * ca * CAJA["u"][k], cc * ca * pc + 35
+
+
+def cil_py(k):
+    D_, H_, m = CIL["D"][k], CIL["H"][k], CIL["m"][k]
+    cc = int(1200 // D_) * int(1000 // D_)
+    ca = max(1, min(int((1600 - 145) // (H_ + 3)), int(1100 // (cc * m + 0.6))))
+    return cc * ca, cc * ca * m + (ca + 1) * 0.6 + 35
+
+
+def reparto(part, n):
+    out, acum, prev = [], 0.0, 0
+    for p in part:
+        acum += p
+        cur = rnd(acum * n)
+        out.append(cur - prev)
+        prev = cur
+    return out
+
+
+def mix_pal(ks, cil, cap, cu):
+    UW = [cil_py(k) if cil else caja_py(k) for k in ks]
+    anual = [(CILINDROS if cil else TERMINADOS)[k][IA] for k in ks]
+    tot = [sum(a * PERFILES[PERFIL_DE[k] - 1][1][j] / uw[0] for k, a, uw in zip(ks, anual, UW)) for j in range(12)]
+    j = tot.index(max(tot))
+    pal = [a * PERFILES[PERFIL_DE[k] - 1][1][j] / uw[0] for k, a, uw in zip(ks, anual, UW)]
+    part = [p / sum(pal) for p in pal]
+    n = min(cap, int(cu // sum(p * uw[1] for p, uw in zip(part, UW))))
+    return reparto(part, n), UW
+
+
+MAS_Z = [(0.0, 3.857 - 1.0 - 0.6, 1.765, 0.0), (3.857 - 1.6, 3.857 - 0.6, 1.38, (1.765 - 1.38) / 2),
+         (3.857 - 0.6, 3.857, 1.765, 0.0)]            # zonas de la Master: delantera, pasos de rueda, trasera
+
+
+def zona_py(largo, ancho, l_, a_):
+    op = [(int(round(largo / x, 6)) * int(round(ancho / y, 6)), x, y) for x, y in ((l_, a_), (a_, l_))]
+    return max(op, key=lambda t: t[0])
+
+
+def master_cap(k):
+    l_, a_ = CARRO["L"][k] / 1000, CARRO["A"][k] / 1000
+    return sum(zona_py(x1 - x0, w, l_, a_)[0] for x0, x1, w, _ in MAS_Z)
+
+
+def master_mix():
+    ks = [0, 1, 2, 3]
+    anual = [TERMINADOS[4 + k][IA] for k in ks]
+    tot = [sum(a * PERFILES[2][1][j] for a in anual) for j in range(12)]
+    j = tot.index(max(tot))
+    dem = [a * PERFILES[2][1][j] for a in anual]
+    part = [x / sum(dem) for x in dem]
+    cap = [master_cap(k) for k in ks]
+    n = min(int(1 / sum(p / c for p, c in zip(part, cap))), int(1593 // sum(p * CARRO["m"][k] for p, k in zip(part, ks))))
+    return reparto(part, n)
+
+
+def caja_camion(ax, largo, ancho, util_l, util_a, cab_txt, lateral=True):
+    ax.add_patch(Rectangle((-1.7, ancho * 0.12), 1.55, ancho * 0.76, fc=GRV[4], ec="black", lw=0.8))
+    ax.text(-0.92, ancho / 2, cab_txt, ha="center", va="center", fontsize=6.5, rotation=90)
+    ax.add_patch(Rectangle((0, 0), largo, ancho, fc="white", ec="black", lw=1.4))
+    ax.add_patch(Rectangle(((largo - util_l) / 2, (ancho - util_a) / 2), util_l, util_a, fill=False, ec="black",
+                           lw=0.5, ls="--"))
+    if lateral:
+        for x in (largo * 0.2, largo * 0.5, largo * 0.8):
+            ax.annotate("", xy=(x, -0.04), xytext=(x, -0.45), arrowprops=dict(arrowstyle="->", lw=0.7))
+        ax.text(largo / 2, -0.62, "carga lateral con autoelevador", ha="center", fontsize=6)
+    ax.set_xlim(-1.9, largo + 0.3)
+    ax.set_ylim(-0.8, ancho + 0.2)
+    ax.set_aspect("equal")
+    ax.axis("off")
+
+
+def slots_sider():
+    # 7 filas de 1,0 m a lo largo × 2 de 1,2 m a lo ancho (hoja Camion)
+    return [(0.05 + i * 1.0 + 0.03, 0.07 + j * 1.2 + 0.03, 0.94, 1.14) for i in range(7) for j in range(2)]
+
+
+def slots_chico():
+    # 3 filas de 1,2 m a lo largo × 2 de 1,0 m a lo ancho (hoja Camion)
+    return [(0.05 + i * 1.2 + 0.03, 0.2 + j * 1.0 + 0.03, 1.14, 0.94) for i in range(3) for j in range(2)]
+
+
+def dibujar_pallets(ax, slots, carga):
+    """carga: lista de (etiqueta, tono) por lugar ocupado, en orden de carga."""
+    for (x, y, w, h), (txt, tono) in zip(slots, carga):
+        ax.add_patch(Rectangle((x, y), w, h, fc=GRV[tono], ec="black", lw=0.7))
+        ax.text(x + w / 2, y + h / 2, txt, ha="center", va="center", fontsize=5.4, linespacing=1.0)
+
+
+def fig_grupo(nombre, archivo, filas, dibujar):
+    fig, axs = plt.subplots(len(filas), 1, figsize=(8.2, 2.05 * len(filas) + (0.4 if len(filas) == 1 else 0)),
+                            squeeze=False)
+    axs = axs[:, 0]
+    for ax, (tit_, args) in zip(axs, filas):
+        dibujar(ax, *args)
+        ax.set_title(tit_, fontsize=8, loc="left")
+    fig.suptitle(nombre, fontsize=10, fontweight="bold", x=0.02, ha="left")
+    fig.tight_layout()
+    f = os.path.join(IMG, archivo)
+    fig.savefig(f, dpi=105)
+    plt.close(fig)
+    return f
+
+
+def fmt_n(x):
+    return f"{x:,.0f}".replace(",", ".")
+
+
+# ---- manuales en caja: camión chico (6 lugares, 6 t)
+CAP_CH, CU_CH = 6, 6000
+CAP_SI, CU_SI = 14, 12000
+
+
+def esc_pallets(ks, cil, cap, cu, slots_fn, cab_txt, pref):
+    filas = []
+    for i, k in enumerate(ks):
+        U, W = cil_py(k) if cil else caja_py(k)
+        n = min(cap, int(cu // W))
+        carga = [(f"{pref}{TIPOS[k]}\n{U} u", i % 4 + 1)] * n
+        filas.append((f"{i + 1}. Todo {TIPOS[k]}: {n} pallets, {fmt_n(n * U)} u, {fmt_n(n * W)} kg", (carga,)))
+    cnt, UW = mix_pal(ks, cil, cap, cu)
+    carga = []
+    for i, (k, c) in enumerate(zip(ks, cnt)):
+        carga += [(f"{pref}{TIPOS[k]}\n{UW[i][0]} u", i % 4 + 1)] * c
+    det = " + ".join(f"{c} de {TIPOS[k]}" for k, c in zip(ks, cnt) if c)
+    filas.append((f"5. Mix: {det} = {sum(cnt)} pallets, {fmt_n(sum(c * uw[0] for c, uw in zip(cnt, UW)))} u, "
+                  f"{fmt_n(sum(c * uw[1] for c, uw in zip(cnt, UW)))} kg", (carga,)))
+
+    def dib(ax, carga_):
+        if slots_fn is slots_chico:
+            caja_camion(ax, 4.30, 2.40, 4.20, 2.30, cab_txt)
+        else:
+            caja_camion(ax, 7.50, 2.60, 7.40, 2.46, cab_txt)
+        dibujar_pallets(ax, slots_fn(), carga_)
+    return filas, dib
+
+
+IMGS = []
+f_, d_ = esc_pallets([0, 1, 2, 3], False, CAP_CH, CU_CH, slots_chico, "cabina", "")
+IMGS.append(("Matafuegos manuales en caja: camión chico GyL baranda volcable 4,30 m",
+             fig_grupo("Matafuegos manuales en caja - camión chico GyL baranda volcable 4,30 m (vista superior)",
+                       "vista_manuales.png", f_, d_)))
+f_, d_ = esc_pallets([0, 1, 2, 3], True, CAP_SI, CU_SI, slots_sider, "cabina", "Cil.\n")
+IMGS.append(("Cilindros de manuales: sider GyL balancín 7,50 m",
+             fig_grupo("Cilindros de manuales - sider GyL balancín 7,50 m (vista superior)", "vista_cil_manuales.png",
+                       f_, d_)))
+f_, d_ = esc_pallets([4, 5, 6, 7], True, CAP_SI, CU_SI, slots_sider, "cabina", "Cil.\n")
+IMGS.append(("Cilindros de rodantes: sider GyL balancín 7,50 m",
+             fig_grupo("Cilindros de rodantes - sider GyL balancín 7,50 m (vista superior)", "vista_cil_rodantes.png",
+                       f_, d_)))
+
+
+# ---- rodantes: Renault Master L3H2
+def empacar(items):
+    """Estantes por zona: items = [(etiqueta, tono, l, a)], de mayor a menor. Devuelve rectángulos ubicados."""
+    out = []
+    est = {z: [] for z in range(3)}                   # por zona: [x0, prof, y_libre]
+    xlib = [z[0] for z in MAS_Z]
+    for txt, tono, l_, a_ in items:
+        hecho = False
+        for z, (x0, x1, w, y0) in enumerate(MAS_Z):
+            for e in est[z]:
+                for px, py in ((l_, a_), (a_, l_)):
+                    if px <= e[1] + 1e-9 and e[2] + py <= y0 + w + 1e-9:
+                        out.append((e[0], e[2], px, py, txt, tono))
+                        e[2] += py
+                        hecho = True
+                        break
+                if hecho:
+                    break
+            if hecho:
+                break
+            for px, py in sorted(((l_, a_), (a_, l_)), key=lambda t: t[0]):
+                if xlib[z] + px <= x1 + 1e-9 and py <= w + 1e-9:
+                    est[z].append([xlib[z], px, y0 + py])
+                    out.append((xlib[z], y0, px, py, txt, tono))
+                    xlib[z] += px
+                    hecho = True
+                    break
+            if hecho:
+                break
+    return out
+
+
+def dib_master(ax, rects):
+    Lm, Am = 3.857, 1.765
+    ax.add_patch(Rectangle((-1.2, 0.12), 1.05, Am - 0.24, fc=GRV[4], ec="black", lw=0.8))
+    ax.text(-0.67, Am / 2, "cabina", ha="center", va="center", fontsize=6.5, rotation=90)
+    ax.add_patch(Rectangle((0, 0), Lm, Am, fc="white", ec="black", lw=1.4))
+    xa = MAS_Z[1][0]
+    for y0 in (0, Am - (Am - 1.38) / 2):
+        ax.add_patch(Rectangle((xa, y0), 1.0, (Am - 1.38) / 2, fc=GRV[4], ec="black", lw=0.5))
+    for x, y, w, h, txt, tono in rects:
+        ax.add_patch(Rectangle((x + 0.015, y + 0.015), w - 0.03, h - 0.03, fc=GRV[tono], ec="black", lw=0.7))
+        ax.text(x + w / 2, y + h / 2, txt, ha="center", va="center", fontsize=5.6)
+    ax.text(Lm + 0.08, Am / 2, "puertas\ntraseras\n(rampa)", va="center", fontsize=6)
+    ax.set_xlim(-1.4, Lm + 0.9)
+    ax.set_ylim(-0.1, Am + 0.1)
+    ax.set_aspect("equal")
+    ax.axis("off")
+
+
+filas = []
+for i in range(4):
+    l_, a_ = CARRO["L"][i] / 1000, CARRO["A"][i] / 1000
+    n = min(master_cap(i), int(1593 // CARRO["m"][i]))
+    rects = []
+    for x0, x1, w, y0 in MAS_Z:                       # misma orientación por zona que la hoja Camion
+        nz, lx, ay = zona_py(x1 - x0, w, l_, a_)
+        nx, ny = int(round((x1 - x0) / lx, 6)), int(round(w / ay, 6))
+        rects += [(x0 + ix * lx, y0 + iy * ay, lx, ay, TIPOS[4 + i], i + 1) for ix in range(nx) for iy in range(ny)]
+    filas.append((f"{i + 1}. Todo {TIPOS[4 + i]}: {n} carros, {fmt_n(n * CARRO['m'][i])} kg", (rects[:n],)))
+cnt = master_mix()
+items = []
+for i in (3, 2, 1, 0):                               # los más grandes primero
+    items += [(TIPOS[4 + i], i + 1, CARRO["L"][i] / 1000, CARRO["A"][i] / 1000)] * cnt[i]
+det = " + ".join(f"{c} de {TIPOS[4 + i]}" for i, c in enumerate(cnt) if c)
+filas.append((f"5. Mix: {det} = {sum(cnt)} carros, {fmt_n(sum(c * m for c, m in zip(cnt, CARRO['m'])))} kg",
+              (empacar(items),)))
+IMGS.insert(1, ("Rodantes: Renault Master L3H2",
+                fig_grupo("Rodantes terminados - Renault Master L3H2 (vista superior)", "vista_rodantes.png", filas,
+                          dib_master)))
+
+# ---- recargas: viaje tipo del sider con jaulas A, B y pallets de rodantes (hoja Recargas)
+cap_fmt = {"A 1 kg": 144, "B 2,5 kg": 60, "B 5 kg": 48, "B 10 kg": 32}
+for k in range(4):
+    cap_fmt[f"R {TIPOS[4 + k]}"] = max((1200 // CARRO["L"][k]) * (1000 // CARRO["A"][k]),
+                                       (1200 // CARRO["A"][k]) * (1000 // CARRO["L"][k]))
+nom_rec = [n for n, _ in REC]
+lug = {"A": 0.0, "B": 0.0, "R": 0.0}
+for i, (nom, v) in enumerate(REC):
+    sem = v[IA] * SHARE[IA] / 48
+    j = nom_rec.index(REC_SUST[i])
+    lug[REC_FMT[i][0]] += sem / cap_fmt[REC_FMT[i]]
+    lug[REC_FMT[j][0]] += sem / cap_fmt[REC_FMT[j]]
+tot = sum(lug.values())
+cnt = reparto([lug[c] / tot for c in "ABR"], CAP_SI)
+carga = ([("Jaula A\n(1 kg)", 1)] * cnt[0] + [("Jaula B\n(2,5-10)", 2)] * cnt[1] +
+         [("Pallet\nrodantes", 3)] * cnt[2])
+
+
+def dib_rec(ax, carga_):
+    caja_camion(ax, 7.50, 2.60, 7.40, 2.46, "cabina")
+    dibujar_pallets(ax, slots_sider(), carga_)
+
+
+IMGS.append(("Recargas y sustitutos: sider GyL balancín 7,50 m",
+             fig_grupo("Recargas + sustitutos de la planta industrial - sider GyL balancín 7,50 m (viaje tipo)",
+                       "vista_recargas.png",
+                       [(f"Viaje tipo: {cnt[0]} jaulas A + {cnt[1]} jaulas B + {cnt[2]} pallets de rodantes = "
+                         f"{sum(cnt)} lugares", (carga,))], dib_rec)))
+
+ws = hoja("Vistas", [2] + [12] * 10)
+tit(ws, 1, "Vista superior de los vehículos por escenario (dibujada con los valores de 2035)")
+fila_ = 3
+for nom, f in IMGS:
+    img = XLImage(f)
+    esc = 760 / img.width
+    img.width, img.height = 760, int(img.height * esc)
+    ws.add_image(img, f"B{fila_}")
+    fila_ += int(img.height / 20) + 2
 
 salida = sys.argv[1] if len(sys.argv) > 1 else os.path.join(SALIDA, "palletizado_PT.xlsx")
 os.makedirs(os.path.dirname(salida), exist_ok=True)
