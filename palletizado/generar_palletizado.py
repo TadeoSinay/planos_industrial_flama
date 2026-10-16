@@ -1,6 +1,6 @@
 """Genera salida/palletizado_PT.xlsx: pallets por camión, disposición por pallet y frecuencia de envíos.
 
-Sólo cuentas (pedido del usuario): Datos -> Produccion -> Pallet -> Camion -> Escenarios. Todo lo calculado es
+Sólo cuentas (pedido del usuario): Datos -> Demanda -> Pallet -> Camion -> Escenarios. Todo lo calculado es
 fórmula; negro y grises.
 """
 
@@ -183,9 +183,9 @@ def d(clave, k=0):
     return f"Datos!${L(3 + k)}${D[clave]}"
 
 
-# ================================================================== Produccion
-ws = hoja("Produccion", [12] + [10] * 16)
-tit(ws, 1, "Producción anual (Proyecciones 5, hoja Indexado Dim Técnico)")
+# ================================================================== Demanda
+ws = hoja("Demanda", [12] + [10] * 20)
+tit(ws, 1, "Demanda anual (Proyecciones 5, hoja Indexado Dim Técnico)")
 COLS = ["Term. " + t for t in TIPOS] + ["Cil. " + t for t in TIPOS]
 cab(ws, 2, ["Año"] + COLS)
 a0 = 3
@@ -215,7 +215,7 @@ for k, (nom, v) in enumerate(PERFILES):
 ws.column_dimensions["A"].width = 22
 
 r = P0 + 4
-tit(ws, r, "Producción por semana del año elegido (u/semana = anual × % del mes ÷ semanas por mes)")
+tit(ws, r, "Demanda por semana del año elegido (u/semana = anual × % del mes ÷ semanas por mes)")
 cab(ws, r + 1, ["Mes"] + COLS)
 S0 = r + 2
 for j in range(12):
@@ -229,6 +229,7 @@ celda(ws, S1 + 1, 1, "Semana pico", neg=True)
 for c in range(2, 18):
     celda(ws, S1 + 1, c, f"=MAX({L(c)}{S0}:{L(c)}{S1})", "#,##0", res=True)
 ws.freeze_panes = "B3"
+WS_DEM = ws
 
 
 def pcol(k, cil=False):
@@ -336,26 +337,49 @@ fila(ws, 12, "Carros por lugar", "u", [f"=SUM({L(3 + k)}9:{L(3 + k)}11)" for k i
 fila(ws, 13, "Carros por peso", "u", [f"=INT({d('MCU')}/{d('rm', k)})" for k in range(4)], "#,##0")
 fila(ws, 14, "Carros por furgón", "u", [f"=MIN({L(3 + k)}12,{L(3 + k)}13)" for k in range(4)], "#,##0", res=True)
 
+# ---- Demanda: pallets (o carros) por semana de cada mix, para el mes pico y los viajes del escenario 5
+MIXES = [("Pallets mix term. 1 a 10", [0, 1, 2, 3], False, False), ("Carros mix 25 a 100", [4, 5, 6, 7], False, True),
+         ("Pallets mix cil. 1 a 10", [0, 1, 2, 3], True, False), ("Pallets mix cil. 25 a 100", [4, 5, 6, 7], True, False)]
+MIXCOL = {}
+for g, (nom, ks_, cil_, fur_) in enumerate(MIXES):
+    c = 18 + g
+    MIXCOL[(ks_[0], cil_)] = L(c)
+    x = WS_DEM.cell(S0 - 1, c, nom)
+    x.font, x.fill, x.alignment, x.border = F_W, NEGRO, CEN, BORDE
+    for j in range(13):
+        rr = S0 + j
+        if j == 12:
+            celda(WS_DEM, rr, c, f"=MAX({L(c)}{S0}:{L(c)}{S1})", "0.0", res=True)
+        elif fur_:
+            celda(WS_DEM, rr, c, "=" + "+".join(f"{pcol(k)}{rr}" for k in ks_), "0.0")
+        else:
+            RR_ = PI if cil_ else PC
+            celda(WS_DEM, rr, c, "=" + "+".join(f"IF(Pallet!{L(3 + k)}{RR_['U']}=0,0,{pcol(k, cil_)}{rr}/"
+                                                f"Pallet!{L(3 + k)}{RR_['U']})" for k in ks_), "0.0")
+WS_DEM.row_dimensions[S0 - 1].height = 30
+
 # ================================================================== Escenarios
 ws = hoja("Escenarios", [26, 8] + [17] * 5)
 
 
 def frecuencia(v):
-    """Texto de la frecuencia y carga del vehículo; con menos de 1 viaje por semana sale cada INT(1/v) semanas."""
-    txt = (f'=IF({v}=0,"-",IF({v}>=1,ROUNDUP({v},0)&" por semana",'
+    """Texto de la frecuencia y carga del vehículo. Con 1 viaje por semana o más: viajes por mes (redondeo hacia
+    arriba); con menos: 1 cada INT(1/v) semanas, así lo acumulado nunca supera el vehículo."""
+    vm = f"{v}*{d('sem_mes')}"
+    txt = (f'=IF({v}=0,"-",IF({v}>=1,ROUNDUP({vm},0)&" por mes",'
            f'IF(INT(1/{v})=1,"1 por semana","1 cada "&INT(1/{v})&" semanas")))')
-    carga = f"=IF({v}=0,0,IF({v}>=1,{v}/ROUNDUP({v},0),{v}*INT(1/{v})))"
+    carga = f"=IF({v}=0,0,IF({v}>=1,{vm}/ROUNDUP({vm},0),{v}*INT(1/{v})))"
     return txt, carga
 
 
 def bloque_esc(r, titulo_, ks, cil, furgon):
     """Escenarios 1 a 4: vehículo lleno de un solo tipo. Escenario 5: vehículo con pallets (o carros) de cada tipo
-    en la proporción de la producción; cada pallet lleva un solo tipo (carga unitaria por tipo)."""
+    según la demanda de un mes y la capacidad de cada pallet; cada pallet lleva un solo tipo (carga unitaria por tipo)."""
     tit(ws, r, titulo_)
     nombres = [f"{i + 1}. Todo {TIPOS[k]}" for i, k in enumerate(ks)] + [
-        "5. Mix " + ("2,5 + 5 + 10" if ks[0] == 0 else "25 a 100")]
+        "5. Mix " + ("1 + 2,5 + 5 + 10" if ks[0] == 0 else "25 a 100")]
     cab(ws, r + 1, ["", "Unidad"] + nombres)
-    mixk = ks[1:] if ks[0] == 0 else ks
+    mixk = ks
     n = len(mixk)
     r += 2
     if furgon:
@@ -367,31 +391,41 @@ def bloque_esc(r, titulo_, ks, cil, furgon):
     celda(ws, r, 1, "Viajes por semana", neg=True)
     m0 = r + 1
     rp = m0 + 12
-    # ---- tabla del escenario 5: carga del vehículo por tipo
+    # ---- tabla del escenario 5: carga del vehículo por tipo, con la demanda de un mes (Datos: mes del mix)
     t0 = rp + 4
     tit(ws, t0, "5. Mix: " + ("carros de cada tipo en el furgón" if furgon else "pallets de cada tipo en el camión"))
     cab(ws, t0 + 1, ["", "Unidad"] + [TIPOS[k] for k in mixk] + ["Total"])
-    T = {c: t0 + 2 + i for i, c in enumerate(["sem", "part", "n", "ocu" if furgon else "u", "peso"])}
+    claves = ["mes", "dem", "cap"] + ([] if furgon else ["pal"]) + ["part", "n", "ocu" if furgon else "u", "peso", "via"]
+    T = {c: t0 + 2 + i for i, c in enumerate(claves)}
     cT = L(3 + n)                                   # columna Total
     tc = [L(3 + i) for i in range(n)]
     hojap, RR = "Pallet", (PI if cil else PC)
+    un = "carros" if furgon else "pallets"
+    hc = MIXCOL[(ks[0], cil)]
+    imes = f"MATCH(MAX(Demanda!${hc}${S0}:${hc}${S1}),Demanda!${hc}${S0}:${hc}${S1},0)"
+    fila(ws, T["mes"], "Mes pico", "", [f"=INDEX(Demanda!$A${S0}:$A${S1},{imes})"], None)
+    fila(ws, T["dem"], "Demanda del mes", "u",
+         [f"=INDEX(Demanda!{pcol(k, cil)}${S0}:{pcol(k, cil)}${S1},{imes})*{d('sem_mes')}" for k in mixk] +
+         [f"=SUM(C{T['dem']}:{tc[-1]}{T['dem']})"], "#,##0")
     if furgon:
         cap = [f"Camion!{L(3 + k - 4)}{CM['lug']}" for k in mixk]
         masa = [d("rm", k - 4) for k in mixk]
-        sem = [f"=Produccion!{pcol(k)}{S1 + 1}" for k in mixk]
-        tot_n = (f"=IF({cT}{T['sem']}=0,0,MIN(INT(1/(" + "+".join(f"{c}{T['part']}/{cp}" for c, cp in zip(tc, cap)) +
+        fila(ws, T["cap"], "Carros por furgón (un solo tipo)", "carros", [f"={c}" for c in cap], "#,##0")
+        base = "dem"
+        tot_n = (f"=IF({cT}{T[base]}=0,0,MIN(INT(1/(" + "+".join(f"{c}{T['part']}/{c}{T['cap']}" for c in tc) +
                  f")),INT({d('MCU')}/(" + "+".join(f"{c}{T['part']}*{m}" for c, m in zip(tc, masa)) + "))))")
     else:
         Uk = [f"{hojap}!{L(3 + k)}{RR['U']}" for k in mixk]
         Wk = [f"{hojap}!{L(3 + k)}{RR['W']}" for k in mixk]
-        sem = [f"=IF({u}=0,0,Produccion!{pcol(k, cil)}{S1 + 1}/{u})" for k, u in zip(mixk, Uk)]
-        tot_n = (f"=IF({cT}{T['sem']}=0,0,MIN({SIDER},INT({d('SCU')}/(" +
+        fila(ws, T["cap"], "Unidades por pallet", "u", [f"={u}" for u in Uk], "#,##0")
+        fila(ws, T["pal"], "Pallets en el mes", "pallets",
+             [f"=IF({c}{T['cap']}=0,0,{c}{T['dem']}/{c}{T['cap']})" for c in tc] +
+             [f"=SUM(C{T['pal']}:{tc[-1]}{T['pal']})"], "0.0")
+        base = "pal"
+        tot_n = (f"=IF({cT}{T[base]}=0,0,MIN({SIDER},INT({d('SCU')}/(" +
                  "+".join(f"{c}{T['part']}*{w}" for c, w in zip(tc, Wk)) + "))))")
-    un = "carros" if furgon else "pallets"
-    fila(ws, T["sem"], "Carros por semana (pico)" if furgon else "Pallets por semana (pico)", un,
-         sem + [f"=SUM(C{T['sem']}:{tc[-1]}{T['sem']})"], "0.00")
     fila(ws, T["part"], "Participación", "%",
-         [f"=IF(${cT}{T['sem']}=0,0,{c}{T['sem']}/${cT}{T['sem']})" for c in tc] +
+         [f"=IF(${cT}{T[base]}=0,0,{c}{T[base]}/${cT}{T[base]})" for c in tc] +
          [f"=SUM(C{T['part']}:{tc[-1]}{T['part']})"], "0%")
     # reparto por redondeo acumulado: los enteros suman exactamente el total
     reparto = [f"=ROUND(SUM($C{T['part']}:{c}{T['part']})*${cT}{T['n']},0)" +
@@ -401,7 +435,7 @@ def bloque_esc(r, titulo_, ks, cil, furgon):
          res=True)
     if furgon:
         fila(ws, T["ocu"], "Ocupación del piso", "%",
-             [f"=IF({cp}=0,0,{c}{T['n']}/{cp})" for c, cp in zip(tc, cap)] +
+             [f"=IF({c}{T['cap']}=0,0,{c}{T['n']}/{c}{T['cap']})" for c in tc] +
              [f"=SUM(C{T['ocu']}:{tc[-1]}{T['ocu']})"], "0%")
         fila(ws, T["peso"], "Peso en el furgón", "kg", [f"={c}{T['n']}*{m}" for c, m in zip(tc, masa)] +
              [f"=SUM(C{T['peso']}:{tc[-1]}{T['peso']})"], "#,##0")
@@ -410,6 +444,10 @@ def bloque_esc(r, titulo_, ks, cil, furgon):
              [f"=SUM(C{T['u']}:{tc[-1]}{T['u']})"], "#,##0")
         fila(ws, T["peso"], "Peso en el camión", "kg", [f"={c}{T['n']}*{w}" for c, w in zip(tc, Wk)] +
              [f"=SUM(C{T['peso']}:{tc[-1]}{T['peso']})"], "#,##0")
+    fila(ws, T["via"], "Viajes en el mes", "viajes", [""] * n +
+         [f"=IF({cT}{T['n']}=0,0,{cT}{T[base]}/{cT}{T['n']})"], "0.0", res=True)
+    for c in tc:
+        ws[f"{c}{T['via']}"].fill = PatternFill(fill_type=None)
     MIX_N = f"${cT}${T['n']}"
     # ---- escenarios 1 a 5
     if furgon:
@@ -429,20 +467,16 @@ def bloque_esc(r, titulo_, ks, cil, furgon):
         for k_ in ("U", "W"):
             ws.cell(R[k_], 7).alignment = CEN
     for j in range(12):
-        pv = [f"=IF({L(3 + i)}${R['UV']}=0,0,Produccion!{pcol(k, cil)}{S0 + j}/{L(3 + i)}${R['UV']})"
+        pv = [f"=IF({L(3 + i)}${R['UV']}=0,0,Demanda!{pcol(k, cil)}{S0 + j}/{L(3 + i)}${R['UV']})"
               for i, k in enumerate(ks)]
-        if furgon:
-            mix = "+".join(f"Produccion!{pcol(k)}{S0 + j}" for k in mixk)
-        else:
-            mix = "+".join(f"IF({u}=0,0,Produccion!{pcol(k, cil)}{S0 + j}/{u})" for k, u in zip(mixk, Uk))
-        pv.append(f"=IF({MIX_N}=0,0,({mix})/{MIX_N})")
+        pv.append(f"=IF({MIX_N}=0,0,Demanda!{hc}{S0 + j}/{MIX_N})")
         fila(ws, m0 + j, MESES[j], "viajes", pv, "0.00")
     fila(ws, rp, "Mes pico", "viajes", [f"=MAX({L(3 + i)}{m0}:{L(3 + i)}{m0 + 11})" for i in range(5)], "0.00",
          res=True)
     tx, ca = zip(*[frecuencia(f"{L(3 + i)}{rp}") for i in range(5)])
     fila(ws, rp + 1, "Frecuencia (mes pico)", "", list(tx), None, res=True)
     fila(ws, rp + 2, "Carga del vehículo", "%", list(ca), "0%")
-    return T["peso"] + 3
+    return T["via"] + 3
 
 
 r = bloque_esc(1, "Matafuegos manuales en caja (sider)", [0, 1, 2, 3], False, False)
