@@ -343,6 +343,23 @@ Versión 12 (revisión al pie de la letra de W-CAR, W-MAN y el croquis de oficin
   matafuegos, baranda con cruces, puertas exteriores hacia afuera) y los 12 circuitos del personal.
 * Lámina de cortes FL_PI10_06 y recorte de ventanas que conserva el orden de dibujo (`planta/dibujo.recortar`).
 
+Versión 14 (redistribución del ala este pedida por el usuario):
+* Prueba hidráulica y secado de carros (C-09 y C-10) al lado de los de manuales (M-14 y M-15), donde estaban el
+  granallado y la detección; los carros llegan del puesto 8 por el paso C-89.
+* Granallado, detección y cuelgue arriba, en la fila de la cabina de la pintura, donde estaban las reservas RV-M y
+  RV-T (sin espacio libre). La pintura sigue vertical contra el muro este, con el cuelgue arriba y la descarga en la
+  punta sur.
+* Terminación compartida debajo de la pintura, cruzando el pasillo principal: terminación de manuales (M-20) y carga,
+  sala de pérdidas, etiquetado y ensayos de lote de carros (C-13, C-14, C-15 y C-17).
+* PT unificado contra el muro sur, debajo de la terminación: racks de manuales (5 + 4 módulos, 90 posiciones, P4 al
+  este) y depósito de carros (retenidos, liberados y rechazados) con despacho por P2 con rampa TRAN-IN-240 y furgón
+  Renault Master L3H2 (plano de carros del usuario, rev 6).
+* Pulmones de carros 11 y 12 en la fila de carros, contra el pasillo principal; el camión de la pintura entra por P3
+  (muro este) y el autoelevador lleva las tarimas por el pasillo.
+* Portón P7 de 4 m al final del pasillo AL-A (muro norte del almacén) con la playa de scrap y el volquete del
+  chatarrero.
+* Lo que sobra de la nave de 76 m queda en RV-S (108 m²) y LB-1 (28 m²) en el ángulo sudoeste.
+
 Versión 13 (carros con la demanda 2035 y revisión de las láminas):
 * Lugares de carros recalculados (317 en lugar de 550): la banda sur libera 88 m² (RV-C1 a RV-C3); sala de
   pérdidas de 4 × 4 m con 3 filas mirando a un pasillo; entrada de los cilindros pintados al depósito 16 por C-16A.

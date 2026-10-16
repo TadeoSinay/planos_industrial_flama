@@ -134,6 +134,14 @@ def carros_fila(cod, nombre, x, y, n, zona, unidad=FCHP, vertical=False, fuente=
           fuente)
 
 
+def filas_carros(cod, nombre, r, zona, por_fila, n_filas, dem, fuente, frente="S", n=None):
+    E(cod, nombre, r, zona, "filas", frente, 0, fuente, n=n or por_fila * n_filas, grid=(por_fila, n_filas), dem=dem)
+
+
+def pares(cod, nombre, r, zona, nu, nv, dem, fuente, n=None, frente="S"):
+    E(cod, nombre, r, zona, "rodantes", frente, 0, fuente, n=n or nu * nv, grid=(nu, nv), dem=dem)
+
+
 # ================================================================ bandas
 Y_S = 13.5          # banda sur: almacén complementario, servicios, carros 11 a 17, PT
 Y_AE = 18.5         # carril del autoelevador del pasillo principal (13,5 a 18,5)
@@ -199,8 +207,9 @@ LUGARES = {k[1]: k[5] for k in STOCK_CARROS}
 # diciembre (X-DT): 6.343 u a 211 u por pallet (1.665 recipientes ÷ 7,9 pallets, W-MAN) = 30 pallets. Total 70.
 # Revendidos: la sección «Almacén de producto terminado» de X-ALM (17 posiciones de rack) va al rack de PT.
 PT_MAN = {"pallets_dia": 7.9, "semana": 40, "diciembre": 30, "total": 70, "reventa": 17, "modulos": 5,
-          "niveles": 5}
-PT_MAN["posiciones"] = 2 * PT_MAN["modulos"] * PT_MAN["niveles"] * 2
+          "modulos_b": 4, "niveles": 5}
+# rack A de 5 módulos y rack B de 4 (el tramo libre del rack B es la entrega de la envolvedora): 90 posiciones >= 87
+PT_MAN["posiciones"] = (PT_MAN["modulos"] + PT_MAN["modulos_b"]) * PT_MAN["niveles"] * 2
 
 # ================================================================ PASILLOS
 Z("A2", "Pasillo principal: carril del autoelevador", R(0, Y_S, LX, Y_AE), "CIRC", _AE, tipo="pasillo", sub="AE")
@@ -222,10 +231,8 @@ Z("PO-C", "Pasillo de operarios de la columna este (soldadura circunferencial a 
   "CIRC", "1,5 m: los carros bajan por la columna y cruzan al granallado", tipo="pasillo", sub="PO")
 Z("PS-1", "Paso peatonal norte-sur entre carros 4/5 y 6/7", R(35.3, Y_A2, 36.8, Y_CN), "CIRC",
   "1,5 m", tipo="pasillo", sub="SP")
-Z("PS-2", "Paso peatonal norte-sur entre carros 9/10 y la terminación", R(57.3, Y_A2, 58.8, Y_CN), "CIRC",
-  "1,5 m", tipo="pasillo", sub="SP")
-Z("PO-N2", "Pasillo norte-sur de operarios (detección y cuelgue)", R(57.3, Y_CN, 58.8, Y_M), "CIRC",
-  "1,5 m: continúa la senda PS-2 hasta la senda norte", tipo="pasillo", sub="PO")
+Z("PO-N2", "Pasillo norte-sur de operarios y carros a mano (pasillo principal a la senda norte)",
+  R(57.3, Y_A2, 58.8, Y_M), "CIRC", "1,5 m: secos al pulmón 11, detección al cuelgue", tipo="pasillo", sub="PO")
 Z("PS-S", "Senda de los locales del sur (mantenimiento, calidad, compresores)", R(0, 8.4, 24.7, 9.9), "CIRC",
   "1,5 m", tipo="pasillo", sub="SP")
 Z("PS-3", "Paso peatonal de la senda sur al pasillo principal", R(10.0, 9.9, 11.5, Y_S), "CIRC", "1,5 m",
@@ -411,11 +418,6 @@ Z("C-78", "Cortina de soldadura entre 7 y 8", R(42.8, Y_A2, 43.3, Y_CN), "CAR", 
 Z("C-88", "Cortina entre 8 y 8.1", R(43.3, 24.5, 51.3, 25.0), "CAR", "W-CAR 8: cortina de soldadura")
 Z("C-08E", "Salida de los carros sobre su juego provisorio", R(49.8, Y_A2, 51.3, 24.5), "CAR",
   "W-CAR 8: salida demarcada en amarillo")
-Z("C-10", "10 Secado", R(51.3, Y_A2, 54.8, 22.5), "CAR", _W + " 10: ≈ 3,0 × 2,5 m", 7.5)
-Z("C-09", "9 Prueba hidráulica", R(51.3, 25.0, 57.3, Y_CN), "CAR", _W + " 9: ≈ 5,5 × 4,0 m", 22)
-Z("C-910a", "Paso de la prueba hidráulica al secado", R(51.3, 22.5, 57.3, 25.0), "CAR", "W-CAR 9 y 10")
-Z("C-910c", "Salida del secado hacia el pulmón de despacho", R(54.8, Y_A2, 57.3, 22.5), "CAR",
-  "W-CAR 10: los carros secos van al puesto 11, al otro lado del pasillo")
 
 # ---- 2 corte (W-CAR 2)
 E("C2-1", "Mesa elevadora de tijera SJG3.0-1.6 (2600 × 1800, 3 t)", R(17.0, 20.1, 19.6, 21.9), "C-02", "mesa_tijera",
@@ -525,34 +527,6 @@ E("C81-7", "Banco de kits (amoladora y plantillas)", R(46.1, 25.2, 47.6, 25.8), 
   "W-CAR 8.1: 1,5 × 0,6 m")
 E("C81-8", "Carro de cajas", R(43.5, 25.15, 44.7, 25.75), "C-081", "carro_plat", "N", 0, "W-CAR 8.1: 1,2 × 0,6 m")
 E("C81-9", "Carro de kits", R(44.8, 25.15, 46.0, 25.75), "C-081", "carro_plat", "N", 0, "W-CAR 8.1: 1,2 × 0,6 m")
-# ---- 9 prueba hidráulica y 10 secado
-E("C9-1", "Puesto de prueba 1: bandeja con rejilla y rampa", R(52.0, 26.75, 53.2, 27.95), "C-09", "bandeja", "S", 0,
-  "W-CAR 9: 1,2 × 1,2 m")
-E("C9-2", "Puesto de prueba 2: bandeja con rejilla y rampa", R(53.5, 26.75, 54.7, 27.95), "C-09", "bandeja", "S", 0,
-  "W-CAR 9: 1,2 × 1,2 m, 0,3 m entre los dos")
-E("C9-3", "Canaleta tapada con rejilla", R(52.0, 28.05, 54.7, 28.25), "C-09", "canaleta", "S", 0,
-  "W-CAR 9: 2,7 × 0,2 m")
-E("C9-4", "Pozo de dos cámaras", R(54.8, 28.05, 55.3, 28.4), "C-09", "pozo", "S", 0, "W-CAR 9: 0,5 × 0,35 m")
-E("C9-5", "Pantalla rebatible de policarbonato", R(51.85, 26.5, 54.85, 26.62), "C-09", "pantalla", "S", 0,
-  "W-CAR 9: 3,0 m")
-E("C9-6", "Máquina de prueba Yukon M-000200 sobre su mesa", R(52.6, 26.0, 53.65, 26.4), "C-09", "ph", "S", 1,
-  "W-CAR 9: 1,05 × 0,40 m")
-E("C9-7", "Tanque de 1.000 L con cesto filtro", R(55.6, 27.35, 57.16, 28.91), "C-09", "tanque", "S", 0,
-  "W-CAR 9: Ø 1,56 m")
-E("C9-8", "Bomba periférica con filtro Y y de cartucho", R(55.7, 26.7, 56.45, 27.15), "C-09", "bomba", "S", 0,
-  "W-CAR 9: 0,75 × 0,45 m")
-E("C9-9", "Planilla, manómetros patrón y cabezales de vaciado", R(55.0, 25.1, 55.95, 25.65), "C-09", "planilla", "S",
-  0, "W-CAR 9: 0,95 × 0,55 m")
-E("C9-10", "Zona de no conforme de la prueba hidráulica (roja)", R(56.0, 23.0, 57.1, 23.7), "C-910a", "nc", "S", 0,
-  "W-CAR 9 y 10")
-E("C10-1", "Espera de carros mojados (2 carros)", R(52.8, 22.65, 54.0, 23.65), "C-910a", "rodantes", "S", 0,
-  "W-CAR 10: 1,2 × 1,0 m", n=2, grid=(2, 1), dem="AM")
-E("C10-2", "Secadora Melisam MR011", R(52.0, 21.6, 52.6, 22.1), "C-10", "secadora", "E", 0, "W-CAR 10: ≈ 0,6 × 0,5 m")
-E("C10-3", "Lugar del carro que se seca", R(52.8, 21.2, 54.0, 22.2), "C-10", "lugar", "S", 0,
-  "W-CAR 10: 1,2 × 1,0 m")
-E("C10-4", "Estante de cinta y planilla", R(54.2, 20.1, 54.6, 20.9), "C-10", "estanteria", "O", 0,
-  "W-CAR 10: 0,8 × 0,4 m")
-
 # ================================================================ MANUALES (29,0 a 45,0) y su ala este
 _M = "W-MAN; máquina de X-MAN; medida de la tabla de áreas v10"
 # fila A (41 a 45): embutido, numerado, cúpulas, soldadura de cuello y preparación de cuello
@@ -651,14 +625,13 @@ Z("M-12", "12 Soldadura circunferencial (2 máquinas)", R(36.8, 40.5, 43.8, Y_M)
 Z("M-13", "13 Control de espesor", R(36.8, 38.0, 43.8, 40.5), "MAN", _M + "; W-MAN 12: PU-S y 2 PU-RT", 2.3)
 Z("M-14", "14 Prueba hidráulica (2 bancos)", R(36.8, 33.5, 43.8, 38.0), "MAN", _M + "; W-MAN 13: 2 PU-6", 14.1)
 Z("M-15", "15 Secado (4 secadoras)", R(36.8, Y_CN, 43.8, 33.5), "MAN", _M + "; W-MAN 14: 2 PU-7", 6.0)
-Z("M-16", "16 Granallado", R(45.3, Y_CN, 51.8, 34.0), "MAN", _M, 27.4)
-Z("M-17", "17 y 18 Detección y corrección de defectos", R(51.8, Y_CN, 57.3, 34.0), "MAN",
+# granallado, detección y cuelgue arriba, donde estaban las reservas (pedido del usuario: «el granallado y la detección
+# van arriba de la prueba hidráulica y el secado; la pintura a la derecha, vertical, alineada con el granallado»)
+Z("M-16", "16 Granallado", R(45.3, 34.0, 52.3, Y_M), "MAN", _M, 27.4)
+Z("M-17", "17 y 18 Detección y corrección de defectos", R(52.3, 34.0, 57.3, Y_M), "MAN",
   _M + "; W-MAN 16 y 17 (3 jaulas y carro de corregibles)", 9.2)
-Z("M-18", "19 Cuelgue en el riel de la pintura", R(58.8, Y_CN, X_PINT, 34.0), "MAN",
+Z("M-18", "19 Cuelgue en el riel de la pintura (a la altura de la cabina)", R(58.8, 34.0, X_PINT, Y_M), "MAN",
   "W-MAN 18: carga de la línea; carros móviles y ganchos por formato")
-Z("RV-M", "Reserva de ampliación de manuales (junto a la columna de puestos saturados)", R(45.3, 34.0, 57.3, Y_M),
-  "LIB", "Lugar para la máquina siguiente de los puestos saturados en 2035. " + _SAT)
-Z("RV-T", "Reserva de la pintura y del granallado", R(58.8, 34.0, X_PINT, Y_M), "LIB", _SAT)
 
 E("M12-1", "Soldadora circunferencial Firesafer FS-SWH", R(37.3, 43.3, 39.3, 44.7), "M-12", "sold_circ", "S", 1,
   _T + " (criterio)")
@@ -683,22 +656,89 @@ for i in range(4):
     E(f"M15-{i + 1}", "Secadora de cilindros Yukon", Rw(37.2 + i * 1.0, 31.8, 0.70, 0.68), "M-15", "secadora", "S",
       1 if i % 2 == 0 else 0, "ET: 700 × 680 × 1750 mm")
 carros_fila("PU-7", "Secos con tapón -> granallado", 41.6, 29.2, 2, "M-15", vertical=True, fuente="W-MAN 14")
-E("M16-1", "Granalladora de rodillos Airblast G-100 (rodillos de entrada y salida incluidos)", R(46.3, 31.2, 50.8, 32.5),
+E("M16-1", "Granalladora de rodillos Airblast G-100 (rodillos de entrada y salida incluidos)", R(46.3, 39.6, 50.8, 40.9),
   "M-16", "granalladora", "N", 1, "Cotización Airblast: 4500 × 1300 × 2200 mm")
-E("M17-1", "Mesa de inspección iluminada (a la salida de la granalladora)", R(52.0, 31.3, 53.2, 31.9), "M-17",
+E("M17-1", "Mesa de inspección iluminada (a la salida de la granalladora)", R(52.5, 39.9, 53.7, 40.5), "M-17",
   "inspeccion", "N", 1, "W-MAN 16")
 for i in range(3):
-    E(f"M17-J{i + 1}", "Jaula «a corregir» / «re-granallar» / «descarte»", Rw(53.8 + i * 1.1, 29.2, 1.0, 1.0), "M-17",
+    E(f"M17-J{i + 1}", "Jaula «a corregir» / «re-granallar» / «descarte»", Rw(53.9 + i * 1.1, 34.3, 1.0, 1.0), "M-17",
       "jaula", "N", 0, "W-MAN 16")
-E("M18-1", "Mesa de corrección con amoladora y extracción", R(55.3, 32.2, 56.5, 32.8), "M-17", "banco_sold", "N", 1,
+E("M18-1", "Mesa de corrección con amoladora y extracción", R(55.6, 37.6, 56.8, 38.2), "M-17", "banco_sold", "N", 1,
   "W-MAN 17")
-carros_fila("PU-CO", "Carro de corregibles", 53.7, 32.3, 1, "M-17", fuente="W-MAN 16")
-carros_fila("PU-G", "Carro móvil: inspeccionados -> cuelgue", 56.0, 30.6, 1, "M-17", fuente="W-MAN 18 (carros móviles)")
-E("M19-C", "Puesto de cuelgue en el riel (ganchos por formato y tapones)", R(64.6, 30.4, 65.9, 32.6), "M-18", "banco",
+carros_fila("PU-CO", "Carro de corregibles", 53.9, 36.4, 1, "M-17", fuente="W-MAN 16")
+carros_fila("PU-G", "Carro móvil: inspeccionados -> cuelgue", 55.9, 41.9, 1, "M-17", fuente="W-MAN 18 (carros móviles)")
+E("M19-C", "Puesto de cuelgue en el riel (ganchos por formato y tapones)", R(64.6, 40.4, 65.9, 42.6), "M-18", "banco",
   "O", 1, "W-MAN 18: carga de la línea")
-carros_fila("PU-G2", "Carro móvil en el cuelgue", 62.2, 30.8, 1, "M-18", fuente="W-MAN 18 (carros móviles)")
-E("M19-G", "Estantería de ganchos por formato y tapones de silicona", R(59.0, 33.3, 62.0, 33.9), "M-18",
+carros_fila("PU-G2", "Carro móvil en el cuelgue", 62.2, 40.8, 1, "M-18", fuente="W-MAN 18 (carros móviles)")
+E("M19-G", "Estantería de ganchos por formato y tapones de silicona", R(59.0, 44.3, 62.0, 44.9), "M-18",
   "estanteria", "S", 0, "W-MAN 15 y 18: tapones-gancho y ganchos por formato")
+
+# ================================================================ ALA NORESTE DE CARROS: prueba hidráulica y secado al lado de
+# los de manuales (pedido del usuario: «la prueba hidráulica y el secado son compartidos»), pulmón de despacho (11) y
+# recepción de pintados (12) contra el pasillo principal; el camión de la pintura entra por P3 (muro este) y el
+# autoelevador lleva la tarima por el pasillo principal.
+Z("C-09", "9 Prueba hidráulica de carros (al lado de la de manuales)", R(45.3, Y_CN, 51.3, 34.0), "CAR",
+  _W + " 9: ≈ 5,5 × 4,0 m", 22)
+Z("C-10", "10 Secado de carros y espera de los mojados", R(51.3, Y_CN, 57.3, 34.0), "CAR",
+  _W + " 10: ≈ 3,0 × 2,5 m, más el paso de los carros que llegan del puesto 8", 7.5)
+Z("C-89", "Paso de los carros del puesto 8 a la prueba hidráulica", R(51.3, Y_A2, 52.5, Y_CN), "CAR",
+  "W-CAR 8: los carros ruedan sobre su juego provisorio a la prueba hidráulica")
+Z("C-12C", "12 Recepción de pintados: tarima, cambio de juego y rechazados del pintor", R(52.5, Y_A2, 57.3, 23.8),
+  "CAR", "W-CAR 12: 2 lugares de cambio de juego de 2,0 × 1,5 m y rechazados ≈ 2 × 1,5 m, al lado del camión")
+_n12 = LUGARES["12 Pulmón de pintados"]
+Z("C-12", "12 Pulmón de pintados (%d carros), enfrente del puesto 13" % _n12, R(52.5, 23.8, 57.3, Y_CN), "CAR",
+  "W-CAR 12: filas por modelo y lote, al lado del puesto 13 (cruzando el pasillo); %d carros a 0,5 m²" % _n12,
+  0.5 * _n12)
+Z("C-11C", "11 Carga del camión de la pintura (tarima; el autoelevador la lleva a P3)", R(58.8, Y_A2, X_PINT, 22.5),
+  "CAR", "W-CAR 11: tarima de carga con topes; el autoelevador la sube a la caja")
+_n11 = LUGARES["11 Pulmón de despacho a la pintura"]
+Z("C-11", "11 Pulmón de despacho a la pintura tercerizada (%d carros)" % _n11, R(58.8, 22.5, X_PINT, 34.0), "CAR",
+  _W + " 11: filas por modelo y semana, demarcadas en amarillo; %d carros a 0,5 m²" % _n11, 0.5 * _n11)
+# 9 prueba hidráulica (W-CAR 9, tabla de espacios): el tanque en el rincón del fondo, la canaleta y el pozo detrás de los
+# puestos, la máquina detrás de la pantalla y la planilla del lado del secado
+E("C9-1", "Puesto de prueba 1: bandeja con rejilla y rampa", R(47.8, 30.75, 49.0, 31.95), "C-09", "bandeja", "S", 0,
+  "W-CAR 9: 1,2 × 1,2 m")
+E("C9-2", "Puesto de prueba 2: bandeja con rejilla y rampa", R(49.3, 30.75, 50.5, 31.95), "C-09", "bandeja", "S", 0,
+  "W-CAR 9: 1,2 × 1,2 m, 0,3 m entre los dos")
+E("C9-3", "Canaleta tapada con rejilla", R(47.8, 32.05, 50.5, 32.25), "C-09", "canaleta", "S", 0,
+  "W-CAR 9: 2,7 × 0,2 m")
+E("C9-4", "Pozo de dos cámaras", R(47.2, 32.05, 47.7, 32.4), "C-09", "pozo", "S", 0, "W-CAR 9: 0,5 × 0,35 m")
+E("C9-5", "Pantalla rebatible de policarbonato", R(47.65, 30.5, 50.65, 30.62), "C-09", "pantalla", "S", 0,
+  "W-CAR 9: 3,0 m")
+E("C9-6", "Máquina de prueba Yukon M-000200 sobre su mesa", R(48.4, 30.0, 49.45, 30.4), "C-09", "ph", "S", 1,
+  "W-CAR 9: 1,05 × 0,40 m")
+E("C9-7", "Tanque de 1.000 L con cesto filtro", R(45.45, 31.35, 47.01, 32.91), "C-09", "tanque", "S", 0,
+  "W-CAR 9: Ø 1,56 m, en el rincón del fondo")
+E("C9-8", "Bomba periférica con filtro Y y de cartucho", R(45.55, 30.7, 46.3, 31.15), "C-09", "bomba", "S", 0,
+  "W-CAR 9: 0,75 × 0,45 m, al lado del tanque")
+E("C9-9", "Planilla, manómetros patrón y cabezales de vaciado", R(50.2, 29.1, 51.15, 29.65), "C-09", "planilla", "S",
+  0, "W-CAR 9: 0,95 × 0,55 m, del lado del secado")
+E("C9-10", "Zona de no conforme de la prueba hidráulica (roja)", R(56.0, 29.2, 57.1, 29.9), "C-10", "nc", "S", 0,
+  "W-CAR 9 y 10")
+# 10 secado
+E("C10-1", "Espera de carros mojados (2 carros)", R(52.8, 32.6, 54.0, 33.6), "C-10", "rodantes", "S", 0,
+  "W-CAR 10: 1,2 × 1,0 m", n=2, grid=(2, 1), dem="AM")
+E("C10-2", "Secadora Melisam MR011", R(54.4, 31.6, 55.0, 32.1), "C-10", "secadora", "E", 0, "W-CAR 10: ≈ 0,6 × 0,5 m")
+E("C10-3", "Lugar del carro que se seca", R(55.2, 31.2, 56.4, 32.2), "C-10", "lugar", "S", 0,
+  "W-CAR 10: 1,2 × 1,0 m")
+E("C10-4", "Estante de cinta y planilla", R(56.4, 33.1, 57.2, 33.5), "C-10", "estanteria", "S", 0,
+  "W-CAR 10: 0,8 × 0,4 m")
+# 11 pulmón de despacho: filas este-oeste con la manija hacia el pasillo PO-N2 (por ahí bajan a la tarima)
+filas_carros("C11-1", "Pulmón de despacho: 11 filas de 8 carros por modelo y semana (%d)" % _n11,
+             R(59.0, 23.0, 64.12, 33.45), "C-11", 8, 11, "AM",
+             "W-CAR 11 con la demanda 2035: %d carros; 0,45 m de paso entre filas (criterio)" % _n11, n=_n11)
+E("C11-T", "Tarima de carga con topes y rampa (el autoelevador la lleva a P3 y la sube a la caja)",
+  R(64.7, 20.05, 65.9, 21.05), "C-11C", "tarima", "N", 0, "W-CAR 11: 1,2 × 1,0 m", ae=True)
+# 12 recepción de pintados: tarima de descarga, dos lugares de cambio de juego y rechazados del pintor
+E("C12-T", "Tarima de descarga (la deja el autoelevador desde P3)", R(52.6, 20.05, 53.8, 21.05), "C-12C", "tarima",
+  "N", 0, "W-CAR 12: la carga del puesto 11 al revés, con la misma tarima", ae=True)
+E("C12-2", "Lugar de cambio de juego 1: crique, zorra de retorno y cajones de ejes y ruedas",
+  R(55.25, 20.05, 57.25, 21.55), "C-12C", "cambio_juego", "O", 1, "W-CAR 12: 2,0 × 1,5 m, al lado del camión")
+E("C12-3", "Lugar de cambio de juego 2", R(55.25, 22.2, 57.25, 23.7), "C-12C", "cambio_juego", "O", 1,
+  "W-CAR 12: 2,0 × 1,5 m")
+E("C12-4", "Rechazados del pintor (rojo)", R(52.6, 22.0, 54.2, 23.7), "C-12C", "nc", "E", 0, "W-CAR 12: ≈ 2 × 1,5 m")
+filas_carros("C12-1", "Pulmón de pintados: 7 filas de 7 carros por modelo y lote (%d)" % _n12,
+             R(52.65, 23.95, 57.15, 28.85), "C-12", 7, 7, "AM", "W-CAR 12 con la demanda 2035: %d carros" % _n12, n=_n12)
 
 # ================================================================ PINTURA (66 a 76, 20 a 47)
 Z("M-19", "19 Pintura en polvo + horno (línea Firesafer)", R(X_PINT, Y_A2, LX, LY), "PINT",
@@ -706,191 +746,150 @@ Z("M-19", "19 Pintura en polvo + horno (línea Firesafer)", R(X_PINT, Y_A2, LX, 
 E("M19-1", "Línea de recubrimiento en polvo Firesafer (riel, cabina, horno, enfriamiento)", R(67.0, 21.0, 75.0, 46.0),
   "M-19", "horno", "O", 0, "ET: 25 × 8 × 4 m")
 
-# ================================================================ TERMINACIÓN DE MANUALES (58,8 a 66, 20 a 29)
-Z("M-20", "20 a 25 Terminación: carga, ensamblaje, presurización, pérdidas, etiquetado y embalaje",
-  R(58.8, Y_A2, X_PINT, Y_CN), "TERM", _M + " (Guerchet de los puestos 20 a 25: 42,4 m² + 6 carros pulmón)", 47.0)
-# carga de polvo, al lado de la descarga de la pintura (borde este)
-carros_fila("PU-TP", "Terminados pintados -> carga", 64.6, 28.2, 1, "M-20", fuente="W-MAN 18")
-E("M20-2", "Cargadora por vacío Yukon M-000121", R(65.2, 26.2, 65.82, 26.71), "M-20", "carga_polvo", "O", 1,
-  "Ficha Yukon: 620 × 510 × 1200 mm")
+# ================================================================ BANDA SUR ESTE: terminación compartida y PT unificado
+# Pedido del usuario: debajo de la pintura (cruzando el pasillo principal) va toda la terminación compartida (carga,
+# presurización y el armado final de manuales y de carros) y debajo de la terminación, contra el muro sur, el depósito de
+# PT unificado de manuales y carros. La franja de terminación va de 7,95 a 13,5 y la de PT de 0 a 7,95 (dos racks
+# enfrentados sobre el pasillo de 5 m del autoelevador: 1,1 + 5,0 + 1,1 m y 0,75 m de margen).
+Y_T = 7.95
+_L = LUGARES
+_n = _L["14 Sala de pérdidas"]
+Z("C-17", "17 Ensayos de lote (recinto de descarga, balanza y mesa)", R(24.7, Y_T, 40.25, Y_S), "CAR",
+  _W + " 17: ≈ 15,5 × 4,5 m, al lado de la sala de pérdidas (el patio de rodadura va afuera, por P5)", 70)
+Z("C-1314", "Paso de la carga a la sala de pérdidas, a los ensayos y al etiquetado", R(40.25, Y_T, 44.25, 9.5), "CAR",
+  "W-CAR 13, 14, 15 y 17: recorrido de los carros de la muestra")
+Z("C-14", "14 Sala del ensayo de pérdidas (paneles aislantes, split)", R(40.25, 9.5, 44.25, Y_S), "CAR",
+  "W-CAR 14: 25 m² para 30 lugares; con los %d de 2035, a la misma relación" % _n, 25.0 * _n / 30, tipo="local")
+Z("C-13", "13 Carga, armado y presurización de carros", R(44.25, Y_T, 56.55, Y_S), "TERM", _W + " 13: ≈ 10 × 6 m", 60)
+Z("C-13P", "Paso de los carros pintados y de los cilindros a la carga y al depósito 16", R(56.55, Y_T, 57.75, Y_S),
+  "TERM", "W-CAR 12 y 13: los pintados cruzan el pasillo principal desde el pulmón 12")
+Z("M-20", "20 a 25 Terminación de manuales: carga, ensamblaje, presurización, pérdidas, etiquetado y embalaje",
+  R(62.75, Y_T, LX, Y_S), "TERM", _M + " (Guerchet de los puestos 20 a 25: 42,4 m² + 6 carros pulmón)", 47.0)
+Z("RV-S", "Libre (reserva de ampliación del PT y de los ensayos)", R(24.7, 0, 38.25, Y_T), "LIB",
+  "Lo que queda de la nave de 76 m con la demanda 2035 (la nave podría acortarse un vano de 7,6 m)")
+Z("C-17P", "17 Paso de la muestra al patio de ensayos (P5)", R(38.25, 0, 40.25, Y_T), "CAR",
+  "W-CAR 17: la rodadura (1 km, caída de 20 cm y choque) se hace afuera")
+Z("C-15", "15 Etiquetado e inspección final", R(40.25, 3.95, 44.25, Y_T), "CAR", _W + " 15: ≈ 3,5 × 2,5 m", 9)
+Z("C-16X", "16 Rechazados (rojo)", R(40.25, 0, 44.25, 3.95), "PT",
+  "W-CAR 16: rechazados, %d carros a 0,5 m²" % _L["16 Rechazados (rojo)"], 0.5 * _L["16 Rechazados (rojo)"])
+Z("C-16", "16 Depósito de PT de carros: retenidos (amarillo), liberados (verde) y despacho por P2", R(44.25, 0, 57.75, Y_T),
+  "PT", _W + " 16: 0,5 m² por carro y los pasillos; %d retenidos y %d liberados (demanda 2035)"
+  % (_L["16 Retenidos (amarillo)"], _L["16 Liberados (verde)"]), 0.5 * (_L["16 Retenidos (amarillo)"] +
+                                                                     _L["16 Liberados (verde)"]))
+Z("PT-MA", "Depósito de PT unificado: pasillo del autoelevador (del pasillo principal a los racks)",
+  R(57.75, 0, 62.75, Y_S), "CIRC", _AE, tipo="pasillo", sub="AE")
+_PTM = ("W-MAN 25: rack de PT y de cilindros en el mismo almacén, el autoelevador ubica el pallet en altura o lo carga "
+        "directo al camión (P4); %d pallets (semana %d + diciembre %d) + %d de revendidos (X-ALM) en %d posiciones"
+        % (PT_MAN["total"], PT_MAN["semana"], PT_MAN["diciembre"], PT_MAN["reventa"], PT_MAN["posiciones"]))
+Z("PT-M", "Depósito de PT unificado: rack de manuales contra el muro sur", R(62.75, 0, LX, 1.35), "PT", _PTM)
+Z("PT-MA2", "Depósito de PT unificado: pasillo de los racks (a P4)", R(62.75, 1.35, LX, 6.4), "CIRC", _AE,
+  tipo="pasillo", sub="AE")
+Z("PT-M2", "Depósito de PT unificado: rack de manuales y entrega de la envolvedora", R(62.75, 6.4, LX, Y_T), "PT",
+  _PTM)
+
+# 13 carga, armado y presurización: A del lado del pulmón de pintados (este), C del lado del etiquetado (oeste)
+E("C13-1", "Estación A: lugar del carro (cinta y control del interior)", R(53.9, 9.3, 56.3, 11.5), "C-13", "lugar",
+  "N", 1, "W-CAR 13: 2,4 × 2,2 m, del lado del pulmón de pintados")
+E("C13-2", "Estación B: balanza de 300 kg con rampa y cargadora por vacío Yukon M-000121", R(49.9, 9.0, 52.9, 11.6),
+  "C-13", "carga_polvo", "S", 1, "W-CAR 13: 3,0 × 2,6 m")
+E("C13-3", "Bastidor de descarga del big bag con tolva (alto 2,8 m)", R(50.6, 12.2, 52.2, 13.4), "C-13", "bastidor",
+  "N", 0, "W-CAR 13: 1,6 × 1,2 m, con acceso para el autoelevador", ae=True)
+E("C13-4", "Estación C: lugar del carro (manga, traba, precinto y tarjeta)", R(45.3, 9.3, 47.6, 11.5), "C-13",
+  "lugar", "N", 1, "W-CAR 13: 2,3 × 2,2 m, del lado del etiquetado")
+E("C13-5", "Batería de nitrógeno (11 tubos de 50 L) en jaula, con manifold", R(44.4, 12.55, 47.0, 13.45), "C-13",
+  "bateria_gas", "N", 0, "W-CAR 13: 2,6 × 0,9 m")
+E("C13-6", "Colector de polvo de 3 HP (aspiración localizada en la boca)", R(52.5, 12.4, 53.3, 13.2), "C-13",
+  "colector10", "N", 0, "W-CAR 13: equipos y herramientas")
+E("C13-7", "Estanterías de válvulas, mangas, ruedas y ejes, con cajones (1 y 2)", R(47.2, 12.95, 50.2, 13.45), "C-13",
+  "estanteria", "S", 0, "W-CAR 13: 3 × (2,0 × 0,5 m)")
+E("C13-8", "Estantería de válvulas, mangas, ruedas y ejes, con cajones (3)", R(53.4, 12.95, 56.4, 13.45), "C-13",
+  "estanteria", "S", 0, "W-CAR 13: 3 × (2,0 × 0,5 m)")
+# 14 sala de pérdidas: 3 filas numeradas con el manómetro hacia un pasillo; la puerta da al paso de la carga
+pares("C14-1", "Muestra: lugares 1 a 6", R(40.4, 12.7, 44.1, 13.4), "C-14", 6, 1, "AM",
+      "W-CAR 14 con la muestra de 2035: %d lugares de 0,5 m²" % _n, frente="N")
+pares("C14-2", "Muestra: lugares 7 a %d" % _n, R(40.4, 10.4, 44.1, 11.8), "C-14", 6, 2, "AM",
+      "W-CAR 14 con la muestra de 2035: %d lugares de 0,5 m²" % _n, n=_n - 6)
+E("C14-3", "Split frío/calor BGH 3000F y registrador", R(40.3, 11.85, 40.55, 12.65), "C-14", "split", "E", 0,
+  "W-CAR 14: en la pared")
+# 15 etiquetado: entran del paso de la carga por el norte y salen al depósito 16 por el este
+E("C15-1", "Lugares de los 2 carros que se etiquetan", R(42.0, 6.0, 44.0, 6.8), "C-15", "lugar", "S", 1,
+  "W-CAR 15: 2 × (1,0 × 0,8 m)")
+E("C15-2", "Mesa con calcomanías, plantillas y alcohol", R(40.45, 7.15, 41.65, 7.75), "C-15", "etiquetadora", "S", 0,
+  "W-CAR 15: 1,2 × 0,6 m")
+E("C15-3", "Zona de no conforme (roja)", R(40.45, 4.15, 41.95, 5.15), "C-15", "nc", "N", 0, "W-CAR 15: 1,5 × 1,0 m")
+# 16 depósito de PT de carros: filas norte-sur; entran por el paso del norte y salen por el sur al pasillo de P2
+_n = _L["16 Retenidos (amarillo)"]
+filas_carros("C16-R", "Retenidos: 10 filas de 8 carros (%d)" % _n, R(44.35, 1.7, 51.35, 6.8), "C-16", 8, 10, "AM",
+             "W-CAR 16 con la demanda 2035: 1,8 semanas de matafuegos, %d carros" % _n, frente="E", n=_n)
+_n = _L["16 Liberados (verde)"]
+filas_carros("C16-L", "Liberados: 9 filas de 8 carros (%d)" % _n, R(51.45, 1.7, 57.65, 6.8), "C-16", 8, 9, "VE",
+             "W-CAR 16 con la demanda 2035: una semana, %d carros" % _n, frente="E", n=_n)
+E("C16-X", "Zona de rechazados (roja): %d carros" % _L["16 Rechazados (rojo)"], R(40.35, 0.25, 44.15, 3.75), "C-16X",
+  "nc", "N", 0, "W-CAR 16: el lote de 50 kg de 2035 a 0,5 m²")
+# 17 ensayos de lote
+E("C17-1", "Colector de polvo con filtro de mangas (fondo del recinto)", R(24.9, 10.2, 25.9, 11.2), "C-17",
+  "colector10", "E", 0, "W-CAR 17: ≈ 1,0 × 1,0 m")
+E("C17-2", "Recinto de descarga cerrado (alto 3 m), piso marcado cada 0,5 m y ventana", R(25.9, 9.2, 36.9, 12.2),
+  "C-17", "recinto", "N", 0, "W-CAR 17: 12 × 3 m con el colector")
+E("C17-3", "Balanza de plataforma con rampa (en la puerta del recinto)", R(37.3, 9.4, 38.5, 10.6), "C-17", "balanza",
+  "N", 0, "W-CAR 17: 1,2 × 1,2 m, del lado de la sala de pérdidas")
+E("C17-4", "Mesa de medición, perchero de mangas y planillas", R(38.0, 12.4, 40.0, 13.2), "C-17", "banco", "S", 1,
+  "W-CAR 17: 2,0 × 0,8 m, al lado de la sala de pérdidas")
+# 20 a 25 terminación de manuales: entra lo pintado por el norte (cruce del pasillo), la fila norte va al oeste (carga,
+# ensamblaje y presurización) y la del sur al este (pérdidas, etiquetado y embalaje); la envolvedora entrega en el
+# rincón sureste, sobre el pasillo de los racks (el autoelevador lo lleva al rack o directo al camión por P4)
+carros_fila("PU-TP", "Terminados pintados -> carga", 71.8, 12.8, 1, "M-20", fuente="W-MAN 18")
 E("M20-1", "Estación de big bag ABC 60 (bastidor, polipasto y transporte por vacío a la cargadora)",
-  R(64.3, Y_A2, 65.8, 21.5), "M-20", "tanque", "S", 0, _T + " (criterio)", ae=True)
-carros_fila("PU-F1", "Carga -> ensamblaje", 63.0, 26.0, 1, "M-20", fuente="W-MAN 19 a 24")
-# fila norte: ensamblaje y presurización
-E("M21-1", "Mesa de ensamblaje con llave dinamométrica", R(62.0, 28.2, 63.2, 28.8), "M-20", "ensamble", "S", 1,
+  R(74.4, 11.8, 75.9, 13.3), "M-20", "tanque", "S", 0, _T + " (criterio)", ae=True)
+E("M20-2", "Cargadora por vacío Yukon M-000121", R(73.4, 12.7, 74.02, 13.21), "M-20", "carga_polvo", "S", 1,
+  "Ficha Yukon: 620 × 510 × 1200 mm")
+carros_fila("PU-F1", "Carga -> ensamblaje", 70.3, 12.8, 1, "M-20", fuente="W-MAN 19 a 24")
+E("M21-1", "Mesa de ensamblaje con llave dinamométrica", R(68.9, 12.85, 70.1, 13.45), "M-20", "ensamble", "S", 1,
   "Mesa 1,2 × 0,6")
-E("M21-2", "Estante de cajones: válvulas, manómetros, sifones y o-rings", R(63.3, 28.3, 64.5, 28.8), "M-20",
+E("M21-2", "Estante de cajones: válvulas, manómetros, sifones y o-rings", R(67.6, 12.95, 68.8, 13.45), "M-20",
   "cajonera", "S", 0, "W-MAN 21: «estante de cajones de cada puesto, al alcance de la mano»; medida: criterio")
-carros_fila("PU-F2", "Ensamblaje -> presurización", 60.6, 27.4, 1, "M-20", fuente="W-MAN 19 a 24")
-E("M22-1", "Pinza Yukon M-000150 sobre mesa (N₂ por cañería desde la jaula exterior)", R(59.2, 28.2, 60.4, 28.8),
+carros_fila("PU-F2", "Ensamblaje -> presurización", 66.1, 12.8, 1, "M-20", fuente="W-MAN 19 a 24")
+E("M22-1", "Pinza Yukon M-000150 sobre mesa (N₂ por cañería desde la jaula exterior)", R(64.7, 12.85, 65.9, 13.45),
   "M-20", "presurizacion", "S", 1, "Mesa 1,2 × 0,6")
-carros_fila("PU-F3", "Presurización -> pérdidas", 59.0, 25.6, 1, "M-20", (0.61, 1.28), fuente="W-MAN 19 a 24")
-# columna oeste: pérdidas
-E("M23-1", "Tanque de inmersión inoxidable Firesafer FS-SS100", R(59.0, 23.3, 60.0, 25.1), "M-20", "hermeticidad",
-  "E", 1, "Catálogo Filling Line, pág. 44: 1000 × 1800 × 900 mm")
-carros_fila("PU-F4", "Pérdidas -> etiquetado", 59.0, 22.4, 1, "M-20", fuente="W-MAN 19 a 24")
-E("M23-2", "Cajón de rechazos con tarjeta roja (punto de la pérdida anotado)", R(59.05, 25.15, 59.65, 25.55), "M-20",
+carros_fila("PU-F3", "Presurización -> pérdidas", 62.9, 11.6, 1, "M-20", (0.61, 1.28), fuente="W-MAN 19 a 24")
+E("M23-1", "Tanque de inmersión inoxidable Firesafer FS-SS100", R(63.0, 8.3, 64.8, 9.3), "M-20", "hermeticidad",
+  "N", 1, "Catálogo Filling Line, pág. 44: 1000 × 1800 × 900 mm (largo este-oeste)")
+E("M23-2", "Cajón de rechazos con tarjeta roja (punto de la pérdida anotado)", R(65.0, 8.2, 65.6, 8.6), "M-20",
   "rechazo", "S", 0, "W-MAN 23: «al cajón identificado con tarjeta roja al lado del tanque»; cajón de 600 × 400 mm")
-# centro: etiquetado y embalaje
-E("M24-1", "Dispensador de etiquetas y Zebra ZD421 sobre mesa", R(61.0, 24.2, 62.2, 24.8), "M-20", "etiquetadora", "N",
+carros_fila("PU-F4", "Pérdidas -> etiquetado", 65.8, 8.15, 1, "M-20", fuente="W-MAN 19 a 24")
+E("M24-1", "Dispensador de etiquetas y Zebra ZD421 sobre mesa", R(67.3, 8.3, 68.5, 8.9), "M-20", "etiquetadora", "N",
   1, "Mesa 1,2 × 0,6")
-carros_fila("PU-F5", "Etiquetado -> embalaje", 62.6, 24.2, 1, "M-20", fuente="W-MAN 19 a 24")
-E("M24-2", "Estante del puesto: etiquetas preimpresas por formato, rollos de la impresora y paños", R(62.3, 25.0, 62.9, 25.9),
-  "M-20", "cajonera", "O", 0, "W-MAN 24: «los deja en el estante del puesto»; medida: criterio")
-E("M25-7", "Lugar de las transpaletas eléctrica y manual (demarcado)", R(64.4, 23.55, 65.9, 25.15), "M-20",
+E("M24-2", "Estante del puesto: etiquetas preimpresas por formato, rollos de la impresora y paños", R(68.6, 8.1, 69.2, 9.0),
+  "M-20", "cajonera", "N", 0, "W-MAN 24: «los deja en el estante del puesto»; medida: criterio")
+carros_fila("PU-F5", "Etiquetado -> embalaje", 69.4, 8.15, 1, "M-20", fuente="W-MAN 19 a 24")
+E("M25-1", "Mesa de encajonado (terminados)", R(70.9, 8.3, 72.1, 8.9), "M-20", "palletizado", "N", 1,
+  "X-MAN: 2 puestos; mesa 1,2 × 0,6")
+E("M25-2", "Mesa de encajonado (cilindros vacíos)", R(72.2, 8.3, 73.4, 8.9), "M-20", "palletizado", "N", 1,
+  "X-MAN: 2 puestos; mesa 1,2 × 0,6")
+E("M25-3", "Armadora automática de cajas", R(73.9, 9.6, 75.92, 11.02), "M-20", "palletizado", "O", 0,
+  "Sin cotizar; referencia FS-DDP50: 2020 × 1420 mm")
+E("M25-4", "Envolvedora EDOS PS5 (pallet listo para el autoelevador)", R(73.45, Y_T, 76.0, 9.45), "M-20",
+  "envolvedora", "S", 0, "Plano de cotas EDOS 26880: 2550 × 1500 mm", ae=True)
+E("M25-5", "Pila de pallets vacíos 1200 × 1000 (junto a la envolvedora)", R(71.2, 9.95, 72.4, 10.95), "M-20",
+  "pallets_q", "S", 0, "W-MAN 25")
+E("M25-6", "Pallet de cajas plegadas (al lado de la armadora)", R(72.55, 9.95, 73.75, 10.88), "M-20", "pallets_q",
+  "N", 0, "W-MAN 25: las cajas llegan plegadas en pallets desde el almacén")
+E("M25-7", "Lugar de las transpaletas eléctrica y manual (demarcado)", R(66.0, 10.25, 67.5, 11.85), "M-20",
   "transpaleta", "S", 0, "W-MAN 25: transpaleta eléctrica y transpaleta manual de respaldo; 0,7 × 1,6 m cada una "
   "(criterio)")
 # demarcaciones de seguridad que no son equipos: rejilla de goteo del tanque (W-MAN 23: «piso antideslizante con
 # rejilla alrededor del tanque») y zona delimitada de la armadora y la envolvedora (W-MAN 25: «zona delimitada alrededor
 # del plato giratorio y de la armadora, con parada de emergencia»)
-REJILLAS = [R(58.85, 23.15, 60.2, 25.25)]
-DELIMITADAS = [R(58.85, Y_A2 + 0.03, 64.0, 21.6)]
-E("M25-1", "Mesa de encajonado (terminados)", R(61.0, 21.8, 62.2, 22.4), "M-20", "palletizado", "N", 1,
-  "X-MAN: 2 puestos; mesa 1,2 × 0,6")
-E("M25-2", "Mesa de encajonado (cilindros vacíos)", R(62.5, 21.8, 63.7, 22.4), "M-20", "palletizado", "N", 1,
-  "X-MAN: 2 puestos; mesa 1,2 × 0,6")
-E("M25-3", "Armadora automática de cajas", R(58.9, Y_A2, 60.92, 21.42), "M-20", "palletizado", "N", 0,
-  "Sin cotizar; referencia FS-DDP50: 2020 × 1420 mm")
-E("M25-4", "Envolvedora EDOS PS5 (pallet listo para el autoelevador)", R(61.2, Y_A2, 63.75, 21.5), "M-20",
-  "envolvedora", "S", 0, "Plano de cotas EDOS 26880: 2550 × 1500 mm", ae=True)
-E("M25-5", "Pila de pallets vacíos 1200 × 1000 (junto a la envolvedora)", R(64.6, 22.4, 65.8, 23.4), "M-20",
-  "pallets_q", "S", 0, "W-MAN 25")
-E("M25-6", "Pallet de cajas plegadas (al lado de la armadora)", R(59.0, 21.45, 60.2, 22.38), "M-20", "pallets_q",
-  "N", 0, "W-MAN 25: las cajas llegan plegadas en pallets desde el almacén")
-
-# ================================================================ BANDA SUR: carros 11 a 17 y depósitos de PT
-# Lugares de carros: STOCK_CARROS (reglas de W-CAR con la demanda 2035). Filas demarcadas, carros uno detrás del otro.
-# Lo que la demanda de 2035 no ocupa queda libre (reserva) al norte de cada pulmón, contra el pasillo principal.
-X16, X13, X11, XPT = 24.7, 39.7, 55.2, 67.6
-X12 = X11 + 6.2
-X14 = X13 + 4.0
-_L = LUGARES
-Z("C-16", "16 Depósito de PT de carros: retenidos (amarillo) y liberados (verde)", R(X16, 3.5, X13, 10.2), "PT",
-  _W + " 16: 0,5 m² por carro y los pasillos; %d retenidos y %d liberados (demanda 2035), paso de carros al norte"
-  % (_L["16 Retenidos (amarillo)"], _L["16 Liberados (verde)"]), 0.5 * (_L["16 Retenidos (amarillo)"] +
-                                                                     _L["16 Liberados (verde)"]))
-Z("RV-C1", "Libre (reserva del depósito de PT de carros)", R(X16, 10.2, X13 - 2.0, Y_S), "LIB",
-  "Lo que no ocupa la demanda 2035 en el depósito 16 (W-CAR pedía ≈ 200 m² para 20 carros por día)")
-Z("C-16A", "16 Entrada de los cilindros pintados desde el pasillo principal", R(X13 - 2.0, 10.2, X13, Y_S), "PT",
-  "Paso de carros a mano (criterio): los cilindros vendidos vacíos vienen del puesto 12 por C-11A y el pasillo principal")
-Z("C-16P", "16 Pasillo de despacho (P2) y rechazados (rojo)", R(X16, 0, X13, 3.5), "PT",
-  "W-CAR 16: pasillo entre las zonas y la puerta; rechazados: %d carros a 0,5 m²" % _L["16 Rechazados (rojo)"],
-  0.5 * _L["16 Rechazados (rojo)"])
-Z("C-17", "17 Ensayos de lote (recinto de descarga, balanza y mesa)", R(X13, 0, X13 + 15.5, 4.5), "CAR",
-  _W + " 17: ≈ 15,5 × 4,5 m (el patio de rodadura va afuera)", 70)
-Z("C-14", "14 Sala del ensayo de pérdidas (paneles aislantes, split)", R(X13, 4.5, X14, 8.5), "CAR",
-  "W-CAR 14: 25 m² para 30 lugares; con los %d de 2035, a la misma relación" % _L["14 Sala de pérdidas"],
-  25.0 * _L["14 Sala de pérdidas"] / 30, tipo="local")
-Z("C-15", "15 Etiquetado e inspección final", R(X13, 8.5, X14, Y_S), "CAR",
-  _W + " 15: ≈ 3,5 × 2,5 m, más el paso de los carros al depósito 16", 9)
-Z("C-13", "13 Carga, armado y presurización", R(X14, 7.0, X11, Y_S), "CAR", _W + " 13: ≈ 10 × 6 m", 60)
-Z("C-1314", "Paso de la carga a la sala de pérdidas y a los ensayos", R(X14, 4.5, X11, 7.0), "CAR",
-  "W-CAR 13, 14 y 17: recorrido de los carros de la muestra; estanterías del puesto 13")
-Z("C-12", "12 Pulmón de pintados (%d carros), al lado del puesto 13" % _L["12 Pulmón de pintados"],
-  R(X11, 3.3, X12, 8.6), "CAR", "W-CAR 12: filas por modelo y lote, al lado del puesto 13; %d carros a 0,5 m²"
-  % _L["12 Pulmón de pintados"], 0.5 * _L["12 Pulmón de pintados"])
-Z("RV-C2", "Libre (reserva del pulmón de pintados)", R(X11, 8.6, X12, Y_S), "LIB",
-  "Lo que no ocupa la demanda 2035 en el pulmón 12 (W-CAR: 120 carros para 20 por día)")
-Z("C-12C", "12 Recepción de pintados: cambio de juego y rechazados del pintor (P6)", R(X11, 0, X12, 3.3), "CAR",
-  "W-CAR 12: 2 lugares de cambio de juego de 2,0 × 1,5 m y rechazados ≈ 2 × 1,5 m, al lado de la puerta")
-Z("C-11A", "11 Pasillo de los carros a la puerta (secos, cilindros pintados)", R(X12, 2.25, X12 + 1.0, Y_S), "CAR",
-  "W-CAR 11: pasillo ≈ 1 m entre las filas y la puerta; por acá suben los cilindros pintados al pasillo principal")
-Z("C-11", "11 Pulmón de despacho a la pintura tercerizada (%d carros)" % _L["11 Pulmón de despacho a la pintura"],
-  R(X12 + 1.0, 2.25, XPT, 10.7), "CAR", _W + " 11: filas por modelo y semana, demarcadas en amarillo; %d carros "
-  "a 0,5 m²" % _L["11 Pulmón de despacho a la pintura"], 0.5 * _L["11 Pulmón de despacho a la pintura"])
-Z("RV-C3", "Libre (reserva del pulmón de despacho)", R(X12 + 1.0, 10.7, XPT, Y_S), "LIB",
-  "Lo que no ocupa la demanda 2035 en el pulmón 11 (W-CAR: 120 carros para 20 por día)")
-Z("C-11C", "11 Carga del camión de la pintura (tarima, P3)", R(X12, 0, XPT, 2.25), "CAR",
-  "W-CAR 11: tarima de carga con topes al lado de la puerta; el autoelevador la sube a la caja")
-_PTM = ("W-MAN 25: rack de PT y rack de cilindros en el mismo almacén, el autoelevador ubica el pallet en altura; "
-        "%d pallets (semana %d + diciembre %d) + %d de revendidos (X-ALM) en %d posiciones"
-        % (PT_MAN["total"], PT_MAN["semana"], PT_MAN["diciembre"], PT_MAN["reventa"], PT_MAN["posiciones"]))
-Z("PT-M", "Almacén de PT de manuales: rack de matafuegos terminados y revendidos", R(XPT, 0, XPT + 1.3, Y_S), "PT", _PTM)
-Z("PT-MA", "Almacén de PT de manuales: pasillo del autoelevador", R(XPT + 1.3, 0, XPT + 6.3, Y_S), "CIRC", _AE,
-  tipo="pasillo", sub="AE")
-Z("PT-M2", "Almacén de PT de manuales: rack de cilindros vacíos", R(XPT + 6.3, 0, LX, Y_S), "PT", _PTM)
-
-
-def filas_carros(cod, nombre, r, zona, por_fila, n_filas, dem, fuente, frente="S", n=None):
-    E(cod, nombre, r, zona, "filas", frente, 0, fuente, n=n or por_fila * n_filas, grid=(por_fila, n_filas), dem=dem)
-
-
-def pares(cod, nombre, r, zona, nu, nv, dem, fuente, n=None):
-    E(cod, nombre, r, zona, "rodantes", "S", 0, fuente, n=n or nu * nv, grid=(nu, nv), dem=dem)
-
-
-# 11 pulmón de despacho: 15 filas de 8 carros (120), la manija hacia el pasillo de la puerta
-_n = _L["11 Pulmón de despacho a la pintura"]
-filas_carros("C11-1", "Pulmón de despacho: 11 filas de 8 carros por modelo y semana (%d)" % _n,
-             R(62.45, 2.4, 67.55, 10.1), "C-11", 8, 11, "AM", "W-CAR 11 con la demanda 2035: %d carros" % _n, n=_n)
-E("C11-T", "Tarima de carga con topes y rampa (el autoelevador la sube a la caja)", R(63.4, 1.1, 64.6, 2.1), "C-11C",
-  "tarima", "N", 0, "W-CAR 11: 1,2 × 1,0 m, al lado de la puerta")
-# 12 recepción de pintados
-_n = _L["12 Pulmón de pintados"]
-filas_carros("C12-1", "Pulmón de pintados: 7 filas de 7 carros por modelo y lote (%d)" % _n,
-             R(55.25, 3.45, 59.75, 8.35), "C-12", 7, 7, "AM", "W-CAR 12 con la demanda 2035: %d carros" % _n, n=_n)
-E("C12-2", "Lugar de cambio de juego 1: crique, zorra de retorno y cajones de ejes y ruedas", R(55.4, 1.2, 57.4, 2.7),
-  "C-12C", "cambio_juego", "S", 1, "W-CAR 12: 2,0 × 1,5 m, al lado de la puerta")
-E("C12-3", "Lugar de cambio de juego 2", R(57.5, 1.2, 59.5, 2.7), "C-12C", "cambio_juego", "S", 1,
-  "W-CAR 12: 2,0 × 1,5 m")
-E("C12-4", "Rechazados del pintor (rojo)", R(59.6, 1.0, 61.3, 2.5), "C-12C", "nc", "N", 0, "W-CAR 12: ≈ 2 × 1,5 m")
-# 13 carga, armado y presurización
-E("C13-1", "Estación A: lugar del carro (cinta y control del interior)", R(52.6, 8.3, 55.0, 10.5), "C-13", "lugar",
-  "N", 1, "W-CAR 13: 2,4 × 2,2 m, del lado del pulmón de pintados")
-E("C13-2", "Estación B: balanza de 300 kg con rampa y cargadora por vacío Yukon M-000121", R(48.6, 8.0, 51.6, 10.6),
-  "C-13", "carga_polvo", "S", 1, "W-CAR 13: 3,0 × 2,6 m")
-E("C13-3", "Bastidor de descarga del big bag con tolva (alto 2,8 m)", R(49.3, 12.2, 50.9, 13.4), "C-13", "bastidor",
-  "N", 0, "W-CAR 13: 1,6 × 1,2 m, con acceso para el autoelevador", ae=True)
-E("C13-4", "Estación C: lugar del carro (manga, traba, precinto y tarjeta)", R(45.2, 8.3, 47.5, 10.5), "C-13",
-  "lugar", "N", 1, "W-CAR 13: 2,3 × 2,2 m, del lado del etiquetado")
-E("C13-5", "Batería de nitrógeno (11 tubos de 50 L) en jaula, con manifold", R(52.6, 12.45, 55.2, 13.35), "C-13",
-  "bateria_gas", "N", 0, "W-CAR 13: 2,6 × 0,9 m")
-E("C13-6", "Colector de polvo de 3 HP (aspiración localizada en la boca)", R(51.7, 11.6, 52.5, 12.4), "C-13",
-  "colector10", "N", 0, "W-CAR 13: equipos y herramientas")
-E("C13-7", "Estanterías de válvulas, mangas, ruedas y ejes, con cajones", R(46.0, 4.55, 52.0, 5.05), "C-1314",
-  "estanteria", "N", 0, "W-CAR 13: 3 × (2,0 × 0,5 m)")
-# 14 sala de pérdidas: lugares numerados en 3 filas con el manómetro hacia un pasillo (la del sur mira al pasillo del
-# medio; el par del norte, una fila a cada pasillo)
-_n = _L["14 Sala de pérdidas"]
-pares("C14-1", "Muestra: lugares 1 a 6", R(39.85, 4.6, 43.55, 5.3), "C-14", 6, 1, "AM",
-      "W-CAR 14 con la muestra de 2035: %d lugares de 0,5 m²" % _n)
-pares("C14-2", "Muestra: lugares 7 a %d" % _n, R(39.85, 6.2, 43.55, 7.6), "C-14", 6, 2, "AM",
-      "W-CAR 14 con la muestra de 2035: %d lugares de 0,5 m²" % _n, n=_n - 6)
-E("C14-3", "Split frío/calor BGH 3000F y registrador", R(39.75, 5.35, 40.0, 6.15), "C-14", "split", "E", 0,
-  "W-CAR 14: en la pared")
-# 15 etiquetado: los carros entran del puesto 13 por el este y salen al depósito 16 por el oeste
-E("C15-1", "Lugares de los 2 carros que se etiquetan", R(41.5, 10.9, 43.5, 11.7), "C-15", "lugar", "S", 1,
-  "W-CAR 15: 2 × (1,0 × 0,8 m)")
-E("C15-2", "Mesa con calcomanías, plantillas y alcohol", R(40.1, 11.0, 41.3, 11.6), "C-15", "etiquetadora", "S", 0,
-  "W-CAR 15: 1,2 × 0,6 m")
-E("C15-3", "Zona de no conforme (roja)", R(42.0, 8.7, 43.5, 9.7), "C-15", "nc", "N", 0, "W-CAR 15: 1,5 × 1,0 m")
-# 16 depósito de PT de carros: filas norte-sur; entran por el paso del norte y salen por el sur al pasillo de despacho
-_n = _L["16 Liberados (verde)"]
-filas_carros("C16-L", "Liberados: 9 filas de 8 carros (%d)" % _n, R(24.85, 3.6, 31.15, 8.7), "C-16", 8, 9, "VE",
-             "W-CAR 16 con la demanda 2035: una semana, %d carros" % _n, frente="E", n=_n)
-_n = _L["16 Retenidos (amarillo)"]
-filas_carros("C16-R", "Retenidos: 10 filas de 8 carros (%d)" % _n, R(31.95, 3.6, 38.95, 8.7), "C-16", 8, 10, "AM",
-             "W-CAR 16 con la demanda 2035: 1,8 semanas de matafuegos, %d carros" % _n, frente="E", n=_n)
-E("C16-T", "Tarima de carga con topes (despacho por P2)", R(27.1, 1.2, 28.3, 2.2), "C-16P", "tarima", "N", 0,
-  "W-CAR 16: las del puesto 11")
-E("C16-X", "Zona de rechazados (roja): %d carros" % _L["16 Rechazados (rojo)"], R(35.6, 0.3, 39.6, 3.3), "C-16P",
-  "nc", "N", 0, "W-CAR 16: el lote de 50 kg de 2035 a 0,5 m², 4 × 3 m")
-# 17 ensayos de lote
-E("C17-1", "Colector de polvo con filtro de mangas (fondo del recinto)", R(39.9, 1.25, 40.9, 2.25), "C-17",
-  "colector10", "E", 0, "W-CAR 17: ≈ 1,0 × 1,0 m")
-E("C17-2", "Recinto de descarga cerrado (alto 3 m), piso marcado cada 0,5 m y ventana", R(40.9, 0.25, 51.9, 3.25),
-  "C-17", "recinto", "N", 0, "W-CAR 17: 12 × 3 m con el colector")
-E("C17-3", "Balanza de plataforma con rampa (en la puerta del recinto)", R(52.2, 0.3, 53.4, 1.5), "C-17", "balanza",
-  "N", 0, "W-CAR 17: 1,2 × 1,2 m")
-E("C17-4", "Mesa de medición, perchero de mangas y planillas", R(52.3, 3.55, 54.3, 4.35), "C-17", "banco", "S", 1,
-  "W-CAR 17: 2,0 × 0,8 m")
-# almacén de PT de manuales: dos racks selectivos enfrentados sobre el pasillo del autoelevador (W-MAN 25)
-_RK = "%d módulos de 2,65 m × %d niveles × 2 pallets = %d posiciones" % (
-    PT_MAN["modulos"], PT_MAN["niveles"], PT_MAN["posiciones"] // 2)
-E("PTM-1", "Rack de PT: matafuegos terminados y revendidos (" + _RK + ")", R(XPT + 0.15, 0.25, XPT + 1.25, Y_S),
-  "PT-M", "rack", "E", 0, _PTM, ae=True)
-E("PTM-2", "Rack de cilindros vacíos (" + _RK + ")", R(XPT + 6.3, 0.25, XPT + 7.4, Y_S), "PT-M2",
-  "rack", "O", 0, _PTM, ae=True)
+REJILLAS = [R(62.85, 8.15, 64.95, 9.45)]
+DELIMITADAS = [R(73.4, Y_T + 0.03, 75.97, 11.1)]
+# PT de manuales: rack A contra el muro sur (5 módulos) y rack B enfrentado (4 módulos); el tramo sin rack del rack B es
+# la entrega de la envolvedora
+_RK = "%d módulos de 2,65 m × %d niveles × 2 pallets = %d posiciones"
+E("PTM-1", "Rack de PT de manuales: terminados y revendidos (" + _RK % (PT_MAN["modulos"], PT_MAN["niveles"],
+  2 * PT_MAN["modulos"] * PT_MAN["niveles"]) + ")", R(62.75, 0.25, 76.0, 1.35), "PT-M", "rack", "N", 0, _PTM, ae=True)
+E("PTM-2", "Rack de PT de manuales: cilindros vacíos (" + _RK % (PT_MAN["modulos_b"], PT_MAN["niveles"],
+  2 * PT_MAN["modulos_b"] * PT_MAN["niveles"]) + ")", R(62.75, 6.5, 73.35, 7.6), "PT-M2", "rack", "S", 0, _PTM,
+  ae=True)
 
 # ================================================================ PUERTAS DE LOS LOCALES DENTRO DE LA NAVE
 # (x, y, ancho, muro 'h' o 'v', abre +1/-1); el ancho mayor a 2 m es una cortina enrollable
@@ -901,7 +900,7 @@ PUERTAS_LOCALES = [
     (13.6, 8.4, 1.0, "h", -1),        # pañol -> senda sur
     (18.0, 8.4, 0.9, "h", -1),        # calidad -> senda sur
     (13.1, Y_S, 5.2, "h", 1),         # depósito de polvo: cortina frente a las 5 pilas, al pasillo principal
-    (X14, 5.3, 0.9, "v", 1),          # sala de pérdidas (pasillo del medio) -> paso de carga
+    (41.6, 9.5, 0.9, "h", -1),        # sala de pérdidas (pasillo sur) -> paso de la carga
 ]
 
 # ================================================================ ADMINISTRACIÓN Y SERVICIOS AL PERSONAL (anexo norte)
@@ -1095,14 +1094,17 @@ CIRCUITOS = [
 # ================================================================ PUERTAS DE LA NAVE
 PUERTAS += [
     Puerta("P1", "O", Y_AE - 5.2, Y_AE - 0.2, 4.5, "porton", "Materia prima: del playón oeste al pasillo principal"),
-    Puerta("P2", "S", X16 + 1.0, X16 + 5.0, 4.5, "porton", "Despacho de carros (depósito 16, liberados)"),
-    Puerta("P3", "S", X12 + 0.6, X12 + 5.6, 4.5, "porton", "Carga del camión a la pintura tercerizada (puesto 11)"),
-    Puerta("P6", "S", X11 + 0.35, X11 + 5.35, 4.5, "porton", "Descarga de los carros pintados (puesto 12)"),
-    Puerta("P4", "E", Y_AE - 5.2, Y_AE - 0.2, 4.5, "porton", "Playa este: despacho de PT de manuales (al final del pasillo)"),
-    Puerta("P5", "S", X13 + 14.2, X13 + 15.3, 2.1, "peatonal", "Patio de ensayos de lote (17)"),
+    Puerta("P2", "S", 53.5, 57.0, 4.5, "porton",
+           "Despacho de carros: furgón Renault Master L3H2 y rampa TRAN-IN-240"),
+    Puerta("P3", "E", Y_AE - 5.2, Y_AE - 0.2, 4.5, "porton",
+           "Camión de la pintura: carros secos (11) y pintados (12)"),
+    Puerta("P4", "E", 1.35, 6.35, 4.5, "porton", "Despacho de PT de manuales (pasillo de los racks)"),
+    Puerta("P5", "S", 38.55, 39.75, 2.1, "peatonal", "Patio de ensayos de lote (17): la muestra sale a la rodadura"),
+    Puerta("P7", "N", 10.9, 14.9, 4.5, "porton",
+           "Scrap: del pasillo AL-A a la playa con volquete"),
     Puerta("PE-1", "O", 8.6, 9.7, 2.1, "emergencia", "Salida del ángulo SO (extremo de la senda de los locales)"),
     Puerta("PE-3", "N", 3.0, 4.2, 2.1, "emergencia", "Salida del almacén (extremo norte del pasillo AL-B)"),
-    Puerta("PE-4", "S", 32.0, 33.2, 2.1, "emergencia", "Salida del depósito de carros"),
+    Puerta("PE-4", "S", 32.0, 33.2, 2.1, "emergencia", "Salida de la banda sur (reserva y ensayos de lote)"),
     Puerta("PN-1", "N", XA0 + 0.3, XA0 + 1.3, 2.1, "peatonal", "Sala técnica: puerta directa a la planta"),
     Puerta("PN-2", "N", XA0 + 5.0, XA0 + 6.1, 2.1, "peatonal", "Enfermería (camilla, 1,10 m)"),
     Puerta("PN-3", "N", XA0 + 15.1, XA0 + 16.2, 2.1, "peatonal", "Comedor (almuerzo: cruce, lavamanos, comedor)"),
@@ -1111,8 +1113,8 @@ PUERTAS += [
 
 # ancho de los portones: croquis de circuitos de carros del usuario (portón O 5 m, E1 y E2 5 m, S despacho 4 m);
 # alto de 4,5 m: criterio (camión con caja de hasta 4,1 m, Ley 24.449 art. 53)
-PORTON_CORTO = {"P1": "Materia prima", "P2": "Despacho de carros", "P3": "Camión a la pintura",
-                "P6": "Camión de la pintura", "P4": "Despacho de PT de manuales"}
+PORTON_CORTO = {"P1": "Materia prima", "P2": "Despacho de carros (furgón y rampa)", "P3": "Camión de la pintura",
+                "P4": "Despacho de PT de manuales", "P7": "Scrap (volquete)"}
 
 # ================================================================ EXTERIOR (calle al norte)
 EXTERIOR = [
@@ -1127,15 +1129,21 @@ EXTERIOR = [
     ("RA3", "Rampa accesible este", R(XA1, YA1 - 1.3, XA1 + 1.8, YA1 + 1.8)),
     ("DE3", "Descanso", R(XA1, YA1 - 3.2, XA1 + 1.8, YA1 - 1.3)),
     ("PO", "Playón oeste: descarga de MP y maniobra", R(-22.0, 6.0, -0.2, 26.0)),
-    ("PS", "Playa sur: despachos (P2), camión de la pintura (P3 y P6), gases y patio de ensayos",
+    ("PS", "Playa sur: despacho de carros (P2, furgón con rampa), patio de ensayos y gases",
      R(-22.0, -22.0, 98.0, -0.2)),
-    ("PE", "Playa este: despacho de PT de manuales", R(LX + 0.2, 6.0, 98.0, 26.0)),
-    ("PEN", "Patio de ensayos de lote: circuito de remolque (W-CAR 17)", R(42.0, -12.0, 54.0, -2.0)),
-    ("PEN1", "Plataforma de caída 20 cm", R(50.5, -4.5, 52.0, -3.0)),
-    ("PEN2", "Pared 60 cm", R(50.5, -7.0, 52.5, -6.7)),
+    ("PE", "Playa este: camión de la pintura (P3) y despacho de PT de manuales (P4)", R(LX + 0.2, 0.0, 98.0, 26.0)),
+    ("PEN", "Patio de ensayos de lote: circuito de remolque (W-CAR 17)", R(26.0, -12.0, 38.0, -2.0)),
+    ("PEN1", "Plataforma de caída 20 cm", R(28.0, -4.5, 29.5, -3.0)),
+    ("PEN2", "Pared 60 cm", R(28.0, -7.0, 30.0, -6.7)),
     ("JG", "Jaula de gases ventilada (Arcal 21 y N₂ en packs con manifold)", R(68.0, -4.2, 75.0, -1.2)),
-    ("SC", "Contenedores de scrap y chatarra", R(-12.0, 28.0, -4.0, 32.0)),
+    ("PSC", "Playa de scrap (P7): volquete del chatarrero", R(4.0, 48.5, 14.0, 56.0)),
 ]
+# despacho de PT de carros por P2 (plano de carros del usuario, rev 6): rampa portátil TRAN-IN-240 (2,4 m útiles, 820 mm
+# de ancho, 23 % ≈ 13°, 350 kg, sin obra civil) y furgón Renault Master L3H2 de culo (2,07 × 6,2 m, ≈ 13 carros por
+# viaje, 6 viajes por semana; carga: 2 operarios, descarga: el chofer); volquete de 5 m³ del chatarrero (2 × 3 m)
+DESPACHO_CARROS = {"rampa": R(54.84, -2.4, 55.66, 0.0), "furgon": R(54.215, -8.6, 56.285, -2.4),
+                   "volquete": R(7.5, 52.6, 10.5, 54.6)}
+FUENTE_DESPACHO = "Plano de carros del usuario (rev 6): rampa TRAN-IN-240 y furgón Renault Master L3H2"
 CAMINO_CAMIONES = [(-23.0, 69.0), (-23.0, -18.0), (99.0, -18.0), (99.0, 69.0)]
 # rampas: hacia dónde apunta la flecha del croquis (al extremo que llega al nivel del terreno)
 RAMPAS = {"RA1": "O", "RA2": "N", "RA3": "N"}
@@ -1157,12 +1165,12 @@ PORTONES_PREDIO = [   # (código, x desde, x hasta, uso) sobre el cerco norte
 
 
 # ================================================================ CORTES DE LA NAVE (lámina FL_PI10_06)
-# A-A: longitudinal por y = 12,5 (banda sur: cuarentena, polvo, fleje, carros 11 a 16, PT), mira al norte.
-# B-B: transversal por x = 38,4 (carros 16, pasillo principal, columna este de manuales, senda norte y anexo), mira al
-# oeste (el norte queda a la derecha del dibujo).
-# C-C: longitudinal por y = 37,65 (almacén, manuales fila B, prueba hidráulica y pintura), mira al norte.
-# D-D: transversal por x = 68,3 (rack de PT, pasillo principal y línea de pintura), mira al oeste.
-CORTES = {"A": ("y", 6.0, "N"), "B": ("x", 38.4, "O"), "C": ("y", 37.65, "N"), "D": ("x", 68.3, "O")}
+# A-A: longitudinal por y = 6,6 (banda sur: locales, reserva, etiquetado, depósito 16 y rack de PT), mira al norte.
+# B-B: transversal por x = 38,4 (paso de la muestra, ensayos de lote, pasillo principal, carros 6/7, columna este de
+# manuales, senda norte y anexo), mira al oeste (el norte queda a la derecha del dibujo).
+# C-C: longitudinal por y = 37,65 (almacén, manuales fila B, prueba hidráulica, granallado, detección y pintura).
+# D-D: transversal por x = 68,3 (racks de PT, terminación, pasillo principal y línea de pintura), mira al oeste.
+CORTES = {"A": ("y", 6.6, "N"), "B": ("x", 38.4, "O"), "C": ("y", 37.65, "N"), "D": ("x", 68.3, "O")}
 ALTO_LOCAL = (3.2, "Locales de servicio de 3,20 m (tabla de áreas v10; Dec. 351/79 cap. 5: 3 m como mínimo)")
 ALTURAS = {   # código o código con * o tipo de símbolo: (alto en m, fuente)
     "M4-3": (2.79, "ET Sangiacomo T 63R: 2790 mm"), "M3-2": (1.2, "Cotización Leapion: 1200 mm"),
