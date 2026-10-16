@@ -438,8 +438,14 @@ NUEVOS = {"efe": efe, "mesa_movil": mesa_movil, "carro_plat": carro_plat, "fchp"
           "nc": nc, "zona_carga": zona_carga, "bastidor": bastidor, "split": split, "colector10": colector10,
           "recinto": recinto, "bigbag": bigbag, "rechazo": rechazo, "transpaleta": transpaleta}
 S.SIMBOLOS.update(NUEVOS)
+# equipamiento de seguridad de planta/mobiliario.py usado como equipo (con su lugar en el piso)
+from planta import mobiliario as _MO     # noqa: E402
+for _t in ("lavaojos", "botiquin", "tambores", "cargador", "camilla", "inflamables", "ducha_emergencia"):
+    S.SIMBOLOS[_t] = (lambda f: (lambda m: f(m, 1)))(_MO.TIPOS[_t])
 S.SIN_PUESTO = tuple(S.SIN_PUESTO) + ("efe", "mesa_movil", "carro_plat", "fchp", "carro_caj", "canasto", "cuna",
                                       "soldadora", "chiller", "tablero_herr", "cajonera", "cajones", "pantalla",
                                       "canaleta", "pozo", "bomba", "tarima", "nc", "zona_carga", "bastidor", "split",
-                                      "colector10", "recinto", "bandeja", "bigbag", "rechazo", "transpaleta")
+                                      "colector10", "recinto", "bandeja", "bigbag", "rechazo", "transpaleta",
+                                      "lavaojos", "botiquin", "tambores", "cargador", "camilla", "inflamables",
+                                      "ducha_emergencia")
 _ = math

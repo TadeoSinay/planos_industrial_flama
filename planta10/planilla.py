@@ -86,6 +86,29 @@ def generar(ruta):
     filas = [(c, a, b, round(b - a, 2), u) for c, a, b, u in M.PORTONES_PREDIO]
     hoja(wb.create_sheet("Portones del predio"), "Portones del predio (cerco norte)", ["a y b: x sobre el cerco (m)."],
          ["Código", "a", "b", "Ancho (m)", "Uso"], filas, [8, 7, 7, 9, 70])
+    from . import seguridad as SEG
+    from .laminas import FILAS_LEGAL
+    es = SEG.escape()
+    filas = [(cod, {"N": "Norte", "S": "Sur", "E": "Este", "O": "Oeste"}[mu], round(w, 2), round(m2, 1),
+              -(-m2 // M.FACTOR_OCUPACION), uso) for cod, mu, w, m2, uso in es["salidas"]]
+    hoja(wb.create_sheet("Medios de escape"), "Salidas de la nave y recorrido de escape (Dec. 351/79, anexo VII)",
+         ["N = %d personas (%d m² / %d m²), %d unidades de ancho, ancho mínimo %.2f m; recorrido máximo %.1f m "
+          "(criterio 40 m) por la línea de libre trayectoria." % (es["N"], es["area"], M.FACTOR_OCUPACION, es["unidades"],
+                                                                es["ancho_min"], es["max"])],
+         ["Salida", "Muro", "Ancho (m)", "m² que llegan", "Personas", "Uso"], filas, [8, 8, 9, 12, 9, 70])
+    filas = [(cod, t, x, y, (SEG.zona_de(x, y).cod if SEG.zona_de(x, y) else ""), mot)
+             for cod, x, y, t, mot in SEG.matafuegos()]
+    filas += [("MF-E%d" % (k + 1), t, x, y, "Exterior", mot) for k, (x, y, t, mot) in enumerate(M.MATAFUEGOS_EXT)]
+    hoja(wb.create_sheet("Matafuegos"), "Matafuegos (1 cada 200 m² y a 15 m o menos de todo punto)",
+         ["Los del riesgo del lugar están en el modelo; el resto los ubica la cobertura de 15 m (seguridad.py)."],
+         ["Código", "Tipo", "x", "y", "Zona", "Motivo"], filas, [8, 18, 7, 7, 9, 70])
+    hoja(wb.create_sheet("Cumplimiento legal"), "Cumplimiento legal de seguridad e higiene",
+         ["Cláusulas tomadas de copias secundarias: confirmarlas con el texto oficial."],
+         ["Tema", "Requisito", "Norma", "Cómo se resuelve en el plano", "Estado"],
+         [(a, b, c, d.format(N=es["N"], n=es["n"], anc="%.2f" % es["ancho_min"], tot="%.1f" % es["ancho_total"],
+                             max="%.1f" % es["max"], le=len(SEG.luces()), sup="%.0f" % es["area"],
+                             mmin=-(-int(es["area"]) // int(M.MF_SUP)), mf=len(SEG.matafuegos())), e)
+          for a, b, c, d, e in FILAS_LEGAL], [14, 45, 32, 60, 12])
     filas = [(k, v[0], v[1]) for k, v in M.ALTURAS.items()]
     hoja(wb.create_sheet("Alturas"), "Alturas usadas en los cortes (FL_PI10_06)", [], ["Elemento", "Alto (m)", "Fuente"],
          filas, [14, 9, 100])

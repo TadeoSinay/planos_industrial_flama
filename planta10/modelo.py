@@ -392,7 +392,10 @@ Z("SV-CA", "Laboratorio de control de calidad: metrología, ensayo de rotura, pa
   R(16.6, 0, 21.4, 8.4), "AUX", "Croquis del usuario (calidad en el ángulo SO); W-MAN 12: «de cada lote se separa 1 "
   "cilindro para el ensayo de rotura: el inspector lo lleva al laboratorio de control de calidad»; W-CAR: técnico de "
   "calidad", 0, tipo="local")
-Z("LB-1", "Libre (reserva)", R(21.4, 0, 24.7, 8.4), "LIB", "Croquis del usuario: espacio libre")
+Z("SV-RE", "Depósito transitorio de residuos especiales (retira un gestor habilitado, con manifiesto)",
+  R(21.4, 0, 24.7, 8.4), "AUX", "W-CAR 17: el polvo que no pasa los controles «se entrega a un gestor de residuos con "
+  "su manifiesto»; Ley 24.051 y Ley 11.720 (PBA): depósito transitorio de residuos especiales; puerta P8 al exterior "
+  "para el retiro", 0, tipo="local")
 E("CP-1", "Compresor a tornillo", R(0.5, 0.5, 2.3, 1.7), "SV-CP", "compresor", "N", 0, "")
 E("CP-2", "Compresor a tornillo (reserva)", R(2.7, 0.5, 4.5, 1.7), "SV-CP", "compresor", "N", 0, "")
 E("CP-3", "Tanque pulmón de aire", R(0.6, 2.6, 1.6, 3.6), "SV-CP", "tanque", "N", 0, "")
@@ -418,6 +421,39 @@ MOB_NAVE = [   # (tipo, R, frente, n, zona, fuente)
     ("escritorio", R(19.4, 4.6, 21.0, 5.5), "S", 1, "SV-CA", "Técnico de calidad (W-CAR)"),
     ("archivo", R(20.6, 6.2, 21.2, 7.4), "O", 2, "SV-CA", "Protocolos y certificados de lote (W-CAR 16)"),
     ("tablero_el", R(0.3, 5.4, 4.2, 6.0), "N", 3, "SV-TG", "Tablero general de baja tensión"),
+    # residuos especiales (SV-RE): aceite usado del compresor y del separador de la prueba hidráulica (W-MAN 13), trapos
+    # y filtros con aceite, polvo del colector y de la descarga de los ensayos (W-CAR 17) y envases contaminados
+    ("tambores", R(21.55, 1.2, 22.95, 4.0), "E", 8, "SV-RE", "Ley 24.051 / Ley 11.720: residuos especiales en envases rotulados, sobre batea antiderrame"),
+    ("bigbags", R(23.4, 1.5, 24.55, 2.65), "O", 1, "SV-RE", "W-CAR 17 y W-MAN (granallado): polvo del colector y del "
+     "ciclón en bolsones, hasta que lo retira el gestor"),
+    ("estanteria", R(21.55, 4.4, 22.15, 6.8), "E", 1, "SV-RE", "Envases vacíos contaminados, kit antiderrame y "
+     "manifiestos (Ley 24.051)"),
+    ("contenedor", R(23.3, 4.4, 24.55, 5.6), "O", 1, "SV-RE", "Ley 24.051 / Ley 11.720: residuos especiales en envases rotulados, sobre batea antiderrame"),
+    # aceites e inflamables (SV-IN)
+    ("inflamables", R(24.85, 0.2, 26.05, 0.8), "N", 1, "SV-IN", "Armario de seguridad: alcohol isopropílico del "
+     "etiquetado (W-CAR 15) y aerosoles (spray antisalpicaduras, W-MAN)"),
+    ("tambores", R(24.85, 1.2, 26.25, 3.4), "E", 6, "SV-IN", "Aceite hidráulico y de compresores en tambores de "
+     "200 L sobre batea antiderrame (≥ 110 % del mayor envase)"),
+    ("estanteria", R(26.6, 0.2, 28.2, 0.7), "N", 1, "SV-IN", "Grasas y lubricantes en envases chicos (grasa de "
+     "silicona, W-MAN 21)"),
+    # limpieza (SV-LI)
+    ("carro_limpieza", R(30.3, 2.7, 31.3, 3.4), "S", 1, "SV-LI", "W-MAN, carga de polvo: «limpieza frecuente»"),
+    ("carro_limpieza", R(31.5, 2.7, 32.5, 3.4), "S", 1, "SV-LI", "W-MAN, carga de polvo: «limpieza frecuente»"),
+    ("lavadero", R(32.9, 0.2, 34.9, 0.9), "N", 1, "SV-LI", "Pileta de lavado de los elementos de limpieza (criterio)"),
+    ("estanteria", R(35.3, 0.2, 37.9, 0.8), "N", 1, "SV-LI", "Insumos de limpieza y absorbente para derrames"),
+    ("bigbags", R(36.6, 2.2, 37.9, 3.4), "S", 1, "SV-LI", "Barredora-fregadora de pisos y aspiradoras industriales "
+     "(W-CAR 17: «el recinto se limpia con aspiradora»)"),
+    # pañol de EPP y primeros auxilios (SV-EP)
+    ("mostrador", R(30.4, 6.9, 32.2, 7.75), "S", 1, "SV-EP", "Entrega de EPP con constancia firmada (Res. SRT 299/11)"),
+    ("estanteria", R(32.6, 7.2, 35.6, 7.8), "S", 1, "SV-EP", "EPP de los Word: protector auditivo 3M Peltor "
+     "Optime I, guantes anticorte Delta Plus Venicut y de soldador, anteojos, máscaras fotosensibles, respiradores, "
+     "botines Ombú y casco"),
+    ("estanteria", R(32.6, 3.8, 35.6, 4.4), "N", 1, "SV-EP", "EPP de repuesto y ropa de trabajo por talle"),
+    ("camilla", R(36.1, 6.6, 38.0, 7.3), "S", 1, "SV-EP", "Primeros auxilios: camilla (Ley 19.587 / Dec. 351/79)"),
+    ("botiquin", R(37.55, 4.6, 38.05, 5.4), "O", 1, "SV-EP", "Botiquín de primeros auxilios (Ley 19.587 / Dec. 351/79)"),
+    ("lavabos", R(36.1, 3.75, 36.8, 4.25), "N", 1, "SV-EP", "Lavamanos de la sala de primeros auxilios"),
+    ("lavaojos", R(37.1, 3.75, 37.8, 4.45), "N", 1, "SV-EP", "Lavaojos y ducha de emergencia (ficha de seguridad del "
+     "polvo ABC: lavar con abundante agua)"),
 ]
 
 # ================================================================ FILA DE FABRICACIÓN DE CARROS (20,0 a 29,0)
@@ -893,8 +929,27 @@ Z("C-13P", "Paso de los carros pintados y de los cilindros a la carga y al depó
 Z("M-20", "20 a 25 Terminación de manuales: carga, ensamblaje, presurización, pérdidas, etiquetado y embalaje",
   R(60.75, 6.15, LX, Y_S), "TERM", _M + " (Guerchet de los puestos 20 a 25: 42,4 m² + 6 carros pulmón); W-MAN 25: "
   "embalaje compartido de terminados y cilindros vacíos (armadora, cajas y envolvedora); pulmón del 2.º turno", 47.0)
-Z("RV-S", "Libre (reserva de ampliación del PT y de los ensayos)", R(24.7, 0, 38.25, Y_T), "LIB",
-  "Lo que queda de la nave de 76 m con la demanda 2035 (la nave podría acortarse un vano de 7,6 m)")
+# Lo que quedaba libre de la nave de 76 m (RV-S y LB-1) se usa para lo que piden las normas y los Word y no tenía lugar:
+# residuos especiales, inflamables, reciclables, limpieza y el pañol de EPP con la sala de primeros auxilios.
+Z("SV-IN", "Depósito de aceites e inflamables (armario de seguridad y tambores sobre batea)", R(24.7, 0, 28.4, 3.6),
+  "AUX", "Dec. 351/79 (prevención de incendios): los inflamables fuera de los puestos, en local propio contra el muro "
+  "exterior y ventilado; contenido: aceites de mantenimiento, grasa de silicona (W-MAN 21) y alcohol del etiquetado "
+  "(W-CAR 15)", tipo="local")
+Z("SV-RR", "Residuos reciclables y asimilables (cartón, film, zunchos y madera)", R(24.7, 3.6, 28.4, Y_T), "AUX",
+  "W-MAN 25 y W-CAR 11 y 16: cajas, cartones separadores, film y pallets rotos; contenedores separados por tipo")
+Z("PS-4", "Paso peatonal a la salida de emergencia PE-4", R(28.4, 0, 30.0, Y_T), "CIRC",
+  "1,6 m: une la banda de los ensayos con PE-4 (Dec. 351/79, anexo VII: medios de escape)", tipo="pasillo", sub="SP")
+Z("SV-LI", "Cuarto de limpieza (fregadora, aspiradoras industriales y carros)", R(30.0, 0, 38.25, 3.6), "AUX",
+  "W-MAN, carga de polvo: «limpieza frecuente, porque el polvo en el piso resbala»; W-CAR 17: el recinto se limpia con "
+  "aspiradora; Dec. 351/79 (orden y limpieza de los lugares de trabajo)", tipo="local")
+Z("SV-EP", "Pañol de EPP y sala de primeros auxilios", R(30.0, 3.6, 38.25, Y_T), "AUX",
+  "Res. SRT 299/11: EPP con constancia de entrega; EPP de cada puesto según W-MAN y W-CAR; primeros auxilios: camilla, "
+  "botiquín, lavamanos y lavaojos", tipo="local")
+for i, (nom, y) in enumerate((("cartón y cajas", 3.75), ("film y zunchos", 5.3))):
+    E(f"RR-{i + 1}", f"Contenedor de 1.000 L: {nom}", R(24.8, y, 26.27, y + 1.42), "SV-RR", "contenedores", "E", 0,
+      "W-MAN 25 y W-CAR 16 (materiales de embalaje); contenedor de 1.000 L como el de scrap (W-CAR 2)")
+E("RR-3", "Pallets rotos y madera (pila en el piso)", R(26.6, 3.75, 27.8, 4.75), "SV-RR", "pallets_q", "O", 0,
+  "X-ALM: pallet de madera 1200 × 1000; los rotos salen con los reciclables")
 Z("C-17P", "17 Paso de la muestra al patio de ensayos (P5)", R(38.25, 0, 40.25, Y_T), "CAR",
   "W-CAR 17: la rodadura (1 km, caída de 20 cm y choque) se hace afuera")
 Z("C-15", "15 Etiquetado e inspección final", R(40.25, 3.95, 44.25, Y_T), "CAR", _W + " 15: ≈ 3,5 × 2,5 m", 9)
@@ -924,8 +979,12 @@ E("C13-3", "Bastidor de descarga del big bag con tolva (alto 2,8 m)", R(50.6, 12
   "N", 0, "W-CAR 13: 1,6 × 1,2 m, con acceso para el autoelevador", ae=True)
 E("C13-4", "Estación C: lugar del carro (manga, traba, precinto y tarjeta)", R(45.3, 9.3, 47.6, 11.5), "C-13",
   "lugar", "N", 1, "W-CAR 13: 2,3 × 2,2 m, del lado del etiquetado")
-E("C13-5", "Batería de nitrógeno (11 tubos de 50 L) en jaula, con manifold", R(44.4, 12.55, 47.0, 13.45), "C-13",
-  "bateria_gas", "N", 0, "W-CAR 13: 2,6 × 0,9 m")
+E("C13-5", "Batería de nitrógeno en uso (11 tubos de 50 L a 200 bar, alquilada) en jaula, encadenada, con manifold y "
+  "regulador a 14 bar", R(44.3, 9.6, 45.2, 12.2), "C-13", "bateria_gas", "E", 0,
+  "W-CAR 13: «batería de nitrógeno en jaula, con manifold, 2,6 × 0,9 m, contra la pared, encadenada» (contra el muro "
+  "de la sala de pérdidas, fuera del carril del autoelevador)")
+E("LO-2", "Lavaojos de emergencia de la carga de polvo de carros", R(48.2, 8.05, 48.8, 8.65), "C-13", "lavaojos", "N",
+  0, "Criterio: la ficha de seguridad del polvo ABC (W-MAN, carga de polvo: «ficha de seguridad del polvo en el puesto») indica lavar los ojos con abundante agua")
 E("C13-6", "Colector de polvo de 3 HP (aspiración localizada en la boca)", R(52.5, 12.4, 53.3, 13.2), "C-13",
   "colector10", "N", 0, "W-CAR 13: equipos y herramientas")
 E("C13-7", "Estanterías de válvulas, mangas, ruedas y ejes, con cajones (1 y 2)", R(47.2, 12.95, 50.2, 13.45), "C-13",
@@ -963,6 +1022,8 @@ E("C17-2", "Recinto de descarga cerrado (alto 3 m), piso marcado cada 0,5 m y ve
   "C-17", "recinto", "N", 0, "W-CAR 17: 12 × 3 m con el colector")
 E("C17-3", "Balanza de plataforma con rampa (en la puerta del recinto)", R(37.3, 9.4, 38.5, 10.6), "C-17", "balanza",
   "N", 0, "W-CAR 17: 1,2 × 1,2 m, del lado de la sala de pérdidas")
+E("LO-3", "Lavaojos de emergencia de la descarga de los ensayos", R(24.8, 12.4, 25.4, 13.0), "C-17", "lavaojos", "N",
+  0, "Criterio: la ficha de seguridad del polvo ABC (W-MAN, carga de polvo: «ficha de seguridad del polvo en el puesto») indica lavar los ojos con abundante agua")
 E("C17-4", "Mesa de medición, perchero de mangas y planillas", R(38.0, 12.4, 40.0, 13.2), "C-17", "banco", "S", 1,
   "W-CAR 17: 2,0 × 0,8 m, al lado de la sala de pérdidas")
 # 20 a 25 terminación de manuales. Al oeste, frente a la descarga de la pintura (cruzando el pasillo principal), el
@@ -990,6 +1051,8 @@ E("M20-2", "Cargadora por vacío Yukon M-000121", R(70.1, 12.9, 70.72, 13.41), "
   "Ficha Yukon: 620 × 510 × 1200 mm")
 E("M20-4", "Balanza de verificación de 50 g con pesas patrón, picos y conos M22 y M30, caja de retorno de tapones",
   R(70.9, 12.85, 72.1, 13.45), "M-20", "mesa_control", "S", 1, "W-MAN, carga de polvo: equipos y herramientas; mesa 1,2 × 0,6")
+E("LO-1", "Lavaojos de emergencia de la carga de polvo de manuales", R(65.35, 11.35, 65.95, 11.95), "M-20",
+  "lavaojos", "N", 0, "Criterio: la ficha de seguridad del polvo ABC (W-MAN, carga de polvo: «ficha de seguridad del polvo en el puesto») indica lavar los ojos con abundante agua")
 carros_fila("PU-F1", "Carga -> ensamblaje", 72.25, 12.8, 1, "M-20", fuente="W-MAN, carga y ensamblaje")
 E("M21-1", "Mesa de ensamblaje con llave dinamométrica, soporte del cilindro y grasa de silicona",
   R(73.6, 12.85, 74.8, 13.45), "M-20", "ensamble", "S", 1, "W-MAN 21; mesa 1,2 × 0,6")
@@ -1051,7 +1114,12 @@ PUERTAS_LOCALES = [
     (13.6, 8.4, 1.0, "h", -1),        # pañol -> senda sur
     (18.0, 8.4, 0.9, "h", -1),        # calidad -> senda sur
     (13.1, Y_S, 5.2, "h", 1),         # depósito de polvo: cortina frente a las 5 pilas, al pasillo principal
+    (17.3, 10.7, 0.9, "h", -1),       # depósito de polvo: puerta peatonal a la franja sur (segunda salida del local)
     (41.6, 9.5, 0.9, "h", -1),        # sala de pérdidas (pasillo sur) -> paso de la carga
+    (21.6, 8.4, 0.9, "h", -1),        # residuos especiales -> senda sur (además, P8 al exterior)
+    (28.4, 1.2, 0.9, "v", 1),         # inflamables: abre hacia afuera, al paso PS-4
+    (30.0, 2.4, 0.9, "v", -1),        # limpieza: abre hacia el paso PS-4
+    (30.0, 5.5, 0.9, "v", -1),        # pañol de EPP y primeros auxilios: abre hacia el paso PS-4
 ]
 
 # ================================================================ ADMINISTRACIÓN Y SERVICIOS AL PERSONAL (anexo norte)
@@ -1216,6 +1284,8 @@ ROTULOS_ADMIN = [   # (texto, (x, y), giro)
 # baranda de la senda norte con cruces frente a cada puerta a la planta (plano del usuario) y aberturas en los pasillos
 # de operarios que llegan a la senda
 CRUCES_N = [(XA0 - 0.1, XA0 + 1.2), (XA0 + 11.0, XA0 + 12.3), (XA0 + 21.7, XA0 + 23.5)]
+# cruces demarcados de la baranda entre el carril del autoelevador y la senda del pasillo principal
+CRUCES_A2 = [(3.0, 4.6), (12.4, 14.0), (16.4, 18.0), (35.3, 36.8), (53.2, 57.3), (60.9, 62.5), (64.8, 66.4)]
 ABERTURAS_N = CRUCES_N + [(43.8, 45.3)]
 # circuitos del personal (marcas del plano del usuario y su lámina de circulación): (n, qué, color, puntos)
 _V = (Y_PC0 + Y_PC1) / 2
@@ -1257,7 +1327,15 @@ PUERTAS += [
            "Scrap: del pasillo AL-A a la playa con volquete"),
     Puerta("PE-1", "O", 8.6, 9.7, 2.1, "emergencia", "Salida del ángulo SO (extremo de la senda de los locales)"),
     Puerta("PE-3", "N", 3.0, 4.2, 2.1, "emergencia", "Salida del almacén (extremo norte del pasillo AL-B)"),
-    Puerta("PE-4", "S", 32.0, 33.2, 2.1, "emergencia", "Salida de la banda sur (reserva y ensayos de lote)"),
+    Puerta("PE-4", "S", 28.6, 29.8, 2.1, "emergencia", "Salida de la banda sur (ensayos de lote y servicios)"),
+    Puerta("PE-5", "E", 18.75, 19.95, 2.1, "emergencia", "Salida del extremo este de la senda del pasillo principal"),
+    Puerta("PE-6", "E", 7.45, 8.65, 2.1, "emergencia", "Salida de la terminación de manuales"),
+    Puerta("PE-7", "N", 13.85, 14.95, 2.1, "emergencia", "Salida del extremo oeste de la senda norte (almacén y "
+           "manuales)"),
+    Puerta("PE-8", "N", 61.3, 62.5, 2.1, "emergencia", "Salida del extremo este de la senda norte (detección, cuelgue y "
+           "pintura)"),
+    Puerta("PE-9", "S", 74.2, 75.4, 2.1, "emergencia", "Salida del depósito de PT de manuales"),
+    Puerta("P8", "S", 23.1, 24.5, 2.1, "servicio", "Retiro de residuos especiales por el gestor (doble hoja)"),
     Puerta("PN-1", "N", XA0 + 0.05, XA0 + 0.85, 2.1, "peatonal", "Sala técnica: puerta directa a la planta"),
     Puerta("PN-2", "N", XA0 + 11.2, XA0 + 12.05, 2.1, "peatonal", "Comedor (almuerzo: cruce, lavamanos, comedor)"),
     Puerta("PN-3", "N", XA0 + 21.9, XA0 + 23.4, 2.1, "peatonal", "Paso de personal a la planta (doble hoja)"),
@@ -1287,7 +1365,13 @@ EXTERIOR = [
     ("PEN", "Patio de ensayos de lote: circuito de remolque (W-CAR 17)", R(26.0, -12.0, 38.0, -2.0)),
     ("PEN1", "Plataforma de caída 20 cm", R(28.0, -4.5, 29.5, -3.0)),
     ("PEN2", "Pared 60 cm", R(28.0, -7.0, 30.0, -6.7)),
-    ("JG", "Jaula de gases ventilada (Arcal 21 y N₂ en packs con manifold)", R(68.0, -4.2, 75.0, -1.2)),
+    ("JG", "Jaula de gases exterior ventilada: packs con manifold de Arcal 21 y de N₂ (en uso y llenos) y vacíos aparte",
+     R(62.5, -4.2, 69.5, -1.2)),
+    ("CAE", "Cobertizo de autoelevadores: estacionamiento y carga de baterías", R(-5.0, 24.0, -0.2, 30.0)),
+    ("ERM", "ERM de gas natural (gabinete en la línea municipal)", R(64.0, 67.6, 67.0, 68.9)),
+    ("PEU-1", "Punto de encuentro 1 (norte)", R(63.5, 49.0, 71.5, 54.0)),
+    ("PEU-2", "Punto de encuentro 2 (sudoeste)", R(0.0, -14.0, 10.0, -9.0)),
+    ("PEU-3", "Punto de encuentro 3 (sudeste)", R(71.0, -14.5, 79.5, -9.5)),
     ("PSC", "Playa de scrap (P7): volquete del chatarrero", R(4.0, 48.5, 14.0, 56.0)),
 ]
 # despacho de PT de carros por P2 (plano de carros del usuario, rev 6): rampa portátil TRAN-IN-240 (2,4 m útiles, 820 mm
@@ -1315,6 +1399,67 @@ PORTONES_PREDIO = [   # (código, x desde, x hasta, uso) sobre el cerco norte
     ("PC-6", XA0 - 1.75, XA0, "Peatonal: supervisión (ingreso oeste)"),
 ]
 
+
+# ================================================================ GASES: dónde están los que se usan (respuesta al usuario)
+# * Manuales (W-MAN): el N₂ de la presurización («pack de 12 cilindros con manifold en la jaula exterior, con cañería y
+#   regulador hasta el puesto; se cambia cada dos o tres semanas con autoelevador») y el Arcal 21 de la soldadura («el
+#   consumo más grande de la jaula de gases: unos 48 m³ por día ... pack de cilindros con manifold ... con cañería a los
+#   13 puestos de soldadura») están EN USO dentro de la jaula exterior JG, conectados por cañería.
+# * Carros (W-CAR 13): la batería de N₂ de 11 tubos de 50 L está en uso adentro, en el puesto 13, en su jaula, contra la
+#   pared y encadenada (C13-5).
+# * Tubos sueltos (W-CAR 1): N₂ y Ar/CO₂ de las soldadoras de carros, llenos separados de vacíos, en la jaula de tubos
+#   ventilada de la cuarentena (CU-2).
+# Sectores de la jaula exterior (de oeste a este, contra el lado norte; el autoelevador entra por el sur):
+# (nombre, R) - packs de 12 cilindros de 1,0 × 1,2 m (medida del pack: criterio)
+JG_SECTORES = [
+    ("Arcal 21 en uso A", R(62.65, -2.6, 63.75, -1.35)), ("Arcal 21 en uso B", R(63.85, -2.6, 64.95, -1.35)),
+    ("Arcal 21 lleno", R(65.05, -2.6, 66.15, -1.35)), ("N₂ en uso", R(66.25, -2.6, 67.35, -1.35)),
+    ("N₂ lleno", R(67.45, -2.6, 68.55, -1.35)), ("Vacíos", R(68.65, -2.6, 69.35, -1.35)),
+]
+# cañerías (aéreas dentro de la nave): N₂ de la jaula a la presurización de manuales (M22-1) y Arcal 21 a los puestos de
+# soldadura de manuales; gas natural de la ERM a los hornos de la pintura (W-MAN: «horno de curado a gas»)
+CANERIA_N2 = [(66.8, -1.35), (66.8, -0.6), (76.6, -0.6), (76.6, 9.8), (75.95, 9.8)]
+CANERIA_ARCAL = [(64.3, -1.35), (64.3, -0.6), (60.6, -0.6), (60.6, 18.3), (36.05, 18.3), (36.05, 44.6)]
+RAMALES_ARCAL = [[(36.05, 44.6), (32.1, 44.6)], [(36.05, 44.6), (43.4, 44.6), (43.4, 44.0)],
+                 [(36.05, 30.6), (26.1, 30.6), (26.1, 30.3)]]
+CANERIA_GAS = [(67.0, 68.25), (73.0, 68.25), (73.0, 47.0)]
+
+# ================================================================ SEGURIDAD E HIGIENE (lámina FL_PI10_07; cálculo en seguridad.py)
+FACTOR_OCUPACION = 16.0          # m² por persona: Dec. 351/79, anexo VII, edificios industriales
+RECORRIDO_MAX = 40.0             # m hasta una salida: criterio (los 40 m del anexo VII hasta la caja de escalera)
+MF_SUP, MF_RECORRIDO = 200.0, 15.0   # Dec. 351/79: 1 matafuego cada 200 m²; recorrido 20 m (clase A), 15 m (clase B)
+# matafuegos ubicados por el riesgo del lugar; seguridad.py agrega los que hacen falta para que ningún punto quede a más
+# de 15 m: (x, y, tipo, motivo)
+MATAFUEGOS_RIESGO = [
+    (2.6, 8.15, "CO₂ 5 kg", "Tablero general (clase C, no deja residuo)"),
+    (18.15, 11.2, "ABC 10 kg", "Depósito de polvo y de pintura en polvo"),
+    (12.25, 10.3, "ABC 50 kg rodante", "Recepción, cuarentena, fleje y polvo"),
+    (0.6, 19.3, "ABC 50 kg rodante", "Almacén de MP: cartón y pallets del R1"),
+    (1.3, 30.8, "ABC 10 kg", "Almacén: montante del R1 hacia AL-B, con protección"),
+    (1.3, 41.5, "ABC 10 kg", "Almacén: montante del R1 hacia AL-B, con protección"),
+    (61.0, 36.3, "ABC 50 kg rodante", "Cuelgue y cabina de pintura en polvo"),
+    (28.55, 2.6, "ABC 10 kg", "Aceites e inflamables (junto a la puerta)"),
+    (24.45, 8.1, "ABC 10 kg", "Residuos especiales"),
+]
+MATAFUEGOS_EXT = [(66.0, -4.6, "ABC 10 kg", "Jaula de gases (junto a la puerta)"),
+                  (-0.6, 24.4, "ABC 10 kg", "Cobertizo de autoelevadores")]
+# botiquines y bebederos en columnas del eje B (cara de la senda) y en el muro norte de la senda norte
+BOTIQUINES = [(23.15, 18.8, "Columna B-4"), (53.55, 18.8, "Columna B-8"), (15.7, 46.75, "Senda norte oeste"),
+              (45.0, 46.75, "Senda norte, columna este"), (60.95, 12.2, "Terminación de manuales")]
+BEBEDEROS = [(15.55, 18.8, "Columna B-3"), (45.95, 18.8, "Columna B-7"), (68.75, 18.8, "Columna B-10"),
+             (30.0, 46.75, "Senda norte")]
+# zonas con protección auditiva obligatoria (los puestos que piden protector en los Word; Res. SRT 295/03: 85 dBA)
+ZONAS_RUIDO = [("C-02", "W-MAN corte y W-CAR 2: guillotina"), ("C-021", "W-CAR 2.1: marcado por percusión"),
+               ("C-081", "W-CAR 8.1: sensitiva"), ("M-04", "W-MAN embutido: prensa"),
+               ("M-16", "W-MAN granallado"), ("M-17C", "W-MAN corrección: amolado")]
+# señales en planta (IRAM 10005): (tipo, texto, zona o None, x, y); tipo pro = prohibición, adv = advertencia
+SENALES_ZONA = [
+    ("pro", "Prohibido fumar", "SR-PQ"), ("pro", "Prohibido fumar", "M-18"), ("pro", "Prohibido fumar", "SV-IN"),
+    ("pro", "Prohibido fumar", "SV-RE"), ("adv", "Riesgo eléctrico", "SV-TG"), ("adv", "Superficie caliente", "M-15"),
+    ("adv", "Superficie caliente", "C-10"), ("adv", "Superficie caliente", "M-19"), ("adv", "Gas a presión", "C-13"),
+    ("adv", "Gas a presión", "SR-CU0"), ("adv", "Atrapamiento", "M-20"), ("adv", "Equipo a presión", "M-14"),
+    ("adv", "Equipo a presión", "C-09"), ("adv", "Autoelevadores", "AL-A"), ("adv", "Autoelevadores", "PT-MA"),
+]
 
 # ================================================================ CORTES DE LA NAVE (lámina FL_PI10_06)
 # A-A: longitudinal por y = 5,6 (banda sur: locales, reserva, etiquetado, depósito 16 y rack B de PT), mira al norte.

@@ -5,6 +5,8 @@ FL_PI10_02  Puestos y equipos (1:100)
 FL_PI10_03  Circulación y flujos de materiales y de personas (1:100)
 FL_PI10_04  Almacén de MP, recepción y servicios del ángulo SO (1:50)
 FL_PI10_05  Administración y servicios al personal (1:50)
+FL_PI10_06  Cortes de la nave (1:100)
+FL_PI10_07  Seguridad e higiene: medios de escape, matafuegos, señales, primeros auxilios, gases y residuos (1:100)
 """
 
 import math
@@ -20,6 +22,7 @@ from planta import mobiliario as MO
 from planta.planos import hoja, titulo_hoja, f
 from . import modelo as M
 from . import simb10 as S10
+from . import seguridad as SEG
 
 A = TextEntityAlignment
 
@@ -79,6 +82,11 @@ def _ocupado(z):
     for t, q, fr, n, zc, fu in M.MOB_NAVE:
         if zc == z.cod:
             out.append(sg.box(q.x0, q.y0, q.x1, q.y1))
+    pts = [(e[1], e[2]) for e in SEG.matafuegos()] + [(x, y) for x, y, t in M.BOTIQUINES + M.BEBEDEROS] + \
+        [(x, y) for t, s_, x, y in SEG.senales()]
+    for x, y in pts:                     # matafuegos, botiquines, bebederos y señales (lámina de seguridad)
+        if r.x0 - 0.5 < x < r.x1 + 0.5 and r.y0 - 0.5 < y < r.y1 + 0.5:
+            out.append(sg.box(x - 0.45, y - 0.6, x + 0.45, y + 0.45))
     for x, y, w, muro, abre in M.PUERTAS_ADMIN + M.PUERTAS_LOCALES:      # barrido de las puertas
         if w > 2.0:
             continue
@@ -228,12 +236,19 @@ def pasillos(pl, rotulos=True, h=1.6):
                 pl.linea((r.x1 - 0.08, r.y0), (r.x1 - 0.08, r.y1), "A-PASILLO")
         elif z.sub == "SP":
             pl.rect(r, "A-SENDA")
+        elif z.sub == "PO":                 # Dec. 351/79 art. 79: dos franjas a los lados del pasillo
+            if r.w >= r.h:
+                pl.linea((r.x0, r.y0 + 0.05), (r.x1, r.y0 + 0.05), "A-PASILLO")
+                pl.linea((r.x0, r.y1 - 0.05), (r.x1, r.y1 - 0.05), "A-PASILLO")
+            else:
+                pl.linea((r.x0 + 0.05, r.y0), (r.x0 + 0.05, r.y1), "A-PASILLO")
+                pl.linea((r.x1 - 0.05, r.y0), (r.x1 - 0.05, r.y1), "A-PASILLO")
         if rotulos and max(r.w, r.h) > 6:
             ang = 0 if r.w >= r.h else 90
             txt = f"{z.cod}  {_corto(z.nombre, 60 if max(r.w, r.h) > 9 else 40)}  {f(min(r.w, r.h), 1)} m"
             pl.texto(txt, r.c, h, A.MIDDLE_CENTER, "A-TEXTO", ang)
     # baranda entre el carril del autoelevador y la senda del pasillo principal, con cruces
-    cruces = [(3.0, 4.6), (12.4, 14.0), (16.4, 18.0), (35.3, 36.8), (53.2, 57.3), (60.9, 62.5), (64.8, 66.4)]
+    cruces = M.CRUCES_A2
     x = 0.4
     for a, b in cruces:
         if a > x:
@@ -381,23 +396,30 @@ def puertas(pl, h=1.6, etiquetas=True):
         if p.tipo == "porton":
             porton(pl, p, h, etiquetas)
             continue
+        # las puertas peatonales, de emergencia y de servicio abren hacia afuera (sentido de la evacuación)
         if p.muro in "NS":
             y = Y if p.muro == "N" else 0.0
             s = 1 if p.muro == "N" else -1
             a = (p.a, y)
             w = p.b - p.a
-            pl.linea(a, (p.a, y - s * w), "A-ABERTURA")
-            pl.arco(a, w, -90 if s > 0 else 0, 0 if s > 0 else 90, "A-ABERTURA")
+            if p.cod.startswith("PN"):          # puertas del anexo a la planta: como en el plano del usuario
+                pl.linea(a, (p.a, y - s * w), "A-ABERTURA")
+                pl.arco(a, w, -90 if s > 0 else 0, 0 if s > 0 else 90, "A-ABERTURA")
+                if etiquetas:
+                    pl.texto(p.cod, ((p.a + p.b) / 2, y + s * 1.4), h, A.MIDDLE_CENTER, "A-TEXTO")
+                continue
+            pl.linea(a, (p.a, y + s * w), "A-ABERTURA")
+            pl.arco(a, w, 0 if s > 0 else 270, 90 if s > 0 else 360, "A-ABERTURA")
             if etiquetas:
-                pl.texto(p.cod, ((p.a + p.b) / 2, y + s * 1.4), h, A.MIDDLE_CENTER, "A-TEXTO")
+                pl.texto(p.cod, ((p.a + p.b) / 2, y + s * (w + 0.9)), h, A.MIDDLE_CENTER, "A-TEXTO")
         else:
             x = X if p.muro == "E" else 0.0
             s = 1 if p.muro == "E" else -1
             w = p.b - p.a
-            pl.linea((x, p.a), (x - s * w, p.a), "A-ABERTURA")
-            pl.arco((x, p.a), w, 0 if s < 0 else 90, 90 if s < 0 else 180, "A-ABERTURA")
+            pl.linea((x, p.a), (x + s * w, p.a), "A-ABERTURA")
+            pl.arco((x, p.a), w, 0 if s > 0 else 90, 90 if s > 0 else 180, "A-ABERTURA")
             if etiquetas:
-                pl.texto(p.cod, (x + s * 1.6, (p.a + p.b) / 2), h, A.MIDDLE_CENTER, "A-TEXTO", 90)
+                pl.texto(p.cod, (x + s * (w + 1.0), (p.a + p.b) / 2), h, A.MIDDLE_CENTER, "A-TEXTO", 90)
     for x, y, w, muro, abre in M.PUERTAS_ADMIN + M.PUERTAS_LOCALES:
         if w > 2.0:
             if muro == "h":
@@ -788,13 +810,15 @@ def resumen():
 # ================================================================ FL_PI10_01
 def fl_01(doc, ox):
     h = hoja(doc, "A0", ox, "Planta general e implantación", "Layout 2035 v10 - zonas codificadas y áreas",
-             "FL_PI10_01", 1, 6, "1:200", "Plano de planta")
+             "FL_PI10_01", 1, 7, "1:200", "Plano de planta")
     win = (-27.0, -22.5, 104.0, 77.0)
     pl = D.Plano(h, 200, (win[0], win[1]), (h.fx0 + 12, h.fy0 + 262))
     titulo_hoja(pl, h, "FL_PI10_01 - PLANTA GENERAL E IMPLANTACIÓN, ZONAS Y SUPERFICIES",
                 "Calle al norte: administración y servicios al personal al norte de la nave (croquis del usuario). "
                 "Cada m² de la nave tiene código y nombre (verificado).")
     exterior(pl, 1.6)
+    pl.pl(M.CANERIA_GAS, "I-GAS")
+    pl.texto("Gas natural a los hornos de pintura", (M.CANERIA_GAS[1][0] + 0.6, 58.0), 1.3, A.MIDDLE_LEFT, "I-GAS", 90)
     zonas(pl, h=1.8, areas=False)
     zonas(pl, lista=M.ADMIN, h=1.5, areas=False)
     tabiques(pl, [z for z in M.ZONAS if z.tipo == "local"], 0.10)
@@ -874,7 +898,8 @@ def fl_01(doc, ox):
         "pasillo; racks de manuales de %d posiciones (70 de PT y 17 revendidos de X-ALM)." % M.PT_MAN["posiciones"],
         "Prueba hidráulica de carros al lado de la de manuales y secado de carros al lado del de manuales (y",
         "pegado a su prueba, W-CAR 10); granallado, detección, corrección y cuelgue arriba; descarga de la pintura",
-        "frente al embalaje. Lo que sobra de la nave (un vano de 7,6 m con la demanda 2035) queda en RV-S y LB-1.",
+        "frente al embalaje. Lo que quedaba libre en el ángulo SO se usa para residuos especiales (con puerta P8 al",
+        "exterior), aceites e inflamables, reciclables, limpieza y el pañol de EPP con primeros auxilios (FL_PI10_07).",
     ], 2.15)
     return h
 
@@ -891,7 +916,7 @@ TABLA_EQ = ["M4-1", "M4-2", "M4-3", "M3-2", "M5-1", "M6-1", "M7-1", "M8-1", "M9-
 
 def fl_02(doc, ox):
     h = hoja(doc, "A0", ox, "Puestos y equipos", "Layout 2035 v10 - máquinas de X-MAN y X-CAR con su medida",
-             "FL_PI10_02", 2, 6, "1:100", "Plano de planta")
+             "FL_PI10_02", 2, 7, "1:100", "Plano de planta")
     pl = D.Plano(h, 100, (-4.0, -6.0), (h.fx0 + 18, h.fy0 + 150))
     titulo_hoja(pl, h, "FL_PI10_02 - PUESTOS Y EQUIPOS (MANUALES, CARROS, PINTURA, TERMINACIÓN Y ALMACENES)",
                 "Máquina de cada puesto según X-MAN y W-CAR; medida de la tabla de áreas v10 (cotización > ET > Word > "
@@ -1028,7 +1053,7 @@ HILOS = [
 
 def fl_03(doc, ox):
     h = hoja(doc, "A0", ox, "Circulación y flujos", "Layout 2035 v10 - pasillos, materiales y personas",
-             "FL_PI10_03", 3, 6, "1:100", "Plano de circulación")
+             "FL_PI10_03", 3, 7, "1:100", "Plano de circulación")
     pl = D.Plano(h, 100, (-8.0, -6.0), (h.fx0 + 12, h.fy0 + 150))
     titulo_hoja(pl, h, "FL_PI10_03 - CIRCULACIÓN, FLUJOS DE MATERIALES Y RECORRIDOS DEL PERSONAL",
                 "Carriles del autoelevador, sendas peatonales y pasillos de operarios con su ancho; flujo de MP, de "
@@ -1104,7 +1129,7 @@ def leyenda_secciones(c, w=8.0):
 
 def fl_04(doc, ox):
     h = hoja(doc, "A0", ox, "Almacén de MP y recepción", "Layout 2035 v10 - X-ALM v5 con el autoelevador de W-CAR",
-             "FL_PI10_04", 4, 6, "1:50", "Plano de detalle")
+             "FL_PI10_04", 4, 7, "1:50", "Plano de detalle")
     titulo_hoja(D.Plano(h, 50, (0, 0), (0, 0)), h, "FL_PI10_04 - ALMACÉN DE MATERIA PRIMA, RECEPCIÓN Y LOCALES DEL "
                 "ÁNGULO SUDOESTE", "Secciones de X-ALM v5 con su color; espacios de W-CAR 1 al pie de la letra "
                 "(cuarentena, retenidos, calle de chapa, racks de carros, franja de descarga).")
@@ -1227,7 +1252,7 @@ def norte_escala(pl, x, y, metros=5, h=2.5):
 
 def fl_05(doc, ox):
     h = hoja(doc, "A0", ox, "Administración y servicios al personal",
-             "Layout 2035 v10 - croquis del usuario y dotación de la X-DT", "FL_PI10_05", 5, 6, "1:50",
+             "Layout 2035 v10 - croquis del usuario y dotación de la X-DT", "FL_PI10_05", 5, 7, "1:50",
              "Plano de detalle")
     titulo_hoja(D.Plano(h, 50, (0, 0), (0, 0)), h, "FL_PI10_05 - ADMINISTRACIÓN Y SERVICIOS AL PERSONAL (ANEXO NORTE)",
                 "Copia del plano del usuario (23,6 × 14,3 m ≈ 337 m², calle al norte, planta al sur): locales, muebles, "
@@ -1471,7 +1496,7 @@ def dibujar_corte(pl, letra, s_min, s_max, h=1.8):
 
 def fl_06(doc, ox):
     h = hoja(doc, "A0", ox, "Cortes de la nave", "Layout 2035 v10 - cortes A-A a D-D con las alturas de las fuentes",
-             "FL_PI10_06", 6, 6, "1:100", "Plano de cortes")
+             "FL_PI10_06", 6, 7, "1:100", "Plano de cortes")
     titulo_hoja(D.Plano(h, 100, (0, 0), (0, 0)), h, "FL_PI10_06 - CORTES DE LA NAVE A-A, B-B, C-C Y D-D",
                 "Alturas con fuente (ET, cotizaciones, W-CAR, hoja de especificaciones); lo que no tiene alto en "
                 "ninguna fuente va marcado «s/d». Ubicación de los cortes en la planta de la derecha y en FL_PI10_01.")
@@ -1525,3 +1550,338 @@ def linea_corte(pl, letra, h=3.0):
         pl.punta(q, d, h * 1.2, h * 0.8)
         pl.texto(letra, (p_[0] - d[1] * 1.5 + d[0] * 1.0, p_[1] + d[0] * 1.5 + d[1] * 1.0), h * 1.4, A.MIDDLE_CENTER,
                  "A-TEXTO")
+
+
+# ================================================================ FL_PI10_07 seguridad e higiene
+ROJO, VERDE_S, AZUL_S, AMAR = (200, 20, 20), (0, 140, 70), (0, 90, 170), (250, 200, 0)
+
+
+def _cuad(pl, x, y, a, rgb, capa, b=None):
+    b = a if b is None else b
+    q = [(x - a, y - b), (x + a, y - b), (x + a, y + b), (x - a, y + b)]
+    pl.relleno(q, rgb, capa)
+    pl.pl(q, capa, True)
+
+
+def sim_mf(pl, x, y, cod, tipo, h=1.4):
+    """Matafuego (IRAM 10005, señal de incendio: rojo): número adentro; rodante más grande; CO₂ rotulado."""
+    a = 0.4 if "rodante" in tipo else 0.3
+    _cuad(pl, x, y, a, ROJO, "S-INCENDIO")
+    pl.texto(cod.split("-")[-1], (x, y), h * (0.8 if a > 0.3 else 0.65), A.MIDDLE_CENTER, "A-TEXTO")
+    if "rodante" in tipo:
+        pl.texto("50 kg", (x, y - a - 0.1), h * 0.55, A.TOP_CENTER, "A-TEXTO")
+    elif "CO" in tipo:
+        pl.texto("CO₂", (x, y - a - 0.1), h * 0.55, A.TOP_CENTER, "A-TEXTO")
+
+
+def sim_bq(pl, x, y, h=1.4):
+    _cuad(pl, x, y, 0.28, VERDE_S, "S-ESCAPE")
+    pl.linea((x - 0.18, y), (x + 0.18, y), "A-TEXTO")
+    pl.linea((x, y - 0.18), (x, y + 0.18), "A-TEXTO")
+
+
+def sim_be(pl, x, y, h=1.4):
+    pts = [(x + 0.24 * math.cos(t / 10 * math.pi), y + 0.24 * math.sin(t / 10 * math.pi)) for t in range(20)]
+    pl.relleno(pts, AZUL_S, "S-SENAL")
+    pl.texto("BE", (x, y + 0.32), h * 0.5, A.BOTTOM_CENTER, "A-TEXTO")
+
+
+def sim_le(pl, x, y):
+    pl.rect(M.R(x - 0.3, y - 0.12, x + 0.3, y + 0.12), "S-ESCAPE")
+    pl.relleno([(x - 0.3, y - 0.12), (x, y - 0.12), (x, y + 0.12), (x - 0.3, y + 0.12)], VERDE_S, "S-ESCAPE")
+
+
+def sim_senal(pl, tipo, x, y, txt=None, h=1.4, r=0.32):
+    if tipo == "obl":
+        pts = [(x + r * math.cos(t / 12 * math.pi), y + r * math.sin(t / 12 * math.pi)) for t in range(24)]
+        pl.relleno(pts, AZUL_S, "S-SENAL")
+    elif tipo == "adv":
+        pts = [(x - r, y - r * 0.8), (x + r, y - r * 0.8), (x, y + r * 0.9)]
+        pl.relleno(pts, AMAR, "S-SENAL")
+        pl.pl(pts, "A-TEXTO", True)
+    elif tipo == "pro":
+        pts = [(x + r * math.cos(t / 12 * math.pi), y + r * math.sin(t / 12 * math.pi)) for t in range(24)]
+        pl.pl(pts, "S-INCENDIO", True)
+        pl.linea((x - r * 0.7, y + r * 0.7), (x + r * 0.7, y - r * 0.7), "S-INCENDIO")
+    if txt:
+        pl.texto(txt, (x, y - r - 0.08), h * 0.5, A.TOP_CENTER, "A-TEXTO")
+
+
+def sim_flecha(pl, p, d, largo=1.3, capa="S-ESCAPE"):
+    a = (p[0] - d[0] * largo / 2, p[1] - d[1] * largo / 2)
+    b = (p[0] + d[0] * largo / 2, p[1] + d[1] * largo / 2)
+    pl.linea(a, b, capa)
+    pl.punta(b, d, 2.2, 1.5, VERDE_S, capa)
+
+
+def salidas_seg(pl, h=1.6):
+    """Cartel SALIDA adentro de cada salida y ancho de la salida afuera."""
+    for p in SEG.salidas():
+        w = p.b - p.a
+        m = (p.a + p.b) / 2
+        dentro = {"N": (m, M.LY - 1.4), "S": (m, 1.4), "E": (M.LX - 1.4, m), "O": (1.4, m)}[p.muro]
+        rot = 0 if p.muro in "NS" else 90
+        a, b = (0.8, 0.28) if rot == 0 else (0.28, 0.8)
+        _cuad(pl, dentro[0], dentro[1], a, VERDE_S, "S-ESCAPE", b)
+        pl.texto("SALIDA", dentro, h * 0.55, A.MIDDLE_CENTER, "A-TEXTO", rot)
+        fuera = {"N": (m, M.LY + 2.6), "S": (m, -2.6), "E": (M.LX + 2.9, m), "O": (-2.9, m)}[p.muro]
+        pl.texto(f"{f(w, 2)} m", fuera, h * 0.75, A.MIDDLE_CENTER, "S-ESCAPE", rot)
+
+
+def gases(pl, h=1.4):
+    """Jaula de gases exterior por sectores, cañerías de N₂ y de Arcal 21 y entrada del gas natural."""
+    jg = next(r for c, n, r in M.EXTERIOR if c == "JG")
+    pl.rect(jg, "A-EQUIPO")
+    pl.rect(M.R(jg.x0 + 0.08, jg.y0 + 0.08, jg.x1 - 0.08, jg.y1 - 0.08), "A-EQUIPO-OCULTO")
+    for nom, r in M.JG_SECTORES:
+        S.dibujar(pl, SimpleNamespace(rect=_r(r), nombre=nom, tipo="bateria_gas", frente="S", op=0, espejo=False),
+                  False)
+        pl.texto(nom.replace("Arcal 21", "Arcal"), (r.c[0], r.y0 - 0.15), h * 0.45, A.TOP_CENTER, "A-TEXTO")
+    pl.linea((jg.x0 + 2.8, jg.y0), (jg.x0 + 4.4, jg.y0), "A-ABERTURA")
+    pl.texto("Puerta (autoelevador)", (jg.x0 + 3.6, jg.y0 - 0.2), h * 0.5, A.TOP_CENTER, "A-TEXTO")
+    pl.texto("JG · jaula de gases: malla, techo liviano, ventilación natural, cilindros parados y encadenados, llenos "
+             "separados de vacíos, bolardos (Dec. 351/79 art. 142; W-MAN)", (jg.x0, jg.y0 - 1.6), h * 0.6,
+             A.TOP_LEFT, "A-TEXTO")
+    pl.pl(M.CANERIA_N2, "I-N2")
+    pl.texto("N₂ a la presurización M22-1 (W-MAN)", (76.9, 4.5), h * 0.55, A.MIDDLE_CENTER, "I-N2", 90)
+    pl.pl(M.CANERIA_ARCAL, "I-SOLD")
+    for ram in M.RAMALES_ARCAL:
+        pl.pl(ram, "I-SOLD")
+        pl.circulo(ram[-1], 0.15, "I-SOLD")
+    pl.texto("Arcal 21: cañería aérea a los puestos de soldadura de manuales (W-MAN)", (60.4, 9.0), h * 0.55,
+             A.MIDDLE_CENTER, "I-SOLD", 90)
+    q = [p_ for p_ in M.CANERIA_GAS if p_[1] <= 58.0] or [M.CANERIA_GAS[-1]]
+    pl.pl([(M.CANERIA_GAS[-1][0], 57.5), M.CANERIA_GAS[-1]], "I-GAS")
+    pl.texto("Gas natural de la ERM a los hornos de pintura (FL_PI10_01)", (M.CANERIA_GAS[-1][0] + 0.4, 52.0),
+             h * 0.55, A.MIDDLE_LEFT, "I-GAS", 90)
+    _ = q
+
+
+def cobertizo(pl, h=1.4):
+    r = next(q for c, n, q in M.EXTERIOR if c == "CAE")
+    pl.rect(r, "A-EQUIPO")
+    for x0, x1, nom in ((r.x0 + 0.15, r.x0 + 2.25, "Heli CPCD50"), (r.x0 + 2.45, r.x1 - 0.2, "Heli CPD15 eléctrico")):
+        q = M.R(x0, r.y0 + 0.3, x1, r.y1 - 1.0)
+        pl.rect(q, "A-DEM-AM")
+        pl.texto(nom, q.c, h * 0.55, A.MIDDLE_CENTER, "A-TEXTO", 90)
+    MO.dibujar(pl, SimpleNamespace(tipo="cargador", rect=_r(M.R(r.x0 + 2.6, r.y1 - 0.9, r.x1 - 0.9, r.y1 - 0.15)),
+                                   frente="S", n=1))
+    MO.dibujar(pl, SimpleNamespace(tipo="lavaojos", rect=_r(M.R(r.x1 - 0.8, r.y1 - 0.85, r.x1 - 0.15, r.y1 - 0.2)),
+                                   frente="S", n=1))
+    pl.texto("CAE · cobertizo de autoelevadores: estacionamiento y carga de baterías (Res. SRT 960/15 art. 22)",
+             (r.x0 - 0.4, r.c[1]), h * 0.6, A.MIDDLE_CENTER, "A-TEXTO", 90)
+
+
+def encuentros(pl, h=1.4):
+    for cod, nom, r in M.EXTERIOR:
+        if not cod.startswith("PEU"):
+            continue
+        pl.rect(r, "S-ESCAPE")
+        c = r.c
+        for d in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            a = (c[0] + d[0] * 1.8, c[1] + d[1] * 1.8)
+            pl.linea((c[0] + d[0] * 0.5, c[1] + d[1] * 0.5), a, "S-ESCAPE")
+            pl.punta((c[0] + d[0] * 0.5, c[1] + d[1] * 0.5), (-d[0], -d[1]), 2.2, 1.5, VERDE_S, "S-ESCAPE")
+        pl.texto("PUNTO DE ENCUENTRO " + cod[-1], (c[0], r.y1 - 0.3), h * 0.75, A.TOP_CENTER, "S-ESCAPE")
+
+
+def seguridad_planta(pl, h=1.4):
+    """Capa de seguridad sobre la planta: zonas de ruido, salidas, flechas, recorrido máximo, luces, matafuegos,
+    botiquines, bebederos y señales."""
+    zon = {z.cod: z for z in M.ZONAS}
+    for zc, fu in M.ZONAS_RUIDO:
+        r = zon[zc].rect
+        pl.rect(M.R(r.x0 + 0.12, r.y0 + 0.12, r.x1 - 0.12, r.y1 - 0.12), "A-ZONA-LOG")
+    for x, y in SEG.luces():
+        sim_le(pl, x, y)
+    for p, d in SEG.flechas():
+        sim_flecha(pl, p, d)
+    es = SEG.escape()
+    cam = sg.LineString(es["camino"]).simplify(0.4)
+    pl.pl(list(cam.coords), "S-ESCAPE")
+    x, y = es["peor"]
+    pl.circulo((x, y), 0.35, "S-ESCAPE")
+    pl.texto(f"Recorrido máximo {f(es['max'], 1)} m (≤ {f(M.RECORRIDO_MAX, 0)} m)", (x + 0.5, y + 0.4), h * 0.75,
+             A.BOTTOM_LEFT, "S-ESCAPE")
+    salidas_seg(pl, h * 1.1)
+    for cod, x, y, t, mot in SEG.matafuegos():
+        sim_mf(pl, x, y, cod, t, h)
+    for k, (x, y, t, mot) in enumerate(M.MATAFUEGOS_EXT):
+        sim_mf(pl, x, y, f"E{k + 1}", t, h)
+    for k, (x, y) in enumerate(M.MATAFUEGOS_ADMIN):
+        sim_mf(pl, x, y, f"A{k + 1}", "ABC", h)
+    for x, y, t in M.BOTIQUINES:
+        sim_bq(pl, x, y, h)
+    for x, y, t in M.BEBEDEROS:
+        sim_be(pl, x, y, h)
+    for tipo, txt, x, y in SEG.senales():
+        sim_senal(pl, tipo, x, y, txt, h)
+
+
+def _leyenda_seg(h, x, y):
+    """Referencias de los símbolos de la lámina (cada uno dibujado en su propio marco a 1:100)."""
+    pl = D.Plano(h, 100, (0.0, 0.0), (x, y))
+    pl.texto("Referencias", (0.0, 1.0), 3.5, A.BOTTOM_LEFT, "A-TEXTO")
+    items = [
+        (lambda q, v: sim_mf(q, 0.6, v, "MF-07", "ABC 10 kg"), "Matafuego ABC 10 kg (número de la tabla); 50 kg: rodante; CO₂: tablero"),
+        (lambda q, v: sim_bq(q, 0.6, v), "Botiquín de primeros auxilios (BQ), en columna o muro"),
+        (lambda q, v: sim_be(q, 0.6, v), "Bebedero de agua para uso humano (Dec. 351/79 art. 57)"),
+        (lambda q, v: sim_le(q, 0.6, v), "Luminaria autónoma de emergencia (art. 76): salidas, cada 10 m y locales"),
+        (lambda q, v: (_cuad(q, 0.9, v, 0.8, VERDE_S, "S-ESCAPE", 0.28),
+                       q.texto("SALIDA", (0.9, v), 0.8, A.MIDDLE_CENTER, "A-TEXTO")), "Cartel de salida (IRAM 10005, salvamento)"),
+        (lambda q, v: sim_flecha(q, (0.8, v), (1, 0)), "Flecha de evacuación pintada en el piso (art. 80)"),
+        (lambda q, v: sim_senal(q, "obl", 0.6, v), "Obligación: protección auditiva (zona en trazo azul)"),
+        (lambda q, v: sim_senal(q, "adv", 0.6, v), "Advertencia: riesgo eléctrico, superficie caliente, gas o equipo a presión"),
+        (lambda q, v: sim_senal(q, "pro", 0.6, v), "Prohibido fumar y hacer fuego"),
+        (lambda q, v: q.pl([(0.0, v), (1.6, v)], "I-N2"), "Cañería de N₂"),
+        (lambda q, v: q.pl([(0.0, v), (1.6, v)], "I-SOLD"), "Cañería de Arcal 21 (Ar + 8 % CO₂)"),
+        (lambda q, v: q.pl([(0.0, v), (1.6, v)], "I-GAS"), "Cañería de gas natural"),
+    ]
+    v = -0.6
+    for fn, txt in items:
+        fn(pl, v)
+        pl.texto(txt, (2.2, v), 2.2, A.MIDDLE_LEFT, "A-TEXTO")
+        v -= 0.95
+    return y + v * 10 - 6
+
+
+FILAS_LEGAL = [
+    ["Escape", "2 unidades de ancho (1,10 m) por salida; 0,55 + 0,45 m", "Dec. 351/79 anexo VII, 3",
+     "9 salidas de 1,10 a 1,20 m que abren hacia afuera", "Cumple"],
+    ["Escape", "N = superficie / 16 m²; n = N / 100 unidades; n/4 + 1 medios", "Dec. 351/79 anexo VII, 3",
+     "N = {N}, n = {n} -> 1 medio y {anc} m; hay 9 salidas y {tot} m", "Cumple"],
+    ["Escape", "Recorrido hasta una salida", "Anexo VII: 40 m (a la caja de escalera)",
+     "Máximo {max} m por la línea de libre trayectoria (grilla de 0,5 m)", "Criterio"],
+    ["Escape", "Puertas en el sentido de la evacuación, sin trabas", "Dec. 351/79 anexo VII, 3",
+     "Abren hacia afuera, con barral antipánico; puntos de encuentro exteriores", "Cumple"],
+    ["Señales", "Vías de evacuación con líneas amarillas y flechas", "Dec. 351/79 art. 80",
+     "Flechas en cada pasillo y senda hacia la salida más cercana", "Cumple"],
+    ["Señales", "Colores y señales de seguridad", "Dec. 351/79 arts. 77-78; IRAM 10005",
+     "SALIDA en cada salida; prohibición, advertencia y obligación por zona", "Cumple"],
+    ["Pasillos", "Demarcados con dos franjas o piso pintado", "Dec. 351/79 art. 79",
+     "Carriles con dos líneas, sendas en cebra, pasillos de operarios con dos líneas", "Cumple"],
+    ["Iluminación", "Emergencia de 30 lx a 0,80 m en los medios de escape", "Dec. 351/79 art. 76",
+     "{le} luminarias autónomas: salidas, cada 10 m de pasillo y cada local", "Verificar lux"],
+    ["Iluminación", "Niveles por tarea y medición", "Dec. 351/79 anexo IV; Res. SRT 84/12",
+     "Proyecto luminotécnico y medición con la planta en marcha", "A completar"],
+    ["Incendio", "1 matafuego cada 200 m²", "Dec. 351/79 cap. 18 y anexo VII",
+     "{sup} m² -> {mmin}; hay {mf} en la nave, 2 afuera y 2 en el anexo", "Cumple"],
+    ["Incendio", "Recorrido al matafuego: 20 m (clase A), 15 m (clase B)", "Dec. 351/79 cap. 18 y anexo VII",
+     "Todo punto libre de la nave a 15 m o menos (se toma clase B en todo)", "Cumple"],
+    ["Incendio", "Potencial extintor y condiciones según la carga de fuego", "Dec. 351/79 anexo VII",
+     "Falta el estudio de carga de fuego por sector", "A completar"],
+    ["Gases", "Cilindros parados, sujetos, ventilados, llenos y vacíos aparte", "Dec. 351/79 art. 142",
+     "Jaula exterior JG, jaula de tubos CU-2 y batería C13-5 encadenada", "Cumple"],
+    ["Autoelevad.", "Carga de baterías en lugar designado y equipado", "Res. SRT 960/15 art. 22",
+     "Cobertizo CAE: cargador, lavaojos y matafuego; estacionamiento", "Cumple"],
+    ["Autoelevad.", "Señalización de las zonas de circulación", "Res. SRT 960/15",
+     "Carriles demarcados, cruces de la baranda y carteles", "Cumple"],
+    ["Ruido", "85 dBA en 8 h: protección auditiva y señal", "Res. MTESS 295/03; Res. SRT 85/12",
+     "Zonas de protección auditiva de los puestos que la piden en los Word", "Medir"],
+    ["Ventilación", "Captación de humos y polvos en la fuente", "Dec. 351/79 cap. 11",
+     "Extracción en soldaduras, amolado, cargas de polvo, granallado y ensayos", "Cumple"],
+    ["EPP", "Entrega con constancia firmada", "Res. SRT 299/11",
+     "Pañol de EPP SV-EP con mostrador y registro", "Cumple"],
+    ["Prim. auxilios", "Botiquín y atención inmediata", "Ley 19.587; Dec. 351/79",
+     "Sala en SV-EP (camilla, botiquín, lavaojos) y 5 botiquines en planta", "Cumple"],
+    ["Lavaojos", "Lavado de ojos (ficha de seguridad del polvo ABC)", "Criterio (W-MAN: ficha en el puesto)",
+     "En las cargas y descargas de polvo, en SV-EP y en el cobertizo", "Criterio"],
+    ["Agua", "Provisión y reserva para uso humano", "Dec. 351/79 art. 57",
+     "4 bebederos; reserva de 50 L por persona y jornada con la dotación X-DT", "A completar"],
+    ["Sanitarios", "Artefactos y armarios por sexo", "Dec. 351/79 art. 49",
+     "Verificado con la dotación de X-DT (FL_PI10_05)", "Cumple"],
+    ["Residuos", "Depósito transitorio, manifiesto y gestor", "Ley 24.051; Ley 11.720 (PBA)",
+     "SV-RE con tambores sobre batea y puerta P8 al exterior", "Cumple"],
+    ["Inflamables", "Fuera de los puestos, en local ventilado", "Dec. 351/79 cap. 18",
+     "SV-IN contra el muro exterior: armario de seguridad y batea", "Cumple"],
+    ["Máquinas", "Resguardos, paradas de emergencia, zonas delimitadas", "Dec. 351/79 cap. 15",
+     "Los de W-MAN y W-CAR en cada puesto (zona de la envolvedora)", "Cumple"],
+    ["Accesibilidad", "Baño accesible, rampas de 8 %, cajón reservado", "Ley 24.314",
+     "Anexo de administración (FL_PI10_05)", "Cumple"],
+    ["Gas natural", "Instalación industrial y ERM", "NAG-201 (ENARGAS)",
+     "ERM en la línea municipal y cañería a los hornos de la pintura", "A completar"],
+    ["Servicios", "Higiene y Seguridad y medicina laboral", "Dec. 1338/96",
+     "Externos (X-DT, notas M29)", "Cumple"],
+]
+
+
+def fl_07(doc, ox):
+    h = hoja(doc, "A0", ox, "Seguridad e higiene", "Layout 2035 v10 - escape, incendio, señales, gases y residuos",
+             "FL_PI10_07", 7, 7, "1:100", "Plano de seguridad")
+    pl = D.Plano(h, 100, (-6.0, -15.0), (h.fx0 + 8, h.fy0 + 8))
+    titulo_hoja(pl, h, "FL_PI10_07 - SEGURIDAD E HIGIENE: MEDIOS DE ESCAPE, PROTECCIÓN CONTRA INCENDIO, SEÑALES, "
+                "PRIMEROS AUXILIOS, GASES Y RESIDUOS",
+                "Ley 19.587 y Dec. 351/79, Res. SRT 960/15, 295/03 y 299/11, Leyes 24.051 y 11.720; lo que piden "
+                "W-MAN y W-CAR en cada puesto. Recorridos y coberturas calculados (planta10/seguridad.py).")
+    antes = D.handles(pl.m)
+    zonas(pl, h=1.4, areas=False)
+    tabiques(pl, [z for z in M.ZONAS if z.tipo == "local"], 0.10)
+    tabiques(pl, M.ADMIN, 0.10)
+    pasillos(pl, rotulos=False)
+    equipos(pl, rotulos=False, operarios=False)
+    muebles(pl)
+    muros(pl)
+    puertas(pl, h=1.5)
+    for cod, nom, r in M.EXTERIOR:
+        if cod in ("PO", "PS", "PE", "PEN", "PSC"):
+            pl.rect(r, "A-EXTERIOR")
+            pl.texto(_corto(nom, 70), (r.x0 + 0.4, r.y1 - 0.4), 1.6, A.TOP_LEFT, "A-TEXTO")
+    despacho_carros(pl, 1.2)
+    gases(pl)
+    cobertizo(pl)
+    encuentros(pl)
+    seguridad_planta(pl)
+    for n_, txt, rgb, pts in M.CIRCUITOS:                # evacuación del anexo (plano del usuario)
+        if "Evacuación" in txt:
+            pl.pl(pts, "S-ESCAPE")
+            a, b = pts[-2], pts[-1]
+            L_ = math.dist(a, b)
+            pl.punta(b, ((b[0] - a[0]) / L_, (b[1] - a[1]) / L_), 2.4, 1.6, VERDE_S, "S-ESCAPE")
+    D.recortar(pl, antes, -6.0, -15.0, 80.0, 62.0)
+    # ---- columna derecha
+    x0 = h.fx0 + 878
+    es = SEG.escape()
+    mf = SEG.matafuegos()
+    c = Col(pl, x0, h.fy1 - 30)
+    filas = [["Superficie de la nave", f(es["area"], 0) + " m²", "76 × 47 m"],
+             ["Factor de ocupación (industria)", f(M.FACTOR_OCUPACION, 0) + " m²/pers.", "Dec. 351/79 anexo VII"],
+             ["Personas N = sup. / factor", str(es["N"]), "X-DT 2035: 36 por turno en planta"],
+             ["Unidades de ancho n = N / 100", str(es["n"]), "mínimo 2 unidades"],
+             ["Ancho total mínimo", f(es["ancho_min"], 2) + " m", "0,55 + 0,55 + 0,45 m"],
+             ["Medios de escape mínimos", str(es["medios_min"]), "n ≤ 3: 1 medio"],
+             ["Salidas de la nave / ancho total", f"{len(es['salidas'])} / {f(es['ancho_total'], 2)} m",
+              "≥ 1,10 m, abren hacia afuera"],
+             ["Recorrido máximo a una salida", f(es["max"], 1) + " m", "criterio ≤ 40 m"]]
+    c.tabla([("Medios de escape", 92, "l"), ("Valor", 34, "r"), ("Fuente o criterio", 150, "l")], filas, 4.6, 2.4,
+            "Cálculo de medios de escape (Dec. 351/79, anexo VII)")
+    filas = [[cod, {"O": "Oeste", "E": "Este", "N": "Norte", "S": "Sur"}[mu], f(w, 2), f(m2, 0),
+              str(math.ceil(m2 / M.FACTOR_OCUPACION)), _corto(uso, 70)] for cod, mu, w, m2, uso in es["salidas"]]
+    c.tabla([("Salida", 16, "l"), ("Muro", 14, "l"), ("Ancho", 14, "r"), ("m² que llegan", 24, "r"),
+             ("Pers.", 14, "r"), ("Uso", 194, "l")], filas, 4.4, 2.3, "Salidas de emergencia y peatonales")
+    zon = SEG.zona_de
+    filas = [[cod, t, (zon(x, y).cod if zon(x, y) else ""), mot] for cod, x, y, t, mot in mf]
+    filas += [[f"MF-E{k + 1}", t, "Exterior", mot] for k, (x, y, t, mot) in enumerate(M.MATAFUEGOS_EXT)]
+    filas += [[f"MF-A{k + 1}", "ABC (plano)", "Anexo", "Pasillo único: los dos puntos rojos del plano del usuario"]
+              for k in range(len(M.MATAFUEGOS_ADMIN))]
+    c.tabla([("Cód.", 15, "l"), ("Tipo", 32, "l"), ("Zona", 18, "l"), ("Ubicación y motivo", 211, "l")], filas, 3.7,
+            2.1, "Matafuegos (FLAMA ABC; 1 cada 200 m² y a 15 m o menos de todo punto)")
+    datos = {"N": es["N"], "n": es["n"], "anc": f(es["ancho_min"], 2), "tot": f(es["ancho_total"], 1),
+             "max": f(es["max"], 1), "le": len(SEG.luces()), "sup": f(es["area"], 0),
+             "mmin": math.ceil(es["area"] / M.MF_SUP), "mf": len(mf)}
+    filas = [[a, b, n_, d_.format(**datos), e] for a, b, n_, d_, e in FILAS_LEGAL]
+    c.tabla([("Tema", 22, "l"), ("Requisito", 74, "l"), ("Norma", 52, "l"), ("Cómo se resuelve en el plano", 106, "l"),
+             ("Estado", 22, "l")], filas, 4.3, 2.1, "Cumplimiento legal de seguridad e higiene")
+    c.parrafo(["Cláusulas tomadas de copias secundarias (SRT, cámaras y colegios); el texto oficial de InfoLEG no se pudo",
+               "abrir desde el entorno de trabajo: confirmarlas antes de la entrega. «Criterio»: decisión de diseño."],
+              2.2)
+    c.titulo("¿Dónde están los gases en uso? Sí: corresponde jaula de gases", 3.0)
+    c.parrafo([
+        "Manuales (W-MAN): el N₂ de la presurización y el Arcal 21 de la soldadura están EN USO en la jaula exterior JG,",
+        "en packs de 12 cilindros con manifold (uno en uso y uno lleno; el Arcal, dos en uso por el consumo de 48 m³/día),",
+        "y llegan a los puestos por cañería. Carros (W-CAR 13): la batería de N₂ de 11 tubos de 50 L está en uso en el",
+        "puesto 13, en su jaula, contra el muro de la sala de pérdidas y encadenada (C13-5). Tubos sueltos de N₂ y Ar/CO₂",
+        "de las soldadoras de carros: jaula de tubos ventilada CU-2, llenos separados de vacíos (W-CAR 1).",
+        "No es un depósito cerrado: es una jaula de malla con techo liviano y ventilación natural (Dec. 351/79 art. 142).",
+    ], 2.3)
+    _leyenda_seg(h, x0, c.y - 16)
+    return h

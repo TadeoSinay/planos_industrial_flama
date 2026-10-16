@@ -1,5 +1,6 @@
 """Verificador del layout v10: geometría (superposiciones, huecos sin nombre, equipos fuera de su zona),
-frente libre de cada operario, acceso del autoelevador, columnas y superficies pedidas por las fuentes."""
+frente libre de cada operario, acceso del autoelevador, columnas, superficies pedidas por las fuentes y seguridad e
+higiene (recorrido de escape, salidas, matafuegos)."""
 
 import shapely.geometry as sg
 from shapely.ops import unary_union
@@ -213,6 +214,11 @@ def verificar(silencioso=False):
         if pu.muro == "N" and not any(z.rect.x0 <= pu.a and pu.b <= z.rect.x1 and z.rect.y0 <= M.YA0 + 0.01
                                       for z in M.ADMIN) and M.XA0 < pu.b and pu.a < M.XA1:
             err.append(f"Puerta {pu.cod} del muro norte no cae entera en un local del anexo")
+    # 10. seguridad e higiene: medios de escape, matafuegos y elementos de seguridad (seguridad.py)
+    from . import seguridad
+    e2, a2 = seguridad.verificar()
+    err += e2
+    avi += a2
     if not silencioso:
         for s in err:
             print("ERROR  ", s)

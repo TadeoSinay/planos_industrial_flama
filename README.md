@@ -305,6 +305,7 @@ norte). Se genera con `python3 generar10.py` (primero corre el verificador; si h
 | `FL_PI10_04` | Almacén de MP y recepción | A0 1:50 | Secciones de X-ALM v5 con su color, espacios de W-CAR 1 (cuarentena, retenidos, calle de chapa, racks de carros, franja de descarga), portón P1 y locales del ángulo SO |
 | `FL_PI10_05` | Administración y servicios al personal | A0 1:50 | Anexo norte con las marcas del croquis del usuario (accesos, rampas, relojes, ventanillas, matafuegos, baranda y cruces) y los 12 circuitos del personal con su largo |
 | `FL_PI10_06` | Cortes de la nave | A0 1:100 | Cortes A-A y C-C (longitudinales) y B-B y D-D (transversales) con las alturas que dan las fuentes; «s/d» donde no hay dato |
+| `FL_PI10_07` | Seguridad e higiene | A0 1:100 | Salidas y recorrido de escape calculados, flechas de evacuación, matafuegos con su cobertura, luces de emergencia, botiquines, bebederos, lavaojos, señales, zonas de protección auditiva, gases, residuos, cobertizo de autoelevadores, puntos de encuentro y tabla de cumplimiento legal |
 
 `salida/v10/Layout_v10_zonas_y_equipos.xlsx`: cada zona, local, equipo y puerta con coordenadas, medidas, m² y fuente.
 
@@ -342,6 +343,27 @@ Versión 12 (revisión al pie de la letra de W-CAR, W-MAN y el croquis de oficin
 * Oficinas con las marcas del croquis (rampas con descanso, plataforma, cajón accesible, relojes, ventanillas,
   matafuegos, baranda con cruces, puertas exteriores hacia afuera) y los 12 circuitos del personal.
 * Lámina de cortes FL_PI10_06 y recorte de ventanas que conserva el orden de dibujo (`planta/dibujo.recortar`).
+
+Versión 16 (pedido del usuario: completar los espacios vacíos con lo que piden los Word y las normas, y cumplir las
+leyes de seguridad e higiene):
+* `planta10/seguridad.py`: grilla de 0,5 m con equipos, columnas, tabiques con sus vanos y barandas con sus cruces;
+  recorrido de escape por la línea de libre trayectoria hasta las salidas de 1,10 m o más (Dec. 351/79, anexo VII:
+  N = 3.572 / 16 = 224 personas, 3 unidades, 1,55 m) y verificación en `planta10.verificar`: recorrido máximo 38,0 m
+  (criterio 40 m), matafuegos 1 cada 200 m² y a 15 m o menos de todo punto (25 en la nave), elementos sin pisar equipos.
+* Salidas nuevas PE-5 a PE-9 (este, norte y sur) y PE-4 movida al paso PS-4; todas abren hacia afuera. Las puertas a
+  la administración (PN) y los portones no se cuentan como salidas.
+* Lo que quedaba libre (RV-S y LB-1) pasa a: depósito transitorio de residuos especiales con puerta P8 al exterior
+  (W-CAR 17: gestor con manifiesto; Leyes 24.051 y 11.720), depósito de aceites e inflamables, reciclables, paso PS-4,
+  cuarto de limpieza (W-MAN: «limpieza frecuente») y pañol de EPP con sala de primeros auxilios (Res. SRT 299/11).
+* Gases: la batería de N₂ de carros en su jaula contra el muro de la sala de pérdidas, encadenada (W-CAR 13), fuera del
+  carril; jaula exterior JG por sectores (Arcal 21 y N₂ en uso y llenos, vacíos aparte) con cañerías a la presurización
+  y a la soldadura de manuales (W-MAN); ERM de gas natural y cañería a los hornos de la pintura.
+* Cobertizo exterior de autoelevadores con cargador, lavaojos y matafuego (Res. SRT 960/15 art. 22); lavaojos en las
+  cargas y descargas de polvo (ficha de seguridad del polvo ABC); botiquines y bebederos en columnas; zonas de
+  protección auditiva de los puestos que la piden en los Word; pasillos de operarios con dos franjas (art. 79);
+  segunda puerta del depósito de polvo; puntos de encuentro exteriores.
+* Lámina FL_PI10_07 con la tabla de cumplimiento legal (las cláusulas salen de copias secundarias: confirmarlas con el
+  texto oficial).
 
 Versión 15 (pedidos del usuario sobre la v14):
 * Prueba hidráulica de carros (C-09) al lado de la de manuales (M-14) y secado de carros (C-10) al lado del de
