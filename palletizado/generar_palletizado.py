@@ -503,6 +503,167 @@ r = bloque_esc(r, "Rodantes (Master L3H2)", [4, 5, 6, 7], False, True)
 r = bloque_esc(r, "Cilindros de manuales (sider)", [0, 1, 2, 3], True, False, SIDER, d("SCU"))
 r = bloque_esc(r, "Cilindros de rodantes (sider)", [4, 5, 6, 7], True, False, SIDER, d("SCU"))
 
+# ================================================================== Recargas (sólo planta industrial)
+# Proyecciones 5, Indexado Dim Técnico, filas 27 a 43 (recargas por tipo, 2026 a 2035)
+REC = [
+    ("ABC 1 kg", [3477.4821, 16970.5856, 30546.0895, 56048.3111, 84270.2261, 117407.8231, 147610.6356, 171404.3607, 183690.566, 196282.6907]),
+    ("ABC 2,5 kg", [329.9967, 1287.414, 2947.1692, 5426.0433, 7850.8758, 10423.9436, 12809.8957, 14263.0683, 15432.8698, 16620.7612]),
+    ("ABC 5 kg", [1950.3941, 7852.6185, 17775.857, 33605.5684, 48407.5719, 64323.0428, 78721.1004, 87237.2124, 94103.6676, 101095.1762]),
+    ("ABC 10 kg", [118.3436, 437.7166, 1024.9748, 1960.4099, 2844.9768, 3810.3906, 4663.6781, 5164.5146, 5571.5443, 5985.9509]),
+    ("Agua 10 l", [159.3087, 643.4235, 1474.3627, 2766.4512, 3991.4652, 5335.7558, 6538.9589, 7269.8197, 7855.4414, 8450.8141]),
+    ("AFFF 10 l", [22.7584, 161.3158, 316.6073, 527.3946, 743.7889, 962.8743, 1194.9422, 1351.6172, 1477.5489, 1604.4414]),
+    ("AFFF 50 l s/ruedas", [11.3792, 83.2235, 164.4638, 281.3411, 398.9025, 514.5273, 629.0655, 711.178, 773.411, 836.3508]),
+    ("BC 5 kg", [6.8275, 47.0731, 88.8897, 159.5025, 219.7962, 291.8699, 368.8442, 408.409, 445.7819, 483.4792]),
+    ("Sales K 6 l", [81.9302, 335.3989, 746.5984, 1358.8998, 1961.1255, 2598.5414, 3197.2635, 3578.5395, 3870.748, 4167.5596]),
+    ("CO₂ 2 kg", [450.6161, 1697.1815, 3955.1969, 7561.2603, 10920.1448, 14514.8852, 17746.4993, 19617.2055, 21161.8063, 22734.5017]),
+    ("CO₂ 5 kg", [125.1711, 643.6304, 1375.6267, 2460.2843, 3545.2577, 4723.4618, 5853.9052, 6608.4599, 7185.7084, 7769.5771]),
+    ("HCFC/HFC 5 kg", [18.2067, 112.0751, 230.854, 400.7153, 574.5078, 754.3456, 944.8488, 1072.2347, 1171.6958, 1271.9411]),
+    ("Clase D 9 l", [6.8275, 47.0731, 88.8897, 148.2792, 205.2261, 255.7651, 328.4179, 366.9081, 401.6817, 436.6868]),
+    ("ABC 25 kg s/ruedas", [17.6378, 85.9878, 186.8696, 336.5836, 484.1326, 643.2204, 792.4317, 889.6777, 965.3111, 1041.9397]),
+    ("ABC 50 kg s/ruedas", [38.8031, 189.1732, 411.113, 740.484, 1065.0917, 1415.0848, 1743.3498, 1957.291, 2123.6844, 2292.2673]),
+    ("ABC 70 kg s/ruedas", [8.4661, 41.2742, 89.6974, 161.5601, 232.3836, 308.7458, 380.3672, 427.0453, 463.3493, 500.1311]),
+    ("ABC 100 kg s/ruedas", [5.6441, 27.5161, 59.7983, 107.7068, 154.9224, 205.8305, 253.5782, 284.6969, 308.8996, 333.4207]),
+]
+# Parte de la planta industrial: CABA Sur + PBA Sur 1º a 3º + PBA Oeste 1º a 3º + PBA Interior (Indexado, filas 61 a 74)
+SHARE = [0.616614, 0.616547, 0.616464, 0.616363, 0.616237, 0.616086, 0.615903, 0.615684, 0.615422, 0.615111]
+# formato de jaula (Word: ABC; el resto por tamaño, criterio), peso de catálogo (FLAMA_BOM, Resumen) y sustituto
+# (Proyecciones 5, Reservas y Sustitutos, filas 54 a 65)
+REC_FMT = ["A 1 kg", "B 2,5 kg", "B 5 kg", "B 10 kg", "B 10 kg", "B 10 kg", "R 50 kg", "B 5 kg", "B 10 kg",
+           "B 2,5 kg", "B 10 kg", "B 5 kg", "B 10 kg", "R 25 kg", "R 50 kg", "R 70 kg", "R 100 kg"]
+REC_PESO = [1.9, 4.6, 8.5, 16.5, 12.55, 12.6, 100, 8.5, 8.25, 9, 20, 8.5, 16.5, 55, 100, 140, 185]
+REC_SUST = ["ABC 5 kg", "ABC 5 kg", "ABC 5 kg", "ABC 10 kg", "Agua 10 l", "AFFF 10 l", "AFFF 50 l s/ruedas", "BC 5 kg",
+            "Sales K 6 l", "CO₂ 5 kg", "CO₂ 5 kg", "HCFC/HFC 5 kg", "Clase D 9 l", "ABC 50 kg s/ruedas",
+            "ABC 50 kg s/ruedas", "ABC 100 kg s/ruedas", "ABC 100 kg s/ruedas"]
+WORD_REC = "Word Proceso de recargas, Recepción y registro"
+
+ws = hoja("Recargas", [24, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11])
+tit(ws, 1, "Recargas anuales (Proyecciones 5, hoja Indexado Dim Técnico, filas 27 a 43)")
+cab(ws, 2, ["Tipo"] + ANIOS)
+RA0 = 3
+for i, (nom, v) in enumerate(REC):
+    celda(ws, RA0 + i, 1, nom, neg=True)
+    for j, x in enumerate(v):
+        celda(ws, RA0 + i, 2 + j, x, "#,##0", dato=True)
+RA1 = RA0 + len(REC) - 1
+RSH = RA1 + 1
+celda(ws, RSH, 1, "Planta industrial", neg=True)
+for j, x in enumerate(SHARE):
+    celda(ws, RSH, 2 + j, x, "0.0%", dato=True)
+celda(ws, RSH + 1, 1, "Fuente: zonas de la planta industrial (CABA Sur, PBA Sur, PBA Oeste e Interior), Indexado Dim "
+                      "Técnico filas 61 a 74")
+ymatch = f"MATCH({d('anio')},$B$2:$K$2,0)"
+
+r = RSH + 3
+tit(ws, r, "Jaulas metálicas palletizables de 1.200 × 1.000 (" + WORD_REC + ")")
+cab(ws, r + 1, ["Formato", "Clase", "U por jaula", "Fuente"])
+F0 = r + 2
+formatos = [("A 1 kg", "A", 72, "Tipo A: 1 nivel, 8 × 9 celdas de 100 × 140 mm"),
+            ("B 2,5 kg", "B", 30, "Tipo B multiformato"), ("B 5 kg", "B", 24, "Tipo B multiformato"),
+            ("B 10 kg", "B", 16, "Tipo B multiformato")]
+for k in range(4):
+    rl, ra = d("rL", k), d("rA", k)
+    formatos.append((f"R {TIPOS[4 + k]}", "R", f"=MAX(INT({PL}/{rl})*INT({PA}/{ra}),INT({PL}/{ra})*INT({PA}/{rl}))",
+                     "Pallet de rodantes: carros por 1.200 × 1.000 (huella de Datos)"))
+for i, (fmt_, cla, cap_, fu) in enumerate(formatos):
+    celda(ws, F0 + i, 1, fmt_, neg=True)
+    celda(ws, F0 + i, 2, cla).alignment = CEN
+    celda(ws, F0 + i, 3, cap_, "#,##0", dato=not str(cap_).startswith("="))
+    celda(ws, F0 + i, 4, fu)
+F1 = F0 + len(formatos) - 1
+for rr in range(F0 - 1, F1 + 1):
+    ws.merge_cells(start_row=rr, start_column=4, end_row=rr, end_column=13)
+ws.merge_cells(start_row=RSH + 1, start_column=1, end_row=RSH + 1, end_column=13)
+
+r = F1 + 2
+tit(ws, r, "Datos de la recarga")
+cab(ws, r + 1, ["Parámetro", "Unidad", "Valor", "Fuente"])
+RD = {}
+for i, (k_, nom, un, v, fmt_, fu) in enumerate([
+        ("sus", "Sustitutos por extintor retirado (máximo)", "%", 1, "0%",
+         "Máximo: uno por extintor (IRAM 3517-2 9.4.5); la reserva del cliente cubre 6,5 % (Reservas y Sustitutos, fila 33)"),
+        ("tara", "Tara de la jaula", "kg", 60, "#,##0",
+         "Criterio: base de acero 1.200 × 1.000 de 22 a 37,5 kg (fltgrupa.pl, hellopro.fr) + reja y varillas"),
+        ("dias", "Días hábiles por semana", "días", 5, "0", "Lunes a viernes")]):
+    rr = r + 2 + i
+    celda(ws, rr, 1, nom)
+    celda(ws, rr, 2, un).alignment = CEN
+    celda(ws, rr, 3, v, fmt_, dato=True)
+    celda(ws, rr, 4, fu)
+    ws.merge_cells(start_row=rr, start_column=4, end_row=rr, end_column=13)
+    RD[k_] = f"$C${rr}"
+ws.merge_cells(start_row=r + 1, start_column=4, end_row=r + 1, end_column=13)
+
+r = r + 6
+tit(ws, r, "Planta industrial: recargados + sustitutos por semana del año elegido (máximo)")
+cab(ws, r + 1, ["Tipo", "Recargas año (todas)", "Planta ind. por semana", "Formato", "U por jaula", "Jaulas", "Peso u. (kg)", "Sustituto",
+                "Sust. por semana", "Jaulas sust.", "Kg por semana", "Clase", "Clase sust."])
+T0 = r + 2
+T1 = T0 + len(REC) - 1
+for i, (nom, _) in enumerate(REC):
+    rr = T0 + i
+    sm = f"MATCH($H{rr},$A${T0}:$A${T1},0)"
+    celda(ws, rr, 1, nom, neg=True)
+    celda(ws, rr, 2, f"=INDEX($B${RA0 + i}:$K${RA0 + i},{ymatch})", "#,##0")
+    celda(ws, rr, 3, f"=B{rr}*INDEX($B${RSH}:$K${RSH},{ymatch})/(12*{d('sem_mes')})", "#,##0")
+    celda(ws, rr, 4, REC_FMT[i], dato=True).alignment = CEN
+    celda(ws, rr, 5, f"=INDEX($C${F0}:$C${F1},MATCH(D{rr},$A${F0}:$A${F1},0))", "#,##0")
+    celda(ws, rr, 6, f"=IF(E{rr}=0,0,C{rr}/E{rr})", "0.0")
+    celda(ws, rr, 7, REC_PESO[i], "0.0", dato=True)
+    celda(ws, rr, 8, REC_SUST[i], dato=True)
+    celda(ws, rr, 9, f"=C{rr}*{RD['sus']}", "#,##0")
+    celda(ws, rr, 10, f"=IF(INDEX($E${T0}:$E${T1},{sm})=0,0,I{rr}/INDEX($E${T0}:$E${T1},{sm}))", "0.0")
+    celda(ws, rr, 11, f"=C{rr}*G{rr}+I{rr}*INDEX($G${T0}:$G${T1},{sm})+(F{rr}+J{rr})*{RD['tara']}", "#,##0")
+    celda(ws, rr, 12, f"=INDEX($B${F0}:$B${F1},MATCH(D{rr},$A${F0}:$A${F1},0))").alignment = CEN
+    celda(ws, rr, 13, f"=INDEX($L${T0}:$L${T1},{sm})").alignment = CEN
+TT = T1 + 1
+celda(ws, TT, 1, "Total", neg=True)
+for c in (2, 3, 6, 9, 10, 11):
+    celda(ws, TT, c, f"=SUM({L(c)}{T0}:{L(c)}{T1})", "#,##0", res=True)
+celda(ws, TT + 1, 1, "Fuentes: formato, Word (ABC) y por tamaño el resto (criterio); peso, FLAMA_BOM hoja Resumen (peso de "
+                     "catálogo); sustituto, Reservas y Sustitutos filas 54 a 65.")
+ws.merge_cells(start_row=TT + 1, start_column=1, end_row=TT + 1, end_column=13)
+ws.freeze_panes = "B3"
+
+# ---- Recargas_camion
+ws = hoja("Recargas_camion", [34, 9, 12, 12, 12, 12])
+tit(ws, 1, "Camión de recargas: Iveco cabina simple con baranda rebatible (" + WORD_REC + ")")
+cab(ws, 2, ["", "Unidad", "Jaulas tipo A", "Jaulas tipo B", "Pallets rodantes", "Peso (kg)"])
+RG = "Recargas!"
+cls = [("A", 3), ("B", 4), ("R", 5)]
+
+
+def sumcl(cla, sust):
+    s = f"SUMIF({RG}$L${T0}:$L${T1},\"{cla}\",{RG}$F${T0}:$F${T1})"
+    if sust:
+        s += f"+SUMIF({RG}$M${T0}:$M${T1},\"{cla}\",{RG}$J${T0}:$J${T1})"
+    return s
+
+
+kg_solo = (f"SUMPRODUCT({RG}$C${T0}:$C${T1},{RG}$G${T0}:$G${T1})+"
+           f"SUM({RG}$F${T0}:$F${T1})*{RG}{RD['tara']}")
+fila(ws, 3, "Capacidad por viaje", "", [9, 8, 2, 2000], "#,##0", dato=True)
+fila(ws, 4, "Solo recargados por semana", "", [f"={sumcl(c_, False)}" for c_, _ in cls] + [f"={kg_solo}"], "#,##0")
+fila(ws, 5, "Recargados + sustitutos por semana", "", [f"={sumcl(c_, True)}" for c_, _ in cls] +
+     [f"={RG}K{TT}"], "#,##0", res=True)
+fila(ws, 6, "Viajes por semana: solo recargados", "viajes", [f"={L(3 + i)}4/{L(3 + i)}3" for i in range(4)], "0.0")
+fila(ws, 7, "Viajes por semana: con sustitutos", "viajes", [f"={L(3 + i)}5/{L(3 + i)}3" for i in range(4)], "0.0")
+fila(ws, 9, "Viajes por semana: solo recargados", "viajes", ["=MAX(C6:F6)"], "0.0")
+fila(ws, 10, "VIAJES POR SEMANA (con sustitutos)", "viajes", ["=MAX(C7:F7)"], "0.0", res=True)
+fila(ws, 11, "Viajes por día hábil (con sustitutos)", "viajes", [f"=C10/{RG}{RD['dias']}"], "0.0", res=True)
+fila(ws, 12, "Camiones para 1 viaje por día", "camiones", ["=ROUNDUP(C11,0)"], "#,##0", res=True)
+fila(ws, 13, "Limita", "", ['=INDEX(C2:F2,MATCH(C10,C7:F7,0))'], None)
+# control del pico de peso del Word: un viaje con las jaulas que nombra, llenas
+cap_ = lambda f_: f"INDEX({RG}$C${F0}:$C${F1},MATCH(\"{f_}\",{RG}$A${F0}:$A${F1},0))"  # noqa: E731
+peso_ = lambda t_: f"INDEX({RG}$G${T0}:$G${T1},MATCH(\"{t_}\",{RG}$A${T0}:$A${T1},0))"  # noqa: E731
+fila(ws, 15, "Peso de 9 jaulas A llenas de 1 kg", "kg", [f"=C3*{cap_('A 1 kg')}*{peso_('ABC 1 kg')}"], "#,##0")
+fila(ws, 16, "Peso de un viaje lleno (9 A de 1 kg, 8 B de 5 kg, 2 pallets de 50 kg y jaulas)", "kg",
+     [f"=C15+D3*{cap_('B 5 kg')}*{peso_('ABC 5 kg')}+E3*{cap_('R 50 kg')}*{peso_('ABC 50 kg s/ruedas')}"
+      f"+(C3+D3+E3)*{RG}{RD['tara']}"], "#,##0", res=True)
+fila(ws, 17, "¿Entra en la carga útil?", "", ['=IF(C16<=F3,"sí","no")'], None, res=True)
+celda(ws, 19, 1, "Fuente de la capacidad: 9 jaulas tipo A, 8 tipo B, 2 pallets de rodantes y unas 2 t de carga útil, con "
+                 "un pico de 1,2 t (" + WORD_REC + ").")
+ws.merge_cells(start_row=19, start_column=1, end_row=19, end_column=6)
+
 salida = sys.argv[1] if len(sys.argv) > 1 else os.path.join(SALIDA, "palletizado_PT.xlsx")
 os.makedirs(os.path.dirname(salida), exist_ok=True)
 wb.save(salida)
