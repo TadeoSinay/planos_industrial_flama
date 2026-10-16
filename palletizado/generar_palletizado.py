@@ -168,6 +168,13 @@ r = bloque(r, "Camión: Sider GyL Full para balancín (carga por los laterales)"
     ("SA", "Ancho útil", "m", [2.46], "2,60 m (GyL) − 0,14 m de parantes y lonas (criterio)"),
     ("SCU", "Carga útil", "kg", [12000], "Balancín sider 7,50 m: 12/14 t (logisticashc.com.ar/nosotros/nuestra-flota)"),
 ], lambda c: "#,##0" if c == "SCU" else "0.00")
+r = bloque(r, "Camión chico (manuales): GyL baranda volcable para camión liviano", ["Valor"], [
+    ("CL", "Largo útil", "m", [4.20],
+     "4,30 m, el más corto de GyL para camión liviano (agroads.com.ar/detalle.asp?clasi=882258) − 0,10 m (criterio)"),
+    ("CA", "Ancho útil", "m", [2.30],
+     "2,40 m, ancho de carrocería de camión liviano (criterio; ej. sider 8 pallets 5,20 × 2,40 m) − 0,10 m (criterio)"),
+    ("CCU", "Carga útil", "kg", [6000], "Mercedes-Benz Accelo 1016: PBT 9,6 t, unas 6 t de carga útil (autoweb.com.ar)"),
+], lambda c: "#,##0" if c == "CCU" else "0.00")
 r = bloque(r, "Furgón: Renault Master L3H2 (rodantes)", ["Valor"], [
     ("ML", "Largo de carga", "m", [3.857], "vansdirect.co.uk, Renault Master dimensions"),
     ("MA", "Ancho de carga", "m", [1.765], "vansdirect.co.uk"),
@@ -317,6 +324,15 @@ fila(ws, 3, "Pallets a lo largo", "u", [f"=IF({o1}>={o2},INT({SL}*1000/{PA}),INT
 fila(ws, 4, "Pallets a lo ancho", "u", [f"=IF({o1}>={o2},INT({SA}*1000/{PL}),INT({SA}*1000/{PA}))"], "#,##0")
 fila(ws, 5, "Pallets por camión", "u", ["=C3*C4"], "#,##0", res=True)
 SIDER = "Camion!$C$5"
+CL, CA = d("CL"), d("CA")
+o1 = f"INT({CL}*1000/{PA})*INT({CA}*1000/{PL})"
+o2 = f"INT({CL}*1000/{PL})*INT({CA}*1000/{PA})"
+tit(ws, 16, "Camión chico: GyL baranda volcable para camión liviano (manuales)")
+cab(ws, 17, ["", "Unidad", "Valor"])
+fila(ws, 18, "Pallets a lo largo", "u", [f"=IF({o1}>={o2},INT({CL}*1000/{PA}),INT({CL}*1000/{PL}))"], "#,##0")
+fila(ws, 19, "Pallets a lo ancho", "u", [f"=IF({o1}>={o2},INT({CA}*1000/{PL}),INT({CA}*1000/{PA}))"], "#,##0")
+fila(ws, 20, "Pallets por camión", "u", ["=C18*C19"], "#,##0", res=True)
+CHICO = "Camion!$C$20"
 
 tit(ws, 7, "Renault Master L3H2")
 cab(ws, 8, ["", "Unidad"] + TIPOS[4:])
@@ -372,7 +388,7 @@ def frecuencia(v):
     return txt, carga
 
 
-def bloque_esc(r, titulo_, ks, cil, furgon):
+def bloque_esc(r, titulo_, ks, cil, furgon, cap_v=None, cu_v=None):
     """Escenarios 1 a 4: vehículo lleno de un solo tipo. Escenario 5: vehículo con pallets (o carros) de cada tipo
     según la demanda de un mes y la capacidad de cada pallet; cada pallet lleva un solo tipo (carga unitaria por tipo)."""
     tit(ws, r, titulo_)
@@ -395,7 +411,8 @@ def bloque_esc(r, titulo_, ks, cil, furgon):
     t0 = rp + 4
     tit(ws, t0, "5. Mix: " + ("carros de cada tipo en el furgón" if furgon else "pallets de cada tipo en el camión"))
     cab(ws, t0 + 1, ["", "Unidad"] + [TIPOS[k] for k in mixk] + ["Total"])
-    claves = ["mes", "dem", "cap"] + ([] if furgon else ["pal"]) + ["part", "n", "ocu" if furgon else "u", "peso", "via"]
+    claves = (["mes", "dem", "cap"] + ([] if furgon else ["pal"]) +
+              ["part", "prom", "n", "ocu" if furgon else "u", "peso", "via"])
     T = {c: t0 + 2 + i for i, c in enumerate(claves)}
     cT = L(3 + n)                                   # columna Total
     tc = [L(3 + i) for i in range(n)]
@@ -422,16 +439,18 @@ def bloque_esc(r, titulo_, ks, cil, furgon):
              [f"=IF({c}{T['cap']}=0,0,{c}{T['dem']}/{c}{T['cap']})" for c in tc] +
              [f"=SUM(C{T['pal']}:{tc[-1]}{T['pal']})"], "0.0")
         base = "pal"
-        tot_n = (f"=IF({cT}{T[base]}=0,0,MIN({SIDER},INT({d('SCU')}/(" +
+        tot_n = (f"=IF({cT}{T[base]}=0,0,MIN({cap_v},INT({cu_v}/(" +
                  "+".join(f"{c}{T['part']}*{w}" for c, w in zip(tc, Wk)) + "))))")
     fila(ws, T["part"], "Participación", "%",
          [f"=IF(${cT}{T[base]}=0,0,{c}{T[base]}/${cT}{T[base]})" for c in tc] +
          [f"=SUM(C{T['part']}:{tc[-1]}{T['part']})"], "0%")
+    fila(ws, T["prom"], "Carros por viaje (promedio)" if furgon else "Pallets por viaje (promedio)", un,
+         [f"={c}{T['part']}*${cT}${T['n']}" for c in tc] + [f"=SUM(C{T['prom']}:{tc[-1]}{T['prom']})"], "0.0")
     # reparto por redondeo acumulado: los enteros suman exactamente el total
     reparto = [f"=ROUND(SUM($C{T['part']}:{c}{T['part']})*${cT}{T['n']},0)" +
                (f"-ROUND(SUM($C{T['part']}:{tc[i - 1]}{T['part']})*${cT}{T['n']},0)" if i else "")
                for i, c in enumerate(tc)]
-    fila(ws, T["n"], "Carros en el furgón" if furgon else "Pallets en el camión", un, reparto + [tot_n], "#,##0",
+    fila(ws, T["n"], "Carros en un viaje tipo" if furgon else "Pallets en un viaje tipo", un, reparto + [tot_n], "#,##0",
          res=True)
     if furgon:
         fila(ws, T["ocu"], "Ocupación del piso", "%",
@@ -440,9 +459,9 @@ def bloque_esc(r, titulo_, ks, cil, furgon):
         fila(ws, T["peso"], "Peso en el furgón", "kg", [f"={c}{T['n']}*{m}" for c, m in zip(tc, masa)] +
              [f"=SUM(C{T['peso']}:{tc[-1]}{T['peso']})"], "#,##0")
     else:
-        fila(ws, T["u"], "Unidades en el camión", "u", [f"={c}{T['n']}*{u}" for c, u in zip(tc, Uk)] +
+        fila(ws, T["u"], "Unidades en el viaje tipo", "u", [f"={c}{T['n']}*{u}" for c, u in zip(tc, Uk)] +
              [f"=SUM(C{T['u']}:{tc[-1]}{T['u']})"], "#,##0")
-        fila(ws, T["peso"], "Peso en el camión", "kg", [f"={c}{T['n']}*{w}" for c, w in zip(tc, Wk)] +
+        fila(ws, T["peso"], "Peso en el viaje tipo", "kg", [f"={c}{T['n']}*{w}" for c, w in zip(tc, Wk)] +
              [f"=SUM(C{T['peso']}:{tc[-1]}{T['peso']})"], "#,##0")
     fila(ws, T["via"], "Viajes en el mes", "viajes", [""] * n +
          [f"=IF({cT}{T['n']}=0,0,{cT}{T[base]}/{cT}{T['n']})"], "0.0", res=True)
@@ -460,7 +479,7 @@ def bloque_esc(r, titulo_, ks, cil, furgon):
         fila(ws, R["W"], "Peso del pallet", "kg", [f"={hojap}!{L(3 + k)}{RR['W']}" for k in ks] + ["por tipo"],
              "#,##0")
         fila(ws, R["N"], "Pallets por camión", "u",
-             [f"=IF({L(3 + i)}{R['W']}=0,0,MIN({SIDER},INT({d('SCU')}/{L(3 + i)}{R['W']})))" for i in range(4)] +
+             [f"=IF({L(3 + i)}{R['W']}=0,0,MIN({cap_v},INT({cu_v}/{L(3 + i)}{R['W']})))" for i in range(4)] +
              [f"={MIX_N}"], "#,##0", res=True)
         fila(ws, R["UV"], "Unidades por viaje", "u",
              [f"={L(3 + i)}{R['N']}*{L(3 + i)}{R['U']}" for i in range(4)] + [f"=${cT}${T['u']}"], "#,##0", res=True)
@@ -479,10 +498,10 @@ def bloque_esc(r, titulo_, ks, cil, furgon):
     return T["via"] + 3
 
 
-r = bloque_esc(1, "Matafuegos manuales en caja (sider)", [0, 1, 2, 3], False, False)
+r = bloque_esc(1, "Matafuegos manuales en caja (camión chico)", [0, 1, 2, 3], False, False, CHICO, d("CCU"))
 r = bloque_esc(r, "Rodantes (Master L3H2)", [4, 5, 6, 7], False, True)
-r = bloque_esc(r, "Cilindros de manuales (sider)", [0, 1, 2, 3], True, False)
-r = bloque_esc(r, "Cilindros de rodantes (sider)", [4, 5, 6, 7], True, False)
+r = bloque_esc(r, "Cilindros de manuales (sider)", [0, 1, 2, 3], True, False, SIDER, d("SCU"))
+r = bloque_esc(r, "Cilindros de rodantes (sider)", [4, 5, 6, 7], True, False, SIDER, d("SCU"))
 
 salida = sys.argv[1] if len(sys.argv) > 1 else os.path.join(SALIDA, "palletizado_PT.xlsx")
 os.makedirs(os.path.dirname(salida), exist_ok=True)
