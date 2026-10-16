@@ -555,23 +555,28 @@ ymatch = f"MATCH({d('anio')},$B$2:$K$2,0)"
 
 r = RSH + 3
 tit(ws, r, "Jaulas metálicas palletizables de 1.200 × 1.000 (" + WORD_REC + ")")
-cab(ws, r + 1, ["Formato", "Clase", "U por jaula", "Fuente"])
+cab(ws, r + 1, ["Formato", "Clase", "Por piso", "Pisos", "U por jaula", "Fuente"])
 F0 = r + 2
-formatos = [("A 1 kg", "A", 72, "Tipo A: 1 nivel, 8 × 9 celdas de 100 × 140 mm"),
-            ("B 2,5 kg", "B", 30, "Tipo B multiformato"), ("B 5 kg", "B", 24, "Tipo B multiformato"),
-            ("B 10 kg", "B", 16, "Tipo B multiformato")]
+PISO_B = "2 pisos (Word: «se puede hacer más de un piso»); 2 cajas de 10 kg de Datos = 1.370 mm ≤ 1.455 mm (criterio)"
+formatos = [("A 1 kg", "A", 72, 1, "Tipo A: 1 nivel, 8 × 9 celdas de 100 × 140 mm"),
+            ("B 2,5 kg", "B", 30, 2, "Tipo B multiformato: 30 por piso. " + PISO_B),
+            ("B 5 kg", "B", 24, 2, "Tipo B multiformato: 24 por piso. " + PISO_B),
+            ("B 10 kg", "B", 16, 2, "Tipo B multiformato: 16 por piso. " + PISO_B)]
 for k in range(4):
     rl, ra = d("rL", k), d("rA", k)
-    formatos.append((f"R {TIPOS[4 + k]}", "R", f"=MAX(INT({PL}/{rl})*INT({PA}/{ra}),INT({PL}/{ra})*INT({PA}/{rl}))",
+    formatos.append((f"R {TIPOS[4 + k]}", "R", f"=MAX(INT({PL}/{rl})*INT({PA}/{ra}),INT({PL}/{ra})*INT({PA}/{rl}))", 1,
                      "Pallet de rodantes: carros por 1.200 × 1.000 (huella de Datos)"))
-for i, (fmt_, cla, cap_, fu) in enumerate(formatos):
-    celda(ws, F0 + i, 1, fmt_, neg=True)
-    celda(ws, F0 + i, 2, cla).alignment = CEN
-    celda(ws, F0 + i, 3, cap_, "#,##0", dato=not str(cap_).startswith("="))
-    celda(ws, F0 + i, 4, fu)
+for i, (fmt_, cla, cap_, pisos, fu) in enumerate(formatos):
+    rr = F0 + i
+    celda(ws, rr, 1, fmt_, neg=True)
+    celda(ws, rr, 2, cla).alignment = CEN
+    celda(ws, rr, 3, cap_, "#,##0", dato=not str(cap_).startswith("="))
+    celda(ws, rr, 4, pisos, "0", dato=True)
+    celda(ws, rr, 5, f"=C{rr}*D{rr}", "#,##0", res=True)
+    celda(ws, rr, 6, fu)
 F1 = F0 + len(formatos) - 1
 for rr in range(F0 - 1, F1 + 1):
-    ws.merge_cells(start_row=rr, start_column=4, end_row=rr, end_column=13)
+    ws.merge_cells(start_row=rr, start_column=6, end_row=rr, end_column=13)
 ws.merge_cells(start_row=RSH + 1, start_column=1, end_row=RSH + 1, end_column=13)
 
 r = F1 + 2
@@ -606,7 +611,7 @@ for i, (nom, _) in enumerate(REC):
     celda(ws, rr, 2, f"=INDEX($B${RA0 + i}:$K${RA0 + i},{ymatch})", "#,##0")
     celda(ws, rr, 3, f"=B{rr}*INDEX($B${RSH}:$K${RSH},{ymatch})/(12*{d('sem_mes')})", "#,##0")
     celda(ws, rr, 4, REC_FMT[i], dato=True).alignment = CEN
-    celda(ws, rr, 5, f"=INDEX($C${F0}:$C${F1},MATCH(D{rr},$A${F0}:$A${F1},0))", "#,##0")
+    celda(ws, rr, 5, f"=INDEX($E${F0}:$E${F1},MATCH(D{rr},$A${F0}:$A${F1},0))", "#,##0")
     celda(ws, rr, 6, f"=IF(E{rr}=0,0,C{rr}/E{rr})", "0.0")
     celda(ws, rr, 7, REC_PESO[i], "0.0", dato=True)
     celda(ws, rr, 8, REC_SUST[i], dato=True)
@@ -625,44 +630,63 @@ ws.merge_cells(start_row=TT + 1, start_column=1, end_row=TT + 1, end_column=13)
 ws.freeze_panes = "B3"
 
 # ---- Recargas_camion
-ws = hoja("Recargas_camion", [34, 9, 12, 12, 12, 12])
-tit(ws, 1, "Camión de recargas: Iveco cabina simple con baranda rebatible (" + WORD_REC + ")")
-cab(ws, 2, ["", "Unidad", "Jaulas tipo A", "Jaulas tipo B", "Pallets rodantes", "Peso (kg)"])
+ws = hoja("Recargas_camion", [46, 12, 13, 13, 13, 13, 13])
+tit(ws, 1, "Recargas y sustitutos de la planta industrial: lugares, peso y viajes")
+cab(ws, 2, ["Por semana", "Unidad", "Jaulas A", "Jaulas B", "Pallets rodantes", "Lugares", "Peso (kg)"])
 RG = "Recargas!"
-cls = [("A", 3), ("B", 4), ("R", 5)]
+cls = ["A", "B", "R"]
 
 
 def sumcl(cla, sust):
-    s = f"SUMIF({RG}$L${T0}:$L${T1},\"{cla}\",{RG}$F${T0}:$F${T1})"
+    s_ = f"SUMIF({RG}$L${T0}:$L${T1},\"{cla}\",{RG}$F${T0}:$F${T1})"
     if sust:
-        s += f"+SUMIF({RG}$M${T0}:$M${T1},\"{cla}\",{RG}$J${T0}:$J${T1})"
-    return s
+        s_ += f"+SUMIF({RG}$M${T0}:$M${T1},\"{cla}\",{RG}$J${T0}:$J${T1})"
+    return s_
 
 
 kg_solo = (f"SUMPRODUCT({RG}$C${T0}:$C${T1},{RG}$G${T0}:$G${T1})+"
            f"SUM({RG}$F${T0}:$F${T1})*{RG}{RD['tara']}")
-fila(ws, 3, "Capacidad por viaje", "", [9, 8, 2, 2000], "#,##0", dato=True)
-fila(ws, 4, "Solo recargados por semana", "", [f"={sumcl(c_, False)}" for c_, _ in cls] + [f"={kg_solo}"], "#,##0")
-fila(ws, 5, "Recargados + sustitutos por semana", "", [f"={sumcl(c_, True)}" for c_, _ in cls] +
-     [f"={RG}K{TT}"], "#,##0", res=True)
-fila(ws, 6, "Viajes por semana: solo recargados", "viajes", [f"={L(3 + i)}4/{L(3 + i)}3" for i in range(4)], "0.0")
-fila(ws, 7, "Viajes por semana: con sustitutos", "viajes", [f"={L(3 + i)}5/{L(3 + i)}3" for i in range(4)], "0.0")
-fila(ws, 9, "Viajes por semana: solo recargados", "viajes", ["=MAX(C6:F6)"], "0.0")
-fila(ws, 10, "VIAJES POR SEMANA (con sustitutos)", "viajes", ["=MAX(C7:F7)"], "0.0", res=True)
-fila(ws, 11, "Viajes por día hábil (con sustitutos)", "viajes", [f"=C10/{RG}{RD['dias']}"], "0.0", res=True)
-fila(ws, 12, "Camiones para 1 viaje por día", "camiones", ["=ROUNDUP(C11,0)"], "#,##0", res=True)
-fila(ws, 13, "Limita", "", ['=INDEX(C2:F2,MATCH(C10,C7:F7,0))'], None)
-# control del pico de peso del Word: un viaje con las jaulas que nombra, llenas
+fila(ws, 3, "Solo recargados", "", [f"={sumcl(c_, False)}" for c_ in cls] + ["=SUM(C3:E3)", f"={kg_solo}"], "#,##0")
+fila(ws, 4, "Recargados + sustitutos (máximo)", "", [f"={sumcl(c_, True)}" for c_ in cls] +
+     ["=SUM(C4:E4)", f"={RG}K{TT}"], "#,##0", res=True)
+
+cab(ws, 6, ["Vehículo", "Lugares por viaje", "Carga útil (kg)", "Viajes/sem por lugar", "Viajes/sem por peso",
+            "Viajes por semana", "Viajes por día"])
+VEHS = [("Iveco cabina simple del Word (9 A + 8 B + 2 rodantes)", 19, 2000, True),
+        ("Camión chico: GyL baranda volcable 4,30 m (Accelo 1016)", "=Camion!C20", f"={d('CCU')}", False),
+        ("Sider GyL Full para balancín 7,50 m", "=Camion!C5", f"={d('SCU')}", False)]
+for i, (nom, lug, cu, dat) in enumerate(VEHS):
+    rr = 7 + i
+    celda(ws, rr, 1, nom)
+    celda(ws, rr, 2, lug, "#,##0", dato=dat)
+    celda(ws, rr, 3, cu, "#,##0", dato=dat)
+    celda(ws, rr, 4, f"=IF(B{rr}=0,0,$F$4/B{rr})", "0.0")
+    celda(ws, rr, 5, f"=IF(C{rr}=0,0,$G$4/C{rr})", "0.0")
+    celda(ws, rr, 6, f"=MAX(D{rr},E{rr})", "0.0", res=True)
+    celda(ws, rr, 7, f"=F{rr}/{RG}{RD['dias']}", "0.0", res=True)
+celda(ws, 10, 1, "Vehículo con menos viajes", neg=True)
+celda(ws, 10, 2, "=INDEX(A7:A9,MATCH(MIN(F7:F9),F7:F9,0))", res=True)
+ws.merge_cells("B10:E10")
+celda(ws, 10, 6, "=MIN(F7:F9)", "0.0", res=True)
+celda(ws, 10, 7, "=MIN(G7:G9)", "0.0", res=True)
+fila(ws, 11, "Camiones con ese vehículo (1 viaje por día cada uno)", "camiones", [""] * 4 + ["=ROUNDUP(G10,0)"],
+     "#,##0", res=True)
+for c_ in range(3, 7):
+    ws.cell(11, c_).fill = PatternFill(fill_type=None)
+
+# control del pico de peso del Word: un viaje con las jaulas que nombra (1 piso), llenas
 cap_ = lambda f_: f"INDEX({RG}$C${F0}:$C${F1},MATCH(\"{f_}\",{RG}$A${F0}:$A${F1},0))"  # noqa: E731
 peso_ = lambda t_: f"INDEX({RG}$G${T0}:$G${T1},MATCH(\"{t_}\",{RG}$A${T0}:$A${T1},0))"  # noqa: E731
-fila(ws, 15, "Peso de 9 jaulas A llenas de 1 kg", "kg", [f"=C3*{cap_('A 1 kg')}*{peso_('ABC 1 kg')}"], "#,##0")
+cab(ws, 13, ["Control del pico de 1,2 t del Word", "Unidad", "Jaulas A", "Jaulas B", "Pallets rodantes", "Peso (kg)"])
+fila(ws, 14, "Viaje del Word", "", [9, 8, 2, 2000], "#,##0", dato=True)
+fila(ws, 15, "Peso de 9 jaulas A llenas de 1 kg", "kg", [f"=C14*{cap_('A 1 kg')}*{peso_('ABC 1 kg')}"], "#,##0")
 fila(ws, 16, "Peso de un viaje lleno (9 A de 1 kg, 8 B de 5 kg, 2 pallets de 50 kg y jaulas)", "kg",
-     [f"=C15+D3*{cap_('B 5 kg')}*{peso_('ABC 5 kg')}+E3*{cap_('R 50 kg')}*{peso_('ABC 50 kg s/ruedas')}"
-      f"+(C3+D3+E3)*{RG}{RD['tara']}"], "#,##0", res=True)
-fila(ws, 17, "¿Entra en la carga útil?", "", ['=IF(C16<=F3,"sí","no")'], None, res=True)
-celda(ws, 19, 1, "Fuente de la capacidad: 9 jaulas tipo A, 8 tipo B, 2 pallets de rodantes y unas 2 t de carga útil, con "
-                 "un pico de 1,2 t (" + WORD_REC + ").")
-ws.merge_cells(start_row=19, start_column=1, end_row=19, end_column=6)
+     [f"=C15+D14*{cap_('B 5 kg')}*{peso_('ABC 5 kg')}+E14*{cap_('R 50 kg')}*{peso_('ABC 50 kg s/ruedas')}"
+      f"+(C14+D14+E14)*{RG}{RD['tara']}"], "#,##0", res=True)
+fila(ws, 17, "¿Entra en la carga útil?", "", ['=IF(C16<=F14,"sí","no")'], None, res=True)
+celda(ws, 19, 1, "Fuentes: Iveco, 9 jaulas A, 8 jaulas B, 2 pallets de rodantes, unas 2 t y pico de 1,2 t (" + WORD_REC +
+      "). Camión chico y sider: hojas Datos y Camion.")
+ws.merge_cells(start_row=19, start_column=1, end_row=19, end_column=7)
 
 salida = sys.argv[1] if len(sys.argv) > 1 else os.path.join(SALIDA, "palletizado_PT.xlsx")
 os.makedirs(os.path.dirname(salida), exist_ok=True)
