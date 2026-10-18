@@ -124,18 +124,13 @@ P_RUTA = [
     (32, "Ensayos de laboratorio por recipiente de polvo", 0.001, "0.000", True,
      "Criterio. 9.9.3.1: el ensayo se hace cuando hay dudas sobre el polvo"),
 ]
-# Sustituto equivalente por tipo (Proyecciones, Reservas y Sustitutos, filas 54 a 65; IRAM 3517-2 9.4.5);
-# None = no lleva sustituto (ABC 1 kg automotor: vuelve el mismo equipo, criterio del usuario)
-SUST = [None, "ABC 5 kg", "ABC 5 kg", "ABC 10 kg", "Agua 10 l", "AFFF 10 l", "AFFF 50 l s/ruedas", "BC 5 kg",
-        "Sales K 6 l", "CO₂ 5 kg", "CO₂ 5 kg", "HCFC/HFC 5 kg", "Clase D 9 l", "ABC 50 kg s/ruedas",
-        "ABC 50 kg s/ruedas", "ABC 100 kg s/ruedas", "ABC 100 kg s/ruedas"]
-GRUPOS = ["ABC 5 kg", "ABC 10 kg", "Agua 10 l", "AFFF 10 l", "AFFF 50 l s/ruedas", "BC 5 kg", "Sales K 6 l",
-          "CO₂ 5 kg", "HCFC/HFC 5 kg", "Clase D 9 l", "ABC 50 kg s/ruedas", "ABC 100 kg s/ruedas"]
+# Sustituto del mismo tipo que el equipo retirado; el ABC 1 kg automotor no lleva (sin canje, criterio del usuario)
+LLEVA = [0] + [1] * 16
 SS = "sobrestock_sustitutos"
-S_TIPO = 10    # paso 1: tipo -> sustituto equivalente
-S_STOCK = 31   # paso 2: stock por equivalente
-S_ALTA = 49    # paso 3: alta anual (fabricar / comprar)
-S_MANT = 68    # paso 4: mantenimiento anual en planta
+S_TIPO = 11    # paso 1: lleva sustituto, días afuera y origen
+S_STOCK = 32   # paso 2: stock
+S_ALTA = 54    # paso 3: alta anual (fabricar / comprar)
+S_MANT = 78    # paso 4: mantenimiento anual en planta
 FILA_PERFIL = 37   # primera fila del perfil mensual (2026)
 FILA_TIPO = 51     # primera fila de la tabla de tipos
 FILA_PUESTO = 72   # primera fila de la tabla de puestos
@@ -467,8 +462,7 @@ def h_plan(wb):
         y = L(2 + i)
         for k in range(17):
             r = b["t1"] + k
-            ms = (f"SUMIF({SS}!$A${S_MANT}:$A${S_MANT + 11},$A{r},{SS}!{y}${S_MANT}:{y}$"
-                  f"{S_MANT + 11})")
+            ms = f"{SS}!${y}${S_MANT + k}"
             celda(ws, r, 1, f"=parametros_recargas!A{FILA_TIPO + k}")
             celda(ws, r, 2, f"=parametros_recargas!B{FILA_TIPO + k}").alignment = CEN
             celda(ws, r, 3, f"=parametros_recargas!C{FILA_TIPO + k}", "0")
@@ -603,86 +597,73 @@ def h_resumen(wb):
 
 
 def h_sust(wb):
-    """Sustitutos (9.4.5): stock por equivalente, alta anual (fabricar / comprar) y mantenimiento en planta."""
-    ws = hoja(wb, SS, [34, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 22, 62])
-    tit(ws, 1, "SUSTITUTOS (IRAM 3517-2:2020, 9.4.5): stock, alta anual y mantenimiento")
-    nota(ws, 2, "El cliente no trae el sustituto: lo pide mientras su equipo está en planta. Es equipo propio de FLAMA "
-                "(costo del servicio). Se dimensiona con las recargas (la demanda), no con la cantidad de clientes.")
-
+    """Sustitutos (9.4.5): stock, alta anual (fabricar / comprar) y mantenimiento en planta, por tipo."""
+    ws = hoja(wb, SS, [34, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 26])
+    tit(ws, 1, "SUSTITUTOS (IRAM 3517-2:2020, 9.4.5)")
+    nota(ws, 2, "Mismo tipo que el equipo retirado. Se dimensionan con las recargas, no con la cantidad de clientes.")
     cab(ws, 4, ["Parámetro", "Valor", "Fuente / criterio"])
-    ws.merge_cells("C4:M4")
-    celda(ws, 5, 1, "Días hábiles por mes")
-    celda(ws, 5, 2, "=parametros_recargas!B2", "0", res=True)
-    celda(ws, 5, 3, "parametros_recargas B2 (240 ÷ 12)")
-    celda(ws, 6, 1, "Días afuera (general)")
-    celda(ws, 6, 2, 1, "0", dato=True)
-    celda(ws, 6, 3, "Criterio: se retira hoy y vuelve en la ruta de mañana. Vale mientras el aprovechamiento "
-                     "consolidado quede ≤ 100 %; si no, se agregan máquinas o turnos, no sustitutos")
-    for r in (5, 6):
-        ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=13)
+    ws.merge_cells("C4:L4")
+    filas = [("Días hábiles por mes", "=parametros_recargas!B2", False, "parametros_recargas B2"),
+             ("Días afuera", 1, True, "Criterio: se retira hoy y vuelve en la ruta de mañana"),
+             ("Planta", "=PROY_Indexado!B52", False, "Comercial: compra todos. Industrial: fabrica los ABC")]
+    for j, (t, v, d, fu) in enumerate(filas):
+        r = 5 + j
+        celda(ws, r, 1, t)
+        celda(ws, r, 2, v, "0", dato=d, res=not d).alignment = CEN
+        celda(ws, r, 3, fu)
+        ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=12)
 
-    # paso 1
-    tit(ws, 8, "PASO 1 — Qué sustituto lleva cada tipo (igual clasificación y por lo menos igual capacidad)")
-    cab(ws, 9, ["Tipo", "Lleva sustituto (1 = sí)", "Sustituto equivalente", "", "", "Días afuera", "Fuente"])
-    ws.merge_cells("C9:E9")
-    ws.merge_cells("G9:M9")
+    tit(ws, S_TIPO - 2, "PASO 1 — Tipos")
+    cab(ws, S_TIPO - 1, ["Tipo", "Lleva sustituto (1 = sí)", "Días afuera", "Origen", "", "Nota"])
+    ws.merge_cells(f"D{S_TIPO - 1}:E{S_TIPO - 1}")
+    ws.merge_cells(f"F{S_TIPO - 1}:L{S_TIPO - 1}")
     for k in range(17):
         r = S_TIPO + k
         celda(ws, r, 1, f"=datos_base!A{2 + k}")
-        celda(ws, r, 2, 0 if SUST[k] is None else 1, "0", dato=True)
-        celda(ws, r, 3, SUST[k] or GRUPOS[0], dato=True)
-        ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=5)
-        celda(ws, r, 6, "=$B$6", "0", dato=True)
-        celda(ws, r, 7, "Automotor: sin canje, vuelve el mismo equipo (criterio del usuario)" if SUST[k] is None
-              else "Proyecciones, Reservas y Sustitutos, filas 54 a 65")
-        ws.merge_cells(start_row=r, start_column=7, end_row=r, end_column=13)
-    dv = DataValidation(type="list", formula1=f"$A${S_STOCK}:$A${S_STOCK + 11}", allow_blank=False)
-    ws.add_data_validation(dv)
-    dv.add(f"C{S_TIPO}:C{S_TIPO + 16}")
+        celda(ws, r, 2, LLEVA[k], "0", dato=True)
+        celda(ws, r, 3, "=$B$6", "0", dato=True)
+        celda(ws, r, 4, f'=IF(AND($B$7="Industrial",LEFT(A{r},3)="ABC"),"Fabrica","Compra")').alignment = CEN
+        ws.merge_cells(start_row=r, start_column=4, end_row=r, end_column=5)
+        celda(ws, r, 6, "" if LLEVA[k] else "Automotor: sin canje")
+        ws.merge_cells(start_row=r, start_column=6, end_row=r, end_column=12)
 
-    def bloque(r, titulo, explica, f_celda, pie, fmt="#,##0"):
-        tit(ws, r, titulo)
-        nota(ws, r + 1, explica)
-        cab(ws, r + 2, ["Sustituto equivalente"] + ANIOS + ["Origen"])
-        for g, nombre in enumerate(GRUPOS):
-            rr = r + 3 + g
-            celda(ws, rr, 1, nombre)
+    origen = f"$D${S_TIPO}:$D${S_TIPO + 16}"
+
+    def bloque(r0, titulo, explica, f_celda, pie, fmt):
+        tit(ws, r0 - 3, titulo)
+        nota(ws, r0 - 2, explica)
+        cab(ws, r0 - 1, ["Tipo"] + ANIOS)
+        for k in range(17):
+            r = r0 + k
+            celda(ws, r, 1, f"=datos_base!A{2 + k}")
             for i in range(10):
-                celda(ws, rr, 2 + i, f_celda(g, i, rr), fmt)
-            celda(ws, rr, 12, "Fabrica FLAMA" if nombre.startswith("ABC") else "Compra (revendido)").alignment = CEN
-        rt = r + 3 + len(GRUPOS)
+                celda(ws, r, 2 + i, f_celda(k, i), fmt)
         for j, (txt, f) in enumerate(pie):
-            celda(ws, rt + j, 1, txt, neg=True)
+            r = r0 + 17 + j
+            celda(ws, r, 1, txt, neg=True)
             for i in range(10):
                 c = L(2 + i)
-                celda(ws, rt + j, 2 + i, f(c, r + 3, rt - 1), fmt, res=True)
+                celda(ws, r, 2 + i, f(c, r0, r0 + 16), fmt, res=True)
 
     total = [("Total", lambda c, a, b: f"=SUM({c}{a}:{c}{b})")]
-    # paso 2: stock
-    bloque(S_STOCK - 3, "PASO 2 — Stock de sustitutos (u.)",
-           "Stock = recargas del año del tipo × % del mes pico ÷ días hábiles del mes × días afuera, sumado por "
-           "equivalente y redondeado hacia arriba (ley de Little: equipos afuera = retiros por día × días afuera)",
-           lambda g, i, rr: (f"=ROUNDUP(SUMPRODUCT(($C${S_TIPO}:$C${S_TIPO + 16}=$A{rr})*$B${S_TIPO}:$B$"
-                             f"{S_TIPO + 16}*datos_base!{L(2 + i)}$2:{L(2 + i)}$18*$F${S_TIPO}:$F${S_TIPO + 16})"
-                             f"*MAX(parametros_recargas!$B${FILA_PERFIL + i}:$M${FILA_PERFIL + i})/$B$5,0)"), total)
-    # paso 3: alta anual
-    origen = f"$L${S_ALTA}:$L${S_ALTA + 11}"
-    bloque(S_ALTA - 3, "PASO 3 — Alta anual: sustitutos nuevos a fabricar o comprar (u.)",
-           "Alta = lo que crece el stock + reposición de los inutilizados del stock anterior (% inutilizados de "
-           "parametros_recargas: CO₂ B23, resto B24). Cada alta lleva su kit: faja amarilla y tarjeta de sustituto",
-           lambda g, i, rr: (f"={L(2 + i)}{S_STOCK + g}" if i == 0 else
-                             f"=MAX(0,{L(2 + i)}{S_STOCK + g}-{L(1 + i)}{S_STOCK + g})+{L(1 + i)}{S_STOCK + g}"
-                             f"*IF(INDEX(parametros_recargas!$B${FILA_TIPO}:$B${FILA_TIPO + 16},MATCH($A{rr},"
-                             f"parametros_recargas!$A${FILA_TIPO}:$A${FILA_TIPO + 16},0))=\"CO₂\","
-                             f"parametros_recargas!$B$23,parametros_recargas!$B$24)"),
-           [("ABC a fabricar (FLAMA)", lambda c, a, b: f'=SUMIF({origen},"Fabrica FLAMA",{c}{a}:{c}{b})'),
-            ("Revendidos a comprar", lambda c, a, b: f'=SUMIF({origen},"Compra (revendido)",{c}{a}:{c}{b})'),
-            ("Kits de sustituto (= total del alta)", lambda c, a, b: f"=SUM({c}{a}:{c}{b})")], "#,##0.0")
-    # paso 4: mantenimiento
-    bloque(S_MANT - 3, "PASO 4 — Mantenimiento anual en planta (u.)",
-           "Mantenimiento = stock del año anterior: el sustituto se mantiene como cualquier extintor (9.4.5 y 9.2.1). Entra al "
-           "Plan mensual parejo en los 12 meses y suma al aprovechamiento consolidado",
-           lambda g, i, rr: 0 if i == 0 else f"={L(1 + i)}{S_STOCK + g}", total)
+    bloque(S_STOCK, "PASO 2 — Stock (u.)",
+           "Stock = recargas del año × % del mes pico ÷ días del mes × días afuera, redondeado hacia arriba",
+           lambda k, i: (f"=ROUNDUP(datos_base!{L(2 + i)}{2 + k}*$B${S_TIPO + k}*$C${S_TIPO + k}"
+                         f"*MAX(parametros_recargas!$B${FILA_PERFIL + i}:$M${FILA_PERFIL + i})/$B$5,0)"),
+           total, "#,##0")
+    bloque(S_ALTA, "PASO 3 — Alta anual (u.)",
+           "Alta = lo que crece el stock + stock del año anterior × % inutilizados (parametros_recargas B23 CO₂, "
+           "B24 resto). Cada alta lleva faja amarilla y tarjeta",
+           lambda k, i: (f"={L(2 + i)}{S_STOCK + k}" if i == 0 else
+                         f"=MAX(0,{L(2 + i)}{S_STOCK + k}-{L(1 + i)}{S_STOCK + k})+{L(1 + i)}{S_STOCK + k}"
+                         f'*IF(parametros_recargas!$B${FILA_TIPO + k}="CO₂",parametros_recargas!$B$23,'
+                         f"parametros_recargas!$B$24)"),
+           [("A fabricar (planta industrial)", lambda c, a, b: f'=SUMIF({origen},"Fabrica",{c}{a}:{c}{b})'),
+            ("A comprar", lambda c, a, b: f'=SUMIF({origen},"Compra",{c}{a}:{c}{b})'),
+            ("Kits de sustituto", lambda c, a, b: f"=SUM({c}{a}:{c}{b})")], "#,##0.0")
+    bloque(S_MANT, "PASO 4 — Mantenimiento anual en planta (u.)",
+           "Mantenimiento = stock del año anterior (9.4.5 y 9.2.1); entra al Plan mensual, 1/12 por mes",
+           lambda k, i: 0 if i == 0 else f"={L(1 + i)}{S_STOCK + k}", total, "#,##0")
     ws.freeze_panes = "B5"
 
 
