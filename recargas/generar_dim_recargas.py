@@ -1,9 +1,11 @@
 """Genera salida/Dimensionamiento_Recargas_Planta_Comercial.xlsx y ..._Industrial.xlsx.
 
 Mismo modelo para las dos plantas; cada archivo aplica su propio % de recargas (Proyecciones, Indexado Dim
-Técnico V61 / V63). Hojas: PROY_Indexado -> datos_base -> parametros_recargas -> sobrestock_sustitutos -> Plan
-mensual -> Demanda por puesto -> Resumen Capacidad (aprovechamiento consolidado). Todo lo calculado es fórmula; máquinas y turnos quedan en 1 para cargarlos a mano.
-Negro y grises.
+Técnico V61 / V63; PBA Interior queda afuera porque la atienden distribuidores ajenos). Hojas: Links ->
+PROY_Indexado -> datos_base -> parametros_recargas -> sobrestock_sustitutos -> Plan mensual -> Demanda por puesto
+-> Resumen Capacidad (aprovechamiento consolidado). Todo lo calculado es fórmula; los IMPORTRANGE leen el link de la
+hoja Links (los de Manuales y Carros quedan para pegar). Máquinas y turnos se cargan con la regla del
+aprovechamiento y se pueden cambiar a mano. Negro y grises.
 """
 
 import math
@@ -26,7 +28,17 @@ ANIOS = list(range(2026, 2036))
 # IMPORTRANGE; en Excel muestra el último valor)
 URL_PROY = "https://docs.google.com/spreadsheets/d/1xc4xDAwSYT3l-RulPYtcePxiCninrbQGzaBUsgO0YEs/edit?gid=1764491891#gid=1764491891"
 IMP_REC = "Indexado Dim Técnico!B27:K43"
-IMP_ZON = "Indexado Dim Técnico!u61:u74"
+IMP_ZON = "Indexado Dim Técnico!U61:U74"
+# hoja Links: (archivo, link, qué se importa). Los que dicen PEGAR se completan cuando estén los Sheets nuevos.
+PEGAR = "PEGAR ACÁ EL LINK DEL GOOGLE SHEET"
+LINKS = [("Proyecciones", URL_PROY,
+          "Indexado Dim Técnico: recargas por tipo (B27:K43), % por zona (U61:U74), % por planta (V61 y V63)"),
+         ("Dimensionamiento Manuales", PEGAR,
+          "parametros_manuales B12:M15: perfil mensual de los manuales (1, 2,5, 5 y 10 kg)"),
+         ("Dimensionamiento Carros", PEGAR, "parametros_carros B12:M15: perfil mensual de los carros (25 a 100 kg)")]
+LK_PROY, LK_MAN, LK_CAR = "Links!$B$4", "Links!$B$5", "Links!$B$6"
+# Proyecciones, Indexado Dim Técnico V61 (comercial) y V63 (industrial): suma de las zonas de cada planta
+PCT_PLANTA = {"Comercial": 0.5545197389, "Industrial": 0.2882365055}
 ANIO_2T = 2032  # año desde el que se agrega turno antes que máquina (Dimensionamiento Técnico V2 y Manuales)
 MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
 # Proyecciones, Indexado Dim Técnico, filas 27 a 43 (recargas por tipo, 2026 a 2035)
@@ -49,7 +61,8 @@ REC = [
     ("ABC 70 kg s/ruedas", [8.466121, 41.274153, 89.697392, 161.560138, 232.383647, 308.745785, 380.367236, 427.045299, 463.349333, 500.131057]),
     ("ABC 100 kg s/ruedas", [5.644081, 27.516102, 59.798262, 107.706759, 154.922431, 205.830523, 253.578158, 284.696866, 308.899555, 333.420704]),
 ]
-# Proyecciones, Indexado Dim Técnico, filas 61 a 74, columna U (% zonal 2035) y planta según V61 / V63
+# Proyecciones, Indexado Dim Técnico, filas 61 a 74, columna U (% zonal 2035) y planta según V61 / V63. PBA Interior
+# queda fuera: la atienden distribuidores ajenos
 ZONAS = [
     ("CABA Norte", 0.0521797399, "Comercial"),
     ("CABA Este", 0.0798836162, "Comercial"),
@@ -64,7 +77,7 @@ ZONAS = [
     ("PBA Oeste 1er cordón", 0.0848900664, "Comercial"),
     ("PBA Oeste 2do cordón", 0.0672643024, "Comercial"),
     ("PBA Oeste 3er cordón", 0.0174767438, "Comercial"),
-    ("PBA Interior", 0.1572437555, "Comercial"),
+    ("PBA Interior", 0.1572437555, "Fuera"),
 ]
 # Proyecciones, hojas PROYECCION <rubro>: cociente sobre RECARGAS An (es el mismo en todos los tipos y rubros)
 TASAS = [
@@ -139,27 +152,28 @@ P_RUTA = [
 LLEVA = [0] + [1] * 16
 DIA_RETIRO, DIA_DEVOL = 1, 1  # el sustituto sale con el camión que retira y vuelve con el que devuelve
 SS = "sobrestock_sustitutos"
-S_RUB = 14     # paso 1: tiempo por rubro (rubros en columnas B a H)
-S_TIPO = 21    # paso 2: tipos
-S_STOCK = 42   # paso 3: stock
-S_ALTA = 64    # paso 4: alta anual (fabricar / comprar)
-S_MANT = 88    # paso 5: mantenimiento anual en planta
+S_RUB = 17     # paso 1: lote, tiempo y ciclo por rubro (rubros en columnas B a H)
+S_TIPO = 30    # paso 2: tipos
+S_STOCK = 51   # paso 3: stock
+S_ALTA = 73    # paso 4: alta anual (fábrica / compra)
+S_MANT = 98    # paso 5: mantenimiento anual en planta
+S_PED = 120    # paso 6: pedido a la planta industrial por modelo (lo leen Manuales y Carros)
 # Proyecciones, hojas PROYECCION <rubro>, 2035: recargas de mercado por rubro y tipo en las zonas de cada planta
-# (industrial = CABA Sur y PBA Sur; comercial = el resto). Los carros se reparten 25/55/12/8 % entre 25, 50, 70 y
-# 100 kg como en PxQ (Corregido), filas 66 a 69.
+# (industrial = CABA Sur y PBA Sur; comercial = el resto de CABA y PBA sin Interior). Los carros se reparten
+# 25/55/12/8 % entre 25, 50, 70 y 100 kg como en PxQ (Corregido), filas 66 a 69.
 RUBROS = ["Automotor", "Edificios", "Educación", "Hoteles", "Industrias / almacenes", "Salud", "Supermercados"]
 MIX_RUBRO = {
     "Comercial": [
-        [2787299, 0, 85878, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0],
-        [0, 126747.3, 924509.9, 56663.5, 71575.0, 0, 0, 0, 25349.5, 231127.5, 32805.2, 0, 0, 5591.8, 12301.9, 2684.1,
-         1789.4],
-        [0, 25545.6, 95138.1, 10225.0, 8788.7, 0, 0, 0, 8036.5, 34334.4, 1607.3, 0, 0, 359.1, 790.0, 172.4, 114.9],
-        [3578.5, 76743.6, 29300.8, 7032.2, 4688.1, 0, 0, 0, 11720.3, 11720.3, 5860.1, 0, 0, 586.0, 1289.2, 281.3, 187.5],
-        [0, 0, 137671.9, 0, 15126.6, 19056.2, 11022.6, 5628.9, 9968.1, 7798.5, 39872.3, 11257.7, 4339.2, 4925.3,
-         10835.6, 2364.1, 1576.1],
-        [0, 12077.2, 77208.2, 10321.9, 14747.1, 0, 0, 0, 4616.3, 17366.2, 19474.2, 3992.6, 0, 2245.9, 4940.9, 1078.0,
-         718.7],
-        [612, 7088, 6153, 0, 647, 0, 0, 0, 0, 0, 2914, 0, 0, 0.0, 0.0, 0.0, 0.0],
+        [2251135, 0, 69628, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0],
+        [0, 100435.9, 732591.4, 44900.8, 56716.8, 0, 0, 0, 20087.2, 183147.8, 25995.2, 0, 0, 4431.0, 9748.2, 2126.9,
+         1417.9],
+        [0, 14173.8, 52786.7, 5673.3, 4876.4, 0, 0, 0, 4459.0, 19050.2, 891.8, 0, 0, 199.2, 438.3, 95.6, 63.8],
+        [3578.5, 45655.1, 8847.8, 2123.5, 1415.6, 0, 0, 0, 3539.1, 3539.1, 1769.6, 0, 0, 177.0, 389.3, 84.9, 56.6],
+        [0, 0, 113431.7, 0, 12568.5, 15671.5, 9151.4, 4634.7, 8169.7, 6402.2, 32678.6, 9269.4, 3535.0, 4055.3, 8921.8,
+         1946.6, 1297.7],
+        [0, 7336.9, 46903.8, 6270.5, 8958.8, 0, 0, 0, 2804.4, 10549.9, 11830.5, 2425.5, 0, 1364.4, 3001.6, 654.9,
+         436.6],
+        [530, 6153, 5342, 0, 562, 0, 0, 0, 0, 0, 2530, 0, 0, 0.0, 0.0, 0.0, 0.0],
     ],
     "Industrial": [
         [1188664, 0, 36760, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0],
@@ -174,11 +188,25 @@ MIX_RUBRO = {
         [331, 3794, 3289, 0, 346, 0, 0, 0, 0, 0, 1558, 0, 0, 0.0, 0.0, 0.0, 0.0],
     ],
 }
+# Equipos que se retiran juntos en cada cliente (u. por cliente de Recargas.xlsx, hoja Supuestos, dato del grupo).
+# Control de sentido: Dec. 351/79, art. 176 (un matafuego cada 200 m² como mínimo)
+LOTE = [25, 14, 18, 20, 45, 35, 16]
+M2_MATAFUEGO = 200
+# Perfil mensual de producción (IMPORTRANGE; valores actuales de los Excel del grupo): Manuales parametros_manuales
+# B12:M15 (1 kg y 2,5 a 10 kg) y Carros parametros_carros B12:M15 (25 a 100 kg)
+P_MAN = [[0.12, 0.09, 0.08, 0.075, 0.07, 0.07, 0.075, 0.075, 0.075, 0.075, 0.075, 0.12]] + \
+        [[0.1, 0.08, 0.085, 0.085, 0.08, 0.075, 0.08, 0.08, 0.08, 0.075, 0.07, 0.11]] * 3
+P_CAR = [[0.085, 0.075, 0.09, 0.09, 0.09, 0.08, 0.09, 0.09, 0.085, 0.075, 0.07, 0.08]] * 4
+K_ABC = [0, 1, 2, 3, 13, 14, 15, 16]   # tipos ABC que fabrica la planta industrial (manuales y carros)
+CIL_VACIO, TERMINADO, COMPRA = "Fábrica: cilindro vacío", "Fábrica: terminado", "Compra"
 P_MIX = 97     # PROY_Indexado: primera fila de la matriz de esta planta (tipos en filas, rubros en columnas)
 FILA_PERFIL = 37   # primera fila del perfil mensual (2026)
 FILA_TIPO = 51     # primera fila de la tabla de tipos
 FILA_PUESTO = 72   # primera fila de la tabla de puestos
 N_PUESTOS = 29
+FILA_PCIL = 107    # primera fila del perfil de llegada de los cilindros nuevos (17 tipos)
+# columnas de la tabla de puestos: agentes E a L, cilindro nuevo M, tiempo N, u/h O, u/mes P, desglose Q, nota R
+C_CIL, C_T, C_UH, C_UM = "M", "N", "O", "P"
 
 PH_P, PH_A = "$B$15", "$B$16"
 USO, DANO, DESC, HUM, LAB, LIQ, PINT = "$B$25", "$B$29", "$B$27", "$B$31", "$B$32", "$B$28", "$B$30"
@@ -290,6 +318,10 @@ PUESTOS = [
      "9.7.1.4: PH anual de mangueras de CO₂ y con cierre en el extremo (tabla 5). Demanda = fila Mangueras del Plan "
      "mensual. Criterio: tiempo igual al de la PH del recipiente; falta el rótulo plástico"),
 ]
+# Ruta del cilindro nuevo (sustituto ABC que llega vacío de la planta industrial con PH, secado y pintura de fábrica):
+# se registra, se carga, se arma, se presuriza, se prueba y se etiqueta (Word de recargas, puestos 1, 9 a 13)
+CILINDRO_NUEVO = {"Recepción y registro", "Carga de polvo ABC", "Ensamblaje y marbete — recinto",
+                  "Presurización — recinto", "Ensayo de pérdidas", "Precinto, etiqueta y despacho"}
 
 # ------------------------------------------------------------------ estilo (sólo negro y grises)
 F_N = Font(name="Arial", size=10)
@@ -342,43 +374,62 @@ def celda(ws, r, c, v, fmt=None, dato=False, neg=False, res=False):
 
 
 # ------------------------------------------------------------------ hojas
-def importrange(ws, r0, c0, rango, valores, fmt):
-    """Bloque IMPORTRANGE como lo exporta Google: la primera celda lleva la fórmula; el resto, el valor calculado."""
+def importrange(ws, r0, c0, link, rango, valores, fmt):
+    """Bloque IMPORTRANGE como lo exporta Google: la primera celda lleva la fórmula (el link sale de la hoja Links);
+    el resto, el valor calculado."""
     for i, fila in enumerate(valores):
         for j, x in enumerate(fila):
             if i == 0 and j == 0:
-                f = f'=IFERROR(__xludf.DUMMYFUNCTION("IMPORTRANGE(""{URL_PROY}"",""{rango}"")"),{x!r})'
+                f = f'=IFERROR(__xludf.DUMMYFUNCTION("IMPORTRANGE({link},""{rango}"")"),{x!r})'
             else:
                 f = f'=IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),{x!r})'
             celda(ws, r0 + i, c0 + j, f, fmt)
 
 
+def h_links(wb, filas):
+    ws = hoja(wb, "Links", [30, 70, 96])
+    tit(ws, 1, "Links de los IMPORTRANGE")
+    nota(ws, 2, "Pegar en la columna B el link del Google Sheet de cada archivo; todas las fórmulas IMPORTRANGE leen el "
+                "link de esta hoja. Hasta que se pegue, esas celdas muestran el último valor conocido o un error de referencia.")
+    cab(ws, 3, ["Archivo", "Link", "Qué se importa"])
+    for i, (a, u, q) in enumerate(filas):
+        celda(ws, 4 + i, 1, a, neg=True)
+        celda(ws, 4 + i, 2, u, dato=True)
+        celda(ws, 4 + i, 3, q)
+    return ws
+
+
 def h_proy(wb, planta):
-    ws = hoja(wb, "PROY_Indexado", [30, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 50])
+    ws = hoja(wb, "PROY_Indexado", [34, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 50])
     tit(ws, 1, "Proyecciones — Indexado Dim Técnico")
     cab(ws, 3, ["Recargas por tipo"] + ANIOS)
     for i, (n, v) in enumerate(REC):
         celda(ws, 4 + i, 1, n)
-    importrange(ws, 4, 2, IMP_REC, [v for n, v in REC], "#,##0")
+    importrange(ws, 4, 2, LK_PROY, IMP_REC, [v for n, v in REC], "#,##0")
     celda(ws, 21, 1, "Recargas total", neg=True)
     for k in range(10):
         celda(ws, 21, 2 + k, f"=SUM({L(2 + k)}4:{L(2 + k)}20)", "#,##0", res=True)
 
-    tit(ws, 23, "Recargas por zona y planta ")
+    tit(ws, 23, "Recargas por zona y planta (PBA Interior queda fuera: la atienden distribuidores ajenos)")
     cab(ws, 24, ["Zona", "% zonal 2035", "Planta"])
     for i, (z, p, pl) in enumerate(ZONAS):
         celda(ws, 25 + i, 1, z)
         celda(ws, 25 + i, 3, pl).alignment = CEN
-    importrange(ws, 25, 2, IMP_ZON, [[p] for z, p, pl in ZONAS], "0.0%")
-    dv = DataValidation(type="list", formula1='"Comercial,Industrial"', allow_blank=False)
+    importrange(ws, 25, 2, LK_PROY, IMP_ZON, [[p] for z, p, pl in ZONAS], "0.0%")
+    dv = DataValidation(type="list", formula1='"Comercial,Industrial,Fuera"', allow_blank=False)
     ws.add_data_validation(dv)
     dv.add("C25:C38")
-    celda(ws, 40, 1, "% planta comercial", neg=True)
-    celda(ws, 40, 2, '=SUMIF($C$25:$C$38,"Comercial",$B$25:$B$38)', "0.0%", res=True)
-    celda(ws, 41, 1, "% planta industrial", neg=True)
-    celda(ws, 41, 2, '=SUMIF($C$25:$C$38,"Industrial",$B$25:$B$38)', "0.0%", res=True)
-    celda(ws, 42, 1, "Control (tiene que dar 100 %)")
-    celda(ws, 42, 2, "=B40+B41", "0.0%")
+    cab(ws, 39, ["Planta", "% de recargas", "Control: suma de sus zonas"])
+    celda(ws, 40, 1, "Comercial (Proyecciones V61)", neg=True)
+    importrange(ws, 40, 2, LK_PROY, "Indexado Dim Técnico!V61", [[PCT_PLANTA["Comercial"]]], "0.0%")
+    celda(ws, 40, 3, '=SUMIF($C$25:$C$38,"Comercial",$B$25:$B$38)', "0.0%")
+    celda(ws, 41, 1, "Industrial (Proyecciones V63)", neg=True)
+    importrange(ws, 41, 2, LK_PROY, "Indexado Dim Técnico!V63", [[PCT_PLANTA["Industrial"]]], "0.0%")
+    celda(ws, 41, 3, '=SUMIF($C$25:$C$38,"Industrial",$B$25:$B$38)', "0.0%")
+    celda(ws, 42, 1, "Fuera: PBA Interior (distribuidores ajenos)")
+    celda(ws, 42, 2, '=SUMIF($C$25:$C$38,"Fuera",$B$25:$B$38)', "0.0%")
+    celda(ws, 43, 1, "Total (tiene que dar 100 %)")
+    celda(ws, 43, 2, "=SUM(B40:B42)", "0.0%")
 
     tit(ws, 44, "Tasas de Proyecciones (hojas PROYECCION por rubro; iguales para todos los tipos)")
     cab(ws, 45, ["Concepto", "Valor", "Uso en este archivo"])
@@ -399,7 +450,8 @@ def h_proy(wb, planta):
 
     tit(ws, 54, "Recargas de mercado 2035 por tipo y rubro, zonas de cada planta (hojas PROYECCION <rubro>)")
     for j, (pl, r0) in enumerate([("Comercial", P_MIX - 40), ("Industrial", P_MIX - 20), (None, P_MIX)]):
-        cab(ws, r0 - 1, [f"Planta {pl.lower()}" if pl else "Esta planta"] + RUBROS + ["Total"])
+        t = {"Comercial": "Planta comercial (sin PBA Interior)", "Industrial": "Planta industrial", None: "Esta planta"}
+        cab(ws, r0 - 1, [t[pl]] + RUBROS + ["Total"])
         for k in range(17):
             r = r0 + k
             celda(ws, r, 1, f"=A{4 + k}")
@@ -410,7 +462,8 @@ def h_proy(wb, planta):
                     celda(ws, r, 2 + c, f'=IF($B$51="Comercial",{L(2 + c)}{P_MIX - 40 + k},{L(2 + c)}{P_MIX - 20 + k})',
                           "#,##0")
             celda(ws, r, 9, f"=SUM(B{r}:H{r})", "#,##0", res=True)
-    nota(ws, P_MIX + 18, "Carros repartidos 25/55/12/8 % entre 25, 50, 70 y 100 kg, como PxQ (Corregido) filas 66 a 69.")
+    nota(ws, P_MIX + 18, "Carros repartidos 25/55/12/8 % entre 25, 50, 70 y 100 kg, como PxQ (Corregido) filas 66 a 69. "
+                         "Comercial: CABA y PBA sin zona Sur ni Interior; industrial: CABA Sur y PBA Sur.")
     ws.freeze_panes = "B4"
 
 
@@ -428,22 +481,23 @@ def h_datos(wb):
 
 
 def h_param(wb, planta):
-    ws = hoja(wb, "parametros_recargas", [52, 30, 34, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 10, 11, 70, 60, 8])
+    ws = hoja(wb, "parametros_recargas",
+              [52, 30, 34, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 10, 11, 70, 60])
     cab(ws, 1, ["Parámetro", "Valor", "Fuente / criterio"])
-    ws.merge_cells("C1:P1")
+    ws.merge_cells("C1:Q1")
     for r, t, v, f, d, fu in P_GEN:
         celda(ws, r, 1, t)
         celda(ws, r, 2, v, f, dato=d, res=not d)
         celda(ws, r, 3, fu)
-        ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=16)
+        ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=17)
     tit(ws, 11, f"CRITERIOS DE RUTA — PLANTA {planta.upper()} (IRAM 3517-2:2020 y Proyecciones)")
     cab(ws, 12, ["Parámetro", "Valor", "Fuente / criterio"])
-    ws.merge_cells("C12:P12")
+    ws.merge_cells("C12:Q12")
     for r, t, v, f, d, fu in P_RUTA:
         celda(ws, r, 1, t)
         celda(ws, r, 2, v, f, dato=d, res=not d)
         celda(ws, r, 3, fu)
-        ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=16)
+        ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=17)
 
     # perfil mensual plano
     tit(ws, 34, "PERFIL MENSUAL POR AÑO (plano, 1/12 por mes)")
@@ -462,7 +516,7 @@ def h_param(wb, planta):
     tit(ws, 49, "TIPOS DE MATAFUEGO")
     cab(ws, 50, ["Tipo", "Agente (ruta)", "u. equivalentes por recipiente", "Manguera con PH anual (1 = sí)",
                  "Fuente de la manguera"])
-    ws.merge_cells("E50:P50")
+    ws.merge_cells("E50:Q50")
     for i, (ag, rod, mang, fu) in enumerate(TIPOS):
         r = FILA_TIPO + i
         celda(ws, r, 1, f"=datos_base!A{2 + i}")
@@ -470,15 +524,16 @@ def h_param(wb, planta):
         celda(ws, r, 3, "=$B$9" if rod else 1, "0", res=bool(rod), dato=not rod)
         celda(ws, r, 4, mang, "0", dato=True)
         celda(ws, r, 5, fu)
-        ws.merge_cells(start_row=r, start_column=5, end_row=r, end_column=16)
+        ws.merge_cells(start_row=r, start_column=5, end_row=r, end_column=17)
     dv = DataValidation(type="list", formula1=f"$E${FILA_PUESTO - 1}:$L${FILA_PUESTO - 1}", allow_blank=False)
     ws.add_data_validation(dv)
     dv.add(f"B{FILA_TIPO}:B{FILA_TIPO + 16}")
 
     # puestos
-    tit(ws, 70, "CAPACIDAD POR PUESTO (fracción de cada agente que pasa por el puesto)")
+    tit(ws, 70, "CAPACIDAD POR PUESTO (fracción de cada agente que pasa por el puesto; cilindro nuevo: 1 = pasa)")
     cab(ws, FILA_PUESTO - 1, ["N°", "Puesto / operación", "Máquina / equipo", "Recurso"] + AGENTES
-        + ["Tiempo tipo (s/u)", "Cap. real (u/h)", "Cap. real (u/mes, 1 turno)", "Desglose del tiempo (s)", "Nota"])
+        + ["Cilindro nuevo (alta de sustituto)", "Tiempo tipo (s/u)", "Cap. real (u/h)", "Cap. real (u/mes, 1 turno)",
+           "Desglose del tiempo (s)", "Nota"])
     for k, (pu, maq, rec, ruta, t, des, no) in enumerate(PUESTOS):
         r = FILA_PUESTO + k
         celda(ws, r, 1, k + 1, "0").alignment = CEN
@@ -490,11 +545,12 @@ def h_param(wb, planta):
                 celda(ws, r, 5 + j, "—").alignment = CEN
             else:
                 celda(ws, r, 5 + j, ruta[j], "0.0%")
-        celda(ws, r, 13, t, "0", dato=True)
-        celda(ws, r, 14, f"=IF(M{r}>0,3600/M{r},0)", "0.0", res=True)
-        celda(ws, r, 15, f"=N{r}*$B$6", "#,##0", res=True)
-        celda(ws, r, 16, des)
-        celda(ws, r, 17, no)
+        celda(ws, r, 13, 1 if pu in CILINDRO_NUEVO else 0, "0", dato=True)
+        celda(ws, r, 14, t, "0", dato=True)
+        celda(ws, r, 15, f"=IF({C_T}{r}>0,3600/{C_T}{r},0)", "0.0", res=True)
+        celda(ws, r, 16, f"={C_UH}{r}*$B$6", "#,##0", res=True)
+        celda(ws, r, 17, des)
+        celda(ws, r, 18, no)
     dv = DataValidation(type="list", formula1='"Máquina,Manual,Tercerizado"', allow_blank=False)
     ws.add_data_validation(dv)
     dv.add(f"D{FILA_PUESTO}:D{FILA_PUESTO + N_PUESTOS - 1}")
@@ -502,19 +558,39 @@ def h_param(wb, planta):
     celda(ws, r, 1, "—").alignment = CEN
     celda(ws, r, 2, "PH Firesafer (alternativa, no entra en el cálculo)")
     celda(ws, r, 3, "Banco Firesafer FS-JD12A")
-    celda(ws, r, 13, 60, "0", dato=True)
-    celda(ws, r, 14, f"=IF(M{r}>0,3600/M{r},0)", "0.0", res=True)
-    celda(ws, r, 17, "El original copia el desglose de la Yukon (302 s) con 60 s: revisar antes de usarla")
+    celda(ws, r, 14, 60, "0", dato=True)
+    celda(ws, r, 15, f"=IF({C_T}{r}>0,3600/{C_T}{r},0)", "0.0", res=True)
+    celda(ws, r, 18, "El original copia el desglose de la Yukon (302 s) con 60 s: revisar antes de usarla")
+
+    # perfil de llegada de los cilindros nuevos
+    tit(ws, FILA_PCIL - 3, "PERFIL DE LLEGADA DE LOS SUSTITUTOS ABC NUEVOS (perfil de producción de Manuales y Carros)")
+    nota(ws, FILA_PCIL - 2, "IMPORTRANGE del perfil mensual de cada modelo (el link se pega en la hoja Links). Solo pasan "
+                            "por la ruta del cilindro nuevo los que llegan como cilindro vacío (planta comercial).")
+    cab(ws, FILA_PCIL - 1, ["Tipo"] + MESES + ["Total", "Origen del perfil"])
+    ws.merge_cells(start_row=FILA_PCIL - 1, start_column=15, end_row=FILA_PCIL - 1, end_column=18)
+    for k in range(17):
+        rr = FILA_PCIL + k
+        celda(ws, rr, 1, f"=A{FILA_TIPO + k}")
+        if k not in K_ABC:
+            for m in range(12):
+                celda(ws, rr, 2 + m, 0, "0.0%")
+        celda(ws, rr, 14, f"=SUM(B{rr}:M{rr})", "0.0%", res=True)
+        origen = (f"Manuales, parametros_manuales fila {12 + k}" if k < 4 else
+                  f"Carros, parametros_carros fila {12 + k - 13}" if k in K_ABC else "Se compra: no se carga acá")
+        celda(ws, rr, 15, origen)
+        ws.merge_cells(start_row=rr, start_column=15, end_row=rr, end_column=18)
+    importrange(ws, FILA_PCIL, 2, LK_MAN, "parametros_manuales!B12:M15", P_MAN, "0.0%")
+    importrange(ws, FILA_PCIL + 13, 2, LK_CAR, "parametros_carros!B12:M15", P_CAR, "0.0%")
     ws.freeze_panes = "B2"
 
 
 def bloque_plan(r0):
-    """Filas del bloque de un año en Plan mensual: tipos, total, agentes y mangueras."""
-    return {"t1": r0 + 1, "t17": r0 + 17, "tot": r0 + 18, "ag1": r0 + 20, "mang": r0 + 28}
+    """Filas del bloque de un año en Plan mensual: tipos, total, agentes, mangueras y cilindros nuevos."""
+    return {"t1": r0 + 1, "t17": r0 + 17, "tot": r0 + 18, "ag1": r0 + 20, "mang": r0 + 28, "cil": r0 + 29}
 
 
 def h_plan(wb):
-    ws = hoja(wb, "Plan mensual", [26, 12, 9] + [9] * 12 + [10, 14])
+    ws = hoja(wb, "Plan mensual", [40, 12, 9] + [9] * 12 + [10, 14])
     for i, a in enumerate(ANIOS):
         r0 = 1 + 32 * i
         b = bloque_plan(r0)
@@ -551,6 +627,14 @@ def h_plan(wb):
             c = L(4 + m)
             celda(ws, r, 4 + m, f"=SUMPRODUCT({c}${b['t1']}:{c}${b['t17']}*parametros_recargas!$D${FILA_TIPO}:"
                                 f"$D${FILA_TIPO + 16})", "#,##0.0", res=True)
+        r = b["cil"]
+        celda(ws, r, 1, "Sustitutos ABC nuevos como cilindro vacío (u. equiv.)", neg=True)
+        for m in range(12):
+            pc = L(2 + m)
+            celda(ws, r, 4 + m, f'=SUMPRODUCT({SS}!${y}${S_ALTA}:${y}${S_ALTA + 16}*({SS}!$F${S_TIPO}:$F${S_TIPO + 16}'
+                                f'="{CIL_VACIO}")*parametros_recargas!$C${FILA_TIPO}:$C${FILA_TIPO + 16}'
+                                f'*parametros_recargas!${pc}${FILA_PCIL}:${pc}${FILA_PCIL + 16})', "#,##0.0", res=True)
+        celda(ws, r, 16, f"=SUM(D{r}:O{r})", "#,##0", res=True)
     ws.freeze_panes = "D2"
 
 
@@ -573,8 +657,9 @@ def h_demanda(wb):
                 if PUESTOS[k][3] is None:
                     f = f"='Plan mensual'!{c}{b['mang']}"
                 else:
-                    f = "=" + "+".join(f"parametros_recargas!${L(5 + j)}${rp}*'Plan mensual'!{c}{b['ag1'] + j}"
-                                       for j in range(8))
+                    f = ("=" + "+".join(f"parametros_recargas!${L(5 + j)}${rp}*'Plan mensual'!{c}{b['ag1'] + j}"
+                                        for j in range(8))
+                         + f"+parametros_recargas!${C_CIL}${rp}*'Plan mensual'!{c}{b['cil']}")
                 celda(ws, r, 2 + m, f, "#,##0.0")
             celda(ws, r, 14, f"=SUM(B{r}:M{r})", "#,##0", res=True)
             celda(ws, r, 15, f"=MAX(B{r}:M{r})", "#,##0.0", res=True)
@@ -583,10 +668,12 @@ def h_demanda(wb):
 
 
 ACCIONES = ["OK", "Agrega turno", "Agrega máquina", "Agrega operario (puesto manual)", "Tercerizado", "Revisar"]
-ACC_TXT = ["Aprovechamiento dentro del umbral", "Hay turnos disponibles (menos que el máximo por día)",
-           "Ya está en el máximo de turnos y el puesto es de máquina",
-           "Ya está en el máximo de turnos y el puesto es manual",
-           "Recurso cargado como Tercerizado en parametros_recargas", "Hay demanda y el puesto no tiene tiempo tipo"]
+ACC_TXT = ["Aprovechamiento dentro del umbral",
+           "Desde el año del 2° turno, si el puesto tiene turnos disponibles",
+           "Antes del año del 2° turno; o con el máximo de turnos y más del 100 %",
+           "Lo mismo que máquina, en un puesto manual",
+           "Recurso cargado como Tercerizado en parametros",
+           "Pasa el umbral con el máximo de turnos sin llegar al 100 % (o no tiene tiempo tipo)"]
 
 
 # colores de la acción aplicada en el aprovechamiento (los mismos de Dimensionamiento Manuales)
@@ -594,24 +681,58 @@ COLOR_ACC = {"Agrega turno": "4A86E8", "Agrega máquina": "FF00FF", "Agrega oper
              "Tercerizado": "FF9900", "Revisar": "FFFF00"}
 
 
-def plan_capacidad(dem, cap, recurso, umbral=0.9, t_max=2, anio_2t=ANIO_2T):
-    """Máquinas y turnos por puesto y año. Se arranca en 1 × 1 y nunca se baja; si un puesto pasa el umbral, antes
-    de anio_2t se agrega máquina u operario y desde anio_2t se agrega turno (hasta t_max) y después máquina."""
+def plan_capacidad(dem, cap, recurso, umbral=0.9, t_max=2, anio_2t=ANIO_2T, piso=None):
+    """Máquinas y turnos por puesto y año con el criterio de Manuales. Nunca se baja y se parte del piso (1 × 1 o lo
+    cargado a mano). Si un puesto pasa el umbral: antes de anio_2t se agrega máquina u operario; desde anio_2t se
+    agrega turno (hasta t_max); con el máximo de turnos se agrega máquina solo si pasa el 100 %, si no queda para
+    revisar. Un piso con 0 máquinas es un año tercerizado."""
     plan = {}
     for k in range(len(cap)):
         m, t = 1, 1
         for i, a in enumerate(ANIOS):
-            while cap[k] > 0 and recurso[k] != "Tercerizado" and dem[k][i] / (cap[k] * m * t) > umbral:
-                if a >= anio_2t and t < t_max:
-                    t += 1
-                else:
+            if piso:
+                pm, pt = piso[(k, i)]
+                if pm == 0:
+                    plan[(k, i)] = (0, max(1, pt))
+                    continue
+                m, t = max(m, pm), max(t, pt)
+
+            def u():
+                return dem[k][i] / (cap[k] * m * t)
+
+            while cap[k] > 0 and recurso[k] != "Tercerizado" and u() > umbral:
+                if a < anio_2t:
                     m += 1
+                elif t < t_max:
+                    t += 1
+                elif u() > 1:
+                    m += 1
+                else:
+                    break
             plan[(k, i)] = (m, t)
     return plan
 
 
+def colores_aprovechamiento(ws, r_util, r_maq, r_tur, n, col_rec, umbral, sin_maquina_es_terc=False):
+    """Formato condicional del aprovechamiento: el color sale de comparar las tablas de máquinas y turnos con el año
+    anterior (2026 contra 1 × 1)."""
+    for rango, c, prev in ((f"B{r_util}:B{r_util + n - 1}", "B", None),
+                           (f"C{r_util}:K{r_util + n - 1}", "C", "B")):
+        pm = f"{prev}{r_maq}" if prev else "1"
+        pt = f"{prev}{r_tur}" if prev else "1"
+        terc = f"{c}{r_maq}=0" if sin_maquina_es_terc else f'${col_rec}{r_util}="Tercerizado"'
+        reglas = [("Revisar", f"{c}{r_util}>{umbral}"),
+                  ("Tercerizado", terc),
+                  ("Agrega turno", f"{c}{r_tur}>{pt}"),
+                  ("Agrega máquina", f'AND({c}{r_maq}>{pm},${col_rec}{r_util}<>"Manual")'),
+                  ("Agrega operario (puesto manual)", f'AND({c}{r_maq}>{pm},${col_rec}{r_util}="Manual")')]
+        for acc, f in reglas:
+            ws.conditional_formatting.add(rango, FormulaRule(
+                formula=[f], stopIfTrue=True, fill=PatternFill("solid", fgColor=COLOR_ACC[acc], bgColor=COLOR_ACC[acc])))
+
+
 def h_resumen(wb, plan):
-    ws = hoja(wb, "Resumen Capacidad", [48] + [10] * 10 + [13, 3, 30, 56])
+    ws = hoja(wb, "Resumen Capacidad", [48] + [10] * 10 + [13, 3, 30, 60])
     bloques = {"util": 1, "maq": 33, "tur": 65, "nec": 97, "acc": 129}
     # lista de acciones (la acción sugerida se indexa a esta tabla)
     cab(ws, 1, ["Acciones (lista)", "Cuándo"], 14)
@@ -626,12 +747,13 @@ def h_resumen(wb, plan):
     celda(ws, 10, 15, "=parametros_recargas!B8", "0", res=True)
     celda(ws, 11, 14, "Año de inicio del 2° turno", neg=True)
     celda(ws, 11, 15, "=parametros_recargas!B10", "0", res=True)
-    nota(ws, 13, "Máquinas y turnos cargados con esa prioridad (antes del año: máquina u operario; desde el año: "
-                 "turno). Se pueden cambiar a mano; los colores se recalculan.", 14)
+    nota(ws, 13, "Máquinas y turnos cargados con el criterio de Manuales (antes del año: máquina u operario; desde el "
+                 "año: turno; con 2 turnos, máquina solo si pasa el 100 %). Se pueden cambiar a mano; los colores se "
+                 "recalculan solos.", 14)
 
-    titulos = {"util": "Aprovechamiento consolidado (recargas de clientes + mantenimiento de sustitutos)", "maq": "Máquinas en el puesto (cargar a mano)",
-               "tur": "Turnos del puesto (cargar a mano)", "nec": "Máquina × turno necesarios al umbral",
-               "acc": "Acción sugerida"}
+    titulos = {"util": "Aprovechamiento consolidado (recargas + mantenimiento y alta de sustitutos)",
+               "maq": "Máquinas en el puesto", "tur": "Turnos del puesto",
+               "nec": "Máquina × turno necesarios al umbral", "acc": "Acción sugerida"}
     for clave, r0 in bloques.items():
         cab(ws, r0, [titulos[clave]] + ANIOS)
         for k in range(N_PUESTOS):
@@ -642,7 +764,7 @@ def h_resumen(wb, plan):
                 c = L(2 + i)
                 rd = fila_dem(i, k)
                 dem = f"'Demanda por puesto'!$P${rd}"
-                cap = f"parametros_recargas!$N${rp}"
+                cap = f"parametros_recargas!${C_UH}${rp}"
                 u = f"{c}{bloques['util'] + 1 + k}"
                 mq = f"{c}{bloques['maq'] + 1 + k}"
                 tu = f"{c}{bloques['tur'] + 1 + k}"
@@ -654,9 +776,10 @@ def h_resumen(wb, plan):
                     celda(ws, r, 2 + i, f"=IF({cap}=0,0,ROUNDUP({dem}/({cap}*$O$9),0))", "0")
                 else:
                     rec = f"parametros_recargas!$D${rp}"
+                    mas = f'IF({rec}="Manual",$N$5,$N$4)'
                     celda(ws, r, 2 + i,
                           f'=IF({dem}=0,"—",IF({cap}=0,$N$7,IF({u}<=$O$9,$N$2,IF({rec}="Tercerizado",$N$6,'
-                          f'IF({tu}<$O$10,$N$3,IF({rec}="Manual",$N$5,$N$4))))))').alignment = CEN
+                          f'IF({c}${r0}<$O$11,{mas},IF({tu}<$O$10,$N$3,IF({u}<=1,$N$7,{mas})))))))').alignment = CEN
         rt = r0 + 1 + N_PUESTOS
         if clave == "util":
             celda(ws, rt, 1, "Aprovechamiento máximo", neg=True)
@@ -666,20 +789,7 @@ def h_resumen(wb, plan):
             celda(ws, r0, 12, "Recurso").font = F_B
             for k in range(N_PUESTOS):
                 celda(ws, r0 + 1 + k, 12, f"=parametros_recargas!$D${FILA_PUESTO + k}").alignment = CEN
-            # color según la acción aplicada ese año (comparando con el año anterior; 2026 contra 1 × 1)
-            mq0, tu0 = bloques["maq"] + 1, bloques["tur"] + 1
-            for rango, c, prev in ((f"B{r0 + 1}:B{rt - 1}", "B", None), (f"C{r0 + 1}:K{rt - 1}", "C", "B")):
-                pm = f"{prev}{mq0}" if prev else "1"
-                pt = f"{prev}{tu0}" if prev else "1"
-                reglas = [("Revisar", f"{c}{r0 + 1}>$O$9"),
-                          ("Tercerizado", f'$L{r0 + 1}="Tercerizado"'),
-                          ("Agrega turno", f"{c}{tu0}>{pt}"),
-                          ("Agrega máquina", f'AND({c}{mq0}>{pm},$L{r0 + 1}="Máquina")'),
-                          ("Agrega operario (puesto manual)", f'AND({c}{mq0}>{pm},$L{r0 + 1}="Manual")')]
-                for acc, f in reglas:
-                    ws.conditional_formatting.add(rango, FormulaRule(
-                        formula=[f], stopIfTrue=True, fill=PatternFill("solid", fgColor=COLOR_ACC[acc],
-                                                                       bgColor=COLOR_ACC[acc])))
+            colores_aprovechamiento(ws, r0 + 1, bloques["maq"] + 1, bloques["tur"] + 1, N_PUESTOS, "L", "$O$9")
         elif clave == "maq":
             celda(ws, rt, 1, "TOTAL máquinas / puestos", neg=True)
             for i in range(10):
@@ -699,18 +809,25 @@ def h_resumen(wb, plan):
 
 
 def h_sust(wb):
-    """Sustitutos (9.4.5): ciclo por rubro, stock, alta anual (fabricar / comprar) y mantenimiento, por tipo."""
-    ws = hoja(wb, SS, [36, 12, 12, 12, 12, 12, 12, 12, 11, 11, 11, 26])
+    """Sustitutos (9.4.5): lote y ciclo por rubro, stock, alta (fábrica / compra), mantenimiento y pedido a fábrica."""
+    ws = hoja(wb, SS, [44, 12, 12, 12, 12, 12, 12, 12, 11, 11, 11, 24])
     tit(ws, 1, "SUSTITUTOS (IRAM 3517-2:2020, 9.4.5)")
-    nota(ws, 2, "Mismo tipo que el equipo retirado. Va con el camión al retirar y vuelve cuando se devuelve el recargado.")
+    nota(ws, 2, "Mismo tipo que el equipo retirado. Sale con el camión que retira el lote y vuelve con el que devuelve "
+                "los recargados: nunca se deja en otro cliente en ese viaje.")
     cab(ws, 4, ["Parámetro", "Valor", "Fuente / criterio"])
     ws.merge_cells("C4:L4")
     filas = [("Días hábiles por mes", "=parametros_recargas!B2", "0", False, ""),
-             ("Día de retiro", DIA_RETIRO, "0", True, "El sustituto sale con el camión que retira"),
-             ("Día de devolución", DIA_DEVOL, "0", True, "El sustituto vuelve con el camión que devuelve; no se deja en otro "
-                                                  "cliente en ese viaje"),
+             ("Día de retiro", DIA_RETIRO, "0", True, "El sustituto sale con el camión que retira el lote"),
+             ("Día de devolución", DIA_DEVOL, "0", True, "Vuelve con el camión que devuelve el lote recargado"),
              ("Minutos productivos por turno", "=parametros_recargas!B5*60", "0", False, ""),
-             ("Planta", "=PROY_Indexado!B51", None, False, "Comercial: compra todos. Industrial: fabrica los ABC")]
+             ("Planta", "=PROY_Indexado!B51", None, False,
+              "Comercial: los ABC llegan de la planta industrial como cilindro vacío y se cargan acá. Industrial: los "
+              "ABC salen terminados de la línea. El resto se compra"),
+             ("Turnos por día desde el año del 2° turno", "=parametros_recargas!B8", "0", False,
+              "Antes de ese año la planta trabaja 1 turno"),
+             ("Año del 2° turno", "=parametros_recargas!B10", "0", False, "El mismo del aprovechamiento"),
+             ("Superficie por matafuego (m²)", M2_MATAFUEGO, "0", True,
+              "Dec. 351/79, art. 176: un matafuego cada 200 m² como mínimo (control de sentido del lote)")]
     for j, (t, v, f, d, fu) in enumerate(filas):
         r = 5 + j
         celda(ws, r, 1, t)
@@ -718,32 +835,44 @@ def h_sust(wb):
         celda(ws, r, 3, fu)
         ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=12)
 
-    # paso 1: tiempo por rubro
+    # paso 1: lote, tiempo y ciclo por rubro
     tipos_rng = f"$C${S_TIPO}:$C${S_TIPO + 16}"
-    tit(ws, S_RUB - 3, "PASO 1 — Tiempo por rubro (mix del rubro × tiempos de operación)")
-    nota(ws, S_RUB - 2, "Días de proceso = minutos por equipo ÷ minutos del turno, redondeado hacia arriba (mínimo 1). "
-                        "Ciclo del sustituto = retiro + proceso + devolución")
+    tit(ws, S_RUB - 3, "PASO 1 — Lote, días en planta y ciclo por rubro")
+    nota(ws, S_RUB - 2, "El lote del cliente viaja junto en su jaula: días en planta = minutos del lote ÷ minutos de "
+                        "planta por día, redondeado hacia arriba (mínimo 1). Ciclo = retiro + días en planta + devolución.")
     cab(ws, S_RUB - 1, ["Concepto"] + RUBROS)
-    conceptos = ["% de las recargas (mercado, zonas de la planta)", "Minutos de operación por equipo",
-                 "Días de proceso", "Ciclo del sustituto (días)", "Horas de planta por día (2035)"]
-    for j, t in enumerate(conceptos):
+    conceptos = [("% de las recargas (mercado, zonas de la planta)", "0.0%"),
+                 ("Lote por cliente (equipos que se retiran juntos)", "0"),
+                 ("Superficie mínima que protege el lote (m²)", "#,##0"),
+                 ("Minutos de operación por equipo (mix del rubro)", "0.0"),
+                 ("Minutos del lote en planta", "#,##0"),
+                 ("Días en planta con 1 turno", "0"),
+                 ("Días en planta con 2 turnos", "0"),
+                 ("Ciclo del sustituto con 1 turno (días)", "0"),
+                 ("Ciclo del sustituto con 2 turnos (días)", "0")]
+    for j, (t, fmt) in enumerate(conceptos):
         r = S_RUB + j
-        celda(ws, r, 1, t, neg=(j == 3))
+        celda(ws, r, 1, t, neg=(j >= 7))
         for c in range(7):
             col = L(2 + c)
             mix = f"PROY_Indexado!{col}${P_MIX}:{col}${P_MIX + 16}"
             f = [f"=SUM({mix})/SUM(PROY_Indexado!$B${P_MIX}:$H${P_MIX + 16})",
+                 LOTE[c],
+                 f"={col}{S_RUB + 1}*$B$12",
                  f"=IF(SUM({mix})=0,0,SUMPRODUCT({mix},{tipos_rng})/SUM({mix}))",
-                 f"=MAX(1,ROUNDUP({col}{S_RUB + 1}/$B$8,0))",
-                 f"=$B$6+{col}{S_RUB + 2}+$B$7",
-                 f"=datos_base!$K$19*{col}{S_RUB}/(12*$B$5)*{col}{S_RUB + 1}/60"][j]
-            celda(ws, r, 2 + c, f, ["0.0%", "0.0", "0", "0", "0.0"][j], res=(j == 3))
+                 f"={col}{S_RUB + 1}*{col}{S_RUB + 3}",
+                 f"=MAX(1,ROUNDUP({col}{S_RUB + 4}/$B$8,0))",
+                 f"=MAX(1,ROUNDUP({col}{S_RUB + 4}/($B$8*$B$10),0))",
+                 f"=$B$6+{col}{S_RUB + 5}+$B$7",
+                 f"=$B$6+{col}{S_RUB + 6}+$B$7"][j]
+            celda(ws, r, 2 + c, f, fmt, dato=(j == 1), res=(j >= 7))
+    nota(ws, S_RUB + 9, "Lote: u. por cliente de Recargas.xlsx (hoja Supuestos), dato del grupo. La superficie es un "
+                        "control de sentido con la dotación mínima del Dec. 351/79, art. 176.")
 
     # paso 2: tipos
     tit(ws, S_TIPO - 2, "PASO 2 — Tipos (el ciclo de cada tipo pesa los rubros según sus recargas)")
     cab(ws, S_TIPO - 1, ["Tipo", "Lleva sustituto (1 = sí)", "Minutos de operación por equipo",
-                         "Ciclo del sustituto (días)", "Origen", "", "Nota"])
-    ws.merge_cells(f"E{S_TIPO - 1}:F{S_TIPO - 1}")
+                         "Ciclo con 1 turno (días)", "Ciclo con 2 turnos (días)", "Origen del alta", "Nota"])
     ws.merge_cells(f"G{S_TIPO - 1}:L{S_TIPO - 1}")
     pr = "parametros_recargas"
     for k in range(17):
@@ -753,17 +882,18 @@ def h_sust(wb):
         celda(ws, r, 1, f"=datos_base!A{2 + k}")
         celda(ws, r, 2, LLEVA[k], "0", dato=True)
         fm = (f"=(SUMPRODUCT(INDEX({pr}!$E${FILA_PUESTO}:$L${FILA_PUESTO + 27},0,MATCH({pr}!$B${rt},"
-              f"{pr}!$E${FILA_PUESTO - 1}:$L${FILA_PUESTO - 1},0)),{pr}!$M${FILA_PUESTO}:$M$"
-              f"{FILA_PUESTO + 27})*{pr}!$C${rt}+{pr}!$D${rt}*{pr}!$M${FILA_PUESTO + 28})/60")
+              f"{pr}!$E${FILA_PUESTO - 1}:$L${FILA_PUESTO - 1},0)),{pr}!${C_T}${FILA_PUESTO}:${C_T}$"
+              f"{FILA_PUESTO + 27})*{pr}!$C${rt}+{pr}!$D${rt}*{pr}!${C_T}${FILA_PUESTO + 28})/60")
         celda(ws, r, 3, None, "0.0").value = ArrayFormula(f"C{r}", fm)
-        celda(ws, r, 4, f"=IF(SUM({fila_mix})=0,$B$6+1+$B$7,SUMPRODUCT({fila_mix},$B${S_RUB + 3}:$H${S_RUB + 3})"
-                        f"/SUM({fila_mix}))", "0.0", res=True)
-        celda(ws, r, 5, f'=IF(AND($B$9="Industrial",LEFT(A{r},3)="ABC"),"Fabrica","Compra")').alignment = CEN
-        ws.merge_cells(start_row=r, start_column=5, end_row=r, end_column=6)
+        for j, fr in enumerate((S_RUB + 7, S_RUB + 8)):
+            celda(ws, r, 4 + j, f"=IF(SUM({fila_mix})=0,$B$6+1+$B$7,SUMPRODUCT({fila_mix},$B${fr}:$H${fr})"
+                                f"/SUM({fila_mix}))", "0.0", res=True)
+        celda(ws, r, 6, f'=IF(LEFT(A{r},3)="ABC",IF($B$9="Comercial","{CIL_VACIO}","{TERMINADO}"),"{COMPRA}")'
+              ).alignment = CEN
         celda(ws, r, 7, "" if LLEVA[k] else "Automotor: sin canje")
         ws.merge_cells(start_row=r, start_column=7, end_row=r, end_column=12)
 
-    origen = f"$E${S_TIPO}:$E${S_TIPO + 16}"
+    origen = f"$F${S_TIPO}:$F${S_TIPO + 16}"
 
     def bloque(r0, titulo, explica, f_celda, pie, fmt):
         tit(ws, r0 - 3, titulo)
@@ -783,9 +913,10 @@ def h_sust(wb):
 
     total = [("Total", lambda c, a, b: f"=SUM({c}{a}:{c}{b})")]
     bloque(S_STOCK, "PASO 3 — Stock (u.)",
-           "Stock = recargas del año × % del mes pico ÷ días del mes × ciclo del sustituto, redondeado hacia arriba",
-           lambda k, i: (f"=ROUNDUP(datos_base!{L(2 + i)}{2 + k}*$B${S_TIPO + k}*$D${S_TIPO + k}"
-                         f"*MAX({pr}!$B${FILA_PERFIL + i}:$M${FILA_PERFIL + i})/$B$5,0)"),
+           "Stock = recargas del año × % del mes pico ÷ días del mes × ciclo (con 2 turnos desde el año del 2° turno), "
+           "redondeado hacia arriba",
+           lambda k, i: (f"=ROUNDUP(datos_base!{L(2 + i)}{2 + k}*$B${S_TIPO + k}*IF({L(2 + i)}${S_STOCK - 1}>=$B$11,"
+                         f"$E${S_TIPO + k},$D${S_TIPO + k})*MAX({pr}!$B${FILA_PERFIL + i}:$M${FILA_PERFIL + i})/$B$5,0)"),
            total, "#,##0")
     bloque(S_ALTA, "PASO 4 — Alta anual (u.)",
            "Alta = lo que crece el stock + stock del año anterior × % inutilizados (parametros_recargas B23 CO₂, "
@@ -793,12 +924,34 @@ def h_sust(wb):
            lambda k, i: (f"={L(2 + i)}{S_STOCK + k}" if i == 0 else
                          f"=MAX(0,{L(2 + i)}{S_STOCK + k}-{L(1 + i)}{S_STOCK + k})+{L(1 + i)}{S_STOCK + k}"
                          f'*IF({pr}!$B${FILA_TIPO + k}="CO₂",{pr}!$B$23,{pr}!$B$24)'),
-           [("A fabricar (planta industrial)", lambda c, a, b: f'=SUMIF({origen},"Fabrica",{c}{a}:{c}{b})'),
-            ("A comprar", lambda c, a, b: f'=SUMIF({origen},"Compra",{c}{a}:{c}{b})'),
+           [(f"{CIL_VACIO} (se carga en esta planta)",
+             lambda c, a, b: f'=SUMIF({origen},"{CIL_VACIO}",{c}{a}:{c}{b})'),
+            (f"{TERMINADO} (sale de la línea)", lambda c, a, b: f'=SUMIF({origen},"{TERMINADO}",{c}{a}:{c}{b})'),
+            ("Compra", lambda c, a, b: f'=SUMIF({origen},"{COMPRA}",{c}{a}:{c}{b})'),
             ("Kits de sustituto", lambda c, a, b: f"=SUM({c}{a}:{c}{b})")], "#,##0.0")
     bloque(S_MANT, "PASO 5 — Mantenimiento anual en planta (u.)",
-           "Mantenimiento = stock del año anterior (9.4.5 y 9.2.1); entra al Plan mensual, 1/12 por mes",
+           "Mantenimiento = stock del año anterior (9.4.5 y 9.2.1); entra al Plan mensual por la ruta normal de su "
+           "tipo, 1/12 por mes",
            lambda k, i: 0 if i == 0 else f"={L(1 + i)}{S_STOCK + k}", total, "#,##0")
+
+    # paso 6: pedido a la planta industrial por modelo
+    tit(ws, S_PED - 3, "PASO 6 — Pedido a la planta industrial por modelo (lo importan Manuales y Carros)")
+    nota(ws, S_PED - 2, "Alta de los ABC (paso 4). Comercial: se entregan como cilindro vacío y se cargan en esta planta "
+                        "(ruta del cilindro nuevo). Industrial: salen terminados de la línea (proceso completo).")
+    cab(ws, S_PED - 1, ["Modelo"] + ANIOS + ["Se entrega como"])
+    for j, k in enumerate(K_ABC):
+        r = S_PED + j
+        celda(ws, r, 1, f"=A{S_TIPO + k}")
+        for i in range(10):
+            celda(ws, r, 2 + i, f'=IF(LEFT($F${S_TIPO + k},7)="Fábrica",{L(2 + i)}{S_ALTA + k},0)', "#,##0.0")
+        celda(ws, r, 12, f"=F{S_TIPO + k}").alignment = CEN
+    r = S_PED + len(K_ABC)
+    celda(ws, r, 1, "Total", neg=True)
+    for i in range(10):
+        c = L(2 + i)
+        celda(ws, r, 2 + i, f"=SUM({c}{S_PED}:{c}{r - 1})", "#,##0.0", res=True)
+    nota(ws, r + 1, f"Manuales importa B{S_PED}:K{S_PED + 3} (1 a 10 kg) y Carros B{S_PED + 4}:K{S_PED + 7} "
+                    "(25 a 100 kg).")
     ws.freeze_panes = "B5"
 
 
@@ -807,6 +960,7 @@ def generar(planta, plan=None):
         plan = {(k, i): (1, 1) for k in range(N_PUESTOS) for i in range(10)}
     wb = Workbook()
     wb.remove(wb.active)
+    h_links(wb, LINKS)
     h_proy(wb, planta)
     h_datos(wb)
     h_param(wb, planta)
@@ -822,7 +976,8 @@ def generar(planta, plan=None):
 
 
 def modelo_demanda(planta):
-    """Demanda por puesto (u/h de un turno, mes pico) igual a la del Excel, para armar el plan de capacidad."""
+    """Réplica del Excel en Python (demanda por puesto en u/h de un turno, mes pico; stock y alta de sustitutos)
+    para cargar el plan de capacidad."""
     proy = {46: TASAS[0][1], 47: TASAS[1][1], 48: TASAS[2][1]}
     filas = {r: v for r, t, v, f, d, fu in P_GEN + P_RUTA}
     B = {}
@@ -842,36 +997,55 @@ def modelo_demanda(planta):
         expr = re.sub(r"\$?B\$?(\d+)", lambda m: repr(val(int(m.group(1)))), f[1:])
         return eval(expr)
 
-    share = sum(p for z, p, pl in ZONAS if pl == planta)
+    def techo(x):
+        return math.ceil(x - 1e-9)
+
+    share = PCT_PLANTA[planta]
     tiempos = [ev(t) if isinstance(t, str) else t for (_, _, _, _, t, _, _) in PUESTOS]
     cap = [3600 / t if t else 0 for t in tiempos]
     fr = [[0] * 8 if ruta is None else [ev(x) if isinstance(x, str) else x for x in ruta]
           for (_, _, _, ruta, _, _, _) in PUESTOS]
+    cil = [1 if p[0] in CILINDRO_NUEVO else 0 for p in PUESTOS]
     eq = [val(9) if rod else 1 for (_, rod, _, _) in TIPOS]
     mins = [(sum(fr[s][AGENTES.index(TIPOS[k][0])] * tiempos[s] for s in range(28)) * eq[k]
              + TIPOS[k][2] * tiempos[28]) / 60 for k in range(17)]
     mix = MIX_RUBRO[planta]
-    turno = val(5) * 60
-    ciclo_r = [DIA_RETIRO + max(1, math.ceil(sum(mix[c][k] * mins[k] for k in range(17)) / sum(mix[c]) / turno))
-               + DIA_DEVOL for c in range(7)]
-    ciclo_t = [sum(mix[c][k] * ciclo_r[c] for c in range(7)) / sum(mix[c][k] for c in range(7))
-               if sum(mix[c][k] for c in range(7)) else DIA_RETIRO + 1 + DIA_DEVOL for k in range(17)]
+    turno, t2, a2 = val(5) * 60, val(8), val(10)
+    min_r = [sum(mix[c][k] * mins[k] for k in range(17)) / sum(mix[c]) for c in range(7)]
+    ciclo_r = {n: [DIA_RETIRO + max(1, techo(LOTE[c] * min_r[c] / (turno * n))) + DIA_DEVOL for c in range(7)]
+               for n in (1, t2)}
+    ciclo_t = {n: [sum(mix[c][k] * ciclo_r[n][c] for c in range(7)) / sum(mix[c][k] for c in range(7))
+                   if sum(mix[c][k] for c in range(7)) else DIA_RETIRO + 1 + DIA_DEVOL for k in range(17)]
+               for n in (1, t2)}
+    inut = [val(23) if TIPOS[k][0] == "CO₂" else val(24) for k in range(17)]
+    vacio = [planta == "Comercial" and REC[k][0].startswith("ABC") for k in range(17)]
+    perfil = {k: (P_MAN[k] if k < 4 else P_CAR[k - 13]) for k in K_ABC}
     dem = [[0] * 10 for _ in range(N_PUESTOS)]
-    stock_prev = [0] * 17
+    stock, alta = [], []
     for i in range(10):
         rec = [v[i] * share for n, v in REC]
-        mant = stock_prev if i else [0] * 17
+        n = t2 if ANIOS[i] >= a2 else 1
+        st = [techo(rec[k] * LLEVA[k] * ciclo_t[n][k] / 240) for k in range(17)]
+        al = st if i == 0 else [max(0, st[k] - stock[-1][k]) + stock[-1][k] * inut[k] for k in range(17)]
+        mant = stock[-1] if i else [0] * 17
+        stock.append(st)
+        alta.append(al)
         mes = [rec[k] / 12 + mant[k] / 12 for k in range(17)]
         ag = [sum(mes[k] * eq[k] for k in range(17) if TIPOS[k][0] == a) for a in AGENTES]
         mang = sum(mes[k] * TIPOS[k][2] for k in range(17))
+        cil_m = [sum(al[k] * eq[k] * perfil[k][m] for k in K_ABC if vacio[k]) for m in range(12)]
         for s in range(N_PUESTOS):
-            u = mang if PUESTOS[s][3] is None else sum(fr[s][j] * ag[j] for j in range(8))
-            dem[s][i] = u / val(6)
-        stock_prev = [math.ceil(rec[k] * LLEVA[k] * ciclo_t[k] / 240 - 1e-9) for k in range(17)]
-    return dem, cap, [r for (_, _, r, _, _, _, _) in PUESTOS], val(7), val(8), val(10)
+            if PUESTOS[s][3] is None:
+                pico = mang
+            else:
+                base = sum(fr[s][j] * ag[j] for j in range(8))
+                pico = max(base + cil[s] * cil_m[m] for m in range(12))
+            dem[s][i] = pico / val(6)
+    extra = {"stock": stock, "alta": alta, "ciclo_r": ciclo_r, "min_r": min_r, "ciclo_t": ciclo_t}
+    return dem, cap, [r for (_, _, r, _, _, _, _) in PUESTOS], val(7), val(8), val(10), extra
 
 
 if __name__ == "__main__":
     for p in ("Comercial", "Industrial"):
-        dem, cap, recurso, umbral, t_max, anio_2t = modelo_demanda(p)
+        dem, cap, recurso, umbral, t_max, anio_2t, _ = modelo_demanda(p)
         print(generar(p, plan_capacidad(dem, cap, recurso, umbral, t_max, anio_2t)))
