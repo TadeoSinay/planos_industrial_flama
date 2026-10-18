@@ -127,10 +127,42 @@ P_RUTA = [
 # Sustituto del mismo tipo que el equipo retirado; el ABC 1 kg automotor no lleva (sin canje, criterio del usuario)
 LLEVA = [0] + [1] * 16
 SS = "sobrestock_sustitutos"
-S_TIPO = 11    # paso 1: lleva sustituto, días afuera y origen
-S_STOCK = 32   # paso 2: stock
-S_ALTA = 54    # paso 3: alta anual (fabricar / comprar)
-S_MANT = 78    # paso 4: mantenimiento anual en planta
+S_RUB = 14     # paso 1: tiempo por rubro (rubros en columnas B a H)
+S_TIPO = 21    # paso 2: tipos
+S_STOCK = 42   # paso 3: stock
+S_ALTA = 64    # paso 4: alta anual (fabricar / comprar)
+S_MANT = 88    # paso 5: mantenimiento anual en planta
+# Proyecciones, hojas PROYECCION <rubro>, 2035: recargas de mercado por rubro y tipo en las zonas de cada planta
+# (industrial = CABA Sur y PBA Sur; comercial = el resto). Los carros se reparten 25/55/12/8 % entre 25, 50, 70 y
+# 100 kg como en PxQ (Corregido), filas 66 a 69.
+RUBROS = ["Automotor", "Edificios", "Educación", "Hoteles", "Industrias / almacenes", "Salud", "Supermercados"]
+MIX_RUBRO = {
+    "Comercial": [
+        [2787299, 0, 85878, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0],
+        [0, 126747.3, 924509.9, 56663.5, 71575.0, 0, 0, 0, 25349.5, 231127.5, 32805.2, 0, 0, 5591.8, 12301.9, 2684.1,
+         1789.4],
+        [0, 25545.6, 95138.1, 10225.0, 8788.7, 0, 0, 0, 8036.5, 34334.4, 1607.3, 0, 0, 359.1, 790.0, 172.4, 114.9],
+        [3578.5, 76743.6, 29300.8, 7032.2, 4688.1, 0, 0, 0, 11720.3, 11720.3, 5860.1, 0, 0, 586.0, 1289.2, 281.3, 187.5],
+        [0, 0, 137671.9, 0, 15126.6, 19056.2, 11022.6, 5628.9, 9968.1, 7798.5, 39872.3, 11257.7, 4339.2, 4925.3,
+         10835.6, 2364.1, 1576.1],
+        [0, 12077.2, 77208.2, 10321.9, 14747.1, 0, 0, 0, 4616.3, 17366.2, 19474.2, 3992.6, 0, 2245.9, 4940.9, 1078.0,
+         718.7],
+        [612, 7088, 6153, 0, 647, 0, 0, 0, 0, 0, 2914, 0, 0, 0.0, 0.0, 0.0, 0.0],
+    ],
+    "Industrial": [
+        [1188664, 0, 36760, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.0, 0.0, 0.0, 0.0],
+        [0, 51231.6, 373689.5, 22903.5, 28930.8, 0, 0, 0, 10246.3, 93422.4, 13260.0, 0, 0, 2260.2, 4972.5, 1084.9,
+         723.3],
+        [0, 8719.2, 32472.3, 3490.0, 2999.8, 0, 0, 0, 2743.0, 11718.9, 548.6, 0, 0, 122.6, 269.6, 58.8, 39.2],
+        [1533.8, 23764.4, 6552.8, 1572.7, 1048.4, 0, 0, 0, 2621.1, 2621.1, 1310.5, 0, 0, 131.1, 288.3, 62.9, 41.9],
+        [0, 0, 44086.3, 0, 4377.3, 6232.7, 3220.9, 1816.2, 3384.2, 2600.2, 13536.8, 3632.5, 1568.0, 1589.2, 3496.3,
+         762.8, 508.5],
+        [0, 4173.4, 26680.3, 3566.9, 5096.0, 0, 0, 0, 1595.2, 6001.1, 6729.6, 1379.7, 0, 776.1, 1707.4, 372.5,
+         248.3],
+        [331, 3794, 3289, 0, 346, 0, 0, 0, 0, 0, 1558, 0, 0, 0.0, 0.0, 0.0, 0.0],
+    ],
+}
+P_MIX = 98     # PROY_Indexado: primera fila de la matriz de esta planta (tipos en filas, rubros en columnas)
 FILA_PERFIL = 37   # primera fila del perfil mensual (2026)
 FILA_TIPO = 51     # primera fila de la tabla de tipos
 FILA_PUESTO = 72   # primera fila de la tabla de puestos
@@ -348,6 +380,21 @@ def h_proy(wb, planta):
     dv2.add("B52")
     celda(ws, 53, 1, "% de recargas de esta planta", neg=True)
     celda(ws, 53, 2, '=IF(B52="Comercial",B41,B42)', "0.0%", res=True)
+
+    tit(ws, 55, "Recargas de mercado 2035 por tipo y rubro, zonas de cada planta (hojas PROYECCION <rubro>)")
+    for j, (pl, r0) in enumerate([("Comercial", P_MIX - 40), ("Industrial", P_MIX - 20), (None, P_MIX)]):
+        cab(ws, r0 - 1, [f"Planta {pl.lower()}" if pl else "Esta planta"] + RUBROS + ["Total"])
+        for k in range(17):
+            r = r0 + k
+            celda(ws, r, 1, f"=A{5 + k}")
+            for c in range(7):
+                if pl:
+                    celda(ws, r, 2 + c, MIX_RUBRO[pl][c][k], "#,##0", dato=True)
+                else:
+                    celda(ws, r, 2 + c, f'=IF($B$52="Comercial",{L(2 + c)}{P_MIX - 40 + k},{L(2 + c)}{P_MIX - 20 + k})',
+                          "#,##0")
+            celda(ws, r, 9, f"=SUM(B{r}:H{r})", "#,##0", res=True)
+    nota(ws, P_MIX + 18, "Carros repartidos 25/55/12/8 % entre 25, 50, 70 y 100 kg, como PxQ (Corregido) filas 66 a 69.")
     ws.freeze_panes = "B5"
 
 
@@ -597,37 +644,69 @@ def h_resumen(wb):
 
 
 def h_sust(wb):
-    """Sustitutos (9.4.5): stock, alta anual (fabricar / comprar) y mantenimiento en planta, por tipo."""
-    ws = hoja(wb, SS, [34, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 26])
+    """Sustitutos (9.4.5): ciclo por rubro, stock, alta anual (fabricar / comprar) y mantenimiento, por tipo."""
+    ws = hoja(wb, SS, [36, 12, 12, 12, 12, 12, 12, 12, 11, 11, 11, 26])
     tit(ws, 1, "SUSTITUTOS (IRAM 3517-2:2020, 9.4.5)")
-    nota(ws, 2, "Mismo tipo que el equipo retirado. Se dimensionan con las recargas, no con la cantidad de clientes.")
+    nota(ws, 2, "Mismo tipo que el equipo retirado. Va con el camión al retirar y vuelve cuando se devuelve el recargado.")
     cab(ws, 4, ["Parámetro", "Valor", "Fuente / criterio"])
     ws.merge_cells("C4:L4")
-    filas = [("Días hábiles por mes", "=parametros_recargas!B2", False, "parametros_recargas B2"),
-             ("Días afuera", 1, True, "Criterio: se retira hoy y vuelve en la ruta de mañana"),
-             ("Planta", "=PROY_Indexado!B52", False, "Comercial: compra todos. Industrial: fabrica los ABC")]
-    for j, (t, v, d, fu) in enumerate(filas):
+    filas = [("Días hábiles por mes", "=parametros_recargas!B2", "0", False, "parametros_recargas B2"),
+             ("Día de retiro", 1, "0", True, "El sustituto sale con el camión que retira"),
+             ("Día de devolución", 1, "0", True, "El sustituto vuelve con el camión que devuelve; no se deja en otro "
+                                                  "cliente en ese viaje"),
+             ("Minutos productivos por turno", "=parametros_recargas!B5*60", "0", False, "parametros_recargas B5"),
+             ("Planta", "=PROY_Indexado!B52", None, False, "Comercial: compra todos. Industrial: fabrica los ABC")]
+    for j, (t, v, f, d, fu) in enumerate(filas):
         r = 5 + j
         celda(ws, r, 1, t)
-        celda(ws, r, 2, v, "0", dato=d, res=not d).alignment = CEN
+        celda(ws, r, 2, v, f, dato=d, res=not d).alignment = CEN
         celda(ws, r, 3, fu)
         ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=12)
 
-    tit(ws, S_TIPO - 2, "PASO 1 — Tipos")
-    cab(ws, S_TIPO - 1, ["Tipo", "Lleva sustituto (1 = sí)", "Días afuera", "Origen", "", "Nota"])
-    ws.merge_cells(f"D{S_TIPO - 1}:E{S_TIPO - 1}")
-    ws.merge_cells(f"F{S_TIPO - 1}:L{S_TIPO - 1}")
+    # paso 1: tiempo por rubro
+    tipos_rng = f"$C${S_TIPO}:$C${S_TIPO + 16}"
+    tit(ws, S_RUB - 3, "PASO 1 — Tiempo por rubro (mix del rubro × tiempos de operación)")
+    nota(ws, S_RUB - 2, "Días de proceso = minutos por equipo ÷ minutos del turno, redondeado hacia arriba (mínimo 1). "
+                        "Ciclo del sustituto = retiro + proceso + devolución")
+    cab(ws, S_RUB - 1, ["Concepto"] + RUBROS)
+    conceptos = ["% de las recargas (mercado, zonas de la planta)", "Minutos de operación por equipo",
+                 "Días de proceso", "Ciclo del sustituto (días)"]
+    for j, t in enumerate(conceptos):
+        r = S_RUB + j
+        celda(ws, r, 1, t, neg=(j == 3))
+        for c in range(7):
+            col = L(2 + c)
+            mix = f"PROY_Indexado!{col}${P_MIX}:{col}${P_MIX + 16}"
+            f = [f"=SUM({mix})/SUM(PROY_Indexado!$B${P_MIX}:$H${P_MIX + 16})",
+                 f"=IF(SUM({mix})=0,0,SUMPRODUCT({mix},{tipos_rng})/SUM({mix}))",
+                 f"=MAX(1,ROUNDUP({col}{S_RUB + 1}/$B$8,0))",
+                 f"=$B$6+{col}{S_RUB + 2}+$B$7"][j]
+            celda(ws, r, 2 + c, f, ["0.0%", "0.0", "0", "0"][j], res=(j == 3))
+
+    # paso 2: tipos
+    tit(ws, S_TIPO - 2, "PASO 2 — Tipos (el ciclo de cada tipo pesa los rubros según sus recargas)")
+    cab(ws, S_TIPO - 1, ["Tipo", "Lleva sustituto (1 = sí)", "Minutos de operación por equipo",
+                         "Ciclo del sustituto (días)", "Origen", "", "Nota"])
+    ws.merge_cells(f"E{S_TIPO - 1}:F{S_TIPO - 1}")
+    ws.merge_cells(f"G{S_TIPO - 1}:L{S_TIPO - 1}")
+    pr = "parametros_recargas"
     for k in range(17):
         r = S_TIPO + k
+        rt = FILA_TIPO + k
+        fila_mix = f"PROY_Indexado!$B${P_MIX + k}:$H${P_MIX + k}"
         celda(ws, r, 1, f"=datos_base!A{2 + k}")
         celda(ws, r, 2, LLEVA[k], "0", dato=True)
-        celda(ws, r, 3, "=$B$6", "0", dato=True)
-        celda(ws, r, 4, f'=IF(AND($B$7="Industrial",LEFT(A{r},3)="ABC"),"Fabrica","Compra")').alignment = CEN
-        ws.merge_cells(start_row=r, start_column=4, end_row=r, end_column=5)
-        celda(ws, r, 6, "" if LLEVA[k] else "Automotor: sin canje")
-        ws.merge_cells(start_row=r, start_column=6, end_row=r, end_column=12)
+        celda(ws, r, 3, f"=(SUMPRODUCT(INDEX({pr}!$E${FILA_PUESTO}:$L${FILA_PUESTO + 27},0,MATCH({pr}!$B${rt},"
+                        f"{pr}!$E${FILA_PUESTO - 1}:$L${FILA_PUESTO - 1},0)),{pr}!$M${FILA_PUESTO}:$M$"
+                        f"{FILA_PUESTO + 27})*{pr}!$C${rt}+{pr}!$D${rt}*{pr}!$M${FILA_PUESTO + 28})/60", "0.0")
+        celda(ws, r, 4, f"=IF(SUM({fila_mix})=0,$B$6+1+$B$7,SUMPRODUCT({fila_mix},$B${S_RUB + 3}:$H${S_RUB + 3})"
+                        f"/SUM({fila_mix}))", "0.0", res=True)
+        celda(ws, r, 5, f'=IF(AND($B$9="Industrial",LEFT(A{r},3)="ABC"),"Fabrica","Compra")').alignment = CEN
+        ws.merge_cells(start_row=r, start_column=5, end_row=r, end_column=6)
+        celda(ws, r, 7, "" if LLEVA[k] else "Automotor: sin canje")
+        ws.merge_cells(start_row=r, start_column=7, end_row=r, end_column=12)
 
-    origen = f"$D${S_TIPO}:$D${S_TIPO + 16}"
+    origen = f"$E${S_TIPO}:$E${S_TIPO + 16}"
 
     def bloque(r0, titulo, explica, f_celda, pie, fmt):
         tit(ws, r0 - 3, titulo)
@@ -646,22 +725,21 @@ def h_sust(wb):
                 celda(ws, r, 2 + i, f(c, r0, r0 + 16), fmt, res=True)
 
     total = [("Total", lambda c, a, b: f"=SUM({c}{a}:{c}{b})")]
-    bloque(S_STOCK, "PASO 2 — Stock (u.)",
-           "Stock = recargas del año × % del mes pico ÷ días del mes × días afuera, redondeado hacia arriba",
-           lambda k, i: (f"=ROUNDUP(datos_base!{L(2 + i)}{2 + k}*$B${S_TIPO + k}*$C${S_TIPO + k}"
-                         f"*MAX(parametros_recargas!$B${FILA_PERFIL + i}:$M${FILA_PERFIL + i})/$B$5,0)"),
+    bloque(S_STOCK, "PASO 3 — Stock (u.)",
+           "Stock = recargas del año × % del mes pico ÷ días del mes × ciclo del sustituto, redondeado hacia arriba",
+           lambda k, i: (f"=ROUNDUP(datos_base!{L(2 + i)}{2 + k}*$B${S_TIPO + k}*$D${S_TIPO + k}"
+                         f"*MAX({pr}!$B${FILA_PERFIL + i}:$M${FILA_PERFIL + i})/$B$5,0)"),
            total, "#,##0")
-    bloque(S_ALTA, "PASO 3 — Alta anual (u.)",
+    bloque(S_ALTA, "PASO 4 — Alta anual (u.)",
            "Alta = lo que crece el stock + stock del año anterior × % inutilizados (parametros_recargas B23 CO₂, "
            "B24 resto). Cada alta lleva faja amarilla y tarjeta",
            lambda k, i: (f"={L(2 + i)}{S_STOCK + k}" if i == 0 else
                          f"=MAX(0,{L(2 + i)}{S_STOCK + k}-{L(1 + i)}{S_STOCK + k})+{L(1 + i)}{S_STOCK + k}"
-                         f'*IF(parametros_recargas!$B${FILA_TIPO + k}="CO₂",parametros_recargas!$B$23,'
-                         f"parametros_recargas!$B$24)"),
+                         f'*IF({pr}!$B${FILA_TIPO + k}="CO₂",{pr}!$B$23,{pr}!$B$24)'),
            [("A fabricar (planta industrial)", lambda c, a, b: f'=SUMIF({origen},"Fabrica",{c}{a}:{c}{b})'),
             ("A comprar", lambda c, a, b: f'=SUMIF({origen},"Compra",{c}{a}:{c}{b})'),
             ("Kits de sustituto", lambda c, a, b: f"=SUM({c}{a}:{c}{b})")], "#,##0.0")
-    bloque(S_MANT, "PASO 4 — Mantenimiento anual en planta (u.)",
+    bloque(S_MANT, "PASO 5 — Mantenimiento anual en planta (u.)",
            "Mantenimiento = stock del año anterior (9.4.5 y 9.2.1); entra al Plan mensual, 1/12 por mes",
            lambda k, i: 0 if i == 0 else f"={L(1 + i)}{S_STOCK + k}", total, "#,##0")
     ws.freeze_panes = "B5"
