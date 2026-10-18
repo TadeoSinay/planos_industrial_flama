@@ -1,8 +1,8 @@
 """Genera salida/Dimensionamiento_Recargas_Planta_Comercial.xlsx y ..._Industrial.xlsx.
 
 Mismo modelo para las dos plantas; cada archivo aplica su propio % de recargas (Proyecciones, Indexado Dim
-Técnico V61 / V63). Hojas: PROY_Indexado -> datos_base -> parametros_recargas -> Plan mensual -> Demanda por
-puesto -> Resumen Capacidad. Todo lo calculado es fórmula; máquinas y turnos quedan en 1 para cargarlos a mano.
+Técnico V61 / V63). Hojas: PROY_Indexado -> datos_base -> parametros_recargas -> sobrestock_sustitutos -> Plan
+mensual -> Demanda por puesto -> Resumen Capacidad (aprovechamiento consolidado). Todo lo calculado es fórmula; máquinas y turnos quedan en 1 para cargarlos a mano.
 Negro y grises.
 """
 
@@ -132,9 +132,10 @@ SUST = [None, "ABC 5 kg", "ABC 5 kg", "ABC 10 kg", "Agua 10 l", "AFFF 10 l", "AF
 GRUPOS = ["ABC 5 kg", "ABC 10 kg", "Agua 10 l", "AFFF 10 l", "AFFF 50 l s/ruedas", "BC 5 kg", "Sales K 6 l",
           "CO₂ 5 kg", "HCFC/HFC 5 kg", "Clase D 9 l", "ABC 50 kg s/ruedas", "ABC 100 kg s/ruedas"]
 SS = "sobrestock_sustitutos"
-S_TIPO = 10    # tabla 1 de sobrestock_sustitutos
-S_STOCK = 111  # tabla 6 (stock por equivalente)
-S_MANT = 175   # tabla 10 (mantenimiento por tipo)
+S_TIPO = 10    # paso 1: tipo -> sustituto equivalente
+S_STOCK = 31   # paso 2: stock por equivalente
+S_ALTA = 49    # paso 3: alta anual (fabricar / comprar)
+S_MANT = 68    # paso 4: mantenimiento anual en planta
 FILA_PERFIL = 37   # primera fila del perfil mensual (2026)
 FILA_TIPO = 51     # primera fila de la tabla de tipos
 FILA_PUESTO = 72   # primera fila de la tabla de puestos
@@ -466,7 +467,8 @@ def h_plan(wb):
         y = L(2 + i)
         for k in range(17):
             r = b["t1"] + k
-            ms = f"{SS}!${y}${S_MANT + k}"
+            ms = (f"SUMIF({SS}!$A${S_MANT}:$A${S_MANT + 11},$A{r},{SS}!{y}${S_MANT}:{y}$"
+                  f"{S_MANT + 11})")
             celda(ws, r, 1, f"=parametros_recargas!A{FILA_TIPO + k}")
             celda(ws, r, 2, f"=parametros_recargas!B{FILA_TIPO + k}").alignment = CEN
             celda(ws, r, 3, f"=parametros_recargas!C{FILA_TIPO + k}", "0")
@@ -545,7 +547,7 @@ def h_resumen(wb):
     celda(ws, 10, 15, "=parametros_recargas!B8", "0", res=True)
     nota(ws, 12, "Máquinas y turnos: celdas gris oscuro, cargar a mano.", 14)
 
-    titulos = {"util": "Aprovechamiento por puesto", "maq": "Máquinas en el puesto (cargar a mano)",
+    titulos = {"util": "Aprovechamiento consolidado (recargas de clientes + mantenimiento de sustitutos)", "maq": "Máquinas en el puesto (cargar a mano)",
                "tur": "Turnos del puesto (cargar a mano)", "nec": "Máquina × turno necesarios al umbral",
                "acc": "Acción sugerida"}
     for clave, r0 in bloques.items():
@@ -601,94 +603,86 @@ def h_resumen(wb):
 
 
 def h_sust(wb):
-    """Stock de sustitutos (9.4.5) por equivalente y su mantenimiento anual, que vuelve al Plan mensual."""
-    ws = hoja(wb, "sobrestock_sustitutos", [44] + [11] * 10 + [70])
-    tit(ws, 1, "SOBRESTOCK DE SUSTITUTOS (IRAM 3517-2 9.4.5)")
-    nota(ws, 2, "Equipos afuera = retiros por día del mes pico × días afuera (ley de Little); depende de las recargas, "
-                "no de la cantidad de clientes. El mantenimiento anual del stock entra al Plan mensual del año "
-                "siguiente y suma al aprovechamiento.")
-    cab(ws, 4, ["Parámetro", "Valor"] + [""] * 9 + ["Fuente / criterio"])
-    celda(ws, 5, 1, "Días de ruta (retiro y devolución)")
-    celda(ws, 5, 2, 1, "0", dato=True)
-    celda(ws, 5, 12, "Criterio (a confirmar): se retira hoy, se recarga y vuelve en la ruta del día siguiente. El "
-                     "camión entrega los recargados y retira en la misma visita (Word de procesos, Recepción)")
-    celda(ws, 6, 1, "Días hábiles por mes")
-    celda(ws, 6, 2, "=parametros_recargas!B2", "0", res=True)
+    """Sustitutos (9.4.5): stock por equivalente, alta anual (fabricar / comprar) y mantenimiento en planta."""
+    ws = hoja(wb, SS, [34, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 22, 62])
+    tit(ws, 1, "SUSTITUTOS (IRAM 3517-2:2020, 9.4.5): stock, alta anual y mantenimiento")
+    nota(ws, 2, "El cliente no trae el sustituto: lo pide mientras su equipo está en planta. Es equipo propio de FLAMA "
+                "(costo del servicio). Se dimensiona con las recargas (la demanda), no con la cantidad de clientes.")
 
-    def tabla(r, titulo, filas, nombres, f_celda, fmt, total=False):
-        tit(ws, r, titulo)
-        cab(ws, r + 1, ["Tipo" if len(filas) == 17 else ("Agente" if len(filas) == 8 else "Sustituto equivalente")]
-            + ANIOS)
-        for k in range(len(filas)):
-            rr = r + 2 + k
-            celda(ws, rr, 1, nombres[k])
-            for i in range(10):
-                celda(ws, rr, 2 + i, f_celda(k, i, rr), fmt)
-        if total:
-            rt = r + 2 + len(filas)
-            celda(ws, rt, 1, "Total", neg=True)
-            for i in range(10):
-                c = L(2 + i)
-                celda(ws, rt, 2 + i, f"=SUM({c}{r + 2}:{c}{rt - 1})", fmt, res=True)
+    cab(ws, 4, ["Parámetro", "Valor", "Fuente / criterio"])
+    ws.merge_cells("C4:M4")
+    celda(ws, 5, 1, "Días hábiles por mes")
+    celda(ws, 5, 2, "=parametros_recargas!B2", "0", res=True)
+    celda(ws, 5, 3, "parametros_recargas B2 (240 ÷ 12)")
+    celda(ws, 6, 1, "Días afuera (general)")
+    celda(ws, 6, 2, 1, "0", dato=True)
+    celda(ws, 6, 3, "Criterio: se retira hoy y vuelve en la ruta de mañana. Vale mientras el aprovechamiento "
+                     "consolidado quede ≤ 100 %; si no, se agregan máquinas o turnos, no sustitutos")
+    for r in (5, 6):
+        ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=13)
 
-    # 1. tipos y sustituto equivalente
-    tit(ws, 8, "1. Tipo y sustituto equivalente (igual clasificación y por lo menos igual capacidad)")
-    cab(ws, 9, ["Tipo", "Agente", "Lleva sustituto (1 = sí)", "Sustituto equivalente"] + [""] * 7 + ["Fuente"])
+    # paso 1
+    tit(ws, 8, "PASO 1 — Qué sustituto lleva cada tipo (igual clasificación y por lo menos igual capacidad)")
+    cab(ws, 9, ["Tipo", "Lleva sustituto (1 = sí)", "Sustituto equivalente", "", "", "Días afuera", "Fuente"])
+    ws.merge_cells("C9:E9")
+    ws.merge_cells("G9:M9")
     for k in range(17):
         r = S_TIPO + k
         celda(ws, r, 1, f"=datos_base!A{2 + k}")
-        celda(ws, r, 2, f"=parametros_recargas!B{FILA_TIPO + k}").alignment = CEN
-        celda(ws, r, 3, 0 if SUST[k] is None else 1, "0", dato=True)
-        celda(ws, r, 4, SUST[k] or GRUPOS[0], dato=True)
-        ws.merge_cells(start_row=r, start_column=4, end_row=r, end_column=6)
-        celda(ws, r, 12, "Automotor: sin canje, vuelve el mismo equipo (criterio del usuario)" if SUST[k] is None
-              else "Proyecciones, Reservas y Sustitutos, filas 54 a 65; 9.4.5")
+        celda(ws, r, 2, 0 if SUST[k] is None else 1, "0", dato=True)
+        celda(ws, r, 3, SUST[k] or GRUPOS[0], dato=True)
+        ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=5)
+        celda(ws, r, 6, "=$B$6", "0", dato=True)
+        celda(ws, r, 7, "Automotor: sin canje, vuelve el mismo equipo (criterio del usuario)" if SUST[k] is None
+              else "Proyecciones, Reservas y Sustitutos, filas 54 a 65")
+        ws.merge_cells(start_row=r, start_column=7, end_row=r, end_column=13)
     dv = DataValidation(type="list", formula1=f"$A${S_STOCK}:$A${S_STOCK + 11}", allow_blank=False)
     ws.add_data_validation(dv)
-    dv.add(f"D{S_TIPO}:D{S_TIPO + 16}")
-    tipos = [f"=datos_base!A{2 + k}" for k in range(17)]
+    dv.add(f"C{S_TIPO}:C{S_TIPO + 16}")
 
-    # 2. retiros por día en el mes pico (sólo clientes)
-    tabla(28, "2. Retiros por día hábil en el mes pico (recargas de clientes × mes pico ÷ días del mes)",
-          range(17), tipos,
-          lambda k, i, rr: f"=datos_base!{L(2 + i)}{2 + k}*MAX(parametros_recargas!$B${FILA_PERFIL + i}:"
-                           f"$M${FILA_PERFIL + i})/$B$6", "#,##0.0")
-    # 3. aprovechamiento máximo de la ruta de cada agente y días de cola
-    tabla(48, "3a. Aprovechamiento máximo de los puestos de la ruta (mes pico, Resumen Capacidad)", range(8),
-          AGENTES,
-          lambda k, i, rr: f"=SUMPRODUCT(MAX((parametros_recargas!${L(5 + k)}${FILA_PUESTO}:${L(5 + k)}$"
-                           f"{FILA_PUESTO + 27}>0)*'Resumen Capacidad'!{L(2 + i)}$2:{L(2 + i)}$29))", "0%")
-    tabla(58, "3b. Días de cola = (aprovechamiento − 1) × días del mes, si pasa el 100 %", range(8), AGENTES,
-          lambda k, i, rr: f"=MAX(0,{L(2 + i)}{50 + k}-1)*$B$6", "0.0")
-    # 4. días afuera y 5. equipos afuera
-    tabla(69, "4. Días afuera = días de ruta + días de cola del agente", range(17), tipos,
-          lambda k, i, rr: f"=$B$5+INDEX({L(2 + i)}$60:{L(2 + i)}$67,MATCH($B${S_TIPO + k},$A$60:$A$67,0))", "0.0")
-    tabla(89, "5. Equipos afuera en el mes pico = retiros por día × días afuera", range(17), tipos,
-          lambda k, i, rr: f"={L(2 + i)}{30 + k}*{L(2 + i)}{71 + k}*$C${S_TIPO + k}", "#,##0.0")
-    # 6. stock por equivalente
-    tabla(S_STOCK - 2, "6. Stock de sustitutos por equivalente (redondeado hacia arriba)", GRUPOS, GRUPOS,
-          lambda k, i, rr: f"=ROUNDUP(SUMIF($D${S_TIPO}:$D${S_TIPO + 16},$A{rr},{L(2 + i)}$91:{L(2 + i)}$107),0)",
-          "#,##0", total=True)
-    # 7. equipos afuera en un mes promedio y 8. sobrestock
-    tabla(125, "7. Equipos afuera en un mes promedio (recargas del año ÷ 240 × días afuera)", GRUPOS, GRUPOS,
-          lambda k, i, rr: f"=SUMPRODUCT(($D${S_TIPO}:$D${S_TIPO + 16}=$A{rr})*$C${S_TIPO}:$C${S_TIPO + 16}"
-                           f"*datos_base!{L(2 + i)}$2:{L(2 + i)}$18*{L(2 + i)}$71:{L(2 + i)}$87)/(12*$B$6)",
-          "#,##0.0", total=True)
-    tabla(141, "8. Sobrestock = stock − equipos afuera en un mes promedio (lo que sobra fuera del pico)", GRUPOS,
-          GRUPOS, lambda k, i, rr: f"={L(2 + i)}{S_STOCK + k}-{L(2 + i)}{127 + k}", "#,##0", total=True)
-    # 9. alta anual
-    tabla(157, "9. Alta anual de sustitutos = lo que crece el stock + reposición de inutilizados", GRUPOS, GRUPOS,
-          lambda k, i, rr: (f"={L(2 + i)}{S_STOCK + k}" if i == 0 else
-                            f"=MAX(0,{L(2 + i)}{S_STOCK + k}-{L(1 + i)}{S_STOCK + k})+{L(1 + i)}{S_STOCK + k}"
-                            f"*IF(INDEX($B${S_TIPO}:$B${S_TIPO + 16},MATCH($A{rr},$A${S_TIPO}:$A${S_TIPO + 16},0))"
-                            f'="CO₂",parametros_recargas!$B$23,parametros_recargas!$B$24)'), "#,##0", total=True)
-    # 10. mantenimiento anual del stock (al Plan mensual)
-    tabla(S_MANT - 2, "10. Mantenimiento anual de sustitutos = stock del año anterior (9.4.5 y 9.2.1); entra al "
-                      "Plan mensual parejo en los 12 meses", range(17), tipos,
-          lambda k, i, rr: (0 if i == 0 else
-                            f"=SUMIF($A${S_STOCK}:$A${S_STOCK + 11},$A{rr},{L(1 + i)}${S_STOCK}:{L(1 + i)}$"
-                            f"{S_STOCK + 11})"), "#,##0", total=True)
-    nota(ws, S_MANT + 19, "Criterio: el mantenimiento del stock propio se programa parejo en el año (1/12 por mes).")
+    def bloque(r, titulo, explica, f_celda, pie, fmt="#,##0"):
+        tit(ws, r, titulo)
+        nota(ws, r + 1, explica)
+        cab(ws, r + 2, ["Sustituto equivalente"] + ANIOS + ["Origen"])
+        for g, nombre in enumerate(GRUPOS):
+            rr = r + 3 + g
+            celda(ws, rr, 1, nombre)
+            for i in range(10):
+                celda(ws, rr, 2 + i, f_celda(g, i, rr), fmt)
+            celda(ws, rr, 12, "Fabrica FLAMA" if nombre.startswith("ABC") else "Compra (revendido)").alignment = CEN
+        rt = r + 3 + len(GRUPOS)
+        for j, (txt, f) in enumerate(pie):
+            celda(ws, rt + j, 1, txt, neg=True)
+            for i in range(10):
+                c = L(2 + i)
+                celda(ws, rt + j, 2 + i, f(c, r + 3, rt - 1), fmt, res=True)
+
+    total = [("Total", lambda c, a, b: f"=SUM({c}{a}:{c}{b})")]
+    # paso 2: stock
+    bloque(S_STOCK - 3, "PASO 2 — Stock de sustitutos (u.)",
+           "Stock = recargas del año del tipo × % del mes pico ÷ días hábiles del mes × días afuera, sumado por "
+           "equivalente y redondeado hacia arriba (ley de Little: equipos afuera = retiros por día × días afuera)",
+           lambda g, i, rr: (f"=ROUNDUP(SUMPRODUCT(($C${S_TIPO}:$C${S_TIPO + 16}=$A{rr})*$B${S_TIPO}:$B$"
+                             f"{S_TIPO + 16}*datos_base!{L(2 + i)}$2:{L(2 + i)}$18*$F${S_TIPO}:$F${S_TIPO + 16})"
+                             f"*MAX(parametros_recargas!$B${FILA_PERFIL + i}:$M${FILA_PERFIL + i})/$B$5,0)"), total)
+    # paso 3: alta anual
+    origen = f"$L${S_ALTA}:$L${S_ALTA + 11}"
+    bloque(S_ALTA - 3, "PASO 3 — Alta anual: sustitutos nuevos a fabricar o comprar (u.)",
+           "Alta = lo que crece el stock + reposición de los inutilizados del stock anterior (% inutilizados de "
+           "parametros_recargas: CO₂ B23, resto B24). Cada alta lleva su kit: faja amarilla y tarjeta de sustituto",
+           lambda g, i, rr: (f"={L(2 + i)}{S_STOCK + g}" if i == 0 else
+                             f"=MAX(0,{L(2 + i)}{S_STOCK + g}-{L(1 + i)}{S_STOCK + g})+{L(1 + i)}{S_STOCK + g}"
+                             f"*IF(INDEX(parametros_recargas!$B${FILA_TIPO}:$B${FILA_TIPO + 16},MATCH($A{rr},"
+                             f"parametros_recargas!$A${FILA_TIPO}:$A${FILA_TIPO + 16},0))=\"CO₂\","
+                             f"parametros_recargas!$B$23,parametros_recargas!$B$24)"),
+           [("ABC a fabricar (FLAMA)", lambda c, a, b: f'=SUMIF({origen},"Fabrica FLAMA",{c}{a}:{c}{b})'),
+            ("Revendidos a comprar", lambda c, a, b: f'=SUMIF({origen},"Compra (revendido)",{c}{a}:{c}{b})'),
+            ("Kits de sustituto (= total del alta)", lambda c, a, b: f"=SUM({c}{a}:{c}{b})")], "#,##0.0")
+    # paso 4: mantenimiento
+    bloque(S_MANT - 3, "PASO 4 — Mantenimiento anual en planta (u.)",
+           "Mantenimiento = stock del año anterior: el sustituto se mantiene como cualquier extintor (9.4.5 y 9.2.1). Entra al "
+           "Plan mensual parejo en los 12 meses y suma al aprovechamiento consolidado",
+           lambda g, i, rr: 0 if i == 0 else f"={L(1 + i)}{S_STOCK + g}", total)
     ws.freeze_panes = "B5"
 
 
@@ -698,10 +692,10 @@ def generar(planta):
     h_proy(wb, planta)
     h_datos(wb)
     h_param(wb, planta)
+    h_sust(wb)
     h_plan(wb)
     h_demanda(wb)
     h_resumen(wb)
-    h_sust(wb)
     wb.active = wb.sheetnames.index("Resumen Capacidad")
     os.makedirs(SALIDA, exist_ok=True)
     ruta = os.path.join(SALIDA, f"Dimensionamiento_Recargas_Planta_{planta}.xlsx")
