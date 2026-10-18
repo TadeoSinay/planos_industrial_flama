@@ -5,7 +5,7 @@ Técnico V61 / V63; PBA Interior queda afuera porque la atienden distribuidores 
 PROY_Indexado -> datos_base -> parametros_recargas -> sobrestock_sustitutos -> Plan mensual -> Demanda por puesto
 -> Resumen Capacidad (aprovechamiento consolidado). Todo lo calculado es fórmula; los IMPORTRANGE leen el link de la
 hoja Links (los de Manuales y Carros quedan para pegar). Máquinas y turnos se cargan con la regla del
-aprovechamiento y se pueden cambiar a mano. Negro y grises.
+aprovechamiento (ningún puesto pasa el 90 %) y se pueden cambiar a mano. Negro y grises.
 """
 
 import math
@@ -34,8 +34,11 @@ PEGAR = "PEGAR ACÁ EL LINK DEL GOOGLE SHEET"
 LINKS = [("Proyecciones", URL_PROY,
           "Indexado Dim Técnico: recargas por tipo (B27:K43), % por zona (U61:U74), % por planta (V61 y V63)"),
          ("Dimensionamiento Manuales", PEGAR,
-          "parametros_manuales B12:M15: perfil mensual de los manuales (1, 2,5, 5 y 10 kg)"),
-         ("Dimensionamiento Carros", PEGAR, "parametros_carros B12:M15: perfil mensual de los carros (25 a 100 kg)")]
+          "parametros_manuales B12:M15: perfil mensual de los manuales (1, 2,5, 5 y 10 kg); K32, K33, K38, K39, K40 y "
+          "K42: tiempos de PH, secado, carga, ensamblaje, presurización y etiquetado (equivalencia del rodante)"),
+         ("Dimensionamiento Carros", PEGAR,
+          "parametros_carros B12:M15: perfil mensual de los carros (25 a 100 kg); I29, I30, I33 e I34: tiempos "
+          "ponderados de PH, secado, carga y presurización, y montaje y etiquetado (equivalencia del rodante)")]
 LK_PROY, LK_MAN, LK_CAR = "Links!$B$4", "Links!$B$5", "Links!$B$6"
 # Proyecciones, Indexado Dim Técnico V61 (comercial) y V63 (industrial): suma de las zonas de cada planta
 PCT_PLANTA = {"Comercial": 0.5545197389, "Industrial": 0.2882365055}
@@ -100,6 +103,13 @@ TIPOS = [
     ("Halogenado", 0, 0, SIN_M), ("Clase D", 0, 0, SIN_M),
 ] + [("ABC", 1, 1, "Sí, 9.7.1.4 a): válvula de cierre en la manguera (rodante, IRAM 3550)")] * 4
 
+# Equivalencia de un rodante: operaciones que comparten la fábrica y la recarga. (operación, celdas de
+# parametros_manuales con su valor (s/u), celda de parametros_carros con su valor (min/u, ponderado con el mix 2035))
+FILA_EQ = 129
+EQUIV = [("Prueba hidráulica", [("K32", 60)], ("I29", 8.979935)),
+         ("Secado", [("K33", 120)], ("I30", 10.058961)),
+         ("Carga de polvo y presurización", [("K38", 45), ("K40", 30)], ("I33", 11.33)),
+         ("Ensamblaje / montaje, precinto y etiquetado", [("K39", 100), ("K42", 60)], ("I34", 6.32))]
 # Parámetros: (fila, texto, valor o fórmula, formato, dato a mano, fuente)
 P_GEN = [
     (2, "Días hábiles por mes", 20, "0", True, "240 días hábiles por año ÷ 12"),
@@ -110,43 +120,55 @@ P_GEN = [
     (7, "Umbral de aprovechamiento", 0.9, "0%", True,
      "10 % de holgura para variabilidad, averías y mantenimiento"),
     (8, "Turnos máximos por día", 2, "0", True, "hasta 2 turnos de 8 h; después se agrega máquina"),
-    (9, "Equivalencia de un rodante (u. equivalentes)", 3, "0", True,
-     "Traslado en carro, morsa y manipuleo del porte"),
+    (9, "Equivalencia de un rodante (u. equivalentes)", f"=D{FILA_EQ + len(EQUIV)}", "0.0", False,
+     "Promedio de la relación de tiempos carros ÷ manuales de FLAMA en las operaciones comunes (bloque EQUIVALENCIA "
+     "DE UN RODANTE, al final de esta hoja)"),
     (10, "Año de inicio del 2° turno (antes: más máquinas)", ANIO_2T, "0", True,
      "Prioridad del aprovechamiento: antes de ese año se agrega máquina u operario; desde ese año, turno"),
 ]
-P_RUTA = [
-    (13, "Intervalo máximo de PH — polvos, CO₂ y halogenados (años)", 5, "0", True,
-     "IRAM 3517-2:2020, Anexo E (IRAM 3523, 3550, 3509, 3565 y 3504)"),
-    (14, "Intervalo máximo de PH — agua, AFFF y sales K (años)", 2, "0", True,
-     "IRAM 3517-2:2020, Anexo E (IRAM 3525, 3527, 3537, 3541, 3693 y 3694)"),
-    (15, "% con PH — polvos, CO₂ y halogenados", "=1/B13", "0.0%", False,
-     "En régimen vence la PH de 1 de cada 5 equipos por año"),
-    (16, "% con PH — agua, AFFF y sales K", "=1/B14", "0.0%", False,
-     "En régimen vence la PH de 1 de cada 2 equipos por año"),
-    (17, "Vida útil — CO₂ (años)", 30, "0", True, "IRAM 3517-2:2020, Anexo E (IRAM 3509; IRAM 3565 hasta 10 kg)"),
-    (18, "Vida útil — resto de los tipos (años)", 20, "0", True, "IRAM 3517-2:2020, Anexo E"),
-    (19, "% fin de vida útil — CO₂", "=1/B17", "0.0%", False, "En régimen llega al fin de su vida 1 de cada 30"),
-    (20, "% fin de vida útil — resto", "=1/B18", "0.0%", False, "En régimen llega al fin de su vida 1 de cada 20"),
-    (21, "% que no pasan la PH", "=PROY_Indexado!B47", "0.0%", False,
-     "Proyecciones (Mat PH). La norma manda inutilizarlos (9.12) pero no fija el %"),
-    (22, "% rotos", "=PROY_Indexado!B48", "0.0%", False, "Proyecciones (Mat Rot)"),
-    (23, "% inutilizados — CO₂", "=B19+B21+B22", "0.0%", False, "Fin de vida útil + no pasan la PH + rotos"),
-    (24, "% inutilizados — resto", "=B20+B21+B22", "0.0%", False, "Fin de vida útil + no pasan la PH + rotos"),
-    (25, "% que llegan descargados por uso", "=PROY_Indexado!B46", "0.0%", False,
-     "Proyecciones (Mat Usados). 9.2.2: se recarga después de usarlo; la norma no fija el %"),
-    (26, "Dígitos posibles del año de fabricación", 10, "0", True,
-     "9.9.4 a): se cambia el polvo ABC cuando el último dígito del año de fabricación coincide con el del año "
-     "del mantenimiento"),
-    (27, "% ABC con cambio de polvo (a descarte)", "=1/B26", "0.0%", False, "1 de cada 10 equipos por año"),
-    (28, "% agua, AFFF y sales K que se vacían y recargan", 1, "0%", True,
-     "Anexo E: el agente se cambia cada año; 9.9.1.9 (sales K) y 9.9.1.10 (AFFF)"),
-    (29, "% CO₂ que se abren por daño o cambio de piezas", 0.05, "0.0%", True,
-     "9.7.1.2: el dañado se examina y va a PH"),
-    (30, "% que se pintan", 0.10, "0.0%", True, "9.10 pide pintar los deteriorados; no fija %"),
-    (31, "% polvos con humedad en el desarme (secado extra)", 0.01, "0.0%", True, ""),
-    (32, "Ensayos de laboratorio por recipiente de polvo", 0.001, "0.000", True,
-     "Criterio. 9.9.3.1: el ensayo se hace cuando hay dudas sobre el polvo"),
+# Criterios de recarga por agente (parametros_recargas filas 13 a 28, agentes en E a L como en la tabla de puestos):
+# (fila, qué le pasa al equipo, unidad, fuente, estado, valor por agente, explicación). "{c}" = columna del agente.
+F_PH, F_INU, F_USO, F_CAMBIO, F_VALV, F_PINT, F_HUM, F_LABD, F_LAB = 16, 21, 22, 23, 24, 25, 26, 27, 28
+CRITERIOS = [
+    (13, "Intervalo de prueba hidráulica", "años", "IRAM 3517-2:2020, Anexo E", "Norma", [5, 5, 5, 2, 2, 2, 5, 5],
+     "Polvos, CO₂ y halogenados cada 5 años; agua, AFFF y sales K cada 2"),
+    (14, "Vence la prueba hidráulica", "% por año", "1 ÷ intervalo", "Norma", ["=1/{c}13"] * 8,
+     "9.7.2: en régimen vence la PH de 1 de cada 5 (o 1 de cada 2) equipos por año"),
+    (15, "Golpe o abolladura leve: va a PH", "% por año", "Criterio del grupo", "A confirmar", [0.05] * 8,
+     "9.7.1.2 y Word (inspección visual). El Dimensionamiento Técnico V2 usaba 25 % de PH en polvos: 20 % por "
+     "vencimiento + 5 % por daño"),
+    (16, "Pasa por prueba hidráulica", "% por año", "Vence + golpe", "Cálculo", ["={c}14+{c}15"] * 8, ""),
+    (17, "Vida útil", "años", "IRAM 3517-2:2020, Anexo E", "Norma", [20, 20, 20, 20, 20, 20, 30, 20],
+     "CO₂: 30 años (IRAM 3509)"),
+    (18, "Llega al fin de la vida útil", "% por año", "1 ÷ vida útil", "Norma", ["=1/{c}17"] * 8,
+     "Se inutiliza en la recepción (Word, operación 1)"),
+    (19, "No pasa la prueba hidráulica", "% por año", "Proyecciones (Mat PH)", "Dato",
+     ["=PROY_Indexado!$B$47"] * 8,
+     "Equivale a 1 de cada 10 de los que se prueban (2 % ÷ 20 %), en línea con lo que informan los servicios de PH"),
+    (20, "Se rompe en el uso", "% por año", "Proyecciones (Mat Rot)", "Dato", ["=PROY_Indexado!$B$48"] * 8, ""),
+    (21, "Se inutiliza", "% por año", "Fin de vida + no pasa la PH + roto", "Cálculo", ["={c}18+{c}19+{c}20"] * 8,
+     "9.12 y Anexo G"),
+    (22, "Llega descargado por uso", "% por año", "Proyecciones (Mat Usados)", "Dato", ["=PROY_Indexado!$B$46"] * 8,
+     "9.2.2: se recarga después de usarlo. El polvo sin presión no se descarga; el CO₂ descargado va directo a la "
+     "carga"),
+    (23, "Cambio obligatorio del agente", "% por año", "Norma y Word", "Norma", ["=1/10", 1, 1, 1, 1, 1, 0, 0],
+     "ABC: dígito del año de fabricación (9.9.4 a). BC: siempre polvo nuevo (Word). Clase D: se descarga y carga a "
+     "mano. Agua, AFFF y sales K: el agente se cambia cada año (Anexo E). CO₂ y halogenados se reutilizan"),
+    (24, "Hay que abrir la válvula (daño, pérdida de peso o presión)", "% por año", "Criterio", "A confirmar",
+     [0, 0, 0, 0, 0, 0, 0.05, 0.05],
+     "Solo CO₂ y halogenados: el resto se abre siempre. Word: se recupera el agente por daño, cambio de piezas o "
+     "pérdida de peso o presión"),
+    (25, "Se pinta", "% por año", "Criterio del grupo", "A confirmar", [0.15] * 8,
+     "9.10: óxido, metal a la vista, pérdida de brillo o repintado parcial; no fija el %. El Dimensionamiento "
+     "Técnico V2 usaba 15 %"),
+    (26, "Humedad interior al desarmar (secado extra)", "% por año", "Criterio", "A confirmar",
+     [0.01, 0.01, 0.01, 0, 0, 0, 0, 0], "Word, operación 7: se seca también si en el desarme aparece humedad"),
+    (27, "Ensayos de laboratorio por día", "ensayos/día", "Criterio (Word)", "A confirmar", [1, 0, 0, 0, 0, 0, 0, 0],
+     "Word, operación 5: control periódico de la tolva de polvo recuperado (uno por día), dudas en el visor y lotes "
+     "nuevos sin Sello IRAM. El BC se carga con polvo nuevo con sello"),
+    (28, "Ensayos de laboratorio por equipo", "ensayos/u.", "Ensayos por día × días del año ÷ recargas del agente "
+     "en 2035", "Cálculo",
+     ["=IF({c}27=0,0,{c}27*$B$2*12/SUMIF($B$51:$B$67,{c}$12,datos_base!$K$2:$K$18))"] * 8, ""),
 ]
 # Sustituto del mismo tipo que el equipo retirado; el ABC 1 kg automotor no lleva (sin canje, criterio del usuario)
 LLEVA = [0] + [1] * 16
@@ -208,11 +230,6 @@ FILA_PCIL = 107    # primera fila del perfil de llegada de los cilindros nuevos 
 # columnas de la tabla de puestos: agentes E a L, cilindro nuevo M, tiempo N, u/h O, u/mes P, desglose Q, nota R
 C_CIL, C_T, C_UH, C_UM = "M", "N", "O", "P"
 
-PH_P, PH_A = "$B$15", "$B$16"
-USO, DANO, DESC, HUM, LAB, LIQ, PINT = "$B$25", "$B$29", "$B$27", "$B$31", "$B$32", "$B$28", "$B$30"
-INU_C, INU_R = "$B$23", "$B$24"
-
-
 def todos(v):
     return [v] * 8
 
@@ -222,7 +239,16 @@ def agentes(**kw):
     return [kw.get(k, 0) for k in claves]
 
 
-LIQS = dict(agua="=" + LIQ, afff="=" + LIQ, k="=" + LIQ)
+# Rutas por agente: fórmulas sobre los criterios de la misma columna ({c})
+R_PH = f"={{c}}${F_PH}"
+R_SECA = f"={{c}}${F_PH}+{{c}}${F_HUM}"
+R_ABRE_CO2 = f"={{c}}${F_PH}+{{c}}${F_VALV}"
+R_ABRE_HAL = f"={{c}}${F_PH}+{{c}}${F_USO}+{{c}}${F_VALV}"
+R_CARGA_CO2 = f"={{c}}${F_PH}+{{c}}${F_VALV}+{{c}}${F_USO}"
+R_RECUP = f"=(1-{{c}}${F_USO})*(1-{{c}}${F_CAMBIO})"
+R_CAMBIA = f"=(1-{{c}}${F_USO})*{{c}}${F_CAMBIO}"
+LIQS = dict(agua=R_CAMBIA, afff=R_CAMBIA, k=R_CAMBIA)
+
 # (puesto, máquina / equipo, recurso, ruta por agente, tiempo tipo (fórmula de pasos), desglose, nota)
 PUESTOS = [
     ("Recepción y registro", "Autoelevador + tablet e impresora de etiquetas; jaulas A y B", "Manual", todos(1),
@@ -232,45 +258,42 @@ PUESTOS = [
      "=5+30+25+10+15+5", "Escanear 5 + exterior 30 + válvula, manómetro y manguera 25 + fecha PH 10 + registro 15 + "
      "bandeja 5", "Antes 70 s; los pasos suman 90 s"),
     ("Descarga ABC — ruta recuperable", "Máquina neumática Yukon (tolva 240 kg)", "Máquina",
-     agentes(abc="=1-" + USO + "-" + DESC), "=15+60+10",
+     agentes(abc=R_RECUP), "=15+60+10",
      "Escanear y agitado 15 + descargar mirando el visor 60 + tapar 10 (el retiro de válvula se cuenta en Desarme)", ""),
-    ("Descarga ABC — ruta descarte", "Tambor Yukon M-000030", "Máquina", agentes(abc="=" + DESC), "=15+60+10",
+    ("Descarga ABC — ruta descarte", "Tambor Yukon M-000030", "Máquina", agentes(abc=R_CAMBIA), "=15+60+10",
      "Igual que la ruta recuperable, al tambor", ""),
-    ("Descarga BC", "Tambor Yukon M-000030 dedicado BC", "Máquina", agentes(bc=1), "=15+60+10",
+    ("Descarga BC", "Tambor Yukon M-000030 dedicado BC", "Máquina", agentes(bc=R_CAMBIA), "=15+60+10",
      "Igual que ABC; todo a descarte", ""),
     ("Descarga de agua / AFFF / sales K", "IBC 1.000 l (AFFF) y tanque 600 l (agua)", "Máquina", agentes(**LIQS),
      "=10+10+15+60+10", "Escanear 10 + quitar lanza 10 + acoplar 15 + vaciar 60 + llevar a desarme 10",
      "Antes 180 s; los pasos suman 105 s. Sales K: misma ruta que agua y AFFF"),
     ("Recuperación de CO₂", "Trasvasadora CO₂ 103/D1 (misma máquina que la carga)", "Máquina",
-     agentes(co2="=" + PH_P + "+" + DANO), "=20+20+120+20+15+10",
+     agentes(co2=R_ABRE_CO2), "=20+20+120+20+15+10",
      "Pesar 20 + conectar 20 + bombear 120 + verificar y pesar 20 + desconectar 15 + registrar 10", ""),
     ("Recuperación de halogenado", "Unidad THB/BP (misma máquina que la carga)", "Máquina",
-     agentes(hal="=" + PH_P + "+" + USO), "=60+20+30+300+40+15",
+     agentes(hal=R_ABRE_HAL), "=60+20+30+300+40+15",
      "Preparar y verificar cilindro de paso 60 + pesar 20 + conectar 30 + recuperar 300 + pesar ambos 40 + anotar 15",
      ""),
     ("Desarme y limpieza — recinto", "Lanza de soplado + aspiradora industrial + llaves", "Manual",
-     agentes(abc=1, bc=1, d=1), "=5+30+5+10+20+120*" + PH_P + "+5",
-     "Verificar 5 + retirar válvula 30 + marbete 5 + bandeja 10 + soplar 20 + limpieza profunda 120 × % con PH + "
-     "tapar 5", "Antes 90 s con 25 % de PH; los pasos suman 99 s con 20 %"),
+     agentes(abc=1, bc=1, d=1), f"=5+30+5+10+20+120*$E${F_PH}+5",
+     "Verificar 5 + retirar válvula 30 + marbete 5 + bandeja 10 + soplar 20 + limpieza profunda 120 × % ABC con PH "
+     "+ tapar 5", "Antes 90 s con 25 % de PH; los pasos suman 105 s con el mismo 25 %"),
     ("Desarme e inspección interior — zona general", "Boroscopio Klein ET19 + llaves", "Manual",
-     agentes(co2="=" + PH_P + "+" + DANO, hal="=" + PH_P + "+" + USO, **LIQS), "=10+40+60+90*0.4+15+15",
+     agentes(co2=R_ABRE_CO2, hal=R_ABRE_HAL, agua=1, afff=1, k=1), "=10+40+60+90*0.4+15+15",
      "Confirmar vacío 10 + retirar válvula 40 + boroscopio 60 + enjuague 90 × 40 % + foto 15 + tapar 15", ""),
     ("Laboratorio — Puffer y mufla", "Puffer Yukon M-100150 + mufla ORL-0", "Máquina",
-     agentes(abc="=" + LAB, bc="=" + LAB), "=300+600+1800+60+120+300",
+     agentes(abc=f"={{c}}${F_LAB}", bc=f"={{c}}${F_LAB}"), "=300+600+1800+60+120+300",
      "Tiempo por ENSAYO: registro 300 + mufla 600 + Puffer 1.800 + dictamen 60 + carga 120 + liberar tolva 300", ""),
     ("Prueba hidráulica", "Máquina PH Yukon 300 kg/cm²", "Máquina",
-     agentes(abc="=" + PH_P, bc="=" + PH_P, d="=" + PH_P, agua="=" + PH_A, afff="=" + PH_A, k="=" + PH_A,
-             co2="=" + PH_P, hal="=" + PH_P), "=12+20+90+90+75+15",
+     todos(R_PH), "=12+20+90+90+75+15",
      "Verificar con patrón 12 + escanear 20 + llenar y conectar 90 + ensayo 90 + vaciar y retirar 75 + registrar 15. "
      "CO₂ lleva además ultrasonido y acuñado", ""),
     ("Secado", "Secadora Yukon de 6 recipientes", "Máquina",
-     agentes(abc="=" + PH_P + "+" + HUM, bc="=" + PH_P + "+" + HUM, d="=" + PH_P + "+" + HUM,
-             co2="=" + PH_P, hal="=" + PH_P), "=15+15*60/6+15",
+     agentes(abc=R_SECA, bc=R_SECA, d=R_SECA, co2=R_PH, hal=R_PH), "=15+15*60/6+15",
      "Colocar 15 + 15 min ÷ 6 recipientes = 150 + retirar 15", "Agua, AFFF y sales K no se secan: se vuelven a llenar"),
     ("Inspección interior con videoscopio", "Videoscopio + mesa con soporte en V", "Manual",
-     agentes(abc="=" + PH_P + "+" + HUM, bc="=" + PH_P + "+" + HUM, d="=" + PH_P + "+" + HUM,
-             co2="=" + PH_P, hal="=" + PH_P), "=60+15+10", "Recorrer con la sonda 60 + guardar foto 15 + tapar 10", ""),
-    ("Pintura", "Cabina con extracción, HVLP, lámparas IR, amoladora", "Máquina", todos("=" + PINT), 750,
+     agentes(abc=R_SECA, bc=R_SECA, d=R_SECA, co2=R_PH, hal=R_PH), "=60+15+10", "Recorrer con la sonda 60 + guardar foto 15 + tapar 10", ""),
+    ("Pintura", "Cabina con extracción, HVLP, lámparas IR, amoladora", "Máquina", todos(f"={{c}}${F_PINT}"), 750,
      "", "Sin desglose de pasos en el original"),
     ("Carga de polvo ABC", "Máquina neumática Yukon con corte por peso", "Máquina", agentes(abc=1),
      "=6+15+45+15+15+10", "Contraste por turno 6 + tara 15 + carga 45 + pesar 15 + rosca 15 + registrar 10",
@@ -284,7 +307,7 @@ PUESTOS = [
      agentes(**LIQS), "=20+10+30+15+15+10",
      "Contraste y premezcla 20 + tara 10 + cargar 30 + corregir 15 + rosca 15 + registrar 10", ""),
     ("Carga de CO₂", "Trasvasadora CO₂ 103/D1 + manifold", "Máquina",
-     agentes(co2="=" + PH_P + "+" + DANO + "+" + USO), "=30+10+15+150+25+10",
+     agentes(co2=R_CARGA_CO2), "=30+10+15+150+25+10",
      "Tarar y programar 30 + elegir origen 10 + abrir manifold 15 + llenar 150 + pesar 25 + registrar 10", ""),
     ("Ensamblaje y marbete — recinto", "Morsa + llave dinamométrica", "Manual", agentes(abc=1, bc=1, d=1),
      "=10+30+20+10+30+20", "Escanear 10 + revisar piezas 30 + o-ring 20 + marbete 10 + enroscar 30 + manguera y "
@@ -293,12 +316,12 @@ PUESTOS = [
      "=3+15+10+20+15+10", "Contraste por turno 3 + fijar presión 15 + colocar 10 + presurizar 20 + pasador 15 + "
      "registrar 10", ""),
     ("Ensamblaje y presurización — zona general", "Morsa + dinamométrica + pinza Yukon", "Manual",
-     agentes(co2="=" + PH_P + "+" + DANO, hal="=" + PH_P + "+" + USO, **LIQS), "=120+50",
+     agentes(co2=R_ABRE_CO2, hal=R_ABRE_HAL, agua=1, afff=1, k=1), "=120+50",
      "Ensamblaje 120 + presurización 50. CO₂ no se presuriza y halogenados se presurizan en la carga", ""),
-    ("Carga y presurización de halogenado", "Unidad THB/BP + pinza", "Máquina", agentes(hal="=" + PH_P + "+" + USO),
+    ("Carga y presurización de halogenado", "Unidad THB/BP + pinza", "Máquina", agentes(hal=R_ABRE_HAL),
      "=300+40+60+30", "Cargar 300 + presurizar 40 + agitar y repetir 60 + pesar y registrar 30", ""),
     ("Control de peso (CO₂ y halogenados sin recarga)", "Balanza", "Manual",
-     agentes(co2="=1-(" + PH_P + "+" + DANO + "+" + USO + ")", hal="=1-(" + PH_P + "+" + USO + ")"), "=30+10",
+     agentes(co2="=1-(" + R_CARGA_CO2[1:] + ")", hal="=1-(" + R_ABRE_HAL[1:] + ")"), "=30+10",
      "Pesar y comparar 30 + registrar 10", "Anexo E: control anual de la masa"),
     ("Ensayo de pérdidas", "Tanque de inmersión inox (6 posiciones); spray en rodantes", "Máquina", todos(1),
      "=5+45+10+10+10", "Preparar por turno 5 + bajar y observar en tandas de 6: 45 + sacar 10 + secar 10 + registrar 10",
@@ -307,8 +330,7 @@ PUESTOS = [
      "=15+25+15+10+15+6", "Precinto 15 + etiqueta 25 + revisión final 15 + cerrar OT 10 + jaula 15 + remito 6",
      "Antes 80 s; los pasos suman 86 s"),
     ("Inutilización y disposición final", "Taladro de columna con prensa en V", "Máquina",
-     agentes(abc="=" + INU_R, bc="=" + INU_R, d="=" + INU_R, agua="=" + INU_R, afff="=" + INU_R, k="=" + INU_R,
-             co2="=" + INU_C, hal="=" + INU_R), "=30+120+90+60+90",
+     todos(f"={{c}}${F_INU}"), "=30+120+90+60+90",
      "Confirmar 30 + perforar 120 + desarmar y cortar manguera 90 + residuos 60 + foto y acta 90",
      "9.12 y Anexo G: acta de inutilización"),
     ("PH de mangueras (CO₂ y rodantes)", "Máquina PH Yukon 300 kg/cm² (misma que la PH de recipientes)", "Máquina",
@@ -318,6 +340,42 @@ PUESTOS = [
      "9.7.1.4: PH anual de mangueras de CO₂ y con cierre en el extremo (tabla 5). Demanda = fila Mangueras del Plan "
      "mensual. Criterio: tiempo igual al de la PH del recipiente; falta el rótulo plástico"),
 ]
+# Cuándo pasa cada puesto (Word de recargas, tabla de operaciones; IRAM 3517-2:2020)
+CUANDO = {
+    "Recepción y registro": "Siempre (operación 1)",
+    "Inspección visual": "Siempre (operación 2)",
+    "Descarga ABC — ruta recuperable": "ABC que llega con presión y no cambia el polvo (operación 3). Sin presión pasa "
+                                       "directo a desarme",
+    "Descarga ABC — ruta descarte": "ABC con presión al que le toca el cambio de polvo por el dígito del año (9.9.4 a)",
+    "Descarga BC": "BC con presión: el polvo BC se cambia siempre",
+    "Descarga de agua / AFFF / sales K": "Con presión: el agente se cambia todos los años (Anexo E)",
+    "Recuperación de CO₂": "CO₂ que va a PH o que hay que abrir por daño o pérdida de peso",
+    "Recuperación de halogenado": "Halogenado que va a PH, que llega usado o que hay que abrir",
+    "Desarme y limpieza — recinto": "Siempre en polvos (operación 4); la limpieza profunda, solo si va a PH",
+    "Desarme e inspección interior — zona general": "CO₂ y halogenados cuando se abren; agua, AFFF y sales K siempre",
+    "Laboratorio — Puffer y mufla": "Control periódico de la tolva, dudas en el visor y lotes de polvo nuevo sin Sello "
+                                    "IRAM (operación 5; 9.9.3)",
+    "Prueba hidráulica": "PH vencida o que vence antes del próximo mantenimiento, o daño menor (operación 6; 9.7.2, "
+                         "Anexo E y 9.7.1.2)",
+    "Secado": "Después de la PH, el mismo día; en polvos también si hay humedad al desarmar (operación 7)",
+    "Inspección interior con videoscopio": "Con el secado (operación 7)",
+    "Pintura": "Óxido, metal a la vista, pérdida de brillo o color, o repintado parcial (operación 8; 9.10)",
+    "Carga de polvo ABC": "Siempre (operación 9)",
+    "Carga de polvo BC": "Siempre",
+    "Descarga y carga Clase D": "Siempre: carga manual con embudo para no contaminar el agente",
+    "Carga de agua / AFFF / sales K": "Siempre: el agente se cambia cada año (Anexo E)",
+    "Carga de CO₂": "CO₂ que se abrió o que llega usado",
+    "Ensamblaje y marbete — recinto": "Siempre (operación 10)",
+    "Presurización — recinto": "Siempre (operación 11)",
+    "Ensamblaje y presurización — zona general": "CO₂ y halogenados que se abrieron; agua, AFFF y sales K siempre",
+    "Carga y presurización de halogenado": "Halogenado que se abrió o que llega usado",
+    "Control de peso (CO₂ y halogenados sin recarga)": "CO₂ y halogenados que no se abren: control anual de la masa "
+                                                       "(Anexo E)",
+    "Ensayo de pérdidas": "Siempre (operación 12)",
+    "Precinto, etiqueta y despacho": "Siempre (operación 13)",
+    "Inutilización y disposición final": "Vida útil vencida, no pasa la PH o roto (operación 14; 9.12)",
+    "PH de mangueras (CO₂ y rodantes)": "Mangueras de CO₂ y con cierre en el extremo, todos los años (9.7.1.4)",
+}
 # Ruta del cilindro nuevo (sustituto ABC que llega vacío de la planta industrial con PH, secado y pintura de fábrica):
 # se registra, se carga, se arma, se presuriza, se prueba y se etiqueta (Word de recargas, puestos 1, 9 a 13)
 CILINDRO_NUEVO = {"Recepción y registro", "Carga de polvo ABC", "Ensamblaje y marbete — recinto",
@@ -391,7 +449,9 @@ def h_links(wb, filas):
     tit(ws, 1, "Links de los IMPORTRANGE")
     nota(ws, 2, "Pegar en la columna B el link del Google Sheet de cada archivo; todas las fórmulas IMPORTRANGE leen el "
                 "link de esta hoja. Hasta que se pegue, esas celdas muestran el último valor conocido o un error de referencia.")
-    cab(ws, 3, ["Archivo", "Link", "Qué se importa"])
+    for k, t in enumerate(["Archivo", "Link", "Qué se importa"]):
+        c = ws.cell(3, 1 + k, t)
+        c.font, c.fill, c.alignment, c.border = F_B, GRIS_C, CEN, BORDE
     for i, (a, u, q) in enumerate(filas):
         celda(ws, 4 + i, 1, a, neg=True)
         celda(ws, 4 + i, 2, u, dato=True)
@@ -482,7 +542,7 @@ def h_datos(wb):
 
 def h_param(wb, planta):
     ws = hoja(wb, "parametros_recargas",
-              [52, 30, 34, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 10, 11, 70, 60])
+              [52, 30, 34, 11, 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 10, 11, 70, 60, 70])
     cab(ws, 1, ["Parámetro", "Valor", "Fuente / criterio"])
     ws.merge_cells("C1:Q1")
     for r, t, v, f, d, fu in P_GEN:
@@ -490,14 +550,28 @@ def h_param(wb, planta):
         celda(ws, r, 2, v, f, dato=d, res=not d)
         celda(ws, r, 3, fu)
         ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=17)
-    tit(ws, 11, f"CRITERIOS DE RUTA — PLANTA {planta.upper()} (IRAM 3517-2:2020 y Proyecciones)")
-    cab(ws, 12, ["Parámetro", "Valor", "Fuente / criterio"])
-    ws.merge_cells("C12:Q12")
-    for r, t, v, f, d, fu in P_RUTA:
-        celda(ws, r, 1, t)
-        celda(ws, r, 2, v, f, dato=d, res=not d)
+    # criterios de recarga: una fila por cosa que le pasa al equipo, una columna por agente
+    tit(ws, 11, f"CRITERIOS DE RECARGA POR AGENTE — PLANTA {planta.upper()} (qué le pasa al equipo en el año)")
+    cab(ws, 12, ["Qué le pasa al equipo", "Unidad", "Fuente", "Estado"] + AGENTES + ["Explicación"])
+    ws.merge_cells("M12:S12")
+    fmts = {"años": "0", "% por año": "0.0%", "ensayos/día": "0", "ensayos/u.": "0.0000"}
+    for r, t, u, fu, est, vals, ex in CRITERIOS:
+        calc = est == "Cálculo"
+        celda(ws, r, 1, t, neg=calc)
+        celda(ws, r, 2, u).alignment = CEN
         celda(ws, r, 3, fu)
-        ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=17)
+        celda(ws, r, 4, est).alignment = CEN
+        for j, v in enumerate(vals):
+            x = celda(ws, r, 5 + j, v.replace("{c}", L(5 + j)) if isinstance(v, str) else v, fmts[u], res=calc)
+            if est == "A confirmar":
+                x.fill = GRIS_C
+        celda(ws, r, 13, ex)
+        ws.merge_cells(start_row=r, start_column=13, end_row=r, end_column=19)
+        ws.row_dimensions[r].height = 30
+    nota(ws, 29, "Estado: Norma = lo fija IRAM 3517-2; Dato = Proyecciones; A confirmar (fondo gris) = criterio del "
+                 "grupo que falta confirmar en la visita al recargador; Cálculo = sale de las filas de arriba.")
+    nota(ws, 30, "Cada puesto de CAPACIDAD POR PUESTO toma estas filas en la columna de su agente (ver la columna "
+                 "Cuándo pasa). Cambiar un valor acá cambia la ruta de todos los puestos que lo usan.")
 
     # perfil mensual plano
     tit(ws, 34, "PERFIL MENSUAL POR AÑO (plano, 1/12 por mes)")
@@ -533,7 +607,7 @@ def h_param(wb, planta):
     tit(ws, 70, "CAPACIDAD POR PUESTO (fracción de cada agente que pasa por el puesto; cilindro nuevo: 1 = pasa)")
     cab(ws, FILA_PUESTO - 1, ["N°", "Puesto / operación", "Máquina / equipo", "Recurso"] + AGENTES
         + ["Cilindro nuevo (alta de sustituto)", "Tiempo tipo (s/u)", "Cap. real (u/h)", "Cap. real (u/mes, 1 turno)",
-           "Desglose del tiempo (s)", "Nota"])
+           "Desglose del tiempo (s)", "Nota", "Cuándo pasa (Word de recargas, tabla de operaciones, y norma)"])
     for k, (pu, maq, rec, ruta, t, des, no) in enumerate(PUESTOS):
         r = FILA_PUESTO + k
         celda(ws, r, 1, k + 1, "0").alignment = CEN
@@ -544,13 +618,15 @@ def h_param(wb, planta):
             if ruta is None:
                 celda(ws, r, 5 + j, "—").alignment = CEN
             else:
-                celda(ws, r, 5 + j, ruta[j], "0.0%")
+                v = ruta[j].replace("{c}", L(5 + j)) if isinstance(ruta[j], str) else ruta[j]
+                celda(ws, r, 5 + j, v, "0.0%")
         celda(ws, r, 13, 1 if pu in CILINDRO_NUEVO else 0, "0", dato=True)
         celda(ws, r, 14, t, "0", dato=True)
         celda(ws, r, 15, f"=IF({C_T}{r}>0,3600/{C_T}{r},0)", "0.0", res=True)
         celda(ws, r, 16, f"={C_UH}{r}*$B$6", "#,##0", res=True)
         celda(ws, r, 17, des)
         celda(ws, r, 18, no)
+        celda(ws, r, 19, CUANDO[pu])
     dv = DataValidation(type="list", formula1='"Máquina,Manual,Tercerizado"', allow_blank=False)
     ws.add_data_validation(dv)
     dv.add(f"D{FILA_PUESTO}:D{FILA_PUESTO + N_PUESTOS - 1}")
@@ -581,6 +657,31 @@ def h_param(wb, planta):
         ws.merge_cells(start_row=rr, start_column=15, end_row=rr, end_column=18)
     importrange(ws, FILA_PCIL, 2, LK_MAN, "parametros_manuales!B12:M15", P_MAN, "0.0%")
     importrange(ws, FILA_PCIL + 13, 2, LK_CAR, "parametros_carros!B12:M15", P_CAR, "0.0%")
+
+    # equivalencia de un rodante con los tiempos de fábrica de FLAMA
+    tit(ws, FILA_EQ - 3, "EQUIVALENCIA DE UN RODANTE (tiempos de fábrica de FLAMA: Manuales y Carros)")
+    nota(ws, FILA_EQ - 2, "Cuántos manuales equivale un carro en las operaciones que tienen la fábrica y la recarga: "
+                          "tiempo del carro (ponderado con el mix 2035) ÷ tiempo del manual. IMPORTRANGE: los links van "
+                          "en la hoja Links.")
+    cab(ws, FILA_EQ - 1, ["Operación común", "Manual (s/u)", "Carro (min/u)", "Carro ÷ manual", "Origen"])
+    ws.merge_cells(start_row=FILA_EQ - 1, start_column=5, end_row=FILA_EQ - 1, end_column=18)
+    for k, (op, man, (cc, cv)) in enumerate(EQUIV):
+        r = FILA_EQ + k
+        celda(ws, r, 1, op)
+        fm = "+".join(f'IMPORTRANGE({LK_MAN},""parametros_manuales!{c}"")' for c, _ in man)
+        celda(ws, r, 2, f'=IFERROR(__xludf.DUMMYFUNCTION("{fm}"),{sum(v for _, v in man)!r})', "0")
+        celda(ws, r, 3, f'=IFERROR(__xludf.DUMMYFUNCTION("IMPORTRANGE({LK_CAR},""parametros_carros!{cc}"")"),'
+                        f'{cv!r})', "0.00")
+        celda(ws, r, 4, f"=IF(B{r}=0,0,C{r}*60/B{r})", "0.0", res=True)
+        celda(ws, r, 5, "Manuales, parametros_manuales " + " + ".join(c for c, _ in man) + " (tiempo tipo); Carros, "
+                        f"parametros_carros {cc} (tiempo ponderado)")
+        ws.merge_cells(start_row=r, start_column=5, end_row=r, end_column=18)
+    r = FILA_EQ + len(EQUIV)
+    celda(ws, r, 1, "Equivalencia de un rodante (promedio)", neg=True)
+    celda(ws, r, 4, f"=AVERAGE(D{FILA_EQ}:D{r - 1})", "0.0", res=True)
+    celda(ws, r, 5, "Va a B9 y de ahí a la columna u. equivalentes de los rodantes (AFFF 50 l y ABC 25 a 100 kg). "
+                    "El Dimensionamiento Técnico V2 usaba 3 (supuesto)")
+    ws.merge_cells(start_row=r, start_column=5, end_row=r, end_column=18)
     ws.freeze_panes = "B2"
 
 
@@ -670,10 +771,10 @@ def h_demanda(wb):
 ACCIONES = ["OK", "Agrega turno", "Agrega máquina", "Agrega operario (puesto manual)", "Tercerizado", "Revisar"]
 ACC_TXT = ["Aprovechamiento dentro del umbral",
            "Desde el año del 2° turno, si el puesto tiene turnos disponibles",
-           "Antes del año del 2° turno; o con el máximo de turnos y más del 100 %",
+           "Antes del año del 2° turno; o con el máximo de turnos (ningún puesto pasa el umbral)",
            "Lo mismo que máquina, en un puesto manual",
            "Recurso cargado como Tercerizado en parametros",
-           "Pasa el umbral con el máximo de turnos sin llegar al 100 % (o no tiene tiempo tipo)"]
+           "El puesto no tiene tiempo tipo, o se cargó a mano un plan que pasa el umbral"]
 
 
 # colores de la acción aplicada en el aprovechamiento (los mismos de Dimensionamiento Manuales)
@@ -684,8 +785,8 @@ COLOR_ACC = {"Agrega turno": "4A86E8", "Agrega máquina": "FF00FF", "Agrega oper
 def plan_capacidad(dem, cap, recurso, umbral=0.9, t_max=2, anio_2t=ANIO_2T, piso=None):
     """Máquinas y turnos por puesto y año con el criterio de Manuales. Nunca se baja y se parte del piso (1 × 1 o lo
     cargado a mano). Si un puesto pasa el umbral: antes de anio_2t se agrega máquina u operario; desde anio_2t se
-    agrega turno (hasta t_max); con el máximo de turnos se agrega máquina solo si pasa el 100 %, si no queda para
-    revisar. Un piso con 0 máquinas es un año tercerizado."""
+    agrega turno (hasta t_max) y con el máximo de turnos, máquina: ningún puesto queda por encima del umbral (límite
+    duro para el análisis de riesgos). Un piso con 0 máquinas es un año tercerizado."""
     plan = {}
     for k in range(len(cap)):
         m, t = 1, 1
@@ -705,10 +806,8 @@ def plan_capacidad(dem, cap, recurso, umbral=0.9, t_max=2, anio_2t=ANIO_2T, piso
                     m += 1
                 elif t < t_max:
                     t += 1
-                elif u() > 1:
-                    m += 1
                 else:
-                    break
+                    m += 1
             plan[(k, i)] = (m, t)
     return plan
 
@@ -748,8 +847,8 @@ def h_resumen(wb, plan):
     celda(ws, 11, 14, "Año de inicio del 2° turno", neg=True)
     celda(ws, 11, 15, "=parametros_recargas!B10", "0", res=True)
     nota(ws, 13, "Máquinas y turnos cargados con el criterio de Manuales (antes del año: máquina u operario; desde el "
-                 "año: turno; con 2 turnos, máquina solo si pasa el 100 %). Se pueden cambiar a mano; los colores se "
-                 "recalculan solos.", 14)
+                 "año: turno; con 2 turnos, máquina). Ningún puesto pasa el umbral. Se pueden cambiar a mano; los "
+                 "colores se recalculan solos.", 14)
 
     titulos = {"util": "Aprovechamiento consolidado (recargas + mantenimiento y alta de sustitutos)",
                "maq": "Máquinas en el puesto", "tur": "Turnos del puesto",
@@ -779,7 +878,7 @@ def h_resumen(wb, plan):
                     mas = f'IF({rec}="Manual",$N$5,$N$4)'
                     celda(ws, r, 2 + i,
                           f'=IF({dem}=0,"—",IF({cap}=0,$N$7,IF({u}<=$O$9,$N$2,IF({rec}="Tercerizado",$N$6,'
-                          f'IF({c}${r0}<$O$11,{mas},IF({tu}<$O$10,$N$3,IF({u}<=1,$N$7,{mas})))))))').alignment = CEN
+                          f'IF({c}${r0}<$O$11,{mas},IF({tu}<$O$10,$N$3,{mas}))))))').alignment = CEN
         rt = r0 + 1 + N_PUESTOS
         if clave == "util":
             celda(ws, rt, 1, "Aprovechamiento máximo", neg=True)
@@ -919,11 +1018,11 @@ def h_sust(wb):
                          f"$E${S_TIPO + k},$D${S_TIPO + k})*MAX({pr}!$B${FILA_PERFIL + i}:$M${FILA_PERFIL + i})/$B$5,0)"),
            total, "#,##0")
     bloque(S_ALTA, "PASO 4 — Alta anual (u.)",
-           "Alta = lo que crece el stock + stock del año anterior × % inutilizados (parametros_recargas B23 CO₂, "
-           "B24 resto). Cada alta lleva faja amarilla y tarjeta",
+           f"Alta = lo que crece el stock + stock del año anterior × % que se inutiliza (parametros_recargas fila "
+           f"{F_INU}, columna de su agente). Cada alta lleva faja amarilla y tarjeta",
            lambda k, i: (f"={L(2 + i)}{S_STOCK + k}" if i == 0 else
                          f"=MAX(0,{L(2 + i)}{S_STOCK + k}-{L(1 + i)}{S_STOCK + k})+{L(1 + i)}{S_STOCK + k}"
-                         f'*IF({pr}!$B${FILA_TIPO + k}="CO₂",{pr}!$B$23,{pr}!$B$24)'),
+                         f"*INDEX({pr}!$E${F_INU}:$L${F_INU},MATCH({pr}!$B${FILA_TIPO + k},{pr}!$E$12:$L$12,0))"),
            [(f"{CIL_VACIO} (se carga en esta planta)",
              lambda c, a, b: f'=SUMIF({origen},"{CIL_VACIO}",{c}{a}:{c}{b})'),
             (f"{TERMINADO} (sale de la línea)", lambda c, a, b: f'=SUMIF({origen},"{TERMINADO}",{c}{a}:{c}{b})'),
@@ -979,31 +1078,44 @@ def modelo_demanda(planta):
     """Réplica del Excel en Python (demanda por puesto en u/h de un turno, mes pico; stock y alta de sustitutos)
     para cargar el plan de capacidad."""
     proy = {46: TASAS[0][1], 47: TASAS[1][1], 48: TASAS[2][1]}
-    filas = {r: v for r, t, v, f, d, fu in P_GEN + P_RUTA}
-    B = {}
+    share = PCT_PLANTA[planta]
+    filas = {r: v for r, t, v, f, d, fu in P_GEN}
+    crit = {r: vals for r, t, u, fu, est, vals, ex in CRITERIOS}
+    # recargas 2035 de cada agente (datos_base K), para los ensayos de laboratorio por equipo
+    rec35 = [sum(REC[k][1][9] * share for k in range(17) if TIPOS[k][0] == a) for a in AGENTES]
+    B, C = {}, {}
 
     def val(r):
         if r not in B:
-            v = filas[r]
-            if isinstance(v, str):
-                if v.startswith("=PROY_Indexado!B"):
-                    v = proy[int(v[16:])]
-                else:
-                    v = ev(v)
-            B[r] = v
+            if r == 9:
+                B[r] = sum(cv * 60 / sum(v for _, v in man) for _, man, (_, cv) in EQUIV) / len(EQUIV)
+            else:
+                v = filas[r]
+                B[r] = ev(v) if isinstance(v, str) else v
         return B[r]
 
-    def ev(f):
-        expr = re.sub(r"\$?B\$?(\d+)", lambda m: repr(val(int(m.group(1)))), f[1:])
+    def cr(r, j):
+        if (r, j) not in C:
+            v = crit[r][j]
+            if r == F_LAB:
+                C[(r, j)] = 0 if cr(F_LABD, j) == 0 else cr(F_LABD, j) * val(2) * 12 / rec35[j]
+            else:
+                C[(r, j)] = ev(v, j) if isinstance(v, str) else v
+        return C[(r, j)]
+
+    def ev(f, j=None):
+        expr = f[1:].replace("{c}", L(5 + j)) if j is not None else f[1:]
+        expr = re.sub(r"PROY_Indexado!\$?B\$?(\d+)", lambda m: repr(proy[int(m.group(1))]), expr)
+        expr = re.sub(r"\$?([E-L])\$?(\d+)", lambda m: repr(cr(int(m.group(2)), ord(m.group(1)) - 69)), expr)
+        expr = re.sub(r"\$?B\$?(\d+)", lambda m: repr(val(int(m.group(1)))), expr)
         return eval(expr)
 
     def techo(x):
         return math.ceil(x - 1e-9)
 
-    share = PCT_PLANTA[planta]
     tiempos = [ev(t) if isinstance(t, str) else t for (_, _, _, _, t, _, _) in PUESTOS]
     cap = [3600 / t if t else 0 for t in tiempos]
-    fr = [[0] * 8 if ruta is None else [ev(x) if isinstance(x, str) else x for x in ruta]
+    fr = [[0] * 8 if ruta is None else [ev(x, j) if isinstance(x, str) else x for j, x in enumerate(ruta)]
           for (_, _, _, ruta, _, _, _) in PUESTOS]
     cil = [1 if p[0] in CILINDRO_NUEVO else 0 for p in PUESTOS]
     eq = [val(9) if rod else 1 for (_, rod, _, _) in TIPOS]
@@ -1017,7 +1129,7 @@ def modelo_demanda(planta):
     ciclo_t = {n: [sum(mix[c][k] * ciclo_r[n][c] for c in range(7)) / sum(mix[c][k] for c in range(7))
                    if sum(mix[c][k] for c in range(7)) else DIA_RETIRO + 1 + DIA_DEVOL for k in range(17)]
                for n in (1, t2)}
-    inut = [val(23) if TIPOS[k][0] == "CO₂" else val(24) for k in range(17)]
+    inut = [cr(F_INU, AGENTES.index(TIPOS[k][0])) for k in range(17)]
     vacio = [planta == "Comercial" and REC[k][0].startswith("ABC") for k in range(17)]
     perfil = {k: (P_MAN[k] if k < 4 else P_CAR[k - 13]) for k in K_ABC}
     dem = [[0] * 10 for _ in range(N_PUESTOS)]
@@ -1041,7 +1153,8 @@ def modelo_demanda(planta):
                 base = sum(fr[s][j] * ag[j] for j in range(8))
                 pico = max(base + cil[s] * cil_m[m] for m in range(12))
             dem[s][i] = pico / val(6)
-    extra = {"stock": stock, "alta": alta, "ciclo_r": ciclo_r, "min_r": min_r, "ciclo_t": ciclo_t}
+    extra = {"stock": stock, "alta": alta, "ciclo_r": ciclo_r, "min_r": min_r, "ciclo_t": ciclo_t, "fr": fr,
+             "tiempos": tiempos, "crit": {(r, j): cr(r, j) for r in crit for j in range(8)}, "eq": val(9)}
     return dem, cap, [r for (_, _, r, _, _, _, _) in PUESTOS], val(7), val(8), val(10), extra
 
 

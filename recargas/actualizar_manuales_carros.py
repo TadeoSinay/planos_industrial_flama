@@ -7,7 +7,9 @@ Cambios sobre los archivos del grupo, sin mover sus hojas:
 - Plan mensual con esas filas (perfil de estacionalidad del modelo); la demanda por puesto las suma igual en sin y con
   sobrestock: los terminados pasan por todos los puestos y los cilindros solo por los de alcance "Todos".
 - Aprovechamiento indexado a las tablas de máquinas y turnos (sin "/2" escritos a mano), tablas cargadas con el
-  criterio de Manuales a partir de lo que ya estaba y colores por formato condicional.
+  criterio de Manuales a partir de lo que ya estaba (ningún puesto pasa el umbral del 90 %) y colores por formato
+  condicional.
+- Formato gris en la hoja Links y en el bloque de sobrestock de parametros_manuales (venía en azul y verde).
 """
 
 import os
@@ -98,6 +100,20 @@ def imp(ws, r0, c0, link, rango, valores):
 def links(wb):
     g.h_links(wb, LINKS)
     wb.move_sheet("Links", offset=-(len(wb.sheetnames) - 1))
+
+
+def grises(wb):
+    """Encabezados azules a gris claro con letra negra y celdas verdes de resultado a gris, como el resto del archivo."""
+    gris = {"FF1F4E78": "FFF2F2F2", "FFE2EFDA": "FFD9D9D9"}
+    for ws in wb:
+        for fila in ws.iter_rows():
+            for c in fila:
+                if c.fill.fill_type == "solid" and c.fill.fgColor.type == "rgb" and c.fill.fgColor.rgb in gris:
+                    if c.fill.fgColor.rgb == "FF1F4E78":
+                        f = copy(c.font)
+                        f.color = "FF000000"
+                        c.font = f
+                    c.fill = PatternFill("solid", fgColor=gris[c.fill.fgColor.rgb])
 
 
 def bloque_sustitutos(ws, r0, modelos, rango, ped, fila_estilo, fila_tot, nota_txt):
@@ -233,7 +249,8 @@ def resumen(ws, n, r_maq, r_tur, util, recursos, umbral_ref, celda_umbral, legen
     ws[rn].value = f"={umbral_ref}"
     ws[rn].number_format = "0%"
     ws.cell(legend_row, 13).value = ("Colores automáticos (formato condicional) comparando las tablas de máquinas y "
-                                     "turnos con el año anterior; amarillo: pasa el umbral sin acción posible.")
+                                     "turnos con el año anterior. Ningún puesto pasa el umbral; amarillo solo si se "
+                                     "cambian las tablas a mano y lo pasa.")
     ws.cell(legend_row, 13).font = Font(name="Arial", size=9, italic=True)
     g.colores_aprovechamiento(ws, 2, r_maq, r_tur, n, "L", "$" + rn[0] + "$" + rn[1:], sin_maquina_es_terc=True)
 
@@ -288,6 +305,7 @@ def manuales(ped):
     wb = load_workbook(ent)
     verif = []
     links(wb)
+    grises(wb)
     db = wb["datos_base"]
     imp(db, 2, 2, LK_PROY, "Indexado Dim Técnico!B3:K6", TERM_MAN)
     imp(db, 9, 2, LK_PROY, "Indexado Dim Técnico!B15:K18", CIL_MAN)
@@ -312,8 +330,8 @@ def manuales(ped):
         estilo(pm[f"{c}8"], pm[f"{c}9"])
     pm["B9"].number_format = "0"
     pm["A8"].value = "Umbral de aprovechamiento"
-    pm["C8"].value = ("Por encima se agrega máquina, operario o turno según el año (Resumen cap.); con 2 turnos se "
-                      "agrega máquina solo si pasa el 100 %, si no queda en amarillo para revisar")
+    pm["C8"].value = ("Límite duro (análisis de riesgos): por encima se agrega máquina, operario o turno según el año "
+                      "(Resumen cap.); con 2 turnos se agrega máquina. Ningún puesto queda por encima")
     hojas = [("Resumen cap. sin sobrestock", "Demanda puesto sin sobrestock", False),
              ("Resumen cap. con sobrestock", "Demanda puesto con sobrestock", True)]
     pisos = {}
@@ -353,6 +371,7 @@ def carros(ped):
     wb = load_workbook(ent)
     verif = []
     links(wb)
+    grises(wb)
     db = wb["datos_base"]
     imp(db, 2, 2, LK_PROY, "Indexado Dim Técnico!B7:K10", TERM_CAR)
     imp(db, 9, 2, LK_PROY, "Indexado Dim Técnico!B19:K22", CIL_CAR)
@@ -371,6 +390,11 @@ def carros(ped):
         "Fuente: Proyecciones, Indexado Dim Técnico (IMPORTRANGE): terminados filas 7 a 10 y cilindros filas 19 a 22.")
     plan_sustitutos(wb["Plan mensual"], 112, fila_db, "parametros_carros", modelos)
     demanda_plan(wb["Demanda por puesto"], "parametros_carros", 18, 20, lambda p: "/60", 112, verif)
+    pc = wb["parametros_carros"]
+    pc["A8"].value = "Umbral de aprovechamiento"
+    pc["C8"].value = ("Límite duro (análisis de riesgos): por encima se agrega máquina, operario o turno según el año "
+                      "(Resumen Capacidad); con 2 turnos se agrega máquina. Ningún puesto queda por encima. El Word toma "
+                      "80 % del turno como límite para una persona")
     ws = wb["Resumen Capacidad"]
     estilo(ws["M5"], ws["M6"])
     ws["M6"].value = "Revisar"
