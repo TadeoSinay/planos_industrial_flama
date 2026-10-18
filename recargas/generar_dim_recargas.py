@@ -387,24 +387,18 @@ def h_param(wb, planta):
         celda(ws, r, 3, fu)
         ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=16)
 
-    # perfil mensual: rampa del crecimiento anual
-    tit(ws, 34, "PERFIL MENSUAL POR AÑO (rampa del crecimiento anual)")
-    nota(ws, 35, "Cada equipo vuelve en su mes (IRAM 3517-2 9.2.1 y 9.4.14 a). Criterio: el crecimiento al año "
-                 "siguiente se reparte parejo mes a mes; 2035 usa el crecimiento 2034→2035.")
-    cab(ws, 36, ["Año", "Recargas del año", "Recargas del año siguiente", "Crecimiento", "Factor mensual (q)"]
-        + MESES + ["Total"])
+    # perfil mensual plano
+    tit(ws, 34, "PERFIL MENSUAL POR AÑO (plano, 1/12 por mes)")
+    nota(ws, 35, "IRAM 3517-2:2020 9.2.1 (mantenimiento como mínimo anual) y 9.4.14 a) (la etiqueta fija el mes y año "
+                 "del próximo): cada equipo vuelve en su mes y la norma no fija ningún mes del calendario. El "
+                 "crecimiento se toma entre años (Proyecciones es anual).")
+    cab(ws, 36, ["Año"] + MESES + ["Total"])
     for i, a in enumerate(ANIOS):
         r = FILA_PERFIL + i
-        col = L(2 + i)
         celda(ws, r, 1, a, "0").alignment = CEN
-        celda(ws, r, 2, f"=datos_base!{col}19", "#,##0")
-        sig = f"=datos_base!{L(3 + i)}19" if i < 9 else "=IF(datos_base!J19>0,datos_base!K19^2/datos_base!J19,0)"
-        celda(ws, r, 3, sig, "#,##0")
-        celda(ws, r, 4, f"=IF(B{r}>0,C{r}/B{r},1)", "0.000")
-        celda(ws, r, 5, f"=D{r}^(1/12)", "0.0000")
         for m in range(12):
-            celda(ws, r, 6 + m, f"=IF(ABS($E{r}-1)<0.000000001,1/12,$E{r}^{m}*($E{r}-1)/($E{r}^12-1))", "0.0%")
-        celda(ws, r, 18, f"=SUM(F{r}:Q{r})", "0.0%", res=True)
+            celda(ws, r, 2 + m, "=1/12", "0.0%", dato=True)
+        celda(ws, r, 14, f"=SUM(B{r}:M{r})", "0.0%", res=True)
 
     # tipos
     tit(ws, 49, "TIPOS DE MATAFUEGO")
@@ -477,7 +471,7 @@ def h_plan(wb):
             celda(ws, r, 2, f"=parametros_recargas!B{FILA_TIPO + k}").alignment = CEN
             celda(ws, r, 3, f"=parametros_recargas!C{FILA_TIPO + k}", "0")
             for m in range(12):
-                celda(ws, r, 4 + m, f"=datos_base!${y}${2 + k}*parametros_recargas!${L(6 + m)}${rp}+{ms}/12",
+                celda(ws, r, 4 + m, f"=datos_base!${y}${2 + k}*parametros_recargas!${L(2 + m)}${rp}+{ms}/12",
                       "#,##0.0")
             celda(ws, r, 16, f"=SUM(D{r}:O{r})", "#,##0", res=True)
             celda(ws, r, 17, f"={ms}", "#,##0")
@@ -657,8 +651,8 @@ def h_sust(wb):
     # 2. retiros por día en el mes pico (sólo clientes)
     tabla(28, "2. Retiros por día hábil en el mes pico (recargas de clientes × mes pico ÷ días del mes)",
           range(17), tipos,
-          lambda k, i, rr: f"=datos_base!{L(2 + i)}{2 + k}*MAX(parametros_recargas!$F${FILA_PERFIL + i}:"
-                           f"$Q${FILA_PERFIL + i})/$B$6", "#,##0.0")
+          lambda k, i, rr: f"=datos_base!{L(2 + i)}{2 + k}*MAX(parametros_recargas!$B${FILA_PERFIL + i}:"
+                           f"$M${FILA_PERFIL + i})/$B$6", "#,##0.0")
     # 3. aprovechamiento máximo de la ruta de cada agente y días de cola
     tabla(48, "3a. Aprovechamiento máximo de los puestos de la ruta (mes pico, Resumen Capacidad)", range(8),
           AGENTES,
