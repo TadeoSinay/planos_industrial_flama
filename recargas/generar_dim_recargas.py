@@ -40,8 +40,8 @@ LINKS = [("Proyecciones", URL_PROY,
           "parametros_carros I29, I30, I33 e I34: tiempos ponderados de PH, secado, carga y presurización, y montaje "
           "y etiquetado (equivalencia del rodante)"),
          ("MRP (FLAMA_MRP)", PEGAR,
-          "ESTACIONALIDAD C4:N6: perfiles E01 (automotor 1 kg), E02 (manual comercial) y E03 (rodantes). E01 es el "
-          "perfil de recarga del rubro Automotor; los tres, el de llegada de los sustitutos ABC nuevos")]
+          "ESTACIONALIDAD C4:N6: perfiles de producción E01 (1 kg), E02 (2,5 a 10 kg) y E03 (rodantes), con los que "
+          "llegan de fábrica los sustitutos ABC nuevos")]
 LK_PROY, LK_MAN, LK_CAR, LK_MRP = "Links!$B$4", "Links!$B$5", "Links!$B$6", "Links!$B$7"
 # Proyecciones, Indexado Dim Técnico V61 (comercial) y V63 (industrial): suma de las zonas de cada planta
 PCT_PLANTA = {"Comercial": 0.5545197389, "Industrial": 0.2882365055}
@@ -106,9 +106,18 @@ TIPOS = [
     ("Halogenado", 0, 0, SIN_M), ("Clase D", 0, 0, SIN_M),
 ] + [("ABC", 1, 1, "Sí, 9.7.1.4 a): válvula de cierre en la manguera (rodante, IRAM 3550)")] * 4
 
+# Filas fijas de las hojas
+P_MIX = 57     # PROY_Indexado: primera fila de la matriz de esta planta (tipos en filas, rubros en columnas)
+FILA_RUB = 35      # primera fila de la estacionalidad por rubro (7 rubros)
+# datos de la estacionalidad: escuelas estatales, patentamientos 2025 por mes, 2024, flota y % exento de VTV
+F_ESTATAL, F_PAT, F_P24, F_FLOTA, F_EXENTO = 44, 45, 46, 47, 48
+FILA_TIPO = 55     # primera fila de la tabla de tipos (con su perfil mensual en E a P)
+FILA_PUESTO = 76   # primera fila de la tabla de puestos
+N_PUESTOS = 29
+FILA_PCIL = 109    # primera fila del perfil de llegada de los sustitutos ABC nuevos (E01, E02, E03 del MRP)
 # Equivalencia de un rodante: operaciones que comparten la fábrica y la recarga. (operación, celdas de
 # parametros_manuales con su valor (s/u), celda de parametros_carros con su valor (min/u, ponderado con el mix 2035))
-FILA_EQ = 112
+FILA_EQ = 116
 EQUIV = [("Prueba hidráulica", [("K32", 60)], ("I29", 8.979935)),
          ("Secado", [("K33", 120)], ("I30", 10.058961)),
          ("Carga de polvo y presurización", [("K38", 45), ("K40", 30)], ("I33", 11.33)),
@@ -171,7 +180,8 @@ CRITERIOS = [
      "nuevos sin Sello IRAM. El BC se carga con polvo nuevo con sello"),
     (28, "Ensayos de laboratorio por equipo", "ensayos/u.", "Ensayos por día × días del año ÷ recargas del agente "
      "en 2035", "Cálculo",
-     ["=IF({c}27=0,0,{c}27*$B$2*12/SUMIF($B$51:$B$67,{c}$12,datos_base!$K$2:$K$18))"] * 8,
+     [f"=IF({{c}}27=0,0,{{c}}27*$B$2*12/SUMIF($B${FILA_TIPO}:$B${FILA_TIPO + 16},{{c}}$12,"
+      f"datos_base!$K$2:$K$18))"] * 8,
      "1 control diario de la tolva repartido en las recargas del agente en 2035"),
 ]
 # Sustituto del mismo tipo que el equipo retirado; el ABC 1 kg automotor no lleva (sin canje, criterio del usuario)
@@ -228,30 +238,36 @@ FAM_ABC = {0: 0, 1: 1, 2: 1, 3: 1, 13: 2, 14: 2, 15: 2, 16: 2}   # tipo ABC -> p
 # Estacionalidad de las recargas por rubro (IRAM 3517-2:2020 9.2.1 y 9.4.14: cada equipo vuelve en el mes de su último
 # mantenimiento, así que solo hay estacionalidad donde una regla o un calendario fija el mes para todo el rubro)
 ESTATAL = 0.682   # unidades educativas de gestión estatal, PBA (HCD PBA, proyecto 13-14 D-1382, con el Relevamiento Anual)
+# Automotor: patentamientos 2025 por mes (ACARA, total del mercado), 2024 (ACARA) y flota circulante 2025 (AFAC)
+PAT_2025 = [68988, 42918, 48389, 55017, 55363, 52212, 62123, 54664, 55827, 51982, 35424, 23997]
+PAT_2024 = 414041
+FLOTA_2025 = 15784385
 EST_RUBRO = [
-    ("Automotor", "mrp",
-     "Perfil E01 del MRP. VTV de PBA y CABA: el mes sale de la terminación de la patente (2 a 9 y 0 de febrero a octubre, "
-     "1 en noviembre; diciembre y enero libres para rezagados) y revisa que el matafuego tenga la carga vigente (Ley "
-     "24.449, art. 40 f); en diciembre y enero se suma la recarga antes de los viajes de verano"),
-    ("Edificios", "plano", "Sin calendario que fije el mes: cada equipo vuelve en el mes de su último mantenimiento"),
+    ("Automotor", "vtv",
+     "VTV de PBA y CABA: el mes sale de la terminación de la patente (2 en febrero ... 0 en octubre y 1 en noviembre; "
+     "diciembre y enero quedan para rezagados) y la VTV revisa que el matafuego tenga la carga vigente: se recarga en "
+     "ese mes. Los exentos (PBA: menos de 2 años de patentado) recargan en el aniversario de la compra"),
+    ("Edificios", "plano",
+     "Sin mes fijo: la recarga vale 1 año desde que se hace y queda en la tarjeta (CABA, Ley 6116; PBA, Dec. 4992/90). "
+     "La declaración jurada anual del administrador (CABA, Ley 941; PBA, Ley 14.701, hasta el 31/3) no fija el mes"),
     ("Educación", "escuelas",
      "Las escuelas estatales recargan en febrero, con los fondos de inicio del ciclo lectivo que la DGCyE gira a los "
      "Consejos Escolares antes del comienzo de clases (2 de marzo); las privadas, parejo"),
-    ("Hoteles", "plano", "Sin calendario que fije el mes en el AMBA: parejo"),
+    ("Hoteles", "plano",
+     "Sin mes fijo: el registro de alojamientos (CABA, Ley 4631) no fija un mes para incendio; rige la vigencia de 1 "
+     "año de la recarga (Ley 6116) y, en PBA, el control de Bomberos cada 6 meses (Dec. 12/2005)"),
     ("Industrias / almacenes", "plano",
-     "Las paradas técnicas de enero y febrero (INDEC, IPI) no fijan el mes de los matafuegos: parejo"),
-    ("Salud", "plano", "Funcionan todo el año y la habilitación no fija un mes: parejo"),
-    ("Supermercados", "plano", "Sin calendario que fije el mes: parejo"),
+     "Sin mes fijo: el relevamiento de riesgos (RGRL, Res. SRT 463/09 y 529/09) se renueva con el contrato de la ART "
+     "y Bomberos PBA controla cada 6 meses (Dec. 12/2005). Las paradas de enero (INDEC) no fijan el mes de la recarga"),
+    ("Salud", "plano",
+     "Sin mes fijo: funcionan todo el año; rigen la vigencia de 1 año de la recarga (Ley 6116, Dec. 4992/90) y el "
+     "control de Bomberos cada 6 meses (Dec. 12/2005)"),
+    ("Supermercados", "plano",
+     "Sin mes fijo: constancia antisiniestral vigente con control de Bomberos cada 6 meses (Dec. 12/2005, PBA) y "
+     "recarga anual desde su fecha (Ley 6116, Dec. 4992/90)"),
 ]
 K_ABC = [0, 1, 2, 3, 13, 14, 15, 16]   # tipos ABC que fabrica la planta industrial (manuales y carros)
 CIL_VACIO, TERMINADO, COMPRA = "Fábrica: cilindro vacío", "Fábrica: terminado", "Compra"
-P_MIX = 57     # PROY_Indexado: primera fila de la matriz de esta planta (tipos en filas, rubros en columnas)
-FILA_RUB = 35      # primera fila de la estacionalidad por rubro (7 rubros)
-FILA_ESTATAL = 43  # % de escuelas de gestión estatal
-FILA_TIPO = 51     # primera fila de la tabla de tipos (con su perfil mensual en E a P)
-FILA_PUESTO = 72   # primera fila de la tabla de puestos
-N_PUESTOS = 29
-FILA_PCIL = 105    # primera fila del perfil de llegada de los sustitutos ABC nuevos (E01, E02, E03 del MRP)
 # columnas de la tabla de puestos: agentes E a L, cilindro nuevo M, tiempo N, u/h O, u/mes P, desglose Q, nota R
 C_CIL, C_T, C_UH, C_UM = "M", "N", "O", "P"
 
@@ -602,31 +618,46 @@ def h_param(wb, planta):
         celda(ws, r, 1, rb, neg=True)
         celda(ws, r, 2, fu)
         ws.merge_cells(start_row=r, start_column=2, end_row=r, end_column=4)
-        ws.row_dimensions[r].height = 54 if regla != "plano" else 28
+        ws.row_dimensions[r].height = 54
+        ex, pat = f"$B${F_EXENTO}", f"$Q${F_PAT}"
         for m in range(12):
+            x = L(5 + m)
             if regla == "plano":
                 v = "=1/12"
             elif regla == "escuelas":
-                v = f"=$B${FILA_ESTATAL}+(1-$B${FILA_ESTATAL})/12" if m == 1 else f"=(1-$B${FILA_ESTATAL})/12"
+                v = f"=$B${F_ESTATAL}+(1-$B${F_ESTATAL})/12" if m == 1 else f"=(1-$B${F_ESTATAL})/12"
             else:
-                continue
+                v = (f"=(1-{ex})/10+{ex}*{x}${F_PAT}/{pat}" if 1 <= m <= 10 else f"={ex}*{x}${F_PAT}/{pat}")
             celda(ws, r, 5 + m, v, "0.0%")
-        if regla == "mrp":
-            importrange(ws, r, 5, LK_MRP, E_MRP[0][1], [E_MRP[0][2]], "0.0%")
         celda(ws, r, 17, f"=SUM(E{r}:P{r})", "0%", res=True)
-    r = FILA_ESTATAL
-    celda(ws, r, 1, "Escuelas de gestión estatal (% de las unidades educativas)")
-    celda(ws, r, 2, ESTATAL, "0.0%", dato=True)
-    celda(ws, r, 3, "PBA: 68,2 % estatal y 31,8 % privada (HCD PBA, proyecto 13-14 D-1382, con datos del Relevamiento "
-                    "Anual del Ministerio de Educación)")
-    ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=19)
-    nota(ws, r + 1, "Fuentes: VTV PBA, anexo de la norma provincial del cronograma por terminación de dominio (normas.gba."
-                    "gob.ar) y VTV CABA (buenosaires.gob.ar); DGCyE PBA, fondos a los Consejos Escolares para preparar el "
-                    "ciclo lectivo, que incluyen la recarga de matafuegos (Ámbito, 8/2/2022; 2026: $8.500 millones antes "
-                    "del inicio de clases); calendario escolar PBA 2026 (inicio 2 de marzo).")
-    nota(ws, r + 2, "Recargadores de Paraná, Rafaela, Córdoba y Mendoza informan el pico de diciembre a febrero por los "
-                    "viajes de verano y la revisión técnica (prensa local): coincide con el perfil E01 del MRP. Sin fuente "
-                    "para los demás rubros: parejo.")
+    cab(ws, F_ESTATAL - 1, ["Dato de la estacionalidad", "Valor", "Fuente", ""] + MESES + ["Total"])
+    ws.merge_cells(start_row=F_ESTATAL - 1, start_column=3, end_row=F_ESTATAL - 1, end_column=4)
+    datos = [(F_ESTATAL, "Escuelas de gestión estatal (% de las unidades educativas)", ESTATAL, "0.0%", True,
+              "PBA: 68,2 % estatal y 31,8 % privada (HCD PBA, proyecto 13-14 D-1382, con el Relevamiento Anual)"),
+             (F_PAT, "Patentamientos 2025 por mes (u.)", None, "#,##0", True, "ACARA, total del mercado"),
+             (F_P24, "Patentamientos 2024 (u.)", PAT_2024, "#,##0", True, "ACARA"),
+             (F_FLOTA, "Flota circulante 2025 (u.)", FLOTA_2025, "#,##0", True, "AFAC, Flota Vehicular Circulante 2025"),
+             (F_EXENTO, "Exentos de VTV (% de la flota)", f"=(B{F_P24}+Q{F_PAT})/B{F_FLOTA}", "0.0%", False,
+              "PBA: VTV anual desde los 2 años de patentado → patentados 2024 + 2025 ÷ flota")]
+    for r, t, v, fmt, dato, fu in datos:
+        celda(ws, r, 1, t)
+        if v is not None:
+            celda(ws, r, 2, v, fmt, dato=dato, res=not dato)
+        celda(ws, r, 3, fu)
+        ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=4)
+    for m in range(12):
+        celda(ws, F_PAT, 5 + m, PAT_2025[m], "#,##0", dato=True)
+    celda(ws, F_PAT, 17, f"=SUM(E{F_PAT}:P{F_PAT})", "#,##0", res=True)
+    nota(ws, F_EXENTO + 1, "Fuentes: VTV PBA (vtv.gba.gob.ar, plazos; anexo del cronograma en normas.gba.gob.ar) y CABA "
+                           "(buenosaires.gob.ar); revisión del matafuego en la VTV (iProfesional); 2 años de exención en "
+                           "PBA (Ámbito, oct. 2025); ACARA (El Economista, MDZ); AFAC 2025. DGCyE: fondos de inicio del "
+                           "ciclo lectivo a los Consejos Escolares (Ámbito 8/2/2022; 2026); calendario escolar PBA 2026.")
+    nota(ws, F_EXENTO + 2, "Edificios y comercios: CABA Leyes 941, 4631 y 6116; PBA Ley 14.701 y Decretos 4992/90 y "
+                           "12/2005; Res. SRT 463/09 y 529/09. Ninguna fija un mes del calendario: la recarga vence a "
+                           "los 12 meses de hecha (IRAM 3517-2 9.2.1 y 9.4.14), así que esos rubros quedan parejos.")
+    nota(ws, F_EXENTO + 3, "Pico de verano en autos: lo informan recargadores de Córdoba, Mendoza, Paraná y Rafaela "
+                           "(prensa local; Córdoba: 12 % de las ITV del año en enero). En el AMBA no hay dato: a "
+                           "confirmar en la visita al recargador.")
 
     # tipos con su perfil mensual
     tit(ws, FILA_TIPO - 2, "TIPOS DE MATAFUEGO Y PERFIL MENSUAL DE RECARGAS (mix de rubros de la planta × estacionalidad "
@@ -658,7 +689,7 @@ def h_param(wb, planta):
     dv.add(f"B{FILA_TIPO}:B{FILA_TIPO + 16}")
 
     # puestos
-    tit(ws, 70, "CAPACIDAD POR PUESTO (fracción de cada agente que pasa por el puesto; cilindro nuevo: 1 = pasa)")
+    tit(ws, FILA_PUESTO - 2, "CAPACIDAD POR PUESTO (fracción de cada agente que pasa por el puesto; cilindro nuevo: 1 = pasa)")
     cab(ws, FILA_PUESTO - 1, ["N°", "Puesto / operación", "Máquina / equipo", "Recurso"] + AGENTES
         + ["Cilindro nuevo (alta de sustituto)", "Tiempo tipo (s/u)", "Cap. real (u/h)", "Cap. real (u/mes, 1 turno)",
            "Desglose del tiempo (s)", "Nota", "Cuándo pasa (Word de recargas, tabla de operaciones, y norma)"])
@@ -1148,8 +1179,9 @@ def modelo_demanda(planta):
     # estacionalidad por rubro y perfil de cada tipo (mix de rubros de la planta)
     prof_r = []
     for rb, regla, fu in EST_RUBRO:
-        if regla == "mrp":
-            prof_r.append(E_MRP[0][2])
+        if regla == "vtv":
+            ex = (PAT_2024 + sum(PAT_2025)) / FLOTA_2025
+            prof_r.append([(1 - ex) / 10 * (1 <= m <= 10) + ex * PAT_2025[m] / sum(PAT_2025) for m in range(12)])
         elif regla == "escuelas":
             prof_r.append([(1 - ESTATAL) / 12 + (ESTATAL if m == 1 else 0) for m in range(12)])
         else:
