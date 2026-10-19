@@ -260,7 +260,7 @@ LIQS = dict(agua=R_CAMBIA, afff=R_CAMBIA, k=R_CAMBIA)
 PUESTOS = [
     ("Recepción y registro", "Autoelevador + tablet e impresora de etiquetas; jaulas A y B", "Manual", todos(1),
      "=12.5+12.5+40+10", "Cargar jaulas 12,5 + descargar y controlar contra remito 12,5 + datos en el sistema 40 + "
-     "separar por agente 10. Lo que se hace en el cliente no cuenta.", ""),
+     "separar por agente 10", ""),
     ("Inspección visual", "Mesa con goma, lámpara con lupa, PC", "Manual", todos(1),
      "=5+30+25+10+15+5", "Escanear 5 + exterior 30 + válvula, manómetro y manguera 25 + fecha PH 10 + registro 15 + "
      "bandeja 5", "Tabla de operaciones del Word: 70 s; paso a paso: 90 s. Vale el paso a paso"),
@@ -271,7 +271,7 @@ PUESTOS = [
      "=15+60+10", "Escanear y agitado 15 + descargar 60 + tapar 10",
      "Clase D: el Word manda la descarga y la PH a las máquinas comunes; al tambor de descarte no vuelve nada"),
     ("Descarga BC", "Tambor Yukon M-000030 dedicado BC", "Máquina", agentes(bc=R_CAMBIA), "=15+60+10",
-     "Igual que ABC; todo a descarte", ""),
+     "Escanear y agitado 15 + descargar 60 + tapar 10", ""),
     ("Descarga de agua / AFFF / sales K", "IBC 1.000 l (AFFF) y tanque 600 l (agua)", "Máquina", agentes(**LIQS),
      "=10+10+15+60+10", "Escanear 10 + quitar lanza 10 + acoplar 15 + vaciar 60 + llevar a desarme 10",
      "Tabla de operaciones: 180 s; paso a paso: 105 s. Vale el paso a paso (tabla 3 de la norma: 40 a 65 s de "
@@ -295,8 +295,8 @@ PUESTOS = [
      "Tiempo por ENSAYO: registro 300 + mufla 600 + Puffer 1.800 + dictamen 60 + carga 120 + liberar tolva 300", ""),
     ("Prueba hidráulica", "Máquina PH Yukon 300 kg/cm²", "Máquina",
      todos(R_PH), "=12+20+90+90+75+15",
-     "Verificar con patrón 12 + escanear 20 + llenar y conectar 90 + ensayo 90 + vaciar y retirar 75 + registrar 15. "
-     "CO₂ lleva además ultrasonido y acuñado", ""),
+     "Verificar con patrón 12 + escanear 20 + llenar y conectar 90 + ensayo 90 + vaciar y retirar 75 + registrar 15",
+     ""),
     ("Secado", "Secadora Yukon de 6 recipientes", "Máquina",
      agentes(abc=R_SECA, bc=R_SECA, d=R_SECA, co2=R_PH, hal=R_PH), "=15+15*60/6+15",
      "Colocar 15 + 15 min ÷ 6 recipientes = 150 + retirar 15", "Agua, AFFF y sales K no se secan: se vuelven a llenar"),
@@ -330,7 +330,7 @@ PUESTOS = [
      "registrar 10", ""),
     ("Ensamblaje y presurización — zona general", "Morsa + dinamométrica + pinza Yukon", "Manual",
      agentes(co2=R_ABRE_CO2, hal=R_ABRE_HAL, agua=1, afff=1, k=1), "=120+50",
-     "Ensamblaje 120 + presurización 50. CO₂ no se presuriza y halogenados se presurizan en la carga", ""),
+     "Ensamblaje 120 + presurización 50", ""),
     ("Carga y presurización de halogenado", "Unidad THB/BP + pinza", "Máquina", agentes(hal=R_ABRE_HAL),
      "=300+40+60+30", "Cargar 300 + presurizar 40 + agitar y repetir 60 + pesar y registrar 30", ""),
     ("Control de peso (CO₂ y halogenados sin recarga)", "Balanza", "Manual",
