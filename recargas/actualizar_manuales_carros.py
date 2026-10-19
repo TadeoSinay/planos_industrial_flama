@@ -212,9 +212,7 @@ def resumen(ws, n, r_maq, r_tur, util, recursos, umbral_ref, celda_umbral, legen
     ws[rm].font = Font(name="Arial", size=10, bold=True)
     ws[rn].value = f"={umbral_ref}"
     ws[rn].number_format = "0%"
-    ws.cell(legend_row, 13).value = ("Colores automáticos comparando las tablas de máquinas y turnos con el año "
-                                     "anterior. Todos los turnos entran el mismo año (2° turno) y después no se agrega "
-                                     "máquina; amarillo solo si se cambian las tablas a mano y se pasa el umbral.")
+    ws.cell(legend_row, 13).value = "Colores automáticos contra el año anterior · Word de recargas § 9"
     ws.cell(legend_row, 13).font = Font(name="Arial", size=9, italic=True)
     g.colores_aprovechamiento(ws, 2, r_maq, r_tur, n, "L", "$" + rn[0] + "$" + rn[1:], sin_maquina_es_terc=True)
 
@@ -277,9 +275,7 @@ def manuales(ped):
     imp(db, 9, 2, LK_PROY, "Indexado Dim Técnico!B15:K18", CIL_MAN)
     modelos = ["ABC 1 kg", "ABC 2,5 kg", "ABC 5 kg", "ABC 10 kg"]
     fila_db = bloque_sustitutos(db, 17, modelos, PED_MAN, {p: v[:4] for p, v in ped.items()}, 2, 6,
-                                "Sustitutos: paso 4 (alta) de sobrestock_sustitutos de cada Dimensionamiento de recargas. La "
-                                "planta industrial los fabrica terminados (proceso completo); la comercial los recibe "
-                                "como cilindro vacío y los carga allá.")
+                                "Sustitutos: alta (paso 4) de cada Dimensionamiento de recargas · Word de recargas § 9")
     db["A15"].value = "Total recipientes a fabricar (con sustitutos)"
     for i in range(10):
         c = L(2 + i)
@@ -289,14 +285,12 @@ def manuales(ped):
     pm = wb["parametros_manuales"]
     pm["A9"].value = "Año de inicio del 2° turno (antes: más máquinas)"
     pm["B9"].value = ANIO_2T
-    pm["C9"].value = ("Antes de ese año se agrega máquina u operario; ese año entran todos los turnos y las máquinas que hagan "
-                      "falta hasta 2035; después no se agrega nada (Resumen)")
+    pm["C9"].value = "Todos los turnos entran ese año · Word de recargas § 8"
     for c in "ABC":
         estilo(pm[f"{c}8"], pm[f"{c}9"])
     pm["B9"].number_format = "0"
     pm["A8"].value = "Umbral de aprovechamiento"
-    pm["C8"].value = ("Límite duro (análisis de riesgos): por encima se agrega máquina, operario o turno según el año "
-                      "(Resumen cap.); con 2 turnos se agrega máquina. Ningún puesto queda por encima")
+    pm["C8"].value = "Límite duro (análisis de riesgos) · Word de recargas § 8"
     hojas = [("Resumen cap. sin sobrestock", "Demanda puesto sin sobrestock", False),
              ("Resumen cap. con sobrestock", "Demanda puesto con sobrestock", True)]
     pisos = {}
@@ -344,9 +338,7 @@ def carros(ped):
     imp(db, 9, 2, LK_PROY, "Indexado Dim Técnico!B19:K22", CIL_CAR)
     modelos = ["Carro ABC 25 kg", "Carro ABC 50 kg", "Carro ABC 70 kg", "Carro ABC 100 kg"]
     fila_db = bloque_sustitutos(db, 34, modelos, PED_CAR, {p: v[4:] for p, v in ped.items()}, 2, 6,
-                                "Sustitutos: paso 4 (alta) de sobrestock_sustitutos de cada Dimensionamiento de recargas. La "
-                                "planta industrial los fabrica terminados (proceso completo); la comercial los recibe "
-                                "como cilindro vacío y los carga allá.")
+                                "Sustitutos: alta (paso 4) de cada Dimensionamiento de recargas · Word de recargas § 9")
     db["A15"].value = "Total recipientes a fabricar (con sustitutos)"
     for i in range(10):
         c = L(2 + i)
@@ -359,15 +351,12 @@ def carros(ped):
     pc = wb["parametros_carros"]
     pc["A9"].value = "Año de inicio del 2° turno (antes: más máquinas)"
     pc["B9"].value = ANIO_2T
-    pc["C9"].value = ("Antes de ese año se agrega máquina u operario; ese año entran todos los turnos y las máquinas que hagan "
-                      "falta hasta 2035; después no se agrega nada (Resumen)")
+    pc["C9"].value = "Todos los turnos entran ese año · Word de recargas § 8"
     for c in "ABC":
         estilo(pc[f"{c}8"], pc[f"{c}9"])
     pc["B9"].number_format = "0"
     pc["A8"].value = "Umbral de aprovechamiento"
-    pc["C8"].value = ("Límite duro (análisis de riesgos): por encima se agrega máquina, operario o turno según el año "
-                      "(Resumen Capacidad); con 2 turnos se agrega máquina. Ningún puesto queda por encima. El Word toma "
-                      "80 % del turno como límite para una persona")
+    pc["C8"].value = "Límite duro (análisis de riesgos) · Word de recargas § 8"
     ws = wb["Resumen Capacidad"]
     estilo(ws["M5"], ws["M6"])
     ws["M6"].value = "Revisar"

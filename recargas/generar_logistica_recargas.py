@@ -17,56 +17,46 @@ import generar_dim_recargas as g  # noqa: E402
 from generar_dim_recargas import cab, celda, hoja, nota, tit  # noqa: E402
 
 PLANTAS = ["Comercial", "Industrial"]
-LINKS = [("Dimensionamiento Recargas Planta Comercial", g.PEGAR, "datos_base, PROY_Indexado, parametros_recargas y "
-          "sobrestock_sustitutos de la planta comercial (ver la hoja Importados)"),
-         ("Dimensionamiento Recargas Planta Industrial", g.PEGAR, "lo mismo de la planta industrial")]
+LINKS = [("Dimensionamiento Recargas Planta Comercial", g.PEGAR, "Lo que trae la hoja Importados"),
+         ("Dimensionamiento Recargas Planta Industrial", g.PEGAR, "Lo que trae la hoja Importados")]
 LK = {"Comercial": "Links!$B$4", "Industrial": "Links!$B$5"}
 TIPOS = [n for n, v in g.REC]
 # peso lleno: BOM FLAMA (Resumen, peso de catálogo) y, para los carros, Word de carros (Tabla 0, carro terminado)
 PESO = [1.9, 4.6, 8.5, 16.5, 12.55, 12.6, 100, 8.5, 8.25, 9, 20, 8.5, 16.5, 53, 90, 136, 179]
-F_PESO = ["BOM FLAMA, peso de catálogo"] * 13 + ["Word de carros, Tabla 0 (carro terminado)"] * 4
-# u. por jaula de 1,2 × 1,0 m: Word de recargas (A: 72 de 1 kg; B: 30 de 2,5, 24 de 5 o 16 de 10 kg); el resto por
-# tamaño parecido y los rodantes por posición (Recargas.xlsx del grupo)
-U_JAULA = [72, 30, 24, 16, 16, 16, 2, 24, 20, 30, 20, 24, 16, 3, 2, 2, 1]
+F_PESO = ["BOM FLAMA"] * 13 + ["Word de carros, Tabla 0"] * 4
+# u. por jaula de 1,2 × 1,0 m: Word de recargas (A: 72 de 1 kg; B: 30 de 2,5, 24 de 5 o 16 de 10 kg); el resto, con la
+# huella del catálogo FLAMA (ancho × profundidad) en la clase del Word que la contiene; rodantes por posición en planta
+U_JAULA = [72, 30, 24, 16, 16, 16, 2, 24, 16, 30, 16, 24, 16, 2, 2, 2, 1]
 JAULA = ["A"] + ["B"] * 5 + ["Rodantes"] + ["B"] * 6 + ["Rodantes"] * 4
-MIN_U = [0.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.0]   # min por u. en el cliente (Recargas.xlsx del grupo, Supuestos E84:E90)
+MIN_U = [0.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.0]   # min por u. en el cliente (criterio del grupo; Word § 10.4)
 
 # Supuestos: secciones con (clave, texto, valor, formato, fuente). "{clave}" en una fórmula = fila de esa clave.
 SUP = [
-    ("1. Camión (Word de recargas)", [
-        ("modelo", "Vehículo", "Iveco cabina simple con caja de baranda rebatible", None,
-         "Word de recargas: jaulas palletizables 1,2 × 1,0 m que se cargan y descargan con autoelevador por el costado"),
-        ("carga", "Carga útil (kg)", 2000, "#,##0", "Word de recargas: capacidad aprox. 2 t (pico de carga 1,2 t)"),
-        ("pos", "Posiciones de jaula 1,2 × 1,0 m en la caja", 6, "0",
-         "Criterio: 2 a lo ancho × 3 a lo largo en una caja de unos 3,7 × 2,1 m sobre el chasis Daily de 3.450 mm "
-         "entre ejes (Autocosmos, Daily 55C17: largo total 5.803 mm). Confirmar con el carrocero"),
-        ("pers", "Personas a bordo (chofer + ayudante)", 2, "0", "Criterio del grupo (Recargas.xlsx original)"),
-        ("kgp", "Peso por persona (kg)", 80, "0", "Criterio del grupo (Recargas.xlsx original)"),
-        ("tara", "Tara de jaulas y cinchas (% de la carga útil)", 0.1, "0%",
-         "Criterio del grupo (Recargas.xlsx original)"),
-        ("neta", "Carga neta por viaje (kg)", "=(B{carga}-B{pers}*B{kgp})*(1-B{tara})", "#,##0",
-         "Carga útil − personas − tara"),
-        ("precio", "Precio del camión con caja (ARS)", None, "#,##0", "A cotizar (concesionario Iveco + carrocero)")]),
+    ("1. Camión", [
+        ("modelo", "Vehículo", "Iveco Daily 55C17 con caja de baranda rebatible", None, "Word de recargas · § 10.1"),
+        ("carga", "Carga útil (kg)", 2000, "#,##0", "Word de recargas: aprox. 2 t"),
+        ("pos", "Posiciones de jaula 1,2 × 1,0 m en la caja", 6, "0", "2 × 3 en caja de 3,7 × 2,1 m · § 10.1"),
+        ("pers", "Personas a bordo (chofer + ayudante)", 2, "0", "Retiro y colocación de sustitutos · § 10.1"),
+        ("kgp", "Peso por persona (kg)", 75, "0", "Masa normalizada por ocupante (Dir. 2007/46/CE)"),
+        ("kgj", "Peso de una jaula (kg)", 75, "0", "Jaula plegable 1,2 × 1,0 m (Palletower Hypacage)"),
+        ("tara", "Tara de las jaulas (kg)", "=B{pos}*B{kgj}", "#,##0", "Posiciones × peso de jaula"),
+        ("neta", "Carga neta por viaje (kg)", "=B{carga}-B{pers}*B{kgp}-B{tara}", "#,##0",
+         "Carga útil − personas − jaulas"),
+        ("precio", "Precio del camión con caja (ARS)", None, "#,##0", "A cotizar")]),
     ("2. Recorrido", [
-        ("turnos", "Turnos de logística por día", 2, "0",
-         "Criterio del grupo (Recargas.xlsx original): el camión sale a la mañana y a la tarde"),
-        ("iv", "Ida y vuelta planta ↔ zona de clientes (h por viaje)", 1.5, "0.0",
-         "Criterio del grupo (Recargas.xlsx original): clientes en AMBA, ~25 km por tramo"),
-        ("parada", "Tiempo fijo por parada (min)", 20, "0", "Criterio del grupo: estacionar, presentarse, remito y firma"),
-        ("manejo", "Manejo entre paradas (min)", 15, "0", "Criterio del grupo (Recargas.xlsx original)")]),
+        ("turnos", "Turnos de logística por día", 2, "0", "Los mismos de la planta (Ley 11.544) · § 10.2"),
+        ("iv", "Ida y vuelta planta ↔ zona de clientes (h por viaje)", 1.5, "0.0", "2 × 25 km (TomTom 2024) · § 10.2"),
+        ("parada", "Tiempo fijo por parada (min)", 20, "0", "Criterio · § 10.2"),
+        ("manejo", "Manejo entre paradas (min)", 15, "0", "5 km a 20 km/h (TomTom 2024) · § 10.2"),
+        ("umbral", "Ocupación máxima de la flota", 0.9, "0%", "El mismo límite de los puestos · § 8")]),
     ("3. Pulmón", [
-        ("d_rec", "Días de llegada que esperan en recepción", 0.5, "0.0",
-         "Criterio del grupo: lo que trae un turno entra al proceso en el turno siguiente"),
-        ("d_desp", "Días de recargados que esperan el recorrido", 0.5, "0.0",
-         "Criterio del grupo: salen en el turno siguiente"),
-        ("medio", "Factor de jaulas a medio llenar", 1.15, "0.00",
-         "Criterio del grupo: las jaulas se separan por cliente y familia de agente (Word: agrupados por cliente)"),
-        ("vacias", "Jaulas vacías de reserva (% de las ocupadas)", 0.15, "0%", "Criterio del grupo"),
-        ("niveles", "Niveles de la estantería de sustitutos", 3, "0",
-         "Criterio del grupo: los sustitutos van en estantería; los rodantes, en el piso"),
-        ("apil", "Jaulas vacías apiladas por posición", 2, "0", "Criterio del grupo: de a 2 con transpaleta"),
-        ("m2pos", "Superficie por posición con pasillo (m²)", "=1.2*1*2", "0.0",
-         "Posición de 1,2 × 1,0 m × 2 (pasillo de transpaleta compartido por dos filas)")]),
+        ("d_rec", "Días de llegada que esperan en recepción", 0.5, "0.0", "Entra en el turno siguiente · § 10.3"),
+        ("d_desp", "Días de recargados que esperan el recorrido", 0.5, "0.0", "Sale en el turno siguiente · § 10.3"),
+        ("medio", "Factor de jaulas a medio llenar", 1.15, "0.00", "Jaulas por cliente y agente · § 10.3"),
+        ("vacias", "Jaulas vacías de reserva (% de las ocupadas)", 0.15, "0%", "Criterio · § 10.3"),
+        ("niveles", "Niveles de la estantería de sustitutos", 3, "0", "Criterio · § 10.3"),
+        ("apil", "Jaulas vacías apiladas por posición", 4, "0", "Hypacage: apilable de a 4"),
+        ("m2pos", "Superficie por posición con pasillo (m²)", "=1.2*1*2", "0.0", "Pasillo compartido por dos filas")]),
 ]
 S = {}
 _r = 3
@@ -146,10 +136,9 @@ def h_importados(wb, datos):
 
 
 def h_supuestos(wb):
-    ws = hoja(wb, "Supuestos", [52, 16, 100])
-    tit(ws, 1, "Supuestos de logística (cada uno con su fuente o criterio)")
-    nota(ws, 2, "La demanda, la estacionalidad, el mix, el lote y los sustitutos no se cargan acá: vienen de Importados. "
-                "Peso y u. por jaula de cada tipo y minutos por rubro están en Cálculo, junto a su uso.")
+    ws = hoja(wb, "Supuestos", [52, 16, 56])
+    tit(ws, 1, "Supuestos de logística")
+    nota(ws, 2, "Demanda, estacionalidad, mix, lote y sustitutos vienen de Importados · § 10")
     for sec, items in SUP:
         cab(ws, S[items[0][0]] - 1, [sec, "Valor", "Fuente / criterio"])
         for clave, t, v, fmt, fu in items:
@@ -167,28 +156,24 @@ C_MES, C_T1, C_R1, C_CAM = 5, 13, 37, 49
 def h_calculo(wb):
     ws = hoja(wb, "Cálculo", [44, 12, 11, 11, 11, 12, 12, 12, 12, 12, 12, 12, 40])
     tit(ws, 1, "Logística en el mes pico de 2035 (las dos plantas lado a lado)")
-    nota(ws, 2, "Cada planta se dimensiona en su mes pico: el de mayor % de recargas del año en su perfil mensual "
-                "(estacionalidad por rubro del Dimensionamiento).")
+    nota(ws, 2, "Cada planta en su mes pico · § 10")
     col = {"Comercial": "B", "Industrial": "C"}
 
     # 1. mes pico
-    cab(ws, C_MES - 1, ["1. Mes pico", "Comercial", "Industrial", "Cómo se calcula"])
-    ws.merge_cells(start_row=C_MES - 1, start_column=4, end_row=C_MES - 1, end_column=13)
-    filas = [("N° del mes pico", lambda p: (f"=MATCH(MAX(Importados!$B${fi(p, 'tot')}:$M${fi(p, 'tot')}),"
-                                             f"Importados!$B${fi(p, 'tot')}:$M${fi(p, 'tot')},0)"), "0",
-              "Mes con el mayor % en la fila Toda la planta de Importados"),
-             ("Mes pico", lambda p: f"=INDEX(Importados!$B${IMP0[p] + 1}:$M${IMP0[p] + 1},{col[p]}{C_MES})", None, ""),
+    cab(ws, C_MES - 1, ["1. Mes pico", "Comercial", "Industrial"])
+    filas = [("N° del mes pico (mayor % de Toda la planta)",
+              lambda p: (f"=MATCH(MAX(Importados!$B${fi(p, 'tot')}:$M${fi(p, 'tot')}),"
+                         f"Importados!$B${fi(p, 'tot')}:$M${fi(p, 'tot')},0)"), "0"),
+             ("Mes pico", lambda p: f"=INDEX(Importados!$B${IMP0[p] + 1}:$M${IMP0[p] + 1},{col[p]}{C_MES})", None),
              ("% de las recargas del año en el mes pico",
-              lambda p: f"=INDEX(Importados!$B${fi(p, 'tot')}:$M${fi(p, 'tot')},{col[p]}{C_MES})", "0.0%", ""),
-             ("Días hábiles por mes", lambda p: f"=Importados!$B${fi(p, 'dias')}", "0", "Importado"),
-             ("Horas productivas por turno", lambda p: f"=Importados!$B${fi(p, 'horas')}", "0.00", "Importado")]
-    for j, (t, fx, fmt, como) in enumerate(filas):
+              lambda p: f"=INDEX(Importados!$B${fi(p, 'tot')}:$M${fi(p, 'tot')},{col[p]}{C_MES})", "0.0%"),
+             ("Días hábiles por mes", lambda p: f"=Importados!$B${fi(p, 'dias')}", "0"),
+             ("Horas productivas por turno", lambda p: f"=Importados!$B${fi(p, 'horas')}", "0.00")]
+    for j, (t, fx, fmt) in enumerate(filas):
         r = C_MES + j
         celda(ws, r, 1, t, neg=(j == 1))
         for p in PLANTAS:
             celda(ws, r, 2 + PLANTAS.index(p), fx(p), fmt, res=True).alignment = g.CEN
-        celda(ws, r, 4, como)
-        ws.merge_cells(start_row=r, start_column=4, end_row=r, end_column=13)
     nmes = {p: f"${col[p]}${C_MES}" for p in PLANTAS}
     dias = {p: f"${col[p]}${C_MES + 3}" for p in PLANTAS}
     horas = {p: f"${col[p]}${C_MES + 4}" for p in PLANTAS}
@@ -200,7 +185,7 @@ def h_calculo(wb):
     ws.merge_cells(start_row=C_T1 - 2, start_column=6, end_row=C_T1 - 2, end_column=8)
     ws.merge_cells(start_row=C_T1 - 2, start_column=9, end_row=C_T1 - 2, end_column=11)
     cab(ws, C_T1 - 1, ["Tipo", "", "", "", "", "u/día", "Sustitutos por día", "Jaulas por día",
-                       "u/día", "Sustitutos por día", "Jaulas por día", "", ""])
+                       "u/día", "Sustitutos por día", "Jaulas por día", "", "§ 10.3"])
     for k in range(17):
         r = C_T1 + k
         celda(ws, r, 1, TIPOS[k])
@@ -225,14 +210,11 @@ def h_calculo(wb):
         u = L(6 + 3 * i)
         celda(ws, tot_t + 1, 6 + 3 * i, f"=SUMPRODUCT({u}{C_T1}:{u}{t17},$B${C_T1}:$B${t17})/{u}{tot_t}", "0.0",
               res=True)
-    nota(ws, tot_t + 2, "u/día = recargas 2035 × % del tipo en el mes pico ÷ días del mes. u. por jaula: Word de "
-                        "recargas (A: 72 de 1 kg; B: 30 de 2,5 kg, 24 de 5 kg o 16 de 10 kg); el resto por tamaño "
-                        "parecido.")
 
     # 3. por rubro
     r7 = C_R1 + 6
     cab(ws, C_R1 - 2, ["3. Por rubro", "min por u. en el cliente", "Comercial", "", "", "", "Industrial", "", "", "",
-                       "", "", "Fuente de los minutos"])
+                       "", "", "Fuente"])
     ws.merge_cells(start_row=C_R1 - 2, start_column=3, end_row=C_R1 - 2, end_column=6)
     ws.merge_cells(start_row=C_R1 - 2, start_column=7, end_row=C_R1 - 2, end_column=10)
     cab(ws, C_R1 - 1, ["Rubro", "", "u/día", "Lote (u/cliente)", "Paradas por día", "Horas de parada",
@@ -251,18 +233,14 @@ def h_calculo(wb):
             celda(ws, r, c0 + 1, f"=Importados!{q}${fi(p, 'lote')}", "0")
             celda(ws, r, c0 + 2, f"=2*{L(c0)}{r}/{L(c0 + 1)}{r}", "0.0")
             celda(ws, r, c0 + 3, f"={L(c0 + 2)}{r}*({sp('parada')}+{sp('manejo')})/60+2*{L(c0)}{r}*$B{r}/60", "0.0")
-        celda(ws, r, 13, "Recargas.xlsx del grupo (Supuestos E84:E90), criterio")
+        celda(ws, r, 13, "Criterio · § 10.4")
     tot_r = r7 + 1
     celda(ws, tot_r, 1, "Total", neg=True)
     for c in (3, 5, 6, 7, 9, 10):
         celda(ws, tot_r, c, f"=SUM({L(c)}{C_R1}:{L(c)}{r7})", "#,##0.0", res=True)
-    nota(ws, tot_r + 1, "u/día del rubro = estacionalidad del rubro en el mes pico × recargas 2035 del rubro ÷ días del "
-                        "mes (suma lo mismo que la tabla por tipo). Paradas = 2 por cliente (retiro con sustituto y "
-                        "devolución). Horas = paradas × (parada + manejo) + 2 manipulaciones por u. en el cliente.")
 
     # 4. camión y viajes ({c} = columna de la planta, {h} = horas por turno de la planta)
-    cab(ws, C_CAM - 1, ["4. Camión y viajes", "Comercial", "Industrial", "Cómo se calcula"])
-    ws.merge_cells(start_row=C_CAM - 1, start_column=4, end_row=C_CAM - 1, end_column=13)
+    cab(ws, C_CAM - 1, ["4. Camión y viajes (§ 10.5)", "Comercial", "Industrial"])
     R = C_CAM
     cam = [("Equipos que se retiran por día (u)", lambda i: f"={L(6 + 3 * i)}{tot_t}", "#,##0.0", "Total por tipo"),
            ("Sustitutos que salen por día (u)", lambda i: f"={L(7 + 3 * i)}{tot_t}", "#,##0.0", "Total por tipo"),
@@ -286,8 +264,8 @@ def h_calculo(wb):
             "El mayor de los dos, redondeado"),
            ("Horas de camión por día", lambda i: f"={{c}}{R + 12}*{sp('iv')}+{{c}}{R + 10}", "0.0",
             "Viajes × ida y vuelta + horas de parada y manipuleo"),
-           ("Camiones necesarios", lambda i: f"=ROUNDUP({{c}}{R + 13}/({{h}}*{sp('turnos')}),0)", "0",
-            "Horas de camión ÷ (horas por turno × turnos de logística)"),
+           ("Camiones necesarios", lambda i: f"=ROUNDUP({{c}}{R + 13}/({{h}}*{sp('turnos')}*{sp('umbral')}),0)", "0",
+            "Horas de camión ÷ (horas por turno × turnos de logística × ocupación máxima)"),
            ("Ocupación de la flota", lambda i: f"={{c}}{R + 13}/({{c}}{R + 14}*{{h}}*{sp('turnos')})", "0%",
             "Horas de camión ÷ horas disponibles"),
            ("Peso por viaje (kg)", lambda i: f"={{c}}{R + 2}*{{c}}{R + 3}/{{c}}{R + 12}", "#,##0",
@@ -302,8 +280,6 @@ def h_calculo(wb):
         for i, p in enumerate(PLANTAS):
             f = fx(i).replace("{c}", L(2 + i)).replace("{h}", horas[p])
             celda(ws, r, 2 + i, f, fmt, res=clave).alignment = g.DER
-        celda(ws, r, 4, como)
-        ws.merge_cells(start_row=r, start_column=4, end_row=r, end_column=13)
 
     # 5. pulmón
     r1 = R + len(cam) + 2
@@ -316,7 +292,7 @@ def h_calculo(wb):
     zonas = [("Recepción", "Jaulas A (1 kg) y B por cliente, en orden de llegada; rodantes en su jaula"),
              ("Despacho", "Jaulas armadas por recorrido y en el orden de entrega"),
              ("Sustitutos en planta", "Estantería con faja amarilla, por tipo; rodantes en el piso"),
-             ("Jaulas vacías", "Apiladas de a 2, junto a despacho")]
+             ("Jaulas vacías", "Apiladas, junto a despacho")]
     for j, (z, donde) in enumerate(zonas):
         r = r1 + 1 + j
         celda(ws, r, 1, z)
@@ -357,8 +333,7 @@ def h_calculo(wb):
 def h_resumen(wb, rf):
     ws = hoja(wb, "Resumen", [52, 16, 16, 60])
     tit(ws, 1, "Recargas — logística de las dos plantas (mes pico de 2035)")
-    nota(ws, 2, "Importados trae la demanda de cada Dimensionamiento; Supuestos tiene el camión, el recorrido y el "
-                "pulmón; Cálculo hace las cuentas con las dos plantas lado a lado.")
+    nota(ws, 2, "Desarrollo y fuentes en el Word de justificación de recargas · § 10")
     cab(ws, 4, ["Concepto", "Comercial", "Industrial", "De dónde sale"])
     tt, tr, pu = rf["tot_t"], rf["tot_r"], rf["pul"]
     filas = [("Recargas del año 2035 (u)", lambda i, p: f"=Importados!$N${fi(p, 'tot')}", "#,##0", "Importados"),
@@ -383,17 +358,6 @@ def h_resumen(wb, rf):
         for i, p in enumerate(PLANTAS):
             celda(ws, r, 2 + i, fx(i, p), fmt, res=True).alignment = g.DER
         celda(ws, r, 4, de)
-    r = 5 + len(filas) + 1
-    tit(ws, r, "Qué cambió respecto del Recargas.xlsx anterior")
-    cambios = ["Demanda por IMPORTRANGE de cada planta (antes: 127.340 fijos de una sola planta); PBA Interior afuera.",
-               "Estacionalidad por rubro con fuente (VTV para automotor, inicio de clases para educación; el resto "
-               "parejo por IRAM 3517-2 9.2.1 y 9.4.14) en lugar del perfil supuesto; sin factor de día pico.",
-               "Sustitutos del Dimensionamiento (lote, días en planta y ciclo por rubro): un solo número en los dos "
-               "archivos.",
-               "Camión con baranda rebatible y jaulas del Word de recargas en vez de Kangoo / Master; pesos del BOM y "
-               "del Word de carros."]
-    for j, t in enumerate(cambios):
-        nota(ws, r + 1 + j, "• " + t)
 
 
 def generar():
