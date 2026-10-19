@@ -1,11 +1,12 @@
 """Actualiza los Dimensionamientos de Manuales y Carros del grupo (referencias/) y los deja en salida/.
 
 Cambios sobre los archivos del grupo, sin mover sus hojas:
-- Hoja Links con los links de los IMPORTRANGE (Proyecciones y los dos Dimensionamientos de recargas, a completar).
+- Hoja Links con los links de los IMPORTRANGE (Proyecciones, los dos Dimensionamientos de recargas y el MRP).
+- Estacionalidad (filas 12 a 15) por IMPORTRANGE de la hoja ESTACIONALIDAD del MRP, que define los picos.
 - datos_base con IMPORTRANGE de Proyecciones (Indexado Dim Técnico) y un bloque de sustitutos ABC por modelo: la
   planta industrial los pide terminados (proceso completo en la línea) y la comercial como cilindro vacío.
-- Plan mensual con esas filas (perfil de estacionalidad del modelo); la demanda por puesto las suma igual en sin y con
-  sobrestock: los terminados pasan por todos los puestos y los cilindros solo por los de alcance "Todos".
+- Las filas del Plan mensual del grupo suman esos sustitutos (terminados a los terminados, cilindros a los
+  cilindros); la demanda por puesto queda como estaba. Con sobrestock se suman con el perfil de producción.
 - Aprovechamiento indexado a las tablas de máquinas y turnos (sin "/2" escritos a mano), tablas cargadas con el
   criterio de Manuales a partir de lo que ya estaba (ningún puesto pasa el umbral del 90 %) y colores por formato
   condicional.
@@ -59,12 +60,12 @@ CIL_CAR = [[0.0, 0.0, 14.4, 50.2, 93.0, 135.0, 191.0, 247.0, 277.0, 322.0],
 
 LINKS = [g.LINKS[0],
          ("Dimensionamiento Recargas Planta Comercial", g.PEGAR,
-          "sobrestock_sustitutos, paso 6: sustitutos ABC que pide como cilindro vacío"),
+          "sobrestock_sustitutos, paso 4: alta de sustitutos ABC que pide como cilindro vacío"),
          ("Dimensionamiento Recargas Planta Industrial", g.PEGAR,
-          "sobrestock_sustitutos, paso 6: sustitutos ABC que pide como matafuego terminado")]
-LK_PROY, LK_COM, LK_IND = "Links!$B$4", "Links!$B$5", "Links!$B$6"
-PED_MAN = f"sobrestock_sustitutos!B{g.S_PED}:K{g.S_PED + 3}"
-PED_CAR = f"sobrestock_sustitutos!B{g.S_PED + 4}:K{g.S_PED + 7}"
+          "sobrestock_sustitutos, paso 4: alta de sustitutos ABC que pide como matafuego terminado")]
+LK_PROY, LK_COM, LK_IND, LK_MRP = "Links!$B$4", "Links!$B$5", "Links!$B$6", "Links!$B$7"
+PED_MAN = f"sobrestock_sustitutos!B{g.S_ALTA}:K{g.S_ALTA + 3}"
+PED_CAR = f"sobrestock_sustitutos!B{g.S_ALTA + 13}:K{g.S_ALTA + 16}"
 # Recurso de cada puesto (para el color de máquina u operario), según el equipo de parametros y el Word de procesos
 REC_MAN = ["Manual"] + ["Máquina"] * 11 + ["Manual", "Máquina", "Máquina", "Máquina", "Manual", "Manual", "Máquina",
                                            "Máquina", "Manual", "Máquina", "Máquina", "Máquina", "Manual"]
@@ -73,7 +74,7 @@ REC_CAR = ["Manual", "Máquina", "Máquina", "Máquina", "Manual", "Máquina", "
 
 
 def pedidos():
-    """Sustitutos ABC por modelo y año que pide cada planta de recargas (paso 6 de su Dimensionamiento)."""
+    """Sustitutos ABC por modelo y año que pide cada planta de recargas (paso 4, alta, de su Dimensionamiento)."""
     out = {}
     for p in ("Comercial", "Industrial"):
         alta = g.modelo_demanda(p)[-1]["alta"]
@@ -97,9 +98,34 @@ def imp(ws, r0, c0, link, rango, valores):
             ws.cell(r0 + i, c0 + j).value = f
 
 
-def links(wb):
-    g.h_links(wb, LINKS)
+def links(wb, mrp):
+    g.h_links(wb, LINKS + [("MRP (FLAMA_MRP)", g.PEGAR, mrp)])
     wb.move_sheet("Links", offset=-(len(wb.sheetnames) - 1))
+
+
+def estacionalidad(ws, perfiles, nota_txt):
+    """Filas 12 a 15 de parametros: IMPORTRANGE del perfil del MRP de cada modelo (queda el valor actual)."""
+    for j, e in enumerate(perfiles):
+        nom, rng, vals = g.E_MRP[e]
+        imp(ws, 12 + j, 2, LK_MRP, rng, [vals])
+        ws.cell(12 + j, 15).value = f"MRP, ESTACIONALIDAD {nom} (IMPORTRANGE)"
+    ws["A10"].value = nota_txt
+
+
+def plan_con_sustitutos(ws, fila_db, pm, verif):
+    """Plan mensual del grupo: cada fila suma los sustitutos de su modelo (terminados de la planta industrial y
+    cilindros de la comercial), con el mismo perfil."""
+    for i in range(10):
+        r0 = 1 + 11 * i
+        y = L(2 + i)
+        for j in range(4):
+            for fila, base, extra in ((r0 + 1 + j, 2 + j, fila_db["Industrial"] + j),
+                                      (r0 + 5 + j, 9 + j, fila_db["Comercial"] + j)):
+                for m in range(12):
+                    viejo = f"=datos_base!${y}${base}*{pm}!{L(2 + m)}${12 + j}"
+                    if ws.cell(fila, 4 + m).value != viejo:
+                        verif.append((ws.title, ws.cell(fila, 4 + m).coordinate, ws.cell(fila, 4 + m).value, viejo))
+                    ws.cell(fila, 4 + m).value = f"=(datos_base!${y}${base}+datos_base!${y}${extra})*{pm}!{L(2 + m)}${12 + j}"
 
 
 def grises(wb):
@@ -145,69 +171,8 @@ def bloque_sustitutos(ws, r0, modelos, rango, ped, fila_estilo, fila_tot, nota_t
     return filas
 
 
-def plan_sustitutos(ws, fila_ini, fila_db, hoja_perfil, modelos):
-    """Plan mensual: bloque por año con los sustitutos (mismo perfil del modelo que en estacionalidad)."""
-    ws.cell(fila_ini - 1, 2).value = ("SUSTITUTOS PARA LAS PLANTAS DE RECARGAS (perfil de estacionalidad del modelo; "
-                                      "se suman igual en sin y con sobrestock)")
-    ws.cell(fila_ini - 1, 2).font = Font(name="Arial", size=11, bold=True)
-    for i in range(10):
-        r0 = fila_ini + 11 * i
-        y = L(2 + i)
-        for c in range(1, 17):
-            estilo(ws.cell(1, c), ws.cell(r0, c))
-            ws.cell(r0, c).value = ws.cell(1, c).value
-        ws.cell(r0, 1).value = g.ANIOS[i]
-        for b, (tipo, base) in enumerate([("Terminado", fila_db["Industrial"]), ("Cilindro", fila_db["Comercial"])]):
-            for j, mo in enumerate(modelos):
-                r = r0 + 1 + 4 * b + j
-                for c in range(1, 17):
-                    estilo(ws.cell(2 + 4 * b + j, c), ws.cell(r, c))
-                ws.cell(r, 1).value = g.ANIOS[i]
-                ws.cell(r, 2).value = f"{mo} — sustituto ({'planta industrial' if b == 0 else 'planta comercial'})"
-                ws.cell(r, 3).value = f"{tipo} sustituto"
-                for m in range(12):
-                    ws.cell(r, 4 + m).value = f"=datos_base!${y}${base + j}*{hoja_perfil}!{L(2 + m)}${12 + j}"
-                ws.cell(r, 16).value = f"=SUM(D{r}:O{r})"
-        rt = r0 + 9
-        for c in range(1, 17):
-            estilo(ws.cell(10, c), ws.cell(rt, c))
-        ws.cell(rt, 2).value = "Total sustitutos"
-        for c in range(4, 17):
-            col = L(c)
-            ws.cell(rt, c).value = f"=SUM({col}{r0 + 1}:{col}{r0 + 8})"
-
-
-def termino(pm, p, coef, t, ts, c_, cs, ref):
-    return (f"{pm}!${coef}${p}*({ref(t)}+{ref(ts)}+IF({pm}!$H${p}=\"Todos\",{ref(c_)}+{ref(cs)},0))")
-
-
-def demanda_plan(ws_dem, pm, n_puestos, bloque_dem, cierre, fila_sust, verif):
-    """Demanda que sale del Plan mensual (sin sobrestock / carros): suma los sustitutos del bloque nuevo."""
-    for i in range(10):
-        r_plan = 1 + 11 * i
-        r_sust = fila_sust + 11 * i
-        for k in range(n_puestos):
-            r = bloque_dem * i + 2 + k
-            p = 19 + k
-            for m in range(12):
-                c = L(4 + m)
-
-                def ref(fila):
-                    return f"'Plan mensual'!{c}{fila}"
-                viejo = "=(" + "+".join(
-                    f"{pm}!${co}${p}*({ref(r_plan + 1 + j)}+IF({pm}!$H${p}=\"Todos\",{ref(r_plan + 5 + j)},0))"
-                    for j, co in enumerate("DEFG")) + ")" + cierre(p)
-                actual = ws_dem.cell(r, 2 + m).value
-                if actual != viejo:
-                    verif.append((ws_dem.title, ws_dem.cell(r, 2 + m).coordinate, actual, viejo))
-                ws_dem.cell(r, 2 + m).value = "=(" + "+".join(
-                    termino(pm, p, co, r_plan + 1 + j, r_sust + 1 + j, r_plan + 5 + j, r_sust + 5 + j, ref)
-                    for j, co in enumerate("DEFG")) + ")" + cierre(p)
-
-
 def demanda_sobrestock(ws_dem, fila_db, verif):
-    """Manuales con sobrestock: producción = datos_base × perfil de producción; los sustitutos van con el perfil de
-    estacionalidad (filas 12 a 15), igual que en la hoja sin sobrestock."""
+    """Manuales con sobrestock: producción = (datos_base + sustitutos) × perfil de producción con sobrestock."""
     pm = "parametros_manuales"
     prod = [95, 100, 105, 110]
     for i in range(10):
@@ -224,10 +189,9 @@ def demanda_sobrestock(ws_dem, fila_db, verif):
                 if actual != viejo:
                     verif.append((ws_dem.title, ws_dem.cell(r, 2 + m).coordinate, actual, viejo))
                 nuevo = "+".join(
-                    f"{pm}!${co}${p}*(datos_base!${y}${2 + j}+IF({pm}!$H${p}=\"Todos\",datos_base!${y}${9 + j},0))"
-                    f"*{pm}!${mc}${prod[j]}+{pm}!${co}${p}*(datos_base!${y}${fila_db['Industrial'] + j}"
-                    f"+IF({pm}!$H${p}=\"Todos\",datos_base!${y}${fila_db['Comercial'] + j},0))*{pm}!${mc}${12 + j}"
-                    for j, co in enumerate("DEFG"))
+                    f"{pm}!${co}${p}*(datos_base!${y}${2 + j}+datos_base!${y}${fila_db['Industrial'] + j}"
+                    f"+IF({pm}!$H${p}=\"Todos\",datos_base!${y}${9 + j}+datos_base!${y}${fila_db['Comercial'] + j},0))"
+                    f"*{pm}!${mc}${prod[j]}" for j, co in enumerate("DEFG"))
                 ws_dem.cell(r, 2 + m).value = f"=({nuevo})*{pm}!$I${p}*{pm}!$J${p}"
 
 
@@ -248,9 +212,9 @@ def resumen(ws, n, r_maq, r_tur, util, recursos, umbral_ref, celda_umbral, legen
     ws[rm].font = Font(name="Arial", size=10, bold=True)
     ws[rn].value = f"={umbral_ref}"
     ws[rn].number_format = "0%"
-    ws.cell(legend_row, 13).value = ("Colores automáticos (formato condicional) comparando las tablas de máquinas y "
-                                     "turnos con el año anterior. Ningún puesto pasa el umbral; amarillo solo si se "
-                                     "cambian las tablas a mano y lo pasa.")
+    ws.cell(legend_row, 13).value = ("Colores automáticos comparando las tablas de máquinas y turnos con el año "
+                                     "anterior. Todos los turnos entran el mismo año (2° turno) y después no se agrega "
+                                     "máquina; amarillo solo si se cambian las tablas a mano y se pasa el umbral.")
     ws.cell(legend_row, 13).font = Font(name="Arial", size=9, italic=True)
     g.colores_aprovechamiento(ws, 2, r_maq, r_tur, n, "L", "$" + rn[0] + "$" + rn[1:], sin_maquina_es_terc=True)
 
@@ -304,28 +268,29 @@ def manuales(ped):
     sal = os.path.join(g.SALIDA, "Dimensionamiento_Manuales.xlsx")
     wb = load_workbook(ent)
     verif = []
-    links(wb)
+    links(wb, "ESTACIONALIDAD C4:N5: perfiles E01 (1 kg) y E02 (2,5 a 10 kg), filas 12 a 15 de parametros_manuales")
     grises(wb)
+    estacionalidad(wb["parametros_manuales"], [0, 1, 1, 1],
+                   "ESTACIONALIDAD (% de la demanda anual por mes; IMPORTRANGE del MRP, que define los picos)")
     db = wb["datos_base"]
     imp(db, 2, 2, LK_PROY, "Indexado Dim Técnico!B3:K6", TERM_MAN)
     imp(db, 9, 2, LK_PROY, "Indexado Dim Técnico!B15:K18", CIL_MAN)
     modelos = ["ABC 1 kg", "ABC 2,5 kg", "ABC 5 kg", "ABC 10 kg"]
     fila_db = bloque_sustitutos(db, 17, modelos, PED_MAN, {p: v[:4] for p, v in ped.items()}, 2, 6,
-                                "Sustitutos: paso 6 de sobrestock_sustitutos de cada Dimensionamiento de recargas. La "
+                                "Sustitutos: paso 4 (alta) de sobrestock_sustitutos de cada Dimensionamiento de recargas. La "
                                 "planta industrial los fabrica terminados (proceso completo); la comercial los recibe "
                                 "como cilindro vacío y los carga allá.")
     db["A15"].value = "Total recipientes a fabricar (con sustitutos)"
     for i in range(10):
         c = L(2 + i)
         db[f"{c}15"].value = f"={c}6+{c}13+{c}22+{c}27"
-    plan_sustitutos(wb["Plan mensual"], 112, fila_db, "parametros_manuales", modelos)
-    cierre = lambda p: f"*parametros_manuales!$I${p}*parametros_manuales!$J${p}"  # noqa: E731
-    demanda_plan(wb["Demanda puesto sin sobrestock"], "parametros_manuales", 25, 27, cierre, 112, verif)
+    plan_con_sustitutos(wb["Plan mensual"], fila_db, "parametros_manuales", verif)
     demanda_sobrestock(wb["Demanda puesto con sobrestock"], fila_db, verif)
     pm = wb["parametros_manuales"]
     pm["A9"].value = "Año de inicio del 2° turno (antes: más máquinas)"
     pm["B9"].value = ANIO_2T
-    pm["C9"].value = "Criterio del aprovechamiento: antes de ese año se agrega máquina u operario; desde ese año, turno"
+    pm["C9"].value = ("Antes de ese año se agrega máquina u operario; ese año entran todos los turnos y las máquinas que hagan "
+                      "falta hasta 2035; después no se agrega nada (Resumen)")
     for c in "ABC":
         estilo(pm[f"{c}8"], pm[f"{c}9"])
     pm["B9"].number_format = "0"
@@ -370,14 +335,16 @@ def carros(ped):
     sal = os.path.join(g.SALIDA, "Dimensionamiento_Carros.xlsx")
     wb = load_workbook(ent)
     verif = []
-    links(wb)
+    links(wb, "ESTACIONALIDAD C6:N6: perfil E03 (rodantes), filas 12 a 15 de parametros_carros")
     grises(wb)
+    estacionalidad(wb["parametros_carros"], [2, 2, 2, 2],
+                   "ESTACIONALIDAD (% de la demanda anual por mes; IMPORTRANGE del MRP, que define los picos)")
     db = wb["datos_base"]
     imp(db, 2, 2, LK_PROY, "Indexado Dim Técnico!B7:K10", TERM_CAR)
     imp(db, 9, 2, LK_PROY, "Indexado Dim Técnico!B19:K22", CIL_CAR)
     modelos = ["Carro ABC 25 kg", "Carro ABC 50 kg", "Carro ABC 70 kg", "Carro ABC 100 kg"]
     fila_db = bloque_sustitutos(db, 34, modelos, PED_CAR, {p: v[4:] for p, v in ped.items()}, 2, 6,
-                                "Sustitutos: paso 6 de sobrestock_sustitutos de cada Dimensionamiento de recargas. La "
+                                "Sustitutos: paso 4 (alta) de sobrestock_sustitutos de cada Dimensionamiento de recargas. La "
                                 "planta industrial los fabrica terminados (proceso completo); la comercial los recibe "
                                 "como cilindro vacío y los carga allá.")
     db["A15"].value = "Total recipientes a fabricar (con sustitutos)"
@@ -388,9 +355,15 @@ def carros(ped):
         "Fuente: Dimensionamiento-Tecnico-FLAMA.xlsx, hoja DATOS-BASE: terminados filas 7 a 10 ('ABC 25/50/70/100 kg "
         "s/ruedas') y cilindros filas 19 a 22.",
         "Fuente: Proyecciones, Indexado Dim Técnico (IMPORTRANGE): terminados filas 7 a 10 y cilindros filas 19 a 22.")
-    plan_sustitutos(wb["Plan mensual"], 112, fila_db, "parametros_carros", modelos)
-    demanda_plan(wb["Demanda por puesto"], "parametros_carros", 18, 20, lambda p: "/60", 112, verif)
+    plan_con_sustitutos(wb["Plan mensual"], fila_db, "parametros_carros", verif)
     pc = wb["parametros_carros"]
+    pc["A9"].value = "Año de inicio del 2° turno (antes: más máquinas)"
+    pc["B9"].value = ANIO_2T
+    pc["C9"].value = ("Antes de ese año se agrega máquina u operario; ese año entran todos los turnos y las máquinas que hagan "
+                      "falta hasta 2035; después no se agrega nada (Resumen)")
+    for c in "ABC":
+        estilo(pc[f"{c}8"], pc[f"{c}9"])
+    pc["B9"].number_format = "0"
     pc["A8"].value = "Umbral de aprovechamiento"
     pc["C8"].value = ("Límite duro (análisis de riesgos): por encima se agrega máquina, operario o turno según el año "
                       "(Resumen Capacidad); con 2 turnos se agrega máquina. Ningún puesto queda por encima. El Word toma "
