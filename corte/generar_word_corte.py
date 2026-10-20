@@ -192,8 +192,7 @@ def bloques_general(X, tmp):
         "frena a la otra.")
     bul(f"**Guillotina 2, QC12Y 6 × 2500** (cuchilla de 2.550 mm, tope 20-800 mm, control E21, 7,5 kW; "
         f"[publicación del link]({URL_LINK}), USD 10.700 FOB): se apoyan varias franjas una al lado de la otra, tantas "
-        "como entran en 2.500 mm, y cada golpe corta una pieza de cada franja. Para 20 golpes por minuto se toma la "
-        "ficha de la Molinari HG 6 × 2500 (la publicación no lo informa; confirmar con el vendedor).")
+        "como entran en 2.500 mm, y cada golpe corta una pieza de cada franja, a 20 golpes por minuto.")
     bul("**Rodantes**: la pieza mide de 858 a 1.210 mm y no entra en el tope de 800 mm de la G2; el 2.º corte se hace en "
         "la G1 (tope de 1.000 mm), también con franjas en paralelo en sus 3.200 mm.")
     p("El tiempo de cada máquina sale de sus golpes por minuto: golpes por hoja ÷ golpes por minuto. La línea rinde lo "
@@ -245,7 +244,7 @@ def bloques_general(X, tmp):
         filas.append([f, n(GC.DIAM[f], 1), n(e, 2), n(al, 1), n(de, 1), DC.PLANO[f]])
     b.append({"t": "tabla", "cab": ["Formato", "Ø ext. (mm)", "Espesor (mm)", "Alto (mm)", "Desarrollo (mm)", "Plano"],
               "cols": [10, 10, 10, 10, 11, 30], "filas": filas, "num": [1, 2, 3, 4]})
-    nota("El 1 kg se corta de chapa de 0,9 mm por decisión del grupo; el plano G809 todavía lo da en caño de 1,25 mm.")
+    nota("El 1 kg se corta de chapa de 0,9 mm por decisión del grupo.")
     h2("4.1 Disco de cúpulas y fondos: embutido")
     p("El disco no tiene el diámetro de la cúpula ni del fondo: al embutirlo, la chapa toma la profundidad de la pieza. "
       "Como el espesor casi no cambia, el disco tiene **la misma superficie que la pieza embutida** (Harsle, «How to "
@@ -280,10 +279,8 @@ def bloques_general(X, tmp):
       f"{n(va[0])} de A y {n(va[2])} de C. El margen se achicó: la hoja tendría que subir "
       f"{n(res['Margen de D: suba del precio de la hoja que la iguala con A'][0] * 100, 1)} % para que A la iguale. El "
       "detalle está en el Excel Comparacion_corte (hojas Resumen y Cálculo).")
-    h1("6. Pendientes")
-    bul("Que el vendedor de la guillotina 2 confirme los golpes por minuto y el precio puesto en planta (USD 10.700 es "
-        "FOB).")
-    bul("Cambiar el plano G809 del 1 kg: cuerpo en chapa de 0,9 mm con costura longitudinal.")
+    h1("6. Pendiente")
+    bul("Precio de la guillotina 2 puesta en planta: los USD 10.700 son FOB, sin flete ni nacionalización.")
     h1("Fuentes")
     for t in ["Cotización CENA, guillotina hidráulica 8 × 3200 E21 (Drive): USD 36.800 + IVA, tope 20-1.000 mm, 10 golpes "
               "por minuto.",
@@ -342,8 +339,7 @@ def bloques_1kg(X, tmp):
              ["Año 2035", f"{n(u35)} cuerpos = {n(hojas35)} hojas: G1 {n(hojas35 * x['m1'] / 60)} h y G2 "
                           f"{n(hojas35 * x['m2'] / 60)} h al año"]]
     b.append({"t": "tabla", "cab": ["Dato", "Valor"], "cols": [10, 26], "filas": filas})
-    nota("Tiempos a ritmo de máquina (golpes por minuto), sin manipulación. 20 golpes por minuto de la G2: ficha Molinari "
-         "HG 6 × 2500, a confirmar con el vendedor del link.")
+    nota("Tiempos a ritmo de máquina (golpes por minuto), sin manipulación: 10 golpes por minuto la G1 y 20 la G2.")
     h1("3. Alternativas evaluadas")
     filas = []
     for (B, C), lado in (((1220, 2440), "franjas a lo largo"), ((2440, 1220), "franjas a lo ancho"),
@@ -363,7 +359,6 @@ def bloques_1kg(X, tmp):
         "soldadora tiene que entrar en el interior de 74,4 mm.")
     bul("Las orillas de 37,5 mm y los recortes de 68,5 mm no sirven para discos: la cúpula del 1 kg necesita un fleje "
         "de 93 mm de ancho.")
-    bul("Falta cambiar el plano G809: cuerpo de 0,9 mm en chapa con costura longitudinal.")
     return b
 
 

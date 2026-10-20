@@ -78,7 +78,7 @@ GEN = [
      "Planilla «Costo oportunidad operario-máquina», CCT 260/75, ago-2026."),
     ("h_mes", "Horas por mes", 150, "h/mes", F0, "Excel V2."),
     ("h_anio", "Horas productivas por operario y año", 1800, "h/año", F0, "Excel V2 (150 h × 12)."),
-    ("tc", "Tipo de cambio", 1545, "ARS/USD", F0, "Pradecon, presupuestos 173170 y 173195 (28/09/2026)."),
+    ("tc", "Tipo de cambio", 1420, "ARS/USD", F0, "Valor fijo del proyecto (criterio del grupo)."),
     ("c_hora", "Costo hora de operario", "={op_ars}/{h_mes}/{tc}", "USD/h", F2, "Cálculo."),
 ]
 CORTE = [
@@ -101,7 +101,7 @@ MAQ = [
     ("L1", "Guillotina 1: largo de corte", 3200, "mm", F0, "Cotización CENA."),
     ("tope1", "Guillotina 1: recorrido del tope trasero", 1000, "mm", F0, "Cotización CENA: 20 a 1.000 mm."),
     ("gpm2", "Guillotina 2 (piezas) QC12Y 6 × 2500: golpes por minuto", 20, "golpes/min", F0,
-     "La publicación del link no lo da: dato de la HG 6 × 2500 en la ficha Molinari Panther. Confirmar."),
+     "Confirmado por el grupo (igual que la HG 6 × 2500 de la ficha Molinari Panther)."),
     ("L2", "Guillotina 2: largo de corte para franjas en paralelo", 2500, "mm", F0,
      "Publicación Alibaba 1600900259147: 6 × 2500, cuchilla de 2.550 mm."),
     ("tope2", "Guillotina 2: recorrido del tope trasero", 800, "mm", F0,
@@ -363,7 +363,7 @@ def h_piezas(wb):
         c(ws, f"H{r}", fx(f"=F{r}*G{r}*E{r}*{{dens}}/1000000"), F3)
         c(ws, f"I{r}", ac)
     g.nota(ws, PZ0 + 8, "Alto: cuerpo del modelo 3D del plano (incluye el labio del encastre). 1 kg en chapa de 0,9 mm "
-                        "por decisión del grupo; el plano G809 todavía lo da en caño de 1,25 mm.")
+                        "por decisión del grupo.")
     seccion(ws, DS0 - 2, "B) Discos: igual superficie que la pieza embutida (sin sobremedida de recorte)")
     hdr = ["Formato", "Pieza", "Perfil del plano", "Espesor e (mm)", "Ø ext. (mm)", "Altura h (mm)",
            "Pollera o pestaña p (mm)", "a = Ø/2 − e/2 (mm)", "b o profundidad (mm)", "Área media (mm²)",
