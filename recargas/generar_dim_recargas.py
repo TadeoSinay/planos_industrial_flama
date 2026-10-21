@@ -106,10 +106,9 @@ KG = [1, 2.5, 5, 10, 10, 10, 50, 5, 6, 2, 5, 5, 9, 25, 50, 70, 100]
 P_MIX = 57     # PROY_Indexado: primera fila de la matriz de esta planta (tipos en filas, rubros en columnas)
 FILA_RUB = 35      # primera fila de la estacionalidad por rubro (7 rubros)
 # datos de la estacionalidad: alumnos estatales CABA y PBA, % estatal de la planta, enero y diciembre en automotor
-F_CABA, F_PBA, F_ESTATAL, F_ENE, F_DIC = 44, 45, 46, 47, 48
+F_CABA, F_PBA, F_ESTATAL, F_ENE, F_DIC, F_MEST = 44, 45, 46, 47, 48, 49
 FILA_TIPO = 55     # primera fila de la tabla de tipos (con su perfil mensual en E a P)
 FILA_PUESTO = 76   # primera fila de la tabla de puestos
-N_PUESTOS = 29
 FILA_PCIL = 109    # primera fila del perfil de llegada de los sustitutos ABC nuevos (E01, E02, E03 del MRP)
 # Equivalencia de un rodante: operaciones que comparten la fábrica y la recarga. (operación, celdas de
 # parametros_manuales con su valor (s/u), celda de parametros_carros con su valor (min/u, ponderado con el mix 2035))
@@ -223,12 +222,15 @@ FAM_ABC = {0: 0, 1: 1, 2: 1, 3: 1, 13: 2, 14: 2, 15: 2, 16: 2}   # tipo ABC -> p
 # IAE 191). Automotor: % de recargas de enero (ITV de Córdoba: enero concentra el 12 % de las inspecciones del año,
 # Hoy Día Córdoba) y de diciembre (igual a enero: temporada de viajes)
 EST_CABA, EST_PBA, AUTO_ENE = 0.51, 0.72, 0.12
+# las estatales reciben los fondos de inicio del ciclo antes de las clases; la planta les da turno en los N meses que
+# arrancan en febrero (criterio de nivelación: desde ahí cada escuela vuelve en su mes, 9.2.1)
+MESES_EST = 3
 AUTO_DIC = AUTO_ENE
 # (rubro, regla, fuente corta para el Excel); el desarrollo de cada uno va en el Word (§3)
 EST_RUBRO = [
     ("Automotor", "vtv", "Pico en enero y diciembre; resto parejo · § 3.1"),
     ("Edificios", "plano", "Sin mes fijo (Ley 6116, Ley 941) · § 3.3"),
-    ("Educación", "escuelas", "Estatales en febrero; privadas parejo · § 3.2"),
+    ("Educación", "escuelas", "Estatales de febrero a abril; privadas parejo · § 3.2"),
     ("Hoteles", "plano", "Sin mes fijo (Ley 4631, Ley 6116) · § 3.3"),
     ("Industrias / almacenes", "plano", "Sin mes fijo (Res. SRT 463/09) · § 3.3"),
     ("Salud", "plano", "Sin mes fijo (Dec. 4992/90) · § 3.3"),
@@ -269,22 +271,28 @@ PUESTOS = [
     ("Descarga ABC — ruta recuperable", "Máquina neumática Yukon (tolva 240 kg)", "Máquina",
      agentes(abc=R_RECUP), "=15+60+10",
      "Escanear y agitado 15 + descargar mirando el visor 60 + tapar 10 (el retiro de válvula se cuenta en Desarme)", ""),
-    ("Descarga a descarte (ABC y Clase D)", "Tambor Yukon M-000030", "Máquina", agentes(abc=R_CAMBIA, d=R_CAMBIA),
-     "=15+60+10", "Escanear y agitado 15 + descargar 60 + tapar 10",
-     "Clase D: el Word manda la descarga y la PH a las máquinas comunes; al tambor de descarte no vuelve nada"),
-    ("Descarga BC", "Tambor Yukon M-000030 dedicado BC", "Máquina", agentes(bc=R_CAMBIA), "=15+60+10",
-     "Escanear y agitado 15 + descargar 60 + tapar 10", ""),
-    ("Descarga de agua / AFFF / sales K", "IBC 1.000 l (AFFF) y tanque 600 l (agua)", "Máquina", agentes(**LIQS),
-     "=10+10+15+60+10", "Escanear 10 + quitar lanza 10 + acoplar 15 + vaciar 60 + llevar a desarme 10",
-     "Tabla de operaciones: 180 s; paso a paso: 105 s. Vale el paso a paso (tabla 3 de la norma: 40 a 65 s de "
-     "descarga en manuales)"),
-    ("Recuperación de CO₂", "Trasvasadora CO₂ 103/D1 (misma máquina que la carga)", "Máquina",
-     agentes(co2=R_ABRE_CO2), "=20+20+120+20+15+10",
-     "Pesar 20 + conectar 20 + bombear 120 + verificar y pesar 20 + desconectar 15 + registrar 10", ""),
-    ("Recuperación de halogenado", "Unidad THB/BP (misma máquina que la carga)", "Máquina",
-     agentes(hal=R_ABRE_HAL), "=60+20+30+300+40+15",
-     "Preparar y verificar cilindro de paso 60 + pesar 20 + conectar 30 + recuperar 300 + pesar ambos 40 + anotar 15",
-     ""),
+    ("Descarga a descarte (ABC, BC y Clase D)", "Tambor Yukon M-000030 de ABC y Clase D + tambor exclusivo de BC",
+     "Máquina", agentes(abc=R_CAMBIA, bc=R_CAMBIA, d=R_CAMBIA), "=15+60+10", "Escanear y agitado 15 + descargar 60 + tapar 10",
+     "BC en su propio tambor: no se mezcla con ABC (IRAM 3517-2, 3.5.3.4). Clase D: el Word manda la descarga y la PH "
+     "a las máquinas comunes; al tambor de descarte no vuelve nada"),
+    ("Descarga y carga de agua / AFFF / sales K", "IBC 1.000 l (AFFF), tanque 600 l (agua) y tanque de premezcla con "
+     "bomba 40 l/min + balanza", "Máquina", agentes(**LIQS), "=10+10+15+60+10+20+10+30+15+15+10",
+     "Descarga: escanear 10 + quitar lanza 10 + acoplar 15 + vaciar 60 + llevar a desarme 10. Carga: contraste y "
+     "premezcla 20 + tara 10 + cargar 30 + corregir 15 + rosca 15 + registrar 10",
+     "Un solo puesto en la zona de líquidos: el mismo operario descarga y, a la vuelta del desarme y la PH, carga. "
+     "Descarga: tabla de operaciones 180 s, paso a paso 105 s; vale el paso a paso (tabla 3 de la norma: 40 a 65 s "
+     "de descarga en manuales)"),
+    ("Recuperación y carga de CO₂", "Trasvasadora CO₂ 103/D1 + manifold (recupera y carga)", "Máquina",
+     agentes(co2=R_CARGA_CO2[:1] + "(" + R_CARGA_CO2[1:] + ")+(" + R_ABRE_CO2[1:] + ")*(20+20+120+20+15+10)"
+             "/(30+10+15+150+25+10)"), "=30+10+15+150+25+10",
+     "Recuperación (solo los que se abren; entra × 205/240): pesar 20 + conectar 20 + bombear 120 + verificar 20 + "
+     "desconectar 15 + registrar 10 = 205 s. Carga: tarar y programar 30 + elegir origen 10 + abrir manifold 15 + "
+     "llenar 150 + pesar 25 + registrar 10",
+     "Una sola máquina: la ruta suma la carga (PH, válvula y usados) y la recuperación de los que se abren × 205/240"),
+    ("Recuperación y carga de halogenado", "Unidad THB/BP + pinza (recupera y carga)", "Máquina",
+     agentes(hal=R_ABRE_HAL), "=60+20+30+300+40+15+300+40+60+30",
+     "Recuperar: preparar cilindro de paso 60 + pesar 20 + conectar 30 + recuperar 300 + pesar ambos 40 + anotar 15. "
+     "Cargar 300 + presurizar 40 + agitar y repetir 60 + pesar y registrar 30", "Una sola unidad para las dos operaciones"),
     ("Desarme y limpieza — recinto", "Lanza de soplado + aspiradora industrial + llaves", "Manual",
      agentes(abc=1, bc=1, d=1), f"=5+30+5+10+20+120*$E${F_PH}+5",
      "Verificar 5 + retirar válvula 30 + marbete 5 + bandeja 10 + soplar 20 + limpieza profunda 120 × % ABC con PH "
@@ -309,21 +317,15 @@ PUESTOS = [
      "Placa, base y tapón + sacar óxido y lijar 120 + desengrasar 30 + enmascarar 30 + fondo anticorrosivo 45 + "
      "esmalte 60 + secado IR 30 min ÷ 6 por tanda = 300 + sacar cinta, base y registro 30",
      "Original: 750 s sin pasos. Secado: ficha del esmalte poliuretano (Sherwin FT 27.00), 30 min a 60 °C"),
-    ("Carga de polvo ABC", "Máquina neumática Yukon con corte por peso", "Máquina", agentes(abc=1),
-     "=15+45+15+15+10", "Tara 15 + carga 45 + pesar 15 + rosca 15 + registrar 10",
-     "Tabla de operaciones: 90 s; paso a paso: 106 s con un contraste por turno de 6 s. La tabla 9 del Word fija la "
-     "calibración de la balanza una vez por mes: sale del tiempo por equipo y quedan 100 s"),
-    ("Carga de polvo BC", "Cargadora portátil Yukon dedicada BC", "Máquina", agentes(bc=1), "=10+15+75+15+15+10",
-     "Contraste 10 + tara 15 + carga portátil 75 + pesar 15 + rosca 15 + registrar 10", ""),
-    ("Carga de polvo Clase D (manual, con embudo)", "Recipiente exclusivo + embudo + balanza", "Manual", agentes(d=1),
-     "=15+9*15+30+15+10", "Tara 15 + carga 9 kg × 15 s/kg = 135 + ajuste 30 + rosca 15 + registro 10",
-     "Original: 490 s sin pasos (180 de descarga manual). 15 s/kg = cargadora portátil BC (75 s por 5 kg)"),
-    ("Carga de agua / AFFF / sales K", "Red + tanque de premezcla con bomba 40 l/min + balanza", "Máquina",
-     agentes(**LIQS), "=20+10+30+15+15+10",
-     "Contraste y premezcla 20 + tara 10 + cargar 30 + corregir 15 + rosca 15 + registrar 10", ""),
-    ("Carga de CO₂", "Trasvasadora CO₂ 103/D1 + manifold", "Máquina",
-     agentes(co2=R_CARGA_CO2), "=30+10+15+150+25+10",
-     "Tarar y programar 30 + elegir origen 10 + abrir manifold 15 + llenar 150 + pesar 25 + registrar 10", ""),
+    ("Carga de polvo ABC, BC y Clase D", "Cargadora Yukon con corte por peso (ABC); cargadora portátil BC y embudo de "
+     "Clase D, exclusivos", "Máquina", agentes(abc=1, bc="=(10+15+75+15+15+10)/(15+45+15+15+10)",
+                                             d="=(15+9*15+30+15+10)/(15+45+15+15+10)"),
+     "=15+45+15+15+10", "BC (entra × 140/100): contraste 10 + tara 15 + carga portátil 75 + pesar 15 + rosca 15 + "
+     "registrar 10 = 140 s. Clase D (entra × 205/100): tara 15 + 9 kg × 15 s/kg + ajuste 30 + rosca 15 + registro 10 "
+     "= 205 s. ABC: tara 15 + carga 45 + pesar 15 + rosca 15 + registrar 10",
+     "BC y Clase D con su equipo exclusivo (IRAM 3517-2, 3.5.3.4) en el mismo puesto y con el mismo operario; entran "
+     "con su tiempo relativo al ABC (140/100 y 205/100). La tabla 9 del Word fija la calibración de la balanza una "
+     "vez por mes"),
     ("Ensamblaje y marbete — recinto", "Morsa + llave dinamométrica", "Manual", agentes(abc=1, bc=1, d=1),
      "=10+30+20+10+30+20", "Escanear 10 + revisar piezas 30 + o-ring 20 + marbete 10 + enroscar 30 + manguera y "
      "repuestos 20", ""),
@@ -333,8 +335,6 @@ PUESTOS = [
     ("Ensamblaje y presurización — zona general", "Morsa + dinamométrica + pinza Yukon", "Manual",
      agentes(co2=R_ABRE_CO2, hal=R_ABRE_HAL, agua=1, afff=1, k=1), "=120+50",
      "Ensamblaje 120 + presurización 50", ""),
-    ("Carga y presurización de halogenado", "Unidad THB/BP + pinza", "Máquina", agentes(hal=R_ABRE_HAL),
-     "=300+40+60+30", "Cargar 300 + presurizar 40 + agitar y repetir 60 + pesar y registrar 30", ""),
     ("Control de peso (CO₂ y halogenados sin recarga)", "Balanza", "Manual",
      agentes(co2="=1-(" + R_CARGA_CO2[1:] + ")", hal="=1-(" + R_ABRE_HAL[1:] + ")"), "=30+10",
      "Pesar y comparar 30 + registrar 10", "Anexo E: control anual de la masa"),
@@ -355,18 +355,21 @@ PUESTOS = [
      "rótulo de 20 × 30 mm 20 + registrar 15",
      "Pasos de 9.7.5.3 a) a h) y rótulo de 9.7.1.4. Demanda = fila Mangueras del Plan mensual"),
 ]
+N_PUESTOS = len(PUESTOS)
 # Cuándo pasa cada puesto (Word de recargas, tabla de operaciones; IRAM 3517-2:2020)
 CUANDO = {
     "Recepción y registro": "Siempre (operación 1)",
     "Inspección visual": "Siempre (operación 2)",
     "Descarga ABC — ruta recuperable": "ABC que llega con presión y no cambia el polvo (operación 3). Sin presión pasa "
                                        "directo a desarme",
-    "Descarga a descarte (ABC y Clase D)": "ABC con presión al que le toca el cambio de polvo por el dígito del año "
-                                           "(9.9.4 a) y Clase D con presión (se carga siempre con polvo nuevo)",
-    "Descarga BC": "BC con presión: el polvo BC se cambia siempre",
-    "Descarga de agua / AFFF / sales K": "Con presión: el agente se cambia todos los años (Anexo E)",
-    "Recuperación de CO₂": "CO₂ que va a PH o que hay que abrir por daño o pérdida de peso",
-    "Recuperación de halogenado": "Halogenado que va a PH, que llega usado o que hay que abrir",
+    "Descarga a descarte (ABC, BC y Clase D)": "ABC con presión al que le toca el cambio de polvo por el dígito del "
+                                               "año (9.9.4 a); BC y Clase D con presión (se cargan siempre con polvo "
+                                               "nuevo; BC en su tambor)",
+    "Descarga y carga de agua / AFFF / sales K": "Descarga los que llegan con presión y carga todos: el agente se "
+                                                 "cambia todos los años (Anexo E)",
+    "Recuperación y carga de CO₂": "Recupera el CO₂ que va a PH o que hay que abrir; carga esos y los que llegan "
+                                   "usados",
+    "Recuperación y carga de halogenado": "Halogenado que va a PH, que llega usado o que hay que abrir",
     "Desarme y limpieza — recinto": "Siempre en polvos (operación 4); la limpieza profunda, solo si va a PH",
     "Desarme e inspección interior — zona general": "CO₂ y halogenados cuando se abren; agua, AFFF y sales K siempre",
     "Laboratorio — Puffer y mufla": "Cada tolva de 240 kg de polvo ABC recuperado antes de volver a usarla (operación "
@@ -377,15 +380,10 @@ CUANDO = {
     "Inspección interior con videoscopio": "Con el secado (operación 7)",
     "Pintura": "Óxido, metal a la vista, pérdida de brillo o color, o repintado parcial (operación 8; 9.10 y "
                "Anexo F)",
-    "Carga de polvo ABC": "Siempre (operación 9)",
-    "Carga de polvo BC": "Siempre",
-    "Carga de polvo Clase D (manual, con embudo)": "Siempre: carga manual con embudo para no contaminar el agente",
-    "Carga de agua / AFFF / sales K": "Siempre: el agente se cambia cada año (Anexo E)",
-    "Carga de CO₂": "CO₂ que se abrió o que llega usado",
+    "Carga de polvo ABC, BC y Clase D": "Siempre (operación 9); BC y Clase D con su equipo, sin tocar el de ABC",
     "Ensamblaje y marbete — recinto": "Siempre (operación 10)",
     "Presurización — recinto": "Siempre (operación 11)",
     "Ensamblaje y presurización — zona general": "CO₂ y halogenados que se abrieron; agua, AFFF y sales K siempre",
-    "Carga y presurización de halogenado": "Halogenado que se abrió o que llega usado",
     "Control de peso (CO₂ y halogenados sin recarga)": "CO₂ y halogenados que no se abren: control anual de la masa "
                                                        "(Anexo E)",
     "Ensayo de pérdidas": "Siempre (operación 12)",
@@ -395,7 +393,7 @@ CUANDO = {
 }
 # Ruta del cilindro nuevo (sustituto ABC que llega vacío de la planta industrial con PH, secado y pintura de fábrica):
 # se registra, se carga, se arma, se presuriza, se prueba y se etiqueta (Word de recargas, puestos 1, 9 a 13)
-CILINDRO_NUEVO = {"Recepción y registro", "Carga de polvo ABC", "Ensamblaje y marbete — recinto",
+CILINDRO_NUEVO = {"Recepción y registro", "Carga de polvo ABC, BC y Clase D", "Ensamblaje y marbete — recinto",
                   "Presurización — recinto", "Ensayo de pérdidas", "Precinto, etiqueta y despacho"}
 
 # ------------------------------------------------------------------ estilo (sólo negro y grises)
@@ -680,7 +678,7 @@ def h_param(wb, planta):
             if regla == "plano":
                 v = "=1/12"
             elif regla == "escuelas":
-                v = f"={est}+(1-{est})/12" if m == 1 else f"=(1-{est})/12"
+                v = f"=IF(AND({m + 1}>=2,{m + 1}<=1+$B${F_MEST}),{est}/$B${F_MEST},0)+(1-{est})/12"
             else:
                 v = f"={ene}" if m == 0 else (f"={dic}" if m == 11 else f"=(1-{ene}-{dic})/10")
             celda(ws, r, 5 + m, v, "0.0%")
@@ -695,10 +693,14 @@ def h_param(wb, planta):
              (F_PBA, "Alumnos en escuelas estatales — PBA", EST_PBA, True, "CREEBBA, IAE 191"),
              (F_ESTATAL, "Estatales en las zonas de la planta", zona, False, "CABA y PBA pesados con PROY_Indexado"),
              (F_ENE, "Automotor: recargas de enero (% del año)", AUTO_ENE, True, "ITV Córdoba: 12 % en enero"),
-             (F_DIC, "Automotor: recargas de diciembre (% del año)", f"=B{F_ENE}", False, "Igual a enero · § 3.1")]
+             (F_DIC, "Automotor: recargas de diciembre (% del año)", f"=B{F_ENE}", False, "Igual a enero · § 3.1"),
+             (F_MEST, "Meses en que se reparten las estatales (desde febrero)", MESES_EST, True,
+              "Criterio: fondos de inicio del ciclo y turnos de la planta · § 3.2")]
     for r, t, v, dato, fu in datos:
         celda(ws, r, 1, t)
-        celda(ws, r, 2, v, "0.0%", dato=dato, res=not dato)
+        x = celda(ws, r, 2, v, "0" if r == F_MEST else "0.0%", dato=dato, res=not dato)
+        if r == F_MEST:
+            x.fill = GRIS_C
         celda(ws, r, 3, fu)
         ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=4)
 
@@ -1069,9 +1071,9 @@ def h_sust(wb):
         fila_mix = f"PROY_Indexado!$B${P_MIX + k}:$H${P_MIX + k}"
         celda(ws, r, 1, f"=datos_base!A{2 + k}")
         celda(ws, r, 2, LLEVA[k], "0", dato=True)
-        fm = (f"=(SUMPRODUCT(INDEX({pr}!$E${FILA_PUESTO}:$L${FILA_PUESTO + 27},0,MATCH({pr}!$B${rt},"
+        fm = (f"=(SUMPRODUCT(INDEX({pr}!$E${FILA_PUESTO}:$L${FILA_PUESTO + N_PUESTOS - 2},0,MATCH({pr}!$B${rt},"
               f"{pr}!$E${FILA_PUESTO - 1}:$L${FILA_PUESTO - 1},0)),{pr}!${C_T}${FILA_PUESTO}:${C_T}$"
-              f"{FILA_PUESTO + 27})*{pr}!$C${rt}+{pr}!$D${rt}*{pr}!${C_T}${FILA_PUESTO + 28})/60")
+              f"{FILA_PUESTO + N_PUESTOS - 2})*{pr}!$C${rt}+{pr}!$D${rt}*{pr}!${C_T}${FILA_PUESTO + N_PUESTOS - 1})/60")
         celda(ws, r, 3, None, "0.0").value = ArrayFormula(f"C{r}", fm)
         for j, fr in enumerate((S_RUB + 7, S_RUB + 8)):
             celda(ws, r, 4 + j, f"=IF(SUM({fila_mix})=0,$B$6+1+$B$7,SUMPRODUCT({fila_mix},$B${fr}:$H${fr})"
@@ -1189,8 +1191,8 @@ def modelo_demanda(planta):
           for (_, _, _, ruta, _, _, _) in PUESTOS]
     cil = [1 if p[0] in CILINDRO_NUEVO else 0 for p in PUESTOS]
     eq = [val(9) if rod else 1 for (_, rod, _, _) in TIPOS]
-    mins = [(sum(fr[s][AGENTES.index(TIPOS[k][0])] * tiempos[s] for s in range(28)) * eq[k]
-             + TIPOS[k][2] * tiempos[28]) / 60 for k in range(17)]
+    mins = [(sum(fr[s][AGENTES.index(TIPOS[k][0])] * tiempos[s] for s in range(N_PUESTOS - 1)) * eq[k]
+             + TIPOS[k][2] * tiempos[N_PUESTOS - 1]) / 60 for k in range(17)]
     mix = MIX_RUBRO[planta]
     turno, t2, a2 = val(5) * 60, val(8), val(10)
     min_r = [sum(mix[c][k] * mins[k] for k in range(17)) / sum(mix[c]) for c in range(7)]
@@ -1212,7 +1214,8 @@ def modelo_demanda(planta):
             prof_r.append([AUTO_ENE if m == 0 else AUTO_DIC if m == 11 else (1 - AUTO_ENE - AUTO_DIC) / 10
                            for m in range(12)])
         elif regla == "escuelas":
-            prof_r.append([(1 - estatal) / 12 + (estatal if m == 1 else 0) for m in range(12)])
+            prof_r.append([(1 - estatal) / 12 + (estatal / MESES_EST if 1 <= m <= MESES_EST else 0)
+                           for m in range(12)])
         else:
             prof_r.append([1 / 12] * 12)
     prof_t = []

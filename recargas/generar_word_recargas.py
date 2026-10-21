@@ -38,6 +38,9 @@ def pc(x, d=1):
     return "—" if x is None else n(100 * x, d) + " %"
 
 
+HAL = [q[0] for q in g.PUESTOS].index("Recuperación y carga de halogenado")
+
+
 def leer():
     d = {}
     for p in PLANTAS:
@@ -90,19 +93,10 @@ POR_QUE = {
     "Descarga ABC — ruta recuperable": "Toma el ABC con presión que no cambia el polvo: (1 − 5 % usados) × (1 − 10 % "
     "de cambio por dígito del año) = 85,5 % del ABC. El polvo va a la tolva de 240 kg de la Yukon y cada tolva llena "
     "dispara un ensayo de laboratorio (§ 4.9). Los usados llegan sin presión y pasan directo a desarme.",
-    "Descarga a descarte (ABC y Clase D)": "ABC con presión al que le toca el cambio por el dígito del año (9,5 % del "
-    "ABC) y Clase D con presión (95 %). La versión anterior tenía un puesto propio de descarga y carga Clase D de 490 s "
-    "sin fuente; el Word de recargas dice que la descarga y la PH de Clase D usan las máquinas comunes, y como el "
-    "polvo descargado no se reutiliza, no hay riesgo de mezclarlo con el ABC recuperable.",
-    "Descarga BC": "El polvo BC se cambia siempre (Word), así que todo BC con presión (95 %) pasa por el tambor "
-    "dedicado. La demanda es baja porque el BC es 0,2 % de las recargas; el puesto existe para no contaminar el ABC.",
-    "Descarga de agua / AFFF / sales K": "El agente se cambia todos los años (Anexo E), así que pasa el 95 % que "
-    "llega con presión. La tabla de operaciones decía 180 s y el paso a paso 105 s; vale el paso a paso. La tabla 3 de "
-    "IRAM 3517-2 da de 40 a 65 s de descarga en manuales, coherente con los 60 s de vaciado.",
-    "Recuperación de CO₂": "Solo se abre el CO₂ que va a PH (25 %) o que perdió masa o tiene daño en la válvula "
-    "(5 %, § 4.6): 30 %. El resto se pesa y no se abre (Control de peso).",
-    "Recuperación de halogenado": "Halogenado que va a PH (25 %), que llega usado (5 %) o que hay que abrir (5 %): 35 %. "
-    "El tiempo es largo (465 s) pero la demanda es la menor de la planta.",
+    "Descarga a descarte (ABC, BC y Clase D)": "ABC con presión al que le toca el cambio por el dígito del año (9,5 % del ABC), BC con presión (el polvo BC se cambia siempre, Word) y Clase D con presión (95 %). El Word de recargas dice que la descarga y la PH de Clase D usan las máquinas comunes; como el polvo descargado no se reutiliza, no hay riesgo de mezclarlo con el ABC recuperable. El BC va a su propio tambor, al lado: la mezcla de ABC con BC puede reaccionar y levantar presión (IRAM 3517-2, 3.5.3.4). Antes el BC tenía un puesto aparte con 0,3 % de aprovechamiento; el tambor es un accesorio del mismo puesto y del mismo operario.",
+    "Descarga y carga de agua / AFFF / sales K": "El agente se cambia todos los años (Anexo E): se descarga el 95 % que llega con presión y se cargan todos. La tabla de operaciones decía 180 s de descarga y el paso a paso 105 s; vale el paso a paso. La tabla 3 de IRAM 3517-2 da de 40 a 65 s de descarga en manuales, coherente con los 60 s de vaciado. La carga lleva 100 s y la premezcla de AFFF y sales K se hace en el tanque con bomba de 40 l/min. Antes eran dos puestos (descarga y carga); como el mismo operario de la zona de líquidos hace las dos, ahora es uno.",
+    "Recuperación y carga de CO₂": "La trasvasadora 103/D1 recupera y carga: antes eran dos puestos con una máquina cada uno y la máquina se contaba dos veces. La carga toma el CO₂ abierto (PH 25 % o válvula 5 %) o usado (5 %): 35 %. La recuperación, solo el abierto (30 %), con 205 s contra los 240 s de la carga: en la ruta entra como 30 % × 205/240. El resto se pesa y no se abre (Control de peso).",
+    "Recuperación y carga de halogenado": "La unidad THB/BP recupera y carga; antes eran dos puestos. Pasa el halogenado que va a PH (25 %), que llega usado (5 %) o que hay que abrir (5 %): 35 %, con 465 s de recuperación y 430 s de carga y presurización. Es el puesto con menos demanda de la planta: queda porque el Word de recargas le da al halogenado su propia unidad de recuperación y carga, que no sirve para el CO₂.",
     "Desarme y limpieza — recinto": "Todos los polvos pasan. La limpieza profunda (120 s) se hace solo en los que "
     "van a PH, por eso el tiempo tipo lleva 120 × 25 %. La tabla de operaciones decía 90 s; el paso a paso da 105 s con "
     "el mismo 25 % de PH.",
@@ -125,24 +119,13 @@ POR_QUE = {
     "poliuretano de Sherwin (FT 27.00) da 30 min a 60 °C; con las lámparas cubriendo 6 recipientes por tanda quedan "
     "300 s por recipiente. Total 615 s. El 15 % que se pinta no tiene estadística publicada (§ 4.7): con 25 % la "
     "comercial necesita 5 cabinas en vez de 3; con 5 %, 1.",
-    "Carga de polvo ABC": "Tabla de operaciones 90 s; paso a paso 106 s con 6 s de contraste de balanza por turno. La "
-    "tabla 9 del Word fija el contraste una vez por mes, así que no va en el tiempo de cada equipo: quedan 100 s.",
-    "Carga de polvo BC": "Cargadora portátil dedicada: 75 s de carga para 5 kg. De ahí sale el ritmo de 15 s/kg que "
-    "se usa en la carga manual de Clase D.",
-    "Carga de polvo Clase D (manual, con embudo)": "Se carga a mano con embudo para no contaminar el agente. 9 kg × "
-    "15 s/kg (el ritmo de la cargadora BC) = 135 s, más tara, ajuste, rosca y registro: 205 s. El original daba 490 s "
-    "con 180 s de descarga manual, que ahora va al tambor de descarte.",
-    "Carga de agua / AFFF / sales K": "Siempre, porque el agente se cambia cada año. La premezcla de AFFF y sales K se "
-    "hace en el tanque con bomba de 40 l/min.",
-    "Carga de CO₂": "CO₂ abierto (PH o válvula) o usado: 35 %. Comparte la trasvasadora con la recuperación.",
+    "Carga de polvo ABC, BC y Clase D": "ABC: tabla de operaciones 90 s; paso a paso 106 s con 6 s de contraste de balanza por turno. La tabla 9 del Word fija el contraste una vez por mes, así que no va en el tiempo de cada equipo: quedan 100 s. BC y Clase D se cargan en el mismo puesto, con el mismo operario, pero cada uno con su equipo exclusivo para no mezclar polvos (IRAM 3517-2, 3.5.3.4): la cargadora portátil BC (75 s para 5 kg, 140 s con tara, pesada, rosca y registro) y el embudo y la balanza de Clase D (9 kg × 15 s/kg, el ritmo de la cargadora BC: 205 s). Como tardan más que el ABC, entran en la ruta con su tiempo relativo: 140/100 y 205/100. Antes eran dos puestos propios con menos de 1 % de aprovechamiento cada uno.",
     "Ensamblaje y marbete — recinto": "Todos los polvos y los cilindros nuevos de sustituto (planta comercial). Es "
     "manual: se dimensiona con operarios y mesas, no con máquinas.",
     "Presurización — recinto": "Mismos equipos que el ensamblaje. El contraste del manómetro patrón por turno (3 s por "
     "equipo) queda en el tiempo porque el Word lo pide al empezar cada turno.",
     "Ensamblaje y presurización — zona general": "CO₂ y halogenados que se abrieron; agua, AFFF y sales K siempre. El "
     "CO₂ no se presuriza y el halogenado se presuriza en su propia carga.",
-    "Carga y presurización de halogenado": "Halogenado abierto o usado (35 %). Demanda mínima; el puesto existe por "
-    "el equipo dedicado.",
     "Control de peso (CO₂ y halogenados sin recarga)": "Los que no se abren (65 %) se pesan y se comparan con la masa "
     "de la placa (Anexo E: control anual de la masa).",
     "Ensayo de pérdidas": "Siempre (operación 12). Tanque de inmersión en tandas de 6; los rodantes, con spray.",
@@ -247,12 +230,18 @@ def bloques(d):
       f"{pc(max(I['planta']))} (antes {ANTES['Industrial']['pico']}).")
     h2("3.2 Educación")
     p("La DGCyE de PBA transfiere a los Consejos Escolares los fondos de inicio del ciclo lectivo antes de las clases "
-      "(Ámbito, 2022), y con esos fondos se ponen en condiciones las escuelas estatales, matafuegos incluidos. Por eso "
-      "las estatales recargan en febrero y las privadas quedan parejas.")
+      "(Ámbito, 2022), y con esos fondos se ponen en condiciones las escuelas estatales, matafuegos incluidos. Las "
+      "privadas quedan parejas.")
+    p(f"Si todas las estatales recargaran en febrero, ese mes se llevaría {pc(C['est'][2] + (1 - C['est'][2]) / 12)} de "
+      "las recargas del rubro. No hace falta: la carga vale un año desde que se hace (9.2.1), así que la planta, al "
+      "tomar cada escuela, le asigna el turno en febrero, marzo o abril (inicio del ciclo, con los fondos ya "
+      "transferidos) y desde ahí cada una vuelve en su mes. Se adopta repartir las estatales en "
+      f"{g.MESES_EST} meses desde febrero (criterio de nivelación; parametros_recargas, B{g.F_MEST}).")
     p(f"Porcentaje estatal (alumnos): CABA 51 % (Infobae, con datos de la UCA y del Relevamiento Anual) y PBA 72 % "
       f"(CREEBBA, IAE 191). Cada planta los pondera con el peso de sus zonas en PROY_Indexado: comercial "
-      f"{pc(C['est'][2])} e industrial {pc(I['est'][2])}. Febrero = estatal + (1 − estatal) ÷ 12; cada otro mes = "
-      f"(1 − estatal) ÷ 12. En la comercial: febrero {pc(C['rub'][2][1])} y {pc(C['rub'][2][0])} el resto.")
+      f"{pc(C['est'][2])} e industrial {pc(I['est'][2])}. Febrero a abril = estatal ÷ {g.MESES_EST} + (1 − estatal) ÷ 12; "
+      f"cada otro mes = (1 − estatal) ÷ 12. En la comercial: febrero a abril {pc(C['rub'][2][1])} y "
+      f"{pc(C['rub'][2][0])} el resto.")
     p("Limitaciones: el porcentaje es de alumnos, no de edificios (no hay un mismo año publicado por edificios para "
       "CABA y PBA), y en CABA el calendario de febrero se aplica por analogía con el inicio de clases. Educación pesa "
       "2,6 % de las recargas de la comercial, así que el error posible mueve poco el pico de la planta.")
@@ -453,6 +442,15 @@ def bloques(d):
       "quedan en 1 turno porque el mes pico pasó de febrero (11,2 %) a enero (10,2 %). En la industrial, la descarga "
       "ABC recuperable y la presurización pasan de 2 máquinas con 1 turno a 1 máquina con 2: el total baja de 40 a 38 "
       "y en la comercial de 52 a 51.")
+    p(f"Puestos unidos en esta versión: los que comparten equipo u operario dejan de figurar como puestos "
+      "separados, porque un puesto con 1 % de aprovechamiento no es un puesto sino un accesorio de otro. La "
+      "trasvasadora de CO₂ y la unidad de halogenados recuperan y cargan (antes se contaban dos veces); la descarga y "
+      "la carga de agua, AFFF y sales K las hace el mismo operario de la zona de líquidos; el BC y el Clase D se "
+      "descargan y se cargan en los puestos de polvo con su tambor, su cargadora y su embudo exclusivos, sin tocar el "
+      f"equipo de ABC (IRAM 3517-2, 3.5.3.4). Quedan {g.N_PUESTOS} puestos. En 2035 el total baja a "
+      f"{C['maq_tot'][-1]} en la comercial (antes 51) y {I['maq_tot'][-1]} en la industrial (antes 38). El halogenado "
+      f"sigue con el aprovechamiento más bajo ({pc(C['puestos'][HAL]['util'][-1])} en la comercial): su unidad no sirve para "
+      "otro agente y la demanda es mínima.")
 
     # 9
     h1("9. Manuales y Carros")

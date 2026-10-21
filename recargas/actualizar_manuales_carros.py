@@ -497,6 +497,10 @@ def manuales(ped):
                        "La carga de carros se suma en Demanda puesto (filas 160 a 169)")
     pm["E53"].value = "=C53*D53/60+8.6*$B$2/60"
     pm["G53"].value = "Más 8,6 min/día de tiras de accesorios de carros (W-CAR: placas 1,7 + patas 1,9 + 5,0)"
+    # ensayo de pérdidas: tanque de 6 posiciones, en tandas (W-MAN); el Excel del grupo tenía 55 s por unidad
+    pm["K42"].value = "=(60+120+60)/6"
+    pm["O42"].value = ("W-MAN, «Ensayo de pérdidas»: tandas de 6 en el tanque; 1 min para bajarlos + 2 min de observación + "
+                       "1 min para sacarlos = 4 min por tanda, 40 s por matafuego")
     hojas = [("Resumen cap. sin sobrestock", "Demanda puesto sin sobrestock"),
              ("Resumen cap. con sobrestock", "Demanda puesto con sobrestock")]
     uno = {(k, i): (1, 1) for k in range(N_MAN) for i in range(10)}
