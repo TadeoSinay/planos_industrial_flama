@@ -1,8 +1,9 @@
-"""Comparacion_corte.xlsx compacto: alternativas de compra y corte de chapa para cuerpos, cúpulas y fondos.
+"""Analisis_alternativas_corte_chapa.xlsx: alternativas de compra y corte de chapa para cuerpos, cúpulas y fondos.
 
-Hojas: Resumen (comparación y decisión), Datos (todo lo editable con su fuente), Links (IMPORTRANGE), Demanda,
-Piezas (medidas del plano y disco por embutido), Corte (cómo sale cada pieza de hoja, bobina, fleje y bobina madre;
-dos guillotinas en serie) y Cálculo (año por año de cada alternativa). Todo con fórmulas.
+Hojas: Links (links y todos los IMPORTRANGE), Resumen (comparación y decisión), Datos (todo lo editable con su
+fuente), Demanda, Piezas (medidas del plano y disco por embutido), Corte (cómo sale cada pieza de hoja, bobina, fleje
+y bobina madre; dos guillotinas en serie, 1.er corte por el lado corto) y Cálculo (año por año de cada alternativa).
+Todo con fórmulas.
 
 Alternativas: A bobina por formato + fleje a medida; B hojas para todo; C bobina madre por espesor con corte
 longitudinal propio; D hojas para cuerpos + fleje a medida para discos; Referencia: cuerpos comprados a medida."""
@@ -20,7 +21,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(AQUI), "recargas"))
 import generar_dim_recargas as g  # noqa: E402
 import datos_corte as DC  # noqa: E402
 
-SALIDA = os.path.join(os.path.dirname(AQUI), "salida", "Comparacion_corte.xlsx")
+SALIDA = os.path.join(os.path.dirname(AQUI), "salida", "Analisis_alternativas_corte_chapa.xlsx")
 ANIOS = DC.ANIOS
 YC = [L(3 + i) for i in range(10)]            # C..L = 2026..2035
 FORM = DC.FORM
@@ -96,16 +97,23 @@ CORTE = [
     ("mix70", "Cuerpos de 70 kg por hoja mixta", 3, "u", F0, "Proceso de carros."),
 ]
 MAQ = [
-    ("gpm1", "Guillotina 1 (franjas) CENA 8 × 3200: golpes por minuto", 10, "golpes/min", F0,
-     "Cotización CENA (Drive)."),
-    ("L1", "Guillotina 1: largo de corte", 3200, "mm", F0, "Cotización CENA."),
-    ("tope1", "Guillotina 1: recorrido del tope trasero", 1000, "mm", F0, "Cotización CENA: 20 a 1.000 mm."),
+    ("gpm1", "Guillotina 1 (franjas) Ermaksan CNC HGS 2600-6: golpes por minuto", 20, "golpes/min", F0,
+     "Dimensionamiento Manuales del grupo. La ficha de la máquina (resale.info, 2018) da 24."),
+    ("L1", "Guillotina 1: largo de corte", 2600, "mm", F0, "Ficha Ermaksan CNC HGS 2600-6: 2.600 × 6 mm."),
+    ("tope1", "Guillotina 1: recorrido del tope trasero", 1000, "mm", F0,
+     "Ficha Ermaksan CNC HGS 2600-6: tope trasero motorizado de 1.000 mm."),
     ("gpm2", "Guillotina 2 (piezas) QC12Y 6 × 2500: golpes por minuto", 20, "golpes/min", F0,
      "Confirmado por el grupo (igual que la HG 6 × 2500 de la ficha Molinari Panther)."),
     ("L2", "Guillotina 2: largo de corte para franjas en paralelo", 2500, "mm", F0,
      "Publicación Alibaba 1600900259147: 6 × 2500, cuchilla de 2.550 mm."),
     ("tope2", "Guillotina 2: recorrido del tope trasero", 800, "mm", F0,
      "Publicación Alibaba 1600900259147: 20 a 800 mm."),
+    ("ciclo", "Hojas por ciclo como máximo (franjas de hojas enteras en paralelo en G2)", 4, "hojas", F0,
+     "Criterio del grupo (comentarios del corte de 5 y 10 kg): sin franjas sueltas en el pulmón."),
+    ("g1_eur", "Guillotina 1 Ermaksan CNC HGS 2600-6 usada (2018)", 26000, "EUR", F0,
+     "Anuncio resale.info N.° 165879844 (nov-2024), sin flete ni nacionalización."),
+    ("eurusd", "Tipo de cambio euro / dólar", "=1/0.8723", "USD/EUR", "0.000",
+     "Pound Sterling Live: USD/EUR 0,8723 al cierre del 21/09/2026."),
     ("linea", "Línea de corte transversal (A y C): golpes por hora", 1200, "golpes/h", F0,
      "Criterio del grupo: 20 golpes por minuto."),
     ("slit_v", "Cortadora longitudinal (C): velocidad efectiva", 40, "m/min", F0,
@@ -171,8 +179,8 @@ P_NOTA = {0.9: "A medida: sin cotización, se toma la hoja Q12.", 4.75: "Bobina:
 EQ = [  # equipo, precio USD, cantidades A, B, C, D, Ref ("grua" = según Datos), fuente
     ("Línea de corte transversal 1-6 mm × 1.600 (desbobinador, aplanadora, alimentador, cizalla)", 80000,
      (1, 0, 1, 0, 0), "ESTIMADO del grupo: Hener da USD 45.000 para 0,2-3 mm × 1.250; para 4,75 mm, más pesada."),
-    ("Guillotina 1 (franjas) CENA 8 × 3200 E21, tope 1.000 mm", 36800, (1, 1, 0, 1, 0),
-     "Cotización CENA (Drive), sin IVA."),
+    ("Guillotina 1 (franjas) Ermaksan CNC HGS 2600-6, tope 1.000 mm", "={g1_eur}*{eurusd}", (1, 1, 0, 1, 0),
+     "Anuncio resale.info (usada, 2018), en EUR pasado a USD (sección 3)."),
     ("Guillotina 2 (piezas) QC12Y 6 × 2500, tope 800 mm", 10700, (0, 1, 0, 1, 0),
      "Publicación Alibaba 1600900259147: FOB China, 1 a 2 unidades."),
     ("Cortadora longitudinal 0,3-3,2 × 1.600", 60000, (0, 0, 1, 0, 0),
@@ -259,7 +267,8 @@ def h_datos(wb):
     e0 = r
     for nom, p, cant, fte in EQ:
         c(ws, f"A{r}", nom)
-        c(ws, f"B{r}", p, F0, dato=True)
+        esf = isinstance(p, str)
+        c(ws, f"B{r}", fx(p) if esf else p, F0, dato=not esf)
         for j, q in enumerate(cant):
             v = fx('=IF({grua}="SI",0,1)') if q == "grua" else q
             c(ws, f"{L(3 + j)}{r}", v, F0, dato=q != "grua")
@@ -280,57 +289,83 @@ def precio(e_ref, k):
     return f"INDEX({N[k]},MATCH({e_ref},{N['pE']},0))"
 
 
-# ------------------------------------------------------------------ Links y Demanda
-def h_links(wb):
-    s = DC.D["S_ALTA"]
-    g.h_links(wb, [
-        ("Proyecciones", DC.D["URL"], "Indexado Dim Técnico B3:K10 (terminados 1 a 100 kg) y B15:K22 (cilindros "
-                                      "vacíos) → Demanda"),
-        ("Dimensionamiento Recargas Planta Comercial", DC.D["PEGAR"],
-         f"sobrestock_sustitutos B{s}:K{s + 3} y B{s + 13}:K{s + 16}: sustitutos ABC como cilindro vacío → Demanda"),
-        ("Dimensionamiento Recargas Planta Industrial", DC.D["PEGAR"],
-         f"sobrestock_sustitutos B{s}:K{s + 3} y B{s + 13}:K{s + 16}: sustitutos ABC terminados → Demanda")])
-
-
+# ------------------------------------------------------------------ Links (todos los IMPORTRANGE) y Demanda
 LINEA = ["Manual"] * 4 + ["Rodante"] * 4
+LK = {"proy": "Links!$B$4", "com": "Links!$B$5", "ind": "Links!$B$6"}
+IMP = {}      # bloque -> primera fila de datos en Links
+
+
+def h_links(wb):
+    """Primera hoja: links (B4:B6) y los bloques IMPORTRANGE. Demanda los lee con IFERROR(…;0): sin link la fuente
+    queda en 0 y la columna Estado lo avisa."""
+    s = DC.D["S_ALTA"]
+    ws = g.hoja(wb, "Links", [44, 11] + [11] * 10 + [30])
+    g.tit(ws, 1, "Links e IMPORTRANGE")
+    g.nota(ws, 2, "Pegar en B el link de cada Google Sheet. La primera vez, tocar la primera celda de cada bloque y "
+                  "«Permitir acceso». Todos los IMPORTRANGE del libro están en esta hoja.")
+    g.cab(ws, 3, ["Archivo", "Link", "", "", "", "", "Qué se importa", "", "", "", "", "Estado"])
+    for c0, c1 in ((2, 6), (7, 11)):
+        ws.merge_cells(start_row=3, start_column=c0, end_row=3, end_column=c1)
+    bloques = [
+        ("proy_t", "proy", "Proyecciones · Indexado Dim Técnico B3:K10: matafuegos terminados",
+         [("Indexado Dim Técnico!B3:K10", DC.D["TERM"])], "Terminados"),
+        ("proy_c", "proy", "Proyecciones · Indexado Dim Técnico B15:K22: cilindros vendidos vacíos",
+         [("Indexado Dim Técnico!B15:K22", DC.D["CIL"])], "Cilindros"),
+        ("ind", "ind", f"Recargas Planta Industrial · sobrestock_sustitutos B{s}:K{s + 3} y B{s + 13}:K{s + 16}: "
+                       "sustitutos ABC terminados",
+         [(f"sobrestock_sustitutos!B{s}:K{s + 3}", DC.D["IND"][:4]),
+          (f"sobrestock_sustitutos!B{s + 13}:K{s + 16}", DC.D["IND"][4:])], "Sustitutos"),
+        ("com", "com", f"Recargas Planta Comercial · sobrestock_sustitutos B{s}:K{s + 3} y B{s + 13}:K{s + 16}: "
+                       "sustitutos ABC cilindros vacíos",
+         [(f"sobrestock_sustitutos!B{s}:K{s + 3}", DC.D["COM"][:4]),
+          (f"sobrestock_sustitutos!B{s + 13}:K{s + 16}", DC.D["COM"][4:])], "Sustitutos")]
+    r = 9
+    for clave, lk, t, imps, tipo in bloques:
+        seccion(ws, r, t)
+        g.cab(ws, r + 1, ["Formato", "Qué es"] + [str(a) for a in ANIOS])
+        IMP[clave] = r + 2
+        rr = r + 2
+        for rng, vals in imps:
+            g.importrange(ws, rr, 3, LK[lk], rng, vals, F0)
+            rr += len(vals)
+        for i, f in enumerate(FORM):
+            c(ws, f"A{r + 2 + i}", f)
+            c(ws, f"B{r + 2 + i}", tipo)
+        r += 11
+    filas = [("Proyecciones", DC.D["URL"], "Indexado Dim Técnico B3:K10 y B15:K22 → Demanda", "proy_t"),
+             ("Dimensionamiento Recargas Planta Comercial", DC.D["PEGAR"],
+              f"sobrestock_sustitutos B{s}:K{s + 3} y B{s + 13}:K{s + 16} → Demanda", "com"),
+             ("Dimensionamiento Recargas Planta Industrial", DC.D["PEGAR"],
+              f"sobrestock_sustitutos B{s}:K{s + 3} y B{s + 13}:K{s + 16} → Demanda", "ind")]
+    for i, (a, u, q, blk) in enumerate(filas):
+        rr = 4 + i
+        c(ws, f"A{rr}", a, neg=True)
+        c(ws, f"B{rr}", u, dato=True)
+        c(ws, f"G{rr}", q)
+        for c0, c1 in ((2, 6), (7, 11)):
+            ws.merge_cells(start_row=rr, start_column=c0, end_row=rr, end_column=c1)
+        c(ws, f"L{rr}", f'=IF(ISERROR(C{IMP[blk]}),"Falta el link o «Permitir acceso»","OK")')
+    g.nota(ws, 7, "Sin link, esa fuente suma 0 en Demanda (la columna Estado lo avisa).")
+    ws.freeze_panes = "C4"
 
 
 def h_demanda(wb):
     ws = g.hoja(wb, "Demanda", [34, 10] + [11] * 10)
-    titulo(ws, "Demanda: cuerpos a fabricar por formato", "Por IMPORTRANGE (hoja Links). Cada unidad lleva un "
-                                                         "cuerpo; las de 1 a 10 kg, además, una cúpula y un fondo.")
-    s = DC.D["S_ALTA"]
-    bloques = [(16, "Matafuegos terminados (Proyecciones)", [("Links!$B$4", "Indexado Dim Técnico!B3:K10",
-                                                              DC.D["TERM"])]),
-               (28, "Cilindros vendidos vacíos (Proyecciones)", [("Links!$B$4", "Indexado Dim Técnico!B15:K22",
-                                                                  DC.D["CIL"])]),
-               (40, "Sustitutos ABC terminados para la planta industrial de recargas",
-                [("Links!$B$6", f"sobrestock_sustitutos!B{s}:K{s + 3}", DC.D["IND"][:4]),
-                 ("Links!$B$6", f"sobrestock_sustitutos!B{s + 13}:K{s + 16}", DC.D["IND"][4:])]),
-               (52, "Sustitutos ABC cilindros vacíos para la planta comercial de recargas",
-                [("Links!$B$5", f"sobrestock_sustitutos!B{s}:K{s + 3}", DC.D["COM"][:4]),
-                 ("Links!$B$5", f"sobrestock_sustitutos!B{s + 13}:K{s + 16}", DC.D["COM"][4:])])]
-    filas_bloque = [4] + [b[0] for b in bloques]
-    for r0 in filas_bloque:
-        g.cab(ws, r0 + 1, ["Formato", "Línea"] + [str(a) for a in ANIOS])
-        for i, f in enumerate(FORM):
-            c(ws, f"A{r0 + 2 + i}", f)
-            c(ws, f"B{r0 + 2 + i}", LINEA[i])
-        c(ws, f"A{r0 + 10}", "Total", neg=True)
-        for col in YC:
-            c(ws, f"{col}{r0 + 10}", f"=SUM({col}{r0 + 2}:{col}{r0 + 9})", F0, neg=True)
+    titulo(ws, "Demanda: cuerpos a fabricar por formato", "Terminados + cilindros vacíos + sustitutos de las dos "
+                                                         "plantas de recargas, todo desde la hoja Links. Cada unidad "
+                                                         "lleva un cuerpo; las de 1 a 10 kg, además, cúpula y fondo.")
     seccion(ws, 4, "Unidades a fabricar = terminados + cilindros + sustitutos")
-    for i in range(8):
+    g.cab(ws, 5, ["Formato", "Línea"] + [str(a) for a in ANIOS])
+    for i, f in enumerate(FORM):
         r = 6 + i
+        c(ws, f"A{r}", f)
+        c(ws, f"B{r}", LINEA[i])
         for col in YC:
-            c(ws, f"{col}{r}", "=" + "+".join(f"{col}{b[0] + 2 + i}" for b in bloques), F0, neg=True)
-    for r0, t, imps in bloques:
-        seccion(ws, r0, t)
-        rr = r0 + 2
-        for lk, rng, vals in imps:
-            g.importrange(ws, rr, 3, lk, rng, vals, F0)
-            rr += len(vals)
-    g.nota(ws, 64, "Discos de rodantes (25 a 100 kg): se compran embutidos, no entran en este análisis.")
+            c(ws, f"{col}{r}", "=" + "+".join(f"IFERROR(Links!{col}{IMP[k] + i},0)" for k in IMP), F0, neg=True)
+    c(ws, "A14", "Total", neg=True)
+    for col in YC:
+        c(ws, f"{col}14", f"=SUM({col}6:{col}13)", F0, neg=True)
+    g.nota(ws, 16, "Discos de rodantes (25 a 100 kg): se compran embutidos, no entran en este análisis.")
     ws.freeze_panes = "C6"
 
 
@@ -466,20 +501,20 @@ def _plan():
     t("B — Hojas para todo: cuerpos con dos guillotinas y discos de tiras de hoja")
     f("B_mix", "Hojas mixtas 70 + 100 kg", "hojas", F1,
       '=IF({mezcla}="SI",MIN({c}{U7}/{mix100},{c}{U6}/{mix70}),0)')
-    f("B_h70", "Hojas de 70 kg solas", "hojas", F1, "=({c}{U6}-{mix70}*{c}{B_mix})/Corte!$D${HS6}")
-    f("B_h100", "Hojas de 100 kg solas", "hojas", F1, "=({c}{U7}-{mix100}*{c}{B_mix})/Corte!$D${HS7}")
+    f("B_h70", "Hojas de 70 kg solas", "hojas", F1, "=({c}{U6}-{mix70}*{c}{B_mix})/Corte!$I${HS6}")
+    f("B_h100", "Hojas de 100 kg solas", "hojas", F1, "=({c}{U7}-{mix100}*{c}{B_mix})/Corte!$I${HS7}")
 
     def hojas(col):
-        return (f"SUMPRODUCT({{c}}${{U0}}:{{c}}${{U5}}/Corte!$D${{HS0}}:$D${{HS5}}*Corte!${col}${{HS0}}:${col}${{HS5}})"
+        return (f"SUMPRODUCT({{c}}${{U0}}:{{c}}${{U5}}/Corte!$I${{HS0}}:$I${{HS5}}*Corte!${col}${{HS0}}:${col}${{HS5}})"
                 f"+{{c}}{{B_h70}}*Corte!${col}${{HS6}}+{{c}}{{B_h100}}*Corte!${col}${{HS7}}"
                 f"+{{c}}{{B_mix}}*Corte!${col}${{HMIX}}")
     f("B_hc", "Hojas para cuerpos", "hojas", F0,
-      "=SUMPRODUCT({c}${U0}:{c}${U5}/Corte!$D${HS0}:$D${HS5})+{c}{B_h70}+{c}{B_h100}+{c}{B_mix}")
-    f("B_tc", "Acero de hojas para cuerpos", "t", F1, "=(" + hojas("P") + ")/1000")
-    f("B_uc", "Costo de las hojas para cuerpos", "USD", F0, "=" + hojas("Q"))
-    f("B_g1", "Horas de la guillotina 1 (franjas; los dos cortes en rodantes)", "h", F1,
-      "=(" + hojas("M") + ")/{gpm1}/60")
-    f("B_g2", "Horas de la guillotina 2 (piezas, franjas en paralelo)", "h", F1, "=(" + hojas("N") + ")/{gpm2}/60")
+      "=SUMPRODUCT({c}${U0}:{c}${U5}/Corte!$I${HS0}:$I${HS5})+{c}{B_h70}+{c}{B_h100}+{c}{B_mix}")
+    f("B_tc", "Acero de hojas para cuerpos", "t", F1, "=(" + hojas("W") + ")/1000")
+    f("B_uc", "Costo de las hojas para cuerpos", "USD", F0, "=" + hojas("X"))
+    f("B_g1", "Horas de la guillotina 1 (1.er corte: franjas)", "h", F1,
+      "=(" + hojas("P") + ")/{gpm1}/60")
+    f("B_g2", "Horas de la guillotina 2 (2.º corte, franjas en paralelo)", "h", F1, "=(" + hojas("R") + ")/{gpm2}/60")
     f("B_td", "Acero de hojas para discos", "t", F1, "=SUMPRODUCT({c}${U0}:{c}${U3},Corte!$E${UF0}:$E${UF3})/1000")
     f("B_ud", "Costo de las hojas para discos", "USD", F0, "=SUMPRODUCT({c}${U0}:{c}${U3},Corte!$F${UF0}:$F${UF3})")
     f("B_ti", "Tiras de hoja para discos", "tiras", F0, "=SUMPRODUCT({c}${U0}:{c}${U3},Corte!$G${UF0}:$G${UF3})")
@@ -544,7 +579,7 @@ def _plan():
     f("R_cost", "COSTO ANUAL REFERENCIA", "USD", F0, "={c}{R_u}+{c}{R_vs}+{c}{R_fin}+{c}{R_mo}+{c}{R_mt}")
     t("Opción D: compras por año")
     for i, fm in enumerate(FORM):
-        tpl = {6: "={c}{B_h70}", 7: "={c}{B_h100}"}.get(i, f"={{c}}{{U{i}}}/Corte!$D${{HS{i}}}")
+        tpl = {6: "={c}{B_h70}", 7: "={c}{B_h100}"}.get(i, f"={{c}}{{U{i}}}/Corte!$I${{HS{i}}}")
         f(f"Dh{i}", f"Hojas para cuerpos de {fm}", "hojas", F0, tpl)
     f("Dhm", "Hojas mixtas 70 + 100 kg", "hojas", F0, "={c}{B_mix}")
     for i, d in enumerate(DC.DISC):
@@ -564,7 +599,7 @@ def _plan():
 
 
 _plan()
-HS0, HMIX, BB0, DC0, UF0, GS0, GD0 = 6, 14, 19, 31, 42, 50, 58
+HS0, HMIX, EX0, BB0, DC0, UF0, GS0, GD0 = 6, 14, 19, 32, 44, 55, 63, 71
 R.update({"HS0": HS0, "HS5": HS0 + 5, "HS6": HS0 + 6, "HS7": HS0 + 7, "HMIX": HMIX, "BB0": BB0, "BB7": BB0 + 7,
           "DC0": DC0, "DC7": DC0 + 7, "UF0": UF0, "UF3": UF0 + 3, "GS0": GS0, "GS5": GS0 + 5,
           "PZ0": PZ0, "PZ7": PZ0 + 7})
@@ -585,51 +620,87 @@ def anio_ref(rango):
 
 
 def h_corte(wb):
-    ws = g.hoja(wb, "Corte", [26, 11, 11, 11, 10, 11, 10, 10, 11, 12, 9, 10, 10, 10, 12, 11, 11, 30, 11])
+    ws = g.hoja(wb, "Corte", [24, 9, 9, 9, 9, 8, 9, 8, 8, 8, 9, 9, 9, 8, 8, 8, 8, 8, 8, 8, 7, 9, 9, 9, 34, 2,
+                              9, 9, 9, 9, 9, 9])
     titulo(ws, "Corte: cómo sale cada pieza de la hoja, la bobina, el fleje y la bobina madre",
-           "Medidas de la hoja Piezas. Dos guillotinas en serie: G1 corta franjas, pasan por un pulmón y G2 apoya "
-           "varias franjas una al lado de la otra y corta una pieza de cada una por golpe.")
-    # A) hojas
+           "Medidas de la hoja Piezas. G1 corta franjas por el lado corto de la hoja; pasan por un pulmón y G2 apoya "
+           "las franjas de hojas enteras una al lado de la otra y corta una pieza de cada una por golpe.")
     seccion(ws, 4, "A) Cuerpos en hoja estándar con dos guillotinas en serie (B y D)")
-    g.cab(ws, 5, ["Formato", "Hoja ancho (mm)", "Hoja largo (mm)", "Piezas por hoja", "Aprovech.",
-                  "Franja = 1.er corte (mm)", "Franjas por hoja", "Piezas por franja", "Pieza = 2.º corte (mm)",
-                  "Tope de G1 en el 1.er corte (mm)", "2.º corte en", "Franjas en paralelo", "Golpes G1 por hoja",
-                  "Golpes G2 por hoja", "Minutos de guillotina por hoja", "Masa de la hoja (kg)", "USD por hoja",
-                  "Control"], c0=1)
+    g.cab(ws, 5, ["Formato", "Hoja: lado corto (mm)", "Hoja: lado largo (mm)", "Orientación (1 alto, 2 desarrollo "
+                  "a lo largo)", "Franja = 1.er corte y tope de G1 (mm)", "Franjas por hoja", "Pieza = 2.º corte (mm)",
+                  "Piezas por franja", "Piezas por hoja", "Aprovech.", "Masa de la franja (kg)",
+                  "Tope de G2 (pieza u orilla, mm)", "Franjas que entran en G2", "Hojas por ciclo",
+                  "Tandas de G2 por ciclo", "Golpes G1 por hoja", "Golpes G2 por tanda", "Golpes G2 por hoja",
+                  "Min G1 por hoja", "Min G2 por hoja", "Manda", "Cuerpos por hora", "Masa de la hoja (kg)",
+                  "USD por hoja", "Control"])
+    g.cab(ws, 5, ["Tandas por hoja con ciclo de 1 hoja", "2 hojas", "3 hojas", "4 hojas",
+                  "Piezas por hoja, orientación 1", "orientación 2"], c0=27)
     for i, f in enumerate(FORM):
         r = HS0 + i
         al, de, e = pz("F", i), pz("G", i), pz("E", i)
         B, C = f"B{r}", f"C{r}"
-        o1, o2 = f"INT({B}/{al})*INT({C}/{de})", f"INT({B}/{de})*INT({C}/{al})"
+
+        def feas(a, b):
+            return fx(f"AND({a}<={{tope1}},{a}<={{L2}},{B}<={{L1}},OR({b}<={{tope2}},AND(INT({B}/{b})=1,"
+                      f"{B}-{b}<={{tope2}})))")
         c(ws, f"A{r}", f)
         c(ws, f"B{r}", DC.CUERPO[f][3], F0, dato=True)
         c(ws, f"C{r}", DC.CUERPO[f][4], F0, dato=True)
-        c(ws, f"D{r}", f"=MAX({o1},{o2})", F0, neg=True)
-        c(ws, f"E{r}", f"=D{r}*{al}*{de}/({B}*{C})", FP)
-        c(ws, f"F{r}", f"=IF({o1}>={o2},{al},{de})", "0.0")
-        c(ws, f"G{r}", f"=INT({B}/F{r})", F0)
-        c(ws, f"H{r}", f"=IF({o1}>={o2},INT({C}/{de}),INT({C}/{al}))", F0)
-        c(ws, f"I{r}", f"=IF({o1}>={o2},{de},{al})", "0.0")
-        _hoja_maquinas(ws, r, e)
-        c(ws, f"R{r}", fx(f'=IF({C}>{{L1}},"Hoja más larga que la cuchilla de G1",IF(J{r}>{{tope1}},'
-                          f'"Franja mayor que el tope de G1",IF(AND(K{r}="G1",I{r}>{{tope1}}),'
-                          f'"Pieza mayor que el tope de G1: va en la hoja mixta","OK")))'))
+        c(ws, f"AE{r}", f"=IF({feas(al, de)},INT({C}/{al})*INT({B}/{de}),0)", F0)
+        c(ws, f"AF{r}", f"=IF({feas(de, al)},INT({C}/{de})*INT({B}/{al}),0)", F0)
+        c(ws, f"D{r}", f"=IF(AE{r}>AF{r},1,IF(AF{r}>AE{r},2,IF(INT({C}/{al})<=INT({C}/{de}),1,2)))", F0)
+        c(ws, f"E{r}", f"=IF(D{r}=1,{al},{de})", "0.0")
+        c(ws, f"F{r}", f"=INT({C}/E{r})", F0)
+        c(ws, f"G{r}", f"=IF(D{r}=1,{de},{al})", "0.0")
+        c(ws, f"H{r}", f"=INT({B}/G{r})", F0)
+        c(ws, f"I{r}", f"=F{r}*H{r}", F0, neg=True)
+        c(ws, f"J{r}", f"=I{r}*{al}*{de}/({B}*{C})", FP)
+        c(ws, f"M{r}", fx(f"=INT({{L2}}/E{r})"), F0)
+        for k in range(1, 5):
+            c(ws, f"{L(26 + k)}{r}", fx(f"=IFERROR(IF({k}>{{ciclo}},1E+9,CEILING({k}*F{r}/M{r},1)/{k}),1E+9)"), F2)
+        _hoja_maquinas(ws, r, e, f"C{r}-F{r}*E{r}")
+        base = (f'IF(I{r}=0,"No entra ninguna pieza",IF({B}>{{L1}},"Hoja más ancha que la cuchilla de G1",'
+                f'IF(E{r}>{{tope1}},"Franja mayor que el tope de G1",IF(L{r}>{{tope2}},"2.º corte mayor que el tope '
+                f'de G2",IF(M{r}<1,"La franja no entra en G2","OK")))))')
+        if f == "70 kg":
+            base = f'IF({base}="OK",IF({{mezcla}}="SI","OK; con mezcla va en la hoja mixta","OK"),{base})'
+        c(ws, f"Y{r}", fx("=" + base))
     r = HMIX
     a70, d70, a100, d100, e = pz("F", 6), pz("G", 6), pz("F", 7), pz("G", 7), pz("E", 7)
+    ancho = fx(f"({{mix100}}*{a100}+{{mix70}}*{a70})")
     c(ws, f"A{r}", "Hoja mixta 70 + 100 kg", neg=True)
     c(ws, f"B{r}", f"=B{HS0 + 7}", F0)
     c(ws, f"C{r}", f"=C{HS0 + 7}", F0)
-    c(ws, f"D{r}", fx("={mix100}+{mix70}"), F0, neg=True)
-    c(ws, f"E{r}", fx(f"=({{mix100}}*{a100}*{d100}+{{mix70}}*{a70}*{d70})/(B{r}*C{r})"), FP)
-    c(ws, f"F{r}", f"={d100}", "0.0")
-    c(ws, f"G{r}", 1, F0)
-    c(ws, f"H{r}", f"=D{r}", F0)
-    c(ws, f"I{r}", f"=MAX({a100},{a70})", "0.0")
-    _hoja_maquinas(ws, r, e)
-    c(ws, f"R{r}", fx(f'=IF(AND({d70}<=B{r},{d100}<=B{r},{{mix100}}*{a100}+{{mix70}}*{a70}<=C{r}),'
-                      f'"OK: 1 de 100 kg y 3 de 70 kg","No entra")'))
-    g.nota(ws, HMIX + 1, "2.º corte en G2 si la pieza entra en su tope (800 mm); si no, en G1 (tope 1.000 mm). La "
-                         "franja más ancha que el tope de G1 se saca cortando la orilla del otro lado.")
+    c(ws, f"D{r}", 1, F0)
+    c(ws, f"E{r}", f"=MAX({a100},{a70})", "0.0")
+    c(ws, f"F{r}", fx("={mix100}+{mix70}"), F0)
+    c(ws, f"G{r}", f"=MAX({d100},{d70})", "0.0")
+    c(ws, f"H{r}", f"=INT(B{r}/G{r})", F0)
+    c(ws, f"I{r}", f"=F{r}*H{r}", F0, neg=True)
+    c(ws, f"J{r}", fx(f"=({{mix100}}*{a100}*{d100}+{{mix70}}*{a70}*{d70})/(B{r}*C{r})"), FP)
+    c(ws, f"M{r}", fx(f"=INT({{L2}}/MIN({a100},{a70}))"), F0)
+    for k in range(1, 5):
+        c(ws, f"{L(26 + k)}{r}", fx(f"=IFERROR(IF({k}>{{ciclo}},1E+9,MAX(CEILING({k}*F{r}/M{r},1),"
+                                    f"CEILING({k}*{ancho}/{{L2}},1))/{k}),1E+9)"), F2)
+    _hoja_maquinas(ws, r, e, f"C{r}-{ancho}")
+    c(ws, f"Y{r}", fx(f'=IF(AND({d70}<=B{r},{d100}<=B{r},{ancho}<=C{r},E{r}<={{tope1}},L{r}<={{tope2}}),'
+                      f'"OK: "&{{mix100}}&" de 100 kg y "&{{mix70}}&" de 70 kg","No entra")'))
+    g.nota(ws, HMIX + 1, "1.er corte por el lado corto (franjas de hasta 1.500 mm de largo). G1 hace solo el 1.er corte y "
+                         "G2 solo el 2.º: la pieza, o la orilla si la pieza supera el tope. Franjas en paralelo: hojas "
+                         "enteras, con el ciclo que da menos tandas por hoja (Datos, «Hojas por ciclo»).")
+    # para los Dimensionamientos de Manuales y Carros
+    seccion(ws, EX0 - 2, "Para los Dimensionamientos de Manuales (1 a 10 kg) y Carros (25 a 100 kg): IMPORTRANGE")
+    g.cab(ws, EX0 - 1, ["Formato", "Piezas por hoja", "Golpes G1 por hoja", "Golpes G2 por hoja",
+                        "Tandas de G2 por hoja", "Golpes por minuto G1", "Golpes por minuto G2"])
+    for i in range(9):
+        r, rs = EX0 + i, HS0 + i
+        c(ws, f"A{r}", f"=A{rs}")
+        c(ws, f"B{r}", f"=I{rs}", F0)
+        c(ws, f"C{r}", f"=P{rs}", F2)
+        c(ws, f"D{r}", f"=R{rs}", F2)
+        c(ws, f"E{r}", f"=O{rs}/N{rs}", F2)
+        c(ws, f"F{r}", fx("={gpm1}"), F0)
+        c(ws, f"G{r}", fx("={gpm2}"), F0)
     # B) bobina por formato
     seccion(ws, BB0 - 2, "B) Cuerpos en bobina de ancho estándar con línea de corte transversal (A) y a medida (Ref.)")
     g.cab(ws, BB0 - 1, ["Formato", "Ancho de bobina (mm)", "Piezas por golpe", "Avance por golpe (mm)", "Aprovech.",
@@ -655,7 +726,7 @@ def h_corte(wb):
     seccion(ws, DC0 - 2, "C) Cúpulas y fondos: fleje a medida (A, D, Ref.) o tiras de hoja (B)")
     g.cab(ws, DC0 - 1, ["Pieza", "Ø disco (mm)", "Espesor (mm)", "Puente de avance (mm)", "Puente al borde (mm)",
                         "Ancho de fleje (mm)", "Paso (mm)", "Aprovech. del fleje", "kg de fleje por disco",
-                        "USD de fleje por disco", "Peso de rollo (t)", "Hoja para tiras: ancho", "largo",
+                        "USD de fleje por disco", "Peso de rollo (t)", "Hoja: lado corto = largo de la tira", "lado largo",
                         "Tiras por hoja", "Discos por tira", "Discos por hoja", "Aprovech. de la hoja",
                         "kg de hoja por disco", "USD de hoja por disco"])
     fmi = {f: i for i, f in enumerate(FORM)}
@@ -679,10 +750,9 @@ def h_corte(wb):
         hw, hl = HOJA_TIRAS[i]
         c(ws, f"L{r}", hw, F0, dato=True)
         c(ws, f"M{r}", hl, F0, dato=True)
-        o1 = f"INT(L{r}/F{r})*INT((M{r}-D{r})/G{r})"
-        o2 = f"INT(M{r}/F{r})*INT((L{r}-D{r})/G{r})"
-        c(ws, f"N{r}", f"=IF({o1}>={o2},INT(L{r}/F{r}),INT(M{r}/F{r}))", F0)
-        c(ws, f"O{r}", f"=IF({o1}>={o2},INT((M{r}-D{r})/G{r}),INT((L{r}-D{r})/G{r}))", F0)
+        # tiras cortadas por el lado corto de la hoja (mismo criterio que los cuerpos)
+        c(ws, f"N{r}", f"=INT(M{r}/F{r})", F0)
+        c(ws, f"O{r}", f"=INT((L{r}-D{r})/G{r})", F0)
         c(ws, f"P{r}", f"=N{r}*O{r}", F0)
         c(ws, f"Q{r}", f"=P{r}*PI()*B{r}^2/4/(L{r}*M{r})", FP)
         c(ws, f"R{r}", fx(f"=L{r}*M{r}*C{r}*{{dens}}/1000000/P{r}"), F3)
@@ -704,15 +774,20 @@ def h_corte(wb):
     ws.freeze_panes = "B6"
 
 
-def _hoja_maquinas(ws, r, e):
-    c(ws, f"J{r}", fx(f"=IF(F{r}<={{tope1}},F{r},B{r}-F{r}*G{r})"), "0.0")
-    c(ws, f"K{r}", fx(f'=IF(AND(I{r}<={{tope2}},F{r}<={{L2}}),"G2","G1")'), neg=True)
-    c(ws, f"L{r}", fx(f'=INT(IF(K{r}="G2",{{L2}},{{L1}})/F{r})'), F0)
-    c(ws, f"M{r}", f'=G{r}+IF(K{r}="G1",G{r}*H{r}/L{r},0)', F2)
-    c(ws, f"N{r}", f'=IF(K{r}="G2",G{r}*H{r}/L{r},0)', F2)
-    c(ws, f"O{r}", fx(f"=M{r}/{{gpm1}}+N{r}/{{gpm2}}"), F2)
-    c(ws, f"P{r}", fx(f"=B{r}*C{r}*{e}*{{dens}}/1000000"), F1)
-    c(ws, f"Q{r}", f"=P{r}*{precio(e, 'pH')}", F2)
+def _hoja_maquinas(ws, r, e, resto):
+    c(ws, f"K{r}", fx(f"=E{r}*B{r}*{e}*{{dens}}/1000000"), F1)
+    c(ws, f"L{r}", fx(f"=IF(G{r}<={{tope2}},G{r},B{r}-H{r}*G{r})"), "0.0")
+    c(ws, f"N{r}", f"=MATCH(MIN(AA{r}:AD{r}),AA{r}:AD{r},0)", F0)
+    c(ws, f"O{r}", f"=ROUND(INDEX(AA{r}:AD{r},N{r})*N{r},0)", F0)
+    c(ws, f"P{r}", f"=IF({resto}>0.001,F{r},F{r}-1)", F0)
+    c(ws, f"Q{r}", fx(f"=IF(G{r}<={{tope2}},IF(B{r}-H{r}*G{r}>0.001,H{r},H{r}-1),1)"), F0)
+    c(ws, f"R{r}", f"=Q{r}*O{r}/N{r}", F2)
+    c(ws, f"S{r}", fx(f"=P{r}/{{gpm1}}"), F2)
+    c(ws, f"T{r}", fx(f"=R{r}/{{gpm2}}"), F2)
+    c(ws, f"U{r}", f'=IF(S{r}>=T{r},"G1","G2")', neg=True)
+    c(ws, f"V{r}", f"=I{r}*60/MAX(S{r},T{r})", F0)
+    c(ws, f"W{r}", fx(f"=B{r}*C{r}*{e}*{{dens}}/1000000"), F1)
+    c(ws, f"X{r}", f"=W{r}*{precio(e, 'pH')}", F2)
 
 
 def _bobina_madre(ws):
@@ -935,7 +1010,9 @@ def main():
     h_calculo(wb)
     wb.remove(h_resumen_placeholder)
     h_resumen(wb)
-    wb.move_sheet("Resumen", offset=-(len(wb.sheetnames) - 1))
+    orden = ["Links", "Resumen", "Datos", "Demanda", "Piezas", "Corte", "Cálculo"]
+    wb._sheets = [wb[n] for n in orden]
+    wb.active = 1
     for ws in wb.worksheets:
         ws.sheet_view.showGridLines = False
         ws.page_setup.orientation = "landscape"
