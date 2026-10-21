@@ -32,9 +32,11 @@ IMP_ZON = "Indexado Dim Técnico!U61:U74"
 # hoja Links: (archivo, link, qué se importa). Los que dicen PEGAR se completan cuando estén los Sheets nuevos.
 PEGAR = "PEGAR ACÁ EL LINK DEL GOOGLE SHEET"
 LINKS = [("Proyecciones", URL_PROY, "Indexado Dim Técnico B27:K43, U61:U74, V61 y V63"),
-         ("Dimensionamiento Manuales", PEGAR, "parametros_manuales K32, K33, K38, K39, K40 y K42 (equivalencia del rodante)"),
+         ("Dimensionamiento Manuales", PEGAR, "parametros_manuales K33, K34, K39, K40, K41 y K43 (equivalencia del rodante)"),
          ("Dimensionamiento Carros", PEGAR, "parametros_carros I29, I30, I33 e I34 (equivalencia del rodante)"),
          ("MRP (FLAMA_MRP)", PEGAR, "ESTACIONALIDAD C4:N6 (llegada de los sustitutos ABC nuevos)")]
+FUENTES = [(k, a, u, q) for k, (a, u, q) in zip(("proy", "man", "car", "mrp"), LINKS)]
+LB = None          # hoja Links del libro que se está generando (todos los IMPORTRANGE)
 LK_PROY, LK_MAN, LK_CAR, LK_MRP = "Links!$B$4", "Links!$B$5", "Links!$B$6", "Links!$B$7"
 # Proyecciones, Indexado Dim Técnico V61 (comercial) y V63 (industrial): suma de las zonas de cada planta
 PCT_PLANTA = {"Comercial": 0.5545197389, "Industrial": 0.2882365055}
@@ -112,10 +114,10 @@ FILA_PCIL = 109    # primera fila del perfil de llegada de los sustitutos ABC nu
 # Equivalencia de un rodante: operaciones que comparten la fábrica y la recarga. (operación, celdas de
 # parametros_manuales con su valor (s/u), celda de parametros_carros con su valor (min/u, ponderado con el mix 2035))
 FILA_EQ = 116
-EQUIV = [("Prueba hidráulica", [("K32", 60)], ("I29", 8.979935)),
-         ("Secado", [("K33", 120)], ("I30", 10.058961)),
-         ("Carga de polvo y presurización", [("K38", 45), ("K40", 30)], ("I33", 11.33)),
-         ("Ensamblaje / montaje, precinto y etiquetado", [("K39", 100), ("K42", 60)], ("I34", 6.32))]
+EQUIV = [("Prueba hidráulica", [("K33", 60)], ("I29", 8.979935)),
+         ("Secado", [("K34", 120)], ("I30", 10.058961)),
+         ("Carga de polvo y presurización", [("K39", 45), ("K41", 30)], ("I33", 11.33)),
+         ("Ensamblaje / montaje, precinto y etiquetado", [("K40", 100), ("K43", 60)], ("I34", 6.32))]
 # Parámetros: (fila, texto, valor o fórmula, formato, dato a mano, fuente)
 P_GEN = [
     (2, "Días hábiles por mes", 20, "0", True, "2035: 248 hábiles (Ley 27.399) · § 11"),
@@ -473,13 +475,80 @@ def h_links(wb, filas):
     return ws
 
 
+class Links:
+    """Hoja Links, la primera del libro: la tabla de links y, debajo, todos los IMPORTRANGE. Las demás hojas la leen con
+    fórmulas, así que alcanza con pegar los links. fuentes: [(clave, archivo, link, qué se importa)]."""
+
+    def __init__(self, fuentes, iferror=()):
+        self.fuentes = fuentes
+        self.lk = {f[0]: f"Links!$B${4 + i}" for i, f in enumerate(fuentes)}
+        self.iferror = set(iferror)       # fuentes que, sin link, valen 0 (la columna Estado lo avisa)
+        self.r = 4 + len(fuentes) + 2
+        self.bloques, self.ya = [], {}
+
+    def imp(self, clave, rango, valores, fmt="#,##0", titulo="", filas=None, cols=None):
+        """Registra un IMPORTRANGE y devuelve la celda de la esquina del bloque (fila, columna)."""
+        if (clave, rango) in self.ya:
+            return self.ya[(clave, rango)]
+        r0 = self.r + 1 + (cols is not None)
+        self.bloques.append(dict(clave=clave, rango=rango, valores=valores, fmt=fmt, titulo=titulo, filas=filas,
+                                 cols=cols, r=self.r, r0=r0))
+        self.ya[(clave, rango)] = (r0, 2)
+        self.r = r0 + len(valores) + 1
+        return (r0, 2)
+
+    def ref(self, pos, i=0, j=0, clave=None):
+        x = f"Links!{L(pos[1] + j)}{pos[0] + i}"
+        return f"IFERROR({x},0)" if clave in self.iferror else x
+
+    def escribir(self, wb):
+        ws = hoja(wb, "Links", [46] + [11] * 12 + [30])
+        wb.move_sheet(ws, offset=-(len(wb.sheetnames) - 1))
+        tit(ws, 1, "Links e IMPORTRANGE")
+        nota(ws, 2, "Pegar en B el link de cada Google Sheet. La primera vez, tocar la primera celda de cada bloque y "
+                    "«Permitir acceso». Todos los IMPORTRANGE del libro están en esta hoja; las demás la leen.")
+        cab(ws, 3, ["Archivo", "Link", "", "", "", "", "Qué se importa", "", "", "", "", "", "Estado"])
+        primero = {}
+        for b in self.bloques:
+            primero.setdefault(b["clave"], f"{L(2)}{b['r0']}")
+        for i, (k, a, u, q) in enumerate(self.fuentes):
+            r = 4 + i
+            celda(ws, r, 1, a, neg=True)
+            celda(ws, r, 2, u, dato=True)
+            celda(ws, r, 7, q)
+            for c0, c1 in ((2, 6), (7, 12)):
+                ws.merge_cells(start_row=r, start_column=c0, end_row=r, end_column=c1)
+            celda(ws, r, 13, f'=IF(ISERROR({primero[k]}),"Falta el link o «Permitir acceso»","OK")' if k in primero
+                  else "—")
+        for c0, c1 in ((2, 6), (7, 12)):
+            ws.merge_cells(start_row=3, start_column=c0, end_row=3, end_column=c1)
+        nombre = {f[0]: f[1] for f in self.fuentes}
+        for b in self.bloques:
+            x = ws.cell(b["r"], 1, f"{nombre[b['clave']]} · {b['rango']}" + (f": {b['titulo']}" if b["titulo"] else ""))
+            x.font = F_B
+            if b["cols"] is not None:
+                cab(ws, b["r"] + 1, [""] + [str(c) for c in b["cols"]])
+            for i in range(len(b["valores"])):
+                if b["filas"]:
+                    celda(ws, b["r0"] + i, 1, b["filas"][i])
+            importrange(ws, b["r0"], 2, self.lk[b["clave"]], b["rango"], b["valores"], b["fmt"])
+        ws.freeze_panes = "B4"
+        ws.page_setup.orientation = "landscape"
+        ws.sheet_properties.pageSetUpPr.fitToPage = True
+        ws.page_setup.fitToWidth, ws.page_setup.fitToHeight = 1, 0
+        return ws
+
+
 def h_proy(wb, planta):
     ws = hoja(wb, "PROY_Indexado", [34, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 50])
     tit(ws, 1, "Proyecciones — Indexado Dim Técnico")
     cab(ws, 3, ["Recargas por tipo"] + ANIOS)
     for i, (n, v) in enumerate(REC):
         celda(ws, 4 + i, 1, n)
-    importrange(ws, 4, 2, LK_PROY, IMP_REC, [v for n, v in REC], "#,##0")
+    pos = LB.imp("proy", IMP_REC, [v for n, v in REC], "#,##0", "recargas por tipo", [n for n, v in REC], ANIOS)
+    for i in range(len(REC)):
+        for j in range(10):
+            celda(ws, 4 + i, 2 + j, "=" + LB.ref(pos, i, j), "#,##0")
     celda(ws, 21, 1, "Recargas total", neg=True)
     for k in range(10):
         celda(ws, 21, 2 + k, f"=SUM({L(2 + k)}4:{L(2 + k)}20)", "#,##0", res=True)
@@ -489,16 +558,21 @@ def h_proy(wb, planta):
     for i, (z, p, pl) in enumerate(ZONAS):
         celda(ws, 25 + i, 1, z)
         celda(ws, 25 + i, 3, pl).alignment = CEN
-    importrange(ws, 25, 2, LK_PROY, IMP_ZON, [[p] for z, p, pl in ZONAS], "0.0%")
+    pos = LB.imp("proy", IMP_ZON, [[p] for z, p, pl in ZONAS], "0.0%", "% de recargas por zona 2035",
+                 [z for z, p, pl in ZONAS])
+    for i in range(len(ZONAS)):
+        celda(ws, 25 + i, 2, "=" + LB.ref(pos, i), "0.0%")
     dv = DataValidation(type="list", formula1='"Comercial,Industrial,Fuera"', allow_blank=False)
     ws.add_data_validation(dv)
     dv.add("C25:C38")
     cab(ws, 39, ["Planta", "% de recargas", "Control: suma de sus zonas"])
     celda(ws, 40, 1, "Comercial (Proyecciones V61)", neg=True)
-    importrange(ws, 40, 2, LK_PROY, "Indexado Dim Técnico!V61", [[PCT_PLANTA["Comercial"]]], "0.0%")
+    celda(ws, 40, 2, "=" + LB.ref(LB.imp("proy", "Indexado Dim Técnico!V61", [[PCT_PLANTA["Comercial"]]], "0.0%",
+                                         "% de recargas de la planta comercial", ["Comercial"])), "0.0%")
     celda(ws, 40, 3, '=SUMIF($C$25:$C$38,"Comercial",$B$25:$B$38)', "0.0%")
     celda(ws, 41, 1, "Industrial (Proyecciones V63)", neg=True)
-    importrange(ws, 41, 2, LK_PROY, "Indexado Dim Técnico!V63", [[PCT_PLANTA["Industrial"]]], "0.0%")
+    celda(ws, 41, 2, "=" + LB.ref(LB.imp("proy", "Indexado Dim Técnico!V63", [[PCT_PLANTA["Industrial"]]], "0.0%",
+                                         "% de recargas de la planta industrial", ["Industrial"])), "0.0%")
     celda(ws, 41, 3, '=SUMIF($C$25:$C$38,"Industrial",$B$25:$B$38)', "0.0%")
     celda(ws, 42, 1, "Fuera: PBA Interior (distribuidores ajenos)")
     celda(ws, 42, 2, '=SUMIF($C$25:$C$38,"Fuera",$B$25:$B$38)', "0.0%")
@@ -693,7 +767,9 @@ def h_param(wb, planta):
         celda(ws, r, 1, nom)
         celda(ws, r, 2, ", ".join(REC[k][0] for k, ff in FAM_ABC.items() if ff == f))
         ws.merge_cells(start_row=r, start_column=2, end_row=r, end_column=4)
-        importrange(ws, r, 5, LK_MRP, rng, [vals], "0.0%")
+        pos = LB.imp("mrp", rng, [vals], "0.0%", nom, [nom], MESES)
+        for m in range(12):
+            celda(ws, r, 5 + m, "=" + LB.ref(pos, 0, m), "0.0%")
         celda(ws, r, 17, f"=SUM(E{r}:P{r})", "0%", res=True)
 
     # equivalencia de un rodante con los tiempos de fábrica de FLAMA
@@ -704,10 +780,10 @@ def h_param(wb, planta):
     for k, (op, man, (cc, cv)) in enumerate(EQUIV):
         r = FILA_EQ + k
         celda(ws, r, 1, op)
-        fm = "+".join(f'IMPORTRANGE({LK_MAN},""parametros_manuales!{c}"")' for c, _ in man)
-        celda(ws, r, 2, f'=IFERROR(__xludf.DUMMYFUNCTION("{fm}"),{sum(v for _, v in man)!r})', "0")
-        celda(ws, r, 3, f'=IFERROR(__xludf.DUMMYFUNCTION("IMPORTRANGE({LK_CAR},""parametros_carros!{cc}"")"),'
-                        f'{cv!r})', "0.00")
+        celda(ws, r, 2, "=" + "+".join(LB.ref(LB.imp("man", f"parametros_manuales!{c}", [[v]], "0", f"{op} (s/u)",
+                                                      [op])) for c, v in man), "0")
+        celda(ws, r, 3, "=" + LB.ref(LB.imp("car", f"parametros_carros!{cc}", [[cv]], "0.00", f"{op} (min/u)", [op])),
+              "0.00")
         celda(ws, r, 4, f"=IF(B{r}=0,0,C{r}*60/B{r})", "0.0", res=True)
         celda(ws, r, 5, "Manuales " + " + ".join(c for c, _ in man) + f"; Carros {cc}")
         ws.merge_cells(start_row=r, start_column=5, end_row=r, end_column=8)
@@ -1046,9 +1122,10 @@ def h_sust(wb):
 def generar(planta, plan=None):
     if plan is None:
         plan = {(k, i): (1, 1) for k in range(N_PUESTOS) for i in range(10)}
+    global LB
+    LB = Links(FUENTES)
     wb = Workbook()
     wb.remove(wb.active)
-    h_links(wb, LINKS)
     h_proy(wb, planta)
     h_datos(wb)
     h_param(wb, planta)
@@ -1056,6 +1133,7 @@ def generar(planta, plan=None):
     h_plan(wb)
     h_demanda(wb)
     h_resumen(wb, plan)
+    LB.escribir(wb)
     wb.active = wb.sheetnames.index("Resumen Capacidad")
     os.makedirs(SALIDA, exist_ok=True)
     ruta = os.path.join(SALIDA, f"Dimensionamiento_Recargas_Planta_{planta}.xlsx")

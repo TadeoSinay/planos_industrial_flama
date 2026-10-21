@@ -1,16 +1,15 @@
 """Actualiza los Dimensionamientos de Manuales y Carros del grupo (referencias/) y los deja en salida/.
 
-Cambios sobre los archivos del grupo, sin mover sus hojas:
-- Hoja Links con los links de los IMPORTRANGE (Proyecciones, los dos Dimensionamientos de recargas y el MRP).
-- Estacionalidad (filas 12 a 15) por IMPORTRANGE de la hoja ESTACIONALIDAD del MRP, que define los picos.
-- datos_base con IMPORTRANGE de Proyecciones (Indexado Dim Técnico) y un bloque de sustitutos ABC por modelo: la
-  planta industrial los pide terminados (proceso completo en la línea) y la comercial como cilindro vacío.
-- Las filas del Plan mensual del grupo suman esos sustitutos (terminados a los terminados, cilindros a los
-  cilindros); la demanda por puesto queda como estaba. Con sobrestock se suman con el perfil de producción.
-- Aprovechamiento indexado a las tablas de máquinas y turnos (sin "/2" escritos a mano), tablas cargadas con el
-  criterio de Manuales a partir de lo que ya estaba (ningún puesto pasa el umbral del 90 %) y colores por formato
-  condicional.
-- Formato gris en la hoja Links y en el bloque de sobrestock de parametros_manuales (venía en azul y verde).
+- Hoja Links primera, con la tabla de links y todos los IMPORTRANGE del libro (Proyecciones, los dos
+  Dimensionamientos de recargas, el MRP y, en Manuales, el Excel «Análisis alternativas corte chapa»). Las demás
+  hojas leen Links: alcanza con pegar los links.
+- Manuales: la versión 4 del grupo (26 puestos: G1 Ermaksan y G2 QC12Y, cilindradora Firesafer y soldadura
+  longitudinal TIG del 1 kg). datos_base con Proyecciones y el alta (paso 4) de sustitutos ABC de cada planta;
+  estacionalidad del MRP; piezas, golpes y tandas por hoja del Excel de corte.
+- Carros: datos_base con IMPORTRANGE de Proyecciones y el bloque de sustitutos; estacionalidad del MRP; guillotinas
+  nuevas (los tiempos siguen siendo los del W-CAR).
+- Aprovechamiento indexado a las tablas de máquinas y turnos, cargadas con la regla del 90 % (2.° turno en un solo
+  año) y colores por formato condicional.
 """
 
 import os
@@ -58,17 +57,30 @@ CIL_CAR = [[0.0, 0.0, 14.4, 50.2, 93.0, 135.0, 191.0, 247.0, 277.0, 322.0],
            [0.0, 0.0, 7.0, 24.4, 45.2, 65.4, 92.2, 119.0, 133.4, 155.0],
            [0.0, 0.0, 4.6, 16.0, 29.6, 42.8, 60.4, 78.0, 87.6, 102.0]]
 
-LINKS = [g.LINKS[0],
-         ("Dimensionamiento Recargas Planta Comercial", g.PEGAR,
-          "sobrestock_sustitutos, paso 4: alta de sustitutos ABC que pide como cilindro vacío"),
-         ("Dimensionamiento Recargas Planta Industrial", g.PEGAR,
-          "sobrestock_sustitutos, paso 4: alta de sustitutos ABC que pide como matafuego terminado")]
-LK_PROY, LK_COM, LK_IND, LK_MRP = "Links!$B$4", "Links!$B$5", "Links!$B$6", "Links!$B$7"
+CORTE = os.path.join(g.SALIDA, "Analisis_alternativas_corte_chapa.xlsx")
+FUENTES_MAN = [
+    ("proy", "Proyecciones", g.URL_PROY, "Indexado Dim Técnico B3:K6 y B15:K18 → datos_base"),
+    ("com", "Dimensionamiento Recargas Planta Comercial", g.PEGAR,
+     "sobrestock_sustitutos B73:K76: alta de sustitutos ABC (cilindros vacíos) → datos_base"),
+    ("ind", "Dimensionamiento Recargas Planta Industrial", g.PEGAR,
+     "sobrestock_sustitutos B73:K76: alta de sustitutos ABC (terminados) → datos_base"),
+    ("mrp", "MRP (FLAMA_MRP)", g.PEGAR, "ESTACIONALIDAD C4:N5 (E01 y E02) → parametros_manuales filas 12 a 15"),
+    ("corte", "Análisis alternativas corte chapa", g.PEGAR,
+     "Corte B19:G22 (piezas, golpes y tandas por hoja; golpes por minuto) → parametros_manuales filas 118 a 127")]
+FUENTES_CAR = [
+    ("proy", "Proyecciones", g.URL_PROY, "Indexado Dim Técnico B7:K10 y B19:K22 → datos_base"),
+    ("com", "Dimensionamiento Recargas Planta Comercial", g.PEGAR,
+     "sobrestock_sustitutos B86:K89: alta de sustitutos ABC (cilindros vacíos) → datos_base"),
+    ("ind", "Dimensionamiento Recargas Planta Industrial", g.PEGAR,
+     "sobrestock_sustitutos B86:K89: alta de sustitutos ABC (terminados) → datos_base"),
+    ("mrp", "MRP (FLAMA_MRP)", g.PEGAR, "ESTACIONALIDAD C6:N6 (E03) → parametros_carros filas 12 a 15")]
+ANIOS_TXT = [str(a) for a in g.ANIOS]
 PED_MAN = f"sobrestock_sustitutos!B{g.S_ALTA}:K{g.S_ALTA + 3}"
 PED_CAR = f"sobrestock_sustitutos!B{g.S_ALTA + 13}:K{g.S_ALTA + 16}"
 # Recurso de cada puesto (para el color de máquina u operario), según el equipo de parametros y el Word de procesos
-REC_MAN = ["Manual"] + ["Máquina"] * 11 + ["Manual", "Máquina", "Máquina", "Máquina", "Manual", "Manual", "Máquina",
+REC_MAN = ["Manual"] + ["Máquina"] * 12 + ["Manual", "Máquina", "Máquina", "Máquina", "Manual", "Manual", "Máquina",
                                            "Máquina", "Manual", "Máquina", "Máquina", "Máquina", "Manual"]
+N_MAN, R_MAQ_M, R_TUR_M = 26, 31, 60      # puestos de Manuales y filas de sus tablas de máquinas y turnos
 REC_CAR = ["Manual", "Máquina", "Máquina", "Máquina", "Manual", "Máquina", "Máquina", "Máquina", "Manual", "Manual",
            "Máquina", "Máquina", "Manual", "Manual", "Máquina", "Manual", "Manual", "Manual"]
 
@@ -87,28 +99,22 @@ def estilo(src, dst):
     dst.alignment, dst.number_format = copy(src.alignment), src.number_format
 
 
-def imp(ws, r0, c0, link, rango, valores):
-    """IMPORTRANGE como lo exporta Google (la celda conserva su formato)."""
-    for i, fila in enumerate(valores):
-        for j, x in enumerate(fila):
-            if i == 0 and j == 0:
-                f = f'=IFERROR(__xludf.DUMMYFUNCTION("IMPORTRANGE({link},""{rango}"")"),{x!r})'
-            else:
-                f = f'=IFERROR(__xludf.DUMMYFUNCTION("""COMPUTED_VALUE"""),{x!r})'
-            ws.cell(r0 + i, c0 + j).value = f
+def refs(ws, r0, c0, LB, pos, nf, nc, clave=None, fmt=None):
+    """Celdas que leen un bloque de la hoja Links (la celda conserva su formato)."""
+    for i in range(nf):
+        for j in range(nc):
+            x = ws.cell(r0 + i, c0 + j)
+            x.value = "=" + LB.ref(pos, i, j, clave)
+            if fmt:
+                x.number_format = fmt
 
 
-def links(wb, mrp):
-    g.h_links(wb, LINKS + [("MRP (FLAMA_MRP)", g.PEGAR, mrp)])
-    wb.move_sheet("Links", offset=-(len(wb.sheetnames) - 1))
-
-
-def estacionalidad(ws, perfiles, nota_txt):
-    """Filas 12 a 15 de parametros: IMPORTRANGE del perfil del MRP de cada modelo (queda el valor actual)."""
+def estacionalidad(ws, LB, perfiles, nota_txt):
+    """Filas 12 a 15 de parametros: el perfil del MRP de cada modelo, desde la hoja Links."""
     for j, e in enumerate(perfiles):
         nom, rng, vals = g.E_MRP[e]
-        imp(ws, 12 + j, 2, LK_MRP, rng, [vals])
-        ws.cell(12 + j, 15).value = f"MRP, ESTACIONALIDAD {nom} (IMPORTRANGE)"
+        refs(ws, 12 + j, 2, LB, LB.imp("mrp", rng, [vals], "0.0%", nom, [nom], g.MESES), 1, 12)
+        ws.cell(12 + j, 15).value = f"MRP, ESTACIONALIDAD {nom} (hoja Links)"
     ws["A10"].value = nota_txt
 
 
@@ -142,22 +148,23 @@ def grises(wb):
                     c.fill = PatternFill("solid", fgColor=gris[c.fill.fgColor.rgb])
 
 
-def bloque_sustitutos(ws, r0, modelos, rango, ped, fila_estilo, fila_tot, nota_txt):
-    """datos_base: terminados (industrial) y cilindros (comercial) para sustitutos, con IMPORTRANGE."""
+def bloque_sustitutos(ws, r0, modelos, rango, ped, fila_estilo, fila_tot, nota_txt, LB):
+    """datos_base: terminados (industrial) y cilindros (comercial) para sustitutos, desde la hoja Links."""
     ws.cell(r0, 1).value = "Sustitutos ABC para las plantas de recargas"
     for c in range(1, 12):
         estilo(ws.cell(1, c), ws.cell(r0, c))
     for i in range(10):
         ws.cell(r0, 2 + i).value = g.ANIOS[i]
     filas = {}
-    for b, (pl, txt, lk) in enumerate([("Industrial", "terminado, planta industrial", LK_IND),
-                                       ("Comercial", "cilindro vacío, planta comercial", LK_COM)]):
+    for b, (pl, txt, lk) in enumerate([("Industrial", "terminado, planta industrial", "ind"),
+                                       ("Comercial", "cilindro vacío, planta comercial", "com")]):
         r1 = r0 + 1 + 5 * b
         for j, mo in enumerate(modelos):
             ws.cell(r1 + j, 1).value = f"{mo} — sustituto ({txt})"
             for c in range(1, 12):
                 estilo(ws.cell(fila_estilo, c), ws.cell(r1 + j, c))
-        imp(ws, r1, 2, lk, rango, ped[pl])
+        pos = LB.imp(lk, rango, ped[pl], "#,##0", f"alta de sustitutos ABC ({txt})", modelos, ANIOS_TXT)
+        refs(ws, r1, 2, LB, pos, 4, 10, lk)
         rt = r1 + 4
         ws.cell(rt, 1).value = f"Total sustitutos {'terminados' if b == 0 else 'cilindros vacíos'}"
         for c in range(1, 12):
@@ -169,30 +176,6 @@ def bloque_sustitutos(ws, r0, modelos, rango, ped, fila_estilo, fila_tot, nota_t
     ws.cell(r0 + 11, 1).value = nota_txt
     ws.cell(r0 + 11, 1).font = Font(name="Arial", size=9, italic=True)
     return filas
-
-
-def demanda_sobrestock(ws_dem, fila_db, verif):
-    """Manuales con sobrestock: producción = (datos_base + sustitutos) × perfil de producción con sobrestock."""
-    pm = "parametros_manuales"
-    prod = [95, 100, 105, 110]
-    for i in range(10):
-        y = L(2 + i)
-        for k in range(25):
-            r = 27 * i + 2 + k
-            p = 19 + k
-            for m in range(12):
-                mc = L(2 + m)
-                viejo = "=(" + "+".join(
-                    f"{pm}!${co}${p}*(datos_base!${y}${2 + j}+IF({pm}!$H${p}=\"Todos\",datos_base!${y}${9 + j},0))"
-                    f"*{pm}!${mc}${prod[j]}" for j, co in enumerate("DEFG")) + f")*{pm}!$I${p}*{pm}!$J${p}"
-                actual = ws_dem.cell(r, 2 + m).value
-                if actual != viejo:
-                    verif.append((ws_dem.title, ws_dem.cell(r, 2 + m).coordinate, actual, viejo))
-                nuevo = "+".join(
-                    f"{pm}!${co}${p}*(datos_base!${y}${2 + j}+datos_base!${y}${fila_db['Industrial'] + j}"
-                    f"+IF({pm}!$H${p}=\"Todos\",datos_base!${y}${9 + j}+datos_base!${y}${fila_db['Comercial'] + j},0))"
-                    f"*{pm}!${mc}${prod[j]}" for j, co in enumerate("DEFG"))
-                ws_dem.cell(r, 2 + m).value = f"=({nuevo})*{pm}!$I${p}*{pm}!$J${p}"
 
 
 def resumen(ws, n, r_maq, r_tur, util, recursos, umbral_ref, celda_umbral, legend_row, piso_solo=False):
@@ -261,67 +244,103 @@ def arreglar_dummy(ruta):
     os.replace(tmp, ruta)
 
 
+def valores_corte(r0, n):
+    """Piezas, golpes y tandas por hoja y golpes por minuto del Excel de corte (valor que trae el IMPORTRANGE)."""
+    ws = load_workbook(CORTE, data_only=True)["Corte"]
+    return [[ws.cell(r0 + i, 2 + j).value for j in range(6)] for i in range(n)]
+
+
 def manuales(ped):
-    ent = os.path.join(REF, "Dimensionamiento_Manuales.xlsx")
+    """Versión 4 del grupo (26 puestos) con la hoja Links y todo indexado."""
+    wb = load_workbook(os.path.join(REF, "Dimensionamiento_Manuales.xlsx"))
     sal = os.path.join(g.SALIDA, "Dimensionamiento_Manuales.xlsx")
-    wb = load_workbook(ent)
-    verif = []
-    links(wb, "ESTACIONALIDAD C4:N5: perfiles E01 (1 kg) y E02 (2,5 a 10 kg), filas 12 a 15 de parametros_manuales")
+    LB = g.Links(FUENTES_MAN, iferror=("com", "ind"))
     grises(wb)
-    estacionalidad(wb["parametros_manuales"], [0, 1, 1, 1],
-                   "ESTACIONALIDAD (% de la demanda anual por mes; IMPORTRANGE del MRP, que define los picos)")
     db = wb["datos_base"]
-    imp(db, 2, 2, LK_PROY, "Indexado Dim Técnico!B3:K6", TERM_MAN)
-    imp(db, 9, 2, LK_PROY, "Indexado Dim Técnico!B15:K18", CIL_MAN)
+    # sustitutos: solo los ABC de 1 a 10 kg (los demás tipos se compran); se sacan las filas de los otros tipos
+    db.delete_rows(58, 13)
+    db.delete_rows(37, 13)
     modelos = ["ABC 1 kg", "ABC 2,5 kg", "ABC 5 kg", "ABC 10 kg"]
-    fila_db = bloque_sustitutos(db, 17, modelos, PED_MAN, {p: v[:4] for p, v in ped.items()}, 2, 6,
-                                "Sustitutos: alta (paso 4) de cada Dimensionamiento de recargas · Word de recargas § 9")
-    db["A15"].value = "Total recipientes a fabricar (con sustitutos)"
+    for r0, clave, rng, vals, tit in (
+            (19, "proy", "Indexado Dim Técnico!B3:K6", TERM_MAN, "matafuegos terminados"),
+            (26, "proy", "Indexado Dim Técnico!B15:K18", CIL_MAN, "cilindros vendidos vacíos"),
+            (33, "ind", PED_MAN, ped["Industrial"][:4], "alta de sustitutos ABC terminados"),
+            (41, "com", PED_MAN, ped["Comercial"][:4], "alta de sustitutos ABC cilindros vacíos")):
+        refs(db, r0, 2, LB, LB.imp(clave, rng, vals, "#,##0", tit, modelos, ANIOS_TXT), 4, 10, clave)
+    db["A18"].value = "PROYECCIONES — Matafuegos terminados (Indexado Dim Técnico B3:K6, hoja Links)"
+    db["A25"].value = "PROYECCIONES — Cilindros vendidos vacíos (Indexado Dim Técnico B15:K18, hoja Links)"
+    db["A32"].value = "PLANTA INDUSTRIAL — Sustitutos ABC terminados: alta anual (sobrestock_sustitutos, paso 4)"
+    db["A40"].value = "PLANTA COMERCIAL — Sustitutos ABC cilindros vacíos: alta anual (sobrestock_sustitutos, paso 4)"
+    db["A37"].value, db["A45"].value = "Total sustitutos planta industrial", "Total sustitutos planta comercial"
+    db["A47"].value = "A la línea de manuales entran solo los ABC de 1 a 10 kg; los demás tipos se compran."
     for i in range(10):
         c = L(2 + i)
-        db[f"{c}15"].value = f"={c}6+{c}13+{c}22+{c}27"
-    plan_con_sustitutos(wb["Plan mensual"], fila_db, "parametros_manuales", verif)
-    demanda_sobrestock(wb["Demanda puesto con sobrestock"], fila_db, verif)
+        db[f"{c}37"].value = f"=SUM({c}33:{c}36)"
+        db[f"{c}45"].value = f"=SUM({c}41:{c}44)"
+        for j in range(4):
+            db[f"{c}{9 + j}"].value = f"={c}{26 + j}+{c}{41 + j}"
     pm = wb["parametros_manuales"]
+    estacionalidad(pm, LB, [0, 1, 1, 1], "ESTACIONALIDAD (% de la demanda anual por mes; MRP, hoja Links)")
+    pm["A8"].value = "Umbral de aprovechamiento"
+    pm["C8"].value = "Límite duro (análisis de riesgos) · Word de recargas § 8"
     pm["A9"].value = "Año de inicio del 2° turno (antes: más máquinas)"
     pm["B9"].value = ANIO_2T
     pm["C9"].value = "Todos los turnos entran ese año · Word de recargas § 8"
     for c in "ABC":
         estilo(pm[f"{c}8"], pm[f"{c}9"])
     pm["B9"].number_format = "0"
-    pm["A8"].value = "Umbral de aprovechamiento"
-    pm["C8"].value = "Límite duro (análisis de riesgos) · Word de recargas § 8"
-    hojas = [("Resumen cap. sin sobrestock", "Demanda puesto sin sobrestock", False),
-             ("Resumen cap. con sobrestock", "Demanda puesto con sobrestock", True)]
-    pisos = {}
-    for rn, dn, multiplica in hojas:
+    # corte de chapa: piezas, golpes y tandas por hoja y golpes por minuto del Excel de corte
+    pos = LB.imp("corte", "Corte!B19:G22", valores_corte(19, 4), "0.00",
+                 "piezas, golpes y tandas por hoja y golpes por minuto (1 a 10 kg)", modelos,
+                 ["Piezas por hoja", "Golpes G1 por hoja", "Golpes G2 por hoja", "Tandas G2 por hoja",
+                  "Golpes/min G1", "Golpes/min G2"])
+    refs(pm, 124, 3, LB, pos, 4, 4)
+    pm["B118"].value = "=" + LB.ref(pos, 0, 4)
+    pm["B119"].value = "=" + LB.ref(pos, 0, 5)
+    pm["A117"].value = ("CORTE DE CHAPA: DOS GUILLOTINAS EN SERIE (Excel «Análisis alternativas corte chapa» y Word "
+                        "«Esquema de corte en guillotina»: G1 Ermaksan CNC HGS 2600-6, G2 QC12Y 6 × 2500)")
+    pm["C118"].value = "Excel de corte (hoja Links). La ficha de la Ermaksan da 24; el grupo toma 20"
+    pm["C119"].value = "Excel de corte (hoja Links): QC12Y 6 × 2500"
+    pm["A129"].value = ("Piezas, golpes y tandas por hoja: Excel de corte (hoja Links). El tiempo tipo es uno solo por "
+                        "puesto: se pondera por los recipientes de 2035 (terminados + cilindros vacíos). La manipulación "
+                        "es editable.")
+    pm["C20"].value = "Guillotina hidráulica Ermaksan CNC HGS 2600-6 (tope 1.000 mm)"
+    pm["O20"].value = ("Golpes de G1 por hoja ÷ golpes/min + manipulación por hoja, ÷ piezas por hoja; promedio "
+                       "ponderado (bloque CORTE DE CHAPA, fila 117)")
+    pm["O21"].value = ("Reemplaza al corte láser de tubo: el 1 kg pasa a chapa. Golpes de G2 por hoja ÷ golpes/min + "
+                       "manipulación por tanda, ÷ piezas por hoja; promedio ponderado (fila 117)")
+    hojas = [("Resumen cap. sin sobrestock", "Demanda puesto sin sobrestock"),
+             ("Resumen cap. con sobrestock", "Demanda puesto con sobrestock")]
+    uno = {(k, i): (1, 1) for k in range(N_MAN) for i in range(10)}
+    for rn, dn in hojas:
         ws = wb[rn]
-        pisos[rn] = piso(ws, 25, 30, 58, mitades(ws, 25), multiplica)
 
         def util(k, i, mq, tu, dn=dn):
-            pr = 27 * i + 2 + k
+            pr = 28 * i + 2 + k
             return (f"=IF({mq}*{tu}*parametros_manuales!$M${19 + k}*parametros_manuales!$B$6=0,0,'{dn}'!$P${pr}/"
                     f"(parametros_manuales!$M${19 + k}*{mq}*{tu}*parametros_manuales!$B$6))")
-        resumen(ws, 25, 30, 58, util, REC_MAN, "parametros_manuales!$B$8", ("M13", "N13"), 14)
-        escribir_tablas(ws, 25, 30, 58, pisos[rn])
-    wb["Resumen cap. con sobrestock"]["O1"].value = ("Turnos: esta hoja divide por la tabla de turnos (filas 58 a 82), "
-                                                     "igual que la hoja sin sobrestock.")
+        resumen(ws, N_MAN, R_MAQ_M, R_TUR_M, util, REC_MAN, "parametros_manuales!$B$8", ("M13", "N13"), 14)
+        escribir_tablas(ws, N_MAN, R_MAQ_M, R_TUR_M, uno)
+    wb["Resumen cap. con sobrestock"]["O1"].value = ("Máquinas y turnos: regla del 90 % con el 2.° turno en un solo "
+                                                     "año (parametros_manuales B8 y B9); se pueden cambiar a mano.")
+    LB.escribir(wb)
+    wb.active = wb.sheetnames.index("Resumen cap. sin sobrestock")
     wb.save(sal)
     recalc(sal)
-    # segunda pasada: tablas con el criterio de Manuales sobre la demanda nueva
+    # segunda pasada: máquinas y turnos con la regla del 90 % sobre la demanda nueva
     wv = load_workbook(sal, data_only=True)
     wb = load_workbook(sal)
-    cap = [wv["parametros_manuales"].cell(19 + k, 13).value for k in range(25)]
+    cap = [wv["parametros_manuales"].cell(19 + k, 13).value for k in range(N_MAN)]
     b6 = wv["parametros_manuales"]["B6"].value
     umbral = wv["parametros_manuales"]["B8"].value
-    for rn, dn, _ in hojas:
-        dem = [[wv[dn].cell(27 * i + 2 + k, 16).value / b6 for i in range(10)] for k in range(25)]
-        plan = g.plan_capacidad(dem, cap, ["Máquina"] * 25, umbral, 2, ANIO_2T, piso=pisos[rn])
-        escribir_tablas(wb[rn], 25, 30, 58, plan)
+    for rn, dn in hojas:
+        dem = [[wv[dn].cell(28 * i + 2 + k, 16).value / b6 for i in range(10)] for k in range(N_MAN)]
+        plan = g.plan_capacidad(dem, cap, ["Máquina"] * N_MAN, umbral, 2, ANIO_2T, piso=uno)
+        escribir_tablas(wb[rn], N_MAN, R_MAQ_M, R_TUR_M, plan)
     wb.save(sal)
     recalc(sal)
     arreglar_dummy(sal)
-    return sal, verif
+    return sal, []
 
 
 def carros(ped):
@@ -329,24 +348,25 @@ def carros(ped):
     sal = os.path.join(g.SALIDA, "Dimensionamiento_Carros.xlsx")
     wb = load_workbook(ent)
     verif = []
-    links(wb, "ESTACIONALIDAD C6:N6: perfil E03 (rodantes), filas 12 a 15 de parametros_carros")
+    LB = g.Links(FUENTES_CAR, iferror=("com", "ind"))
     grises(wb)
-    estacionalidad(wb["parametros_carros"], [2, 2, 2, 2],
-                   "ESTACIONALIDAD (% de la demanda anual por mes; IMPORTRANGE del MRP, que define los picos)")
+    estacionalidad(wb["parametros_carros"], LB, [2, 2, 2, 2],
+                   "ESTACIONALIDAD (% de la demanda anual por mes; MRP, hoja Links)")
     db = wb["datos_base"]
-    imp(db, 2, 2, LK_PROY, "Indexado Dim Técnico!B7:K10", TERM_CAR)
-    imp(db, 9, 2, LK_PROY, "Indexado Dim Técnico!B19:K22", CIL_CAR)
     modelos = ["Carro ABC 25 kg", "Carro ABC 50 kg", "Carro ABC 70 kg", "Carro ABC 100 kg"]
+    refs(db, 2, 2, LB, LB.imp("proy", "Indexado Dim Técnico!B7:K10", TERM_CAR, "#,##0", "carros terminados", modelos,
+                              ANIOS_TXT), 4, 10)
+    refs(db, 9, 2, LB, LB.imp("proy", "Indexado Dim Técnico!B19:K22", CIL_CAR, "#,##0", "cilindros vendidos vacíos",
+                              modelos, ANIOS_TXT), 4, 10)
     fila_db = bloque_sustitutos(db, 34, modelos, PED_CAR, {p: v[4:] for p, v in ped.items()}, 2, 6,
-                                "Sustitutos: alta (paso 4) de cada Dimensionamiento de recargas · Word de recargas § 9")
+                                "Sustitutos: alta (paso 4) de cada Dimensionamiento de recargas · Word de recargas § 9",
+                                LB)
     db["A15"].value = "Total recipientes a fabricar (con sustitutos)"
     for i in range(10):
         c = L(2 + i)
         db[f"{c}15"].value = f"={c}6+{c}13+{c}39+{c}44"
-    db["A24"].value = (db["A24"].value or "").replace(
-        "Fuente: Dimensionamiento-Tecnico-FLAMA.xlsx, hoja DATOS-BASE: terminados filas 7 a 10 ('ABC 25/50/70/100 kg "
-        "s/ruedas') y cilindros filas 19 a 22.",
-        "Fuente: Proyecciones, Indexado Dim Técnico (IMPORTRANGE): terminados filas 7 a 10 y cilindros filas 19 a 22.")
+    db["A24"].value = ("Fuente: Proyecciones, Indexado Dim Técnico (hoja Links): terminados filas 7 a 10 y cilindros "
+                       "filas 19 a 22.")
     plan_con_sustitutos(wb["Plan mensual"], fila_db, "parametros_carros", verif)
     pc = wb["parametros_carros"]
     pc["A9"].value = "Año de inicio del 2° turno (antes: más máquinas)"
@@ -357,6 +377,15 @@ def carros(ped):
     pc["B9"].number_format = "0"
     pc["A8"].value = "Umbral de aprovechamiento"
     pc["C8"].value = "Límite duro (análisis de riesgos) · Word de recargas § 8"
+    # guillotinas nuevas (compartidas con manuales); los tiempos siguen siendo los del W-CAR
+    pc["C20"].value = ("Guillotinas Ermaksan CNC HGS 2600-6 (1.er corte) y QC12Y 6 × 2500 (2.º corte), compartidas con "
+                       "manuales + mesa elevadora de tijera 3 t + ventosas")
+    pc["A42"].value = ((pc["A42"].value or "") + " Corte: tiempos del W-CAR (una sola guillotina); con G1 y G2 en serie "
+                       "falta que el grupo los separe por máquina.")
+    pw = wb["Proceso (Word)"]
+    pw["F6"].value = (pw["F6"].value or "").replace(
+        "Guillotina CENA 8 × 3200 NC E21 (USD 36.800 + IVA, compartida con manuales)",
+        "Guillotinas Ermaksan CNC HGS 2600-6 y QC12Y 6 × 2500 (compartidas con manuales)")
     ws = wb["Resumen Capacidad"]
     estilo(ws["M5"], ws["M6"])
     ws["M6"].value = "Revisar"
@@ -366,6 +395,8 @@ def carros(ped):
     def util(k, i, mq, tu):
         return f"=IF({mq}*{tu}=0,0,'Demanda por puesto'!$P${20 * i + 2 + k}/({mq}*{tu}))"
     resumen(ws, 18, 23, 44, util, REC_CAR, "parametros_carros!$B$8", ("M8", "N8"), 9)
+    LB.escribir(wb)
+    wb.active = wb.sheetnames.index("Resumen Capacidad")
     wb.save(sal)
     recalc(sal)
     wv = load_workbook(sal, data_only=True)
