@@ -435,7 +435,7 @@ class Libro:
         self.det = {}
         prods = {"MANUALES": [("MANUALES", k) for k in range(8)], "RODANTES": [("RODANTES", 8 + k) for k in range(8)],
                  "RECARGAS": [("RECARGAS", 16 + k) for k in range(17)], "REVENDIDOS": None}
-        share = {"MANUALES": 1, "RODANTES": 1, "RECARGAS": 2}       # fila de DEMANDA: D02 nuevos / D03 recargas
+        share = {"MANUALES": 1, "RODANTES": 1, "RECARGAS": 2, "REVENDIDOS": 1}   # DEMANDA: D02 nuevos, D03 recargas
         for lin in ("MANUALES", "RODANTES", "RECARGAS", "REVENDIDOS"):
             b, n = self.mb[lin]
             sub(ws, r, lin, 14)
@@ -470,10 +470,8 @@ class Libro:
                 c(ws, r, 6, f'=IFERROR(INDEX({self.m_pol2.col(0)},MATCH(C{r},{self.m_pol.col(0)},0)),"")', izq=True)
                 c(ws, r, 7, "=" + b.anio(i, 4 + n), "#,##0.0")
                 dest = b.a(i, 3)
-                fac = "1"
-                if lin != "REVENDIDOS":
-                    sh = self.m_dem.anio(share[lin], 1)
-                    fac = f'IF({dest}="CABA",{sh},IF({dest}="PBA",1-{sh},1))'
+                sh = self.m_dem.anio(share[lin], 1)
+                fac = f'IF({dest}="CABA",{sh},IF({dest}="PBA",1-{sh},1))'
                 c(ws, r, 8, f"=SUMPRODUCT({b.fila(i, 4, 3 + n)},$O${rp}:${L(14 + n)}${rp})*{fac}", "#,##0.0")
                 c(ws, r, 9, f"=G{r}-H{r}", "#,##0.0")
                 c(ws, r, 10, sino(f"ROUND(G{r}-H{r},1)>=0"))
