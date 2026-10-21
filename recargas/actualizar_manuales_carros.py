@@ -13,6 +13,7 @@
 """
 
 import os
+import re
 import subprocess
 import sys
 import zipfile
@@ -240,13 +241,21 @@ def recalc(ruta):
     print(out.stdout.strip()[:400])
 
 
+# celda de un bloque IMPORTRANGE que no es la primera (lleva el último valor importado)
+RE_COMPUTED = re.compile(rb'<c (r="[A-Z]+[0-9]+")( s="[0-9]+")?[^>]*><f[^>]*>[^<]*COMPUTED_VALUE[^<]*</f>(?:<v>[^<]*</v>)?'
+                         rb'</c>', re.I)
+
+
 def arreglar_dummy(ruta):
-    """LibreOffice guarda __xludf.DUMMYFUNCTION en minúscula: se vuelve a poner como lo exporta Google."""
+    """Deja los IMPORTRANGE listos para Google Sheets: __xludf.DUMMYFUNCTION en mayúscula (LibreOffice la guarda en
+    minúscula) y vacías las celdas del bloque que no son la primera (si tienen algo, Sheets no expande el resultado y
+    da #REF!). Los demás valores calculados quedan guardados (vista previa de Drive)."""
     tmp = ruta + ".tmp"
     with zipfile.ZipFile(ruta) as zi, zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as zo:
         for it in zi.infolist():
             d = zi.read(it.filename)
             if it.filename.startswith("xl/worksheets/"):
+                d = RE_COMPUTED.sub(lambda m: b"<c " + m.group(1) + (m.group(2) or b"") + b"/>", d)
                 d = d.replace(b"__xludf.dummyfunction", b"__xludf.DUMMYFUNCTION").replace(
                     b"_xludf.dummyfunction", b"_xludf.DUMMYFUNCTION")
             zo.writestr(it, d)
