@@ -90,6 +90,11 @@ def importrange(ws, r0, c0, link, rango, valores, fmt):
             c.font, c.border = FN, BORDE
             if fmt:
                 c.number_format = fmt
+    # marca vacía justo afuera de la esquina inferior derecha del bloque: Google Sheets arma la hoja del tamaño de lo
+    # que tiene contenido y, con el bloque vacío (arreglar_dummy), las fórmulas que leen sus últimas filas o columnas
+    # darían «La referencia no existe»
+    if valores:
+        ws.cell(r0 + len(valores), c0 + max(len(f) for f in valores), '=""')
 
 
 g.importrange = importrange
