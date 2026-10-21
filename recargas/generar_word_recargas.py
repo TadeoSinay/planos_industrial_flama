@@ -1,4 +1,4 @@
-"""Genera salida/Justificacion_Recargas.docx: cómo se decidió cada valor de los Dimensionamientos de recargas, de
+"""Genera salida/Justificacion_Recargas.docx: cómo se decidió cada valor de los Aprovechamientos de recargas, de
 Recargas.xlsx y de los sustitutos que importan Manuales y Carros, qué implica en cada puesto y de dónde sale.
 
 Los números salen de los Excel ya recalculados (salida/), así que el Word queda igual a lo que muestran. Las
@@ -44,12 +44,13 @@ HAL = [q[0] for q in g.PUESTOS].index("Recuperación y carga de halogenado")
 def leer():
     d = {}
     for p in PLANTAS:
-        wb = load_workbook(os.path.join(g.SALIDA, f"Dimensionamiento_Recargas_Planta_{p}.xlsx"), data_only=True)
+        wb = load_workbook(os.path.join(g.SALIDA, f"Aprovechamiento_Recargas_Planta_{p}.xlsx"), data_only=True)
         pr, ss, R, D, px = wb["parametros_recargas"], wb[g.SS], wb["Resumen Capacidad"], wb["Demanda por puesto"], \
             wb["PROY_Indexado"]
         x = {"B": {r: pr.cell(r, 2).value for r in range(2, 11)},
              "crit": {r: [pr.cell(r, 5 + j).value for j in range(8)] for r in range(13, 29)},
-             "est": [pr.cell(r, 2).value for r in range(g.F_CABA, g.F_DIC + 1)],
+             "auto": [pr.cell(r, 2).value for r in range(g.F_ENE, g.F_TRANS + 1)],
+             "a": pr.cell(g.F_A, 2).value,
              "rub": [[pr.cell(g.FILA_RUB + c, 5 + m).value for m in range(12)] for c in range(7)],
              "planta": [pr.cell(g.FILA_TIPO + 17, 5 + m).value for m in range(12)],
              "eq": [[pr.cell(g.FILA_EQ + k, c).value for c in range(1, 5)] for k in range(len(g.EQUIV) + 1)],
@@ -160,8 +161,8 @@ def bloques(d):
                                  "implica en cada puesto"})
     out.append({"t": "sub", "x": "FLAMA · octubre de 2026"})
     p("Los Excel llevan solo números, fórmulas y una referencia corta (§) a la sección de este documento donde está el "
-      "porqué. Los archivos son: Dimensionamiento_Recargas_Planta_Comercial.xlsx, Dimensionamiento_Recargas_Planta_"
-      "Industrial.xlsx, Recargas.xlsx (logística) y Dimensionamiento_Manuales.xlsx / Dimensionamiento_Carros.xlsx "
+      "porqué. Los archivos son: Aprovechamiento_Recargas_Planta_Comercial.xlsx, Aprovechamiento_Recargas_Planta_"
+      "Industrial.xlsx, Recargas.xlsx (logística) y Aprovechamiento_Manuales.xlsx / Aprovechamiento_Carros.xlsx "
       "(alta de sustitutos ABC).")
 
     # 1
@@ -200,9 +201,11 @@ def bloques(d):
     # 3
     h1("3. Estacionalidad")
     p("IRAM 3517-2:2020 pide mantenimiento al menos una vez al año (9.2.1) y que la tarjeta indique mes y año del "
-      "próximo (9.4.14). La fecha de la próxima recarga la fija la última, no el calendario: si nada empuja a todo un "
-      "rubro a recargar el mismo mes, los aniversarios se reparten y el rubro queda parejo (1/12 por mes). Por eso solo "
-      "llevan estacionalidad los rubros donde una regla o un calendario externo concentra la recarga.")
+      "próximo (9.4.14). El mes de la próxima recarga lo fija la última, así que un rubro puede elegir en qué mes "
+      "recargar: adelanta una vez el turno y desde ahí vuelve cada año en ese mes. Mientras el equipo está en la planta "
+      "el cliente queda con un sustituto (9.4.5), y descolgar, retirar y reponer equipos es un trabajo que cada rubro "
+      "evita en su temporada alta y concentra en sus meses tranquilos. Por eso cada rubro lleva los meses que marcan "
+      "sus pliegos, cámaras y manuales; el que no tiene una ventana así queda parejo (1/12 por mes).")
     tabla([22] + [7] * 12, ["Comercial"] + g.MESES,
           [[RUB_CORTO[c]] + [pc(v) for v in C["rub"][c]] for c in range(7)]
           + [["Toda la planta"] + [pc(v) for v in C["planta"]], ["Industrial: planta"] + [pc(v) for v in I["planta"]]],
@@ -217,10 +220,18 @@ def bloques(d):
       "art. 40) y para salir a la ruta en vacaciones se pide la VTV al día (iProfesional). El único dato mensual "
       "publicado es el de la ITV de "
       "Córdoba: el 12 % de las inspecciones del año se hace en enero, con recargadores que informan el mismo pico "
-      "(Hoy Día Córdoba). Recargadores de Mendoza, Paraná y Rafaela informan el pico antes de las vacaciones de verano.")
-    p("Se adopta: **enero 12 %, diciembre 12 % y el resto 7,6 % por mes** ((100 − 24) ÷ 10). Diciembre igual a enero "
-      "es criterio: la salida de vacaciones arranca con las fiestas de fin de año y el perfil de producción del 1 kg "
-      "del MRP (E01) también tiene 12 % en esos dos meses, así que ventas nuevas y recargas comparten el pico.")
+      "(Hoy Día Córdoba). En Mendoza, diciembre y enero siguen siendo los meses de más demanda de la RTO, que exige el "
+      "matafuego cargado, por los viajes del verano (Sitio Andino, jul. 2026); recargadores de Paraná y Rafaela "
+      "informan la suba antes de las vacaciones (Elonce; Rafaela Noticias).")
+    A = C["auto"]
+    p("Se adopta **enero 12 %** (ITV Córdoba) y **diciembre igual a enero**, porque las fuentes ubican la temporada en "
+      "esos dos meses: diciembre carga los viajes de enero y enero los de febrero. Para que el perfil no salte de un mes "
+      "al otro, **noviembre y febrero llevan la mitad del exceso** de la temporada (criterio de transición: la demanda "
+      "sube y baja de a poco, no de un día para el otro). Marzo a octubre quedan parejos.")
+    p(f"Cuenta (parametros_recargas, filas {g.F_ENE} a {g.F_TRANS}): con enero = diciembre = J, noviembre = febrero = base + "
+      f"½ × exceso y el resto = base, los 12 meses suman 100 % si exceso = (12 × J − 1) ÷ (10 − 2 × ½) = {pc(A[3])}. "
+      f"Mes común = {pc(A[0])} − {pc(A[3])} = {pc(A[4])}; noviembre y febrero = {pc(A[5])}; diciembre y enero = "
+      f"{pc(A[0])}. La subida es en dos escalones de unos 2,5 puntos, en vez de un salto de 4,4.")
     p("La regla de exención de VTV se investigó para separar zonas: en PBA la VTV es obligatoria desde los 2 años de "
       "patentado (Ámbito, oct. 2025) y en CABA desde los 4 años o 64.000 km, lo que ocurra primero (La Nación, feb. "
       "2026). Con el perfil adoptado la exención no cambia el resultado, porque el perfil ya no depende del mes de VTV; "
@@ -228,31 +239,61 @@ def bloques(d):
     p(f"Efecto: el ABC 1 kg (97 % del automotor) sigue este perfil. El mes pico de las dos plantas pasa de febrero a "
       f"enero: comercial {pc(max(C['planta']))} (antes {ANTES['Comercial']['pico']}) e industrial "
       f"{pc(max(I['planta']))} (antes {ANTES['Industrial']['pico']}).")
-    h2("3.2 Educación")
-    p("La DGCyE de PBA transfiere a los Consejos Escolares los fondos de inicio del ciclo lectivo antes de las clases "
-      "(Ámbito, 2022), y con esos fondos se ponen en condiciones las escuelas estatales, matafuegos incluidos. Las "
-      "privadas quedan parejas.")
-    p(f"Si todas las estatales recargaran en febrero, ese mes se llevaría {pc(C['est'][2] + (1 - C['est'][2]) / 12)} de "
-      "las recargas del rubro. No hace falta: la carga vale un año desde que se hace (9.2.1), así que la planta, al "
-      "tomar cada escuela, le asigna el turno en febrero, marzo o abril (inicio del ciclo, con los fondos ya "
-      "transferidos) y desde ahí cada una vuelve en su mes. Se adopta repartir las estatales en "
-      f"{g.MESES_EST} meses desde febrero (criterio de nivelación; parametros_recargas, B{g.F_MEST}).")
-    p(f"Porcentaje estatal (alumnos): CABA 51 % (Infobae, con datos de la UCA y del Relevamiento Anual) y PBA 72 % "
-      f"(CREEBBA, IAE 191). Cada planta los pondera con el peso de sus zonas en PROY_Indexado: comercial "
-      f"{pc(C['est'][2])} e industrial {pc(I['est'][2])}. Febrero a abril = estatal ÷ {g.MESES_EST} + (1 − estatal) ÷ 12; "
-      f"cada otro mes = (1 − estatal) ÷ 12. En la comercial: febrero a abril {pc(C['rub'][2][1])} y "
-      f"{pc(C['rub'][2][0])} el resto.")
-    p("Limitaciones: el porcentaje es de alumnos, no de edificios (no hay un mismo año publicado por edificios para "
-      "CABA y PBA), y en CABA el calendario de febrero se aplica por analogía con el inicio de clases. Educación pesa "
-      "2,6 % de las recargas de la comercial, así que el error posible mueve poco el pico de la planta.")
-    h2("3.3 Rubros sin mes fijo")
-    p("Edificios, hoteles, industrias y almacenes, salud y supermercados quedan parejos. Se revisaron las normas que "
-      "los alcanzan: CABA Ley 6116 (modifica la Ley 257 y la Ordenanza 40.473; regula matafuegos e instalaciones fijas "
-      "y fija en un año la vigencia de la carga), Ley 941 (administradores de consorcios, declaración jurada anual) y "
-      "Ley 4631; PBA Ley 14.701 y Decretos 4992/90 y 12/2005; Res. SRT 463/09 y 529/09 (relevamiento general de riesgos "
-      "laborales). Ninguna fija un mes del calendario para la recarga: todas cuentan el año desde la última.")
-    p("Las paradas de planta de enero que muestra el INDEC en la industria no ubican la recarga en enero: el "
-      "mantenimiento del matafuego no requiere parar la planta y su vencimiento sigue la tarjeta.")
+    a_inst = C["a"]
+    h2("3.2 Edificios (consorcios)")
+    p("Las asambleas ordinarias anuales de los consorcios, donde el administrador rinde cuentas y se aprueban las "
+      "expensas extraordinarias y los fondos para las actualizaciones de seguridad y el abono de matafuegos, se "
+      "concentran entre abril y junio (CAPHAI, Circular N.° 14, 2025; Arya Seguridad, matafuegos en consorcios). Enero y "
+      "febrero son temporada baja administrativa: receso de las administraciones y licencias anuales de los encargados "
+      "de edificio (convenio colectivo de SUTERH), que dejan sin acceso a cocheras, bauleras y salas cerradas.")
+    b("**Abril, mayo y junio: preferidos (+). Enero y febrero: vedados (−).**")
+    h2("3.3 Educación")
+    p("Las escuelas hacen el mantenimiento en los recesos, cuando no hay alumnos. El Ministerio de Educación de Río "
+      "Negro emitió órdenes de servicio para la recarga de matafuegos de las escuelas de General Roca durante el receso "
+      "de verano, intensifica el mantenimiento en el receso de invierno y hace recambio y recarga de matafuegos en el "
+      "plan preventivo de Cipolletti. En General Pueyrredón, el Consejo Escolar aprovecha las vacaciones de invierno para "
+      "el mantenimiento de las escuelas (La Capital). En PBA, la DGCyE transfiere a los Consejos Escolares los fondos de "
+      "inicio del ciclo antes de las clases (Ámbito, 2022), que se usan para poner las escuelas en condiciones.")
+    b("**Enero, febrero y marzo: preferidos (+), igual los tres** (receso de verano y puesta en condiciones del inicio "
+      "de clases). **Julio: medio preferido (+½)**, porque el receso de invierno dura dos semanas. La versión anterior "
+      "ponía todas las estatales en febrero (67,5 % del rubro en un mes); ninguna fuente respalda esa concentración.")
+    h2("3.4 Hoteles")
+    p("Los planes de mantenimiento preventivo de hotelería programan todo trabajo con proveedores externos en "
+      "habitaciones, pasillos y áreas comunes en los meses de baja ocupación, para no afectar a los huéspedes. En "
+      "temporada alta (enero, febrero y julio) el hotel está lleno de personas que no conocen las salidas y los comités "
+      "de higiene y seguridad restringen el movimiento de equipos: descolgar, subir por los ascensores de huéspedes y "
+      "acopiar sustitutos genera cuellos de botella en las vías de evacuación (MaxiSeguridad, seguridad contra incendios "
+      "en hoteles).")
+    b("**Mayo, junio, agosto, septiembre y octubre: preferidos (+). Enero, febrero y julio: vedados (−).**")
+    h2("3.5 Industrias y almacenes")
+    p("Sin estacionalidad. Las normas que los alcanzan (Res. SRT 463/09 y 529/09, relevamiento general de riesgos "
+      "laborales) no fijan un mes, y el mantenimiento del matafuego no necesita parar la planta, así que las paradas de "
+      "enero que muestra el INDEC no ubican la recarga en enero: el vencimiento sigue la tarjeta.")
+    h2("3.6 Salud")
+    p("Los pliegos de especificaciones técnicas del Ministerio de Salud de CABA para el mantenimiento hospitalario "
+      "refuerzan las tareas de servicios generales en los meses de verano, cuando baja la ocupación de camas por "
+      "enfermedades respiratorias, y prohíben en guardias e internación las tareas invasivas (obstruir el tránsito, "
+      "ruidos, retiros masivos de equipamiento de seguridad) durante la Campaña de Invierno (Boletín Oficial CABA, "
+      "anexos de la DGACSA y de la SSASS, 2026).")
+    b("**Diciembre, enero y febrero: preferidos (+). Junio, julio y agosto: vedados (−).**")
+    h2("3.7 Supermercados")
+    p("El recambio de los matafuegos de salón con sus sustitutos es un trabajo invasivo en pasillos, y las prestadoras lo "
+      "coordinan en los meses de menor facturación y tránsito, de mayo a agosto (MaxiSeguridad, carga de matafuegos en "
+      "comercios). Hacia fin de año los depósitos y las góndolas trabajan con su máximo stock y su máxima carga de fuego, "
+      "y el servicio de higiene y seguridad no deja descolgar la dotación fija del salón (LEA Global, incendios en "
+      "supermercados y depósitos). Los controles trimestrales de las áreas críticas (panadería, rotisería, salas de "
+      "frío; Extintec, CAGESRA) se hacen en el local y no pasan por la planta.")
+    b("**Mayo a agosto: preferidos (+). Noviembre a febrero: vedados (−).**")
+    h2("3.8 Cuánto pesa un mes preferido")
+    p(f"Las fuentes dicen en qué meses se concentra o se evita la recarga, pero no cuánto. Se toma un mes preferido "
+      f"con 1 + a y uno vedado con 1 − a de un mes común, con a = {pc(a_inst)} (criterio; parametros_recargas, B{g.F_A}); cada "
+      "rubro se divide por su suma para que el año dé 100 %. Así, en cada rubro el mes más cargado queda como mucho en el "
+      "doble del menos cargado y ningún mes pasa de 11 % del año. "
+      f"Ejemplo, edificios: abril a junio {pc(C['rub'][1][3])}, enero y febrero {pc(C['rub'][1][0])} y el resto "
+      f"{pc(C['rub'][1][2])}.")
+    p(f"Con todo junto, la planta comercial va de {pc(min(C['planta']))} a {pc(max(C['planta']))} por mes y la "
+      f"industrial de {pc(min(I['planta']))} a {pc(max(I['planta']))}: el automotor sigue marcando el pico del verano y "
+      "los rubros institucionales llenan el otoño y el invierno.")
 
     # 4
     h1("4. Criterios de recarga por agente")
@@ -354,8 +395,8 @@ def bloques(d):
     # 6
     h1("6. Equivalencia de un rodante")
     p("Un carro no ocupa un puesto lo mismo que un manual. Se mide con los tiempos de fábrica de FLAMA en las "
-      "operaciones que comparten la fábrica y la recarga: tiempo del carro (Dimensionamiento Carros, ponderado con el "
-      "mix 2035) ÷ tiempo del manual (Dimensionamiento Manuales). Los dos se importan por IMPORTRANGE.")
+      "operaciones que comparten la fábrica y la recarga: tiempo del carro (Aprovechamiento Carros, ponderado con el "
+      "mix 2035) ÷ tiempo del manual (Aprovechamiento Manuales). Los dos se importan por IMPORTRANGE.")
     tabla([40, 18, 18, 18], ["Operación", "Manual (s)", "Carro (min)", "Carro ÷ manual"],
           [[r[0], n(r[1], 0), n(r[2], 2), n(r[3], 2)] for r in C["eq"][:-1]]
           + [["Promedio (va a parametros_recargas B9)", "", "", n(C["eq"][-1][3], 2)]], num=(1, 2, 3), negrita=(4,))
@@ -454,7 +495,7 @@ def bloques(d):
 
     # 9
     h1("9. Manuales y Carros")
-    p("Los Dimensionamientos de Manuales y Carros del grupo importan del paso 4 (alta) de cada Dimensionamiento de "
+    p("Los Aprovechamientos de Manuales y Carros del grupo importan del paso 4 (alta) de cada Aprovechamiento de "
       "recargas los sustitutos ABC: Manuales los de 1 a 10 kg y Carros los de 25 a 100 kg. La industrial los pide "
       "terminados (proceso completo); la comercial, como cilindro vacío. La estacionalidad de producción viene del MRP "
       "(hoja ESTACIONALIDAD, perfiles E01 a E03), que es el que define los picos. Se aplican las mismas reglas del § 8; "
@@ -541,8 +582,8 @@ def bloques(d):
               "los que tenían dos tiempos en el Word (§ 5).",
               "Qué es un cliente automotor y cuántos equipos retira el camión en cada uno (hoy 9) (§ 7.1).",
               "Tiempo fijo por parada y minutos por equipo en el cliente (§ 10.2 y 10.4).",
-              "Mes de recarga de las escuelas estatales de CABA (§ 3.2) y si el pico de diciembre y enero se ve en el "
-              "AMBA como en Córdoba (§ 3.1)."]:
+              "Meses preferidos y vedados de cada rubro con los clientes de la zona (§ 3.2 a 3.8) y si la temporada de diciembre y enero del automotor "
+              "se ve en el AMBA como en Córdoba y Mendoza (§ 3.1)."]:
             b(x)
 
     # 13
@@ -562,9 +603,32 @@ def bloques(d):
         "[Hoy Día Córdoba: demanda de ITV y recarga de matafuegos](https://hoydia.com.ar/sociedad/"
         "alta-demanda-de-itv-y-recarga-de-matafuegos-en-cordoba/)",
         "[Ámbito: fondos a los Consejos Escolares](https://www.ambito.com/pba-env237an-3000-m-consejos-escolares-n5367560)",
-        "[Infobae / UCA: alumnos por sector de gestión](https://www.infobae.com/educacion/2024/03/13/"
-        "3-de-cada-10-alumnos-de-escuelas-privadas-son-pobres-segun-datos-de-la-uca/) · [CREEBBA, IAE 191]"
-        "(https://creebba.org.ar/iae/iae191/3_educacion_IAE_191.pdf)",
+        "[CAPHAI, Circular N.° 14 (2025)](https://caphai.com.ar/site/wp-content/uploads/2025/04/CircularN14.pdf) · "
+        "[Arya Seguridad: matafuegos en consorcios](https://www.aryaseguridad.com/cuantos-matafuegos-necesita-un-consorcio-"
+        "y-cada-cuanto-deben-revisarse) · convenio colectivo de SUTERH (licencias de encargados)",
+        "Río Negro, Ministerio de Educación: [recarga de matafuegos en el receso de verano, General Roca]"
+        "(https://rionegro.gov.ar/articulo/6211/tareas-de-mantenimiento-en-escuelas-de-general-roca) · [mantenimiento en "
+        "el receso de invierno](https://rionegro.gov.ar/articulo/60168/receso-escolar-se-intensifican-las-tareas-de-"
+        "mantenimiento-en-las-escuelas) · [recambio y recarga de matafuegos, Cipolletti](https://rionegro.gov.ar/articulo/"
+        "58563/obras-y-mantenimiento-preventivo-en-escuelas-de-cipolletti)",
+        "[La Capital (Mar del Plata): mantenimiento de escuelas en las vacaciones de invierno](https://www.lacapitalmdp.com/"
+        "aprovechan-las-vacaciones-de-invierno-para-realizar-mantenimiento-en-escuelas/)",
+        "[MaxiSeguridad: seguridad contra incendios en hoteles](https://www.maxiseguridad.com.ar/detalle-noticias-"
+        "maxiseguridad/34/Seguridad-contra-incendios-en-Hoteles) · [MaxiSeguridad: carga de matafuegos en comercios]"
+        "(https://www.maxiseguridad.com.ar/detalle-noticias-maxiseguridad/80/Carga-de-Matafuegos-en-comercios-Normativas)",
+        "Boletín Oficial CABA, Ministerio de Salud: [anexo DGACSA 434/26](https://documentosboletinoficial.buenosaires.gob."
+        "ar/publico/PE-DIS-MSGC-DGACSA-434-26-ANX-18.pdf) · [anexo SSASS 607/26](https://documentosboletinoficial."
+        "buenosaires.gob.ar/publico/PE-RES-MSGC-SSASS-607-26-ANX.pdf)",
+        "[LEA Global: incendios en supermercados y depósitos](https://www.lea-global.com/uploads/circulares/2018/02/"
+        "05-04-incendios-en-supermercados-y-depositos-de-mercaderias.pdf) · [Extintec: IRAM 3517 e inspecciones]"
+        "(https://extintec.com.ar/web/2026/03/11/norma-iram-3517/) · [CAGESRA, circular N.° 168]"
+        "(https://cagesra.org.ar/circular-n-168/)",
+        "[Sitio Andino: movimiento de la RTO en Mendoza y pico de demanda (jul. 2026)](https://www.sitioandino.com.ar/"
+        "sociedad/como-es-el-movimiento-la-rto-mendoza-el-pico-demanda-n5715925) · [Elonce: alta demanda de recargas por "
+        "las vacaciones](https://www.elonce.com/parana/matafuegos-para-vehnculos-alta-demanda-de-recargas-por-las-"
+        "vacaciones.htm) · [Rafaela Noticias: recarga de matafuegos antes de las vacaciones](https://rafaelanoticias.com/"
+        "locales/alta-demanda-de-servicios-esenciales-antes-de-las-vacaciones-recarga-de-matafuegos-y-mantenimiento-"
+        "vehicular.htm)",
         "[46 CFR 132.350](https://www.ecfr.gov/current/title-46/chapter-I/subchapter-L/part-132/subpart-C/"
         "section-132.350)",
         "[Iveco Daily 55C17 chasis cabina (Autocosmos)](https://www.autocosmos.com.ar/catalogo/2020/iveco/daily-chasis/"

@@ -1,6 +1,6 @@
 """Corre toda la cadena en orden y deja los 5 Excel en salida/.
 
-1. Dimensionamientos de recargas (comercial e industrial) -> recálculo.
+1. Aprovechamientos de recargas (comercial e industrial) -> recálculo.
 2. Manuales y Carros sobre los archivos del grupo (referencias/), con el pedido de sustitutos de cada planta.
 3. Recargas.xlsx (logística), que lee los dimensionamientos ya recalculados.
 Al final se deja __xludf.DUMMYFUNCTION como lo exporta Google, para que al subirlo a Sheets vuelva a ser IMPORTRANGE.

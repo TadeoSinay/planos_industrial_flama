@@ -102,7 +102,7 @@ CORTE = [
 ]
 MAQ = [
     ("gpm1", "Guillotina 1 (franjas) Ermaksan CNC HGS 2600-6: golpes por minuto", 20, "golpes/min", F0,
-     "Dimensionamiento Manuales del grupo. La ficha de la máquina (resale.info, 2018) da 24."),
+     "Aprovechamiento Manuales del grupo. La ficha de la máquina (resale.info, 2018) da 24."),
     ("L1", "Guillotina 1: largo de corte", 2600, "mm", F0, "Ficha Ermaksan CNC HGS 2600-6: 2.600 × 6 mm."),
     ("tope1", "Guillotina 1: recorrido del tope trasero", 1000, "mm", F0,
      "Ficha Ermaksan CNC HGS 2600-6: tope trasero motorizado de 1.000 mm."),
@@ -337,9 +337,9 @@ def h_links(wb):
             c(ws, f"B{r + 2 + i}", tipo)
         r += 11
     filas = [("Proyecciones", DC.D["URL"], "Indexado Dim Técnico B3:K10 y B15:K22 → Demanda", "proy_t"),
-             ("Dimensionamiento Recargas Planta Comercial", DC.D["PEGAR"],
+             ("Aprovechamiento Recargas Planta Comercial", DC.D["PEGAR"],
               f"sobrestock_sustitutos B{s}:K{s + 3} y B{s + 13}:K{s + 16} → Demanda", "com"),
-             ("Dimensionamiento Recargas Planta Industrial", DC.D["PEGAR"],
+             ("Aprovechamiento Recargas Planta Industrial", DC.D["PEGAR"],
               f"sobrestock_sustitutos B{s}:K{s + 3} y B{s + 13}:K{s + 16} → Demanda", "ind")]
     for i, (a, u, q, blk) in enumerate(filas):
         rr = 4 + i
@@ -709,8 +709,8 @@ def h_corte(wb):
     g.nota(ws, HMIX + 1, "1.er corte por el lado corto (franjas de hasta 1.500 mm de largo). G1 hace solo el 1.er corte y "
                          "G2 solo el 2.º: la pieza, o la orilla si la pieza supera el tope. Franjas en paralelo: hojas "
                          "enteras, con el ciclo que da menos tandas por hoja (Datos, «Hojas por ciclo»).")
-    # para los Dimensionamientos de Manuales y Carros
-    seccion(ws, EX0 - 2, "Para los Dimensionamientos de Manuales (1 a 10 kg) y Carros (25 a 100 kg): IMPORTRANGE")
+    # para los Aprovechamientos de Manuales y Carros
+    seccion(ws, EX0 - 2, "Para los Aprovechamientos de Manuales (1 a 10 kg) y Carros (25 a 100 kg): IMPORTRANGE")
     g.cab(ws, EX0 - 1, ["Formato", "Piezas por hoja", "Golpes G1 por hoja", "Golpes G2 por hoja",
                         "Tandas de G2 por hoja", "Golpes por minuto G1", "Golpes por minuto G2"])
     for i in range(9):
@@ -1018,9 +1018,9 @@ def h_nesting(wb):
     c(ws, f"B{r}", f'=IF(C{rt}<B{rt},"Sí: ahorra "&TEXT(B{rh}-C{rh},"0")&" hojas y USD "&TEXT(B{rt + 2}-C{rt + 2},'
                    f'"#,##0")&" en el año","No")', neg=True)
     ws.merge_cells(start_row=r, start_column=2, end_row=r, end_column=5)
-    # promedios del plan para los Dimensionamientos (25 y 50 kg)
+    # promedios del plan para los Aprovechamientos (25 y 50 kg)
     re_ = r + 2
-    seccion(ws, re_, "Promedio por hoja de 3,2 mm con el plan elegido (va a Corte, tabla para los Dimensionamientos)")
+    seccion(ws, re_, "Promedio por hoja de 3,2 mm con el plan elegido (va a Corte, tabla para los Aprovechamientos)")
     tot = "(" + "+".join(pk[k] for k in KP) + ")"
     prom = [("Piezas por hoja", f"=IF({tot}=0,0,({U4}+{U5})/{tot})"),
             ("Golpes G1 por hoja", "=IF({t}=0,0,(" + "+".join(f"{pk[k]}*G{NP0 + k - 1}" for k in KP) + ")/{t})"),

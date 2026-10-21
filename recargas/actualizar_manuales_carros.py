@@ -1,7 +1,7 @@
-"""Actualiza los Dimensionamientos de Manuales y Carros del grupo (referencias/) y los deja en salida/.
+"""Actualiza los Aprovechamientos de Manuales y Carros del grupo (referencias/) y los deja en salida/.
 
 - Hoja Links primera, con la tabla de links y todos los IMPORTRANGE del libro (Proyecciones, los dos
-  Dimensionamientos de recargas, el MRP y, en Manuales, el Excel «Análisis alternativas corte chapa»). Las demás
+  Aprovechamientos de recargas, el MRP y, en Manuales, el Excel «Análisis alternativas corte chapa»). Las demás
   hojas leen Links: alcanza con pegar los links.
 - Manuales: la versión 4 del grupo (26 puestos: G1 Ermaksan y G2 QC12Y, cilindradora Firesafer y soldadura
   longitudinal TIG del 1 kg). datos_base con Proyecciones y el alta (paso 4) de sustitutos ABC de cada planta;
@@ -61,23 +61,23 @@ CORTE = os.path.join(g.SALIDA, "Analisis_alternativas_corte_chapa.xlsx")
 FUENTES_MAN = [
     ("proy", "Proyecciones", g.URL_PROY,
      "Indexado Dim Técnico B3:K10 y B15:K22 → datos_base y carros en las guillotinas compartidas"),
-    ("com", "Dimensionamiento Recargas Planta Comercial", g.PEGAR,
+    ("com", "Aprovechamiento Recargas Planta Comercial", g.PEGAR,
      "sobrestock_sustitutos B73:K76 y B86:K89: alta de sustitutos ABC (cilindros vacíos)"),
-    ("ind", "Dimensionamiento Recargas Planta Industrial", g.PEGAR,
+    ("ind", "Aprovechamiento Recargas Planta Industrial", g.PEGAR,
      "sobrestock_sustitutos B73:K76 y B86:K89: alta de sustitutos ABC (terminados)"),
     ("mrp", "MRP (FLAMA_MRP)", g.PEGAR, "ESTACIONALIDAD C4:N6 (E01, E02 y E03) → parametros_manuales"),
     ("corte", "Análisis alternativas corte chapa", g.PEGAR,
      "Corte B19:G27 (piezas y golpes por hoja; golpes por minuto) → parametros_manuales filas 118 a 137")]
 FUENTES_CAR = [
     ("proy", "Proyecciones", g.URL_PROY, "Indexado Dim Técnico B7:K10 y B19:K22 → datos_base"),
-    ("com", "Dimensionamiento Recargas Planta Comercial", g.PEGAR,
+    ("com", "Aprovechamiento Recargas Planta Comercial", g.PEGAR,
      "sobrestock_sustitutos B86:K89: alta de sustitutos ABC (cilindros vacíos) → datos_base"),
-    ("ind", "Dimensionamiento Recargas Planta Industrial", g.PEGAR,
+    ("ind", "Aprovechamiento Recargas Planta Industrial", g.PEGAR,
      "sobrestock_sustitutos B86:K89: alta de sustitutos ABC (terminados) → datos_base"),
     ("mrp", "MRP (FLAMA_MRP)", g.PEGAR, "ESTACIONALIDAD C6:N6 (E03) → parametros_carros filas 12 a 15"),
     ("corte", "Análisis alternativas corte chapa", g.PEGAR,
      "Corte B23:G27 (piezas y golpes por hoja de 25 a 100 kg; golpes por minuto) → parametros_carros filas 66 a 73"),
-    ("man", "Dimensionamiento Manuales", g.PEGAR,
+    ("man", "Aprovechamiento Manuales", g.PEGAR,
      "Resumen cap. sin sobrestock filas 3, 4, 32, 33, 61 y 62 → guillotinas compartidas (consolidado)")]
 # modelo de tiempos de guillotina (W-MAN y W-CAR): minutos por corte con el golpe incluido y manipulación por hoja
 T_MAN = [(0.3, 2), (0.3, 2), (0.3, 2), (0.4, 3)]           # 1 kg (como 2,5 kg), 2,5, 5 y 10 kg
@@ -95,7 +95,7 @@ REC_CAR = ["Manual", "Máquina", "Máquina", "Máquina", "Manual", "Máquina", "
 
 
 def pedidos():
-    """Sustitutos ABC por modelo y año que pide cada planta de recargas (paso 4, alta, de su Dimensionamiento)."""
+    """Sustitutos ABC por modelo y año que pide cada planta de recargas (paso 4, alta, de su Aprovechamiento)."""
     out = {}
     for p in ("Comercial", "Industrial"):
         alta = g.modelo_demanda(p)[-1]["alta"]
@@ -414,13 +414,13 @@ def corte_carros(pc, LB):
 def consolidado_carros(ws, LB):
     """Resumen Capacidad de Carros: aprovechamiento de G1 y G2 consolidado (lo calcula Manuales)."""
     nom = ["Guillotina 1 (manuales + carros)", "Guillotina 2 (manuales + carros)"]
-    rv = load_workbook(os.path.join(g.SALIDA, "Dimensionamiento_Manuales.xlsx"), data_only=True)
+    rv = load_workbook(os.path.join(g.SALIDA, "Aprovechamiento_Manuales.xlsx"), data_only=True)
     rv = rv["Resumen cap. sin sobrestock"]
     bloques = [("Aprovechamiento consolidado", "Resumen cap. sin sobrestock!B3:K4", 3, "0%"),
                ("Máquinas", "Resumen cap. sin sobrestock!B32:K33", 32, "0"),
                ("Turnos", "Resumen cap. sin sobrestock!B61:K62", 61, "0")]
     estilo(ws["A1"], ws["A65"])
-    ws["A65"].value = "GUILLOTINAS COMPARTIDAS CON MANUALES (consolidado en el Dimensionamiento de Manuales)"
+    ws["A65"].value = "GUILLOTINAS COMPARTIDAS CON MANUALES (consolidado en el Aprovechamiento de Manuales)"
     r = 66
     for t, rng, r0, fmt in bloques:
         vals = [[rv.cell(r0 + k, 2 + i).value for i in range(10)] for k in range(2)]
@@ -440,7 +440,7 @@ def consolidado_carros(ws, LB):
 def manuales(ped):
     """Versión 4 del grupo (26 puestos) con la hoja Links y todo indexado."""
     wb = load_workbook(os.path.join(REF, "Dimensionamiento_Manuales.xlsx"))
-    sal = os.path.join(g.SALIDA, "Dimensionamiento_Manuales.xlsx")
+    sal = os.path.join(g.SALIDA, "Aprovechamiento_Manuales.xlsx")
     LB = g.Links(FUENTES_MAN, iferror=("com", "ind"))
     grises(wb)
     db = wb["datos_base"]
@@ -544,7 +544,7 @@ def manuales(ped):
 
 def carros(ped):
     ent = os.path.join(REF, "Dimensionamiento_Carros.xlsx")
-    sal = os.path.join(g.SALIDA, "Dimensionamiento_Carros.xlsx")
+    sal = os.path.join(g.SALIDA, "Aprovechamiento_Carros.xlsx")
     wb = load_workbook(ent)
     verif = []
     LB = g.Links(FUENTES_CAR, iferror=("com", "ind"))
@@ -558,7 +558,7 @@ def carros(ped):
     refs(db, 9, 2, LB, LB.imp("proy", "Indexado Dim Técnico!B19:K22", CIL_CAR, "#,##0", "cilindros vendidos vacíos",
                               modelos, ANIOS_TXT), 4, 10)
     fila_db = bloque_sustitutos(db, 34, modelos, PED_CAR, {p: v[4:] for p, v in ped.items()}, 2, 6,
-                                "Sustitutos: alta (paso 4) de cada Dimensionamiento de recargas · Word de recargas § 9",
+                                "Sustitutos: alta (paso 4) de cada Aprovechamiento de recargas · Word de recargas § 9",
                                 LB)
     db["A15"].value = "Total recipientes a fabricar (con sustitutos)"
     for i in range(10):

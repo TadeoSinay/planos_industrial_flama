@@ -2,7 +2,7 @@
 mes pico de 2035.
 
 Hojas: Links -> Resumen -> Supuestos -> Importados -> Cálculo. Lo que viene de la demanda sale por IMPORTRANGE de los
-Dimensionamientos de recargas (recargas 2035 por tipo, perfil mensual, mix y estacionalidad por rubro, lote y
+Aprovechamientos de recargas (recargas 2035 por tipo, perfil mensual, mix y estacionalidad por rubro, lote y
 sustitutos); el resto son los supuestos de logística con su fuente. Las dos plantas van lado a lado.
 """
 
@@ -17,8 +17,8 @@ import generar_dim_recargas as g  # noqa: E402
 from generar_dim_recargas import cab, celda, hoja, nota, tit  # noqa: E402
 
 PLANTAS = ["Comercial", "Industrial"]
-LINKS = [("Dimensionamiento Recargas Planta Comercial", g.PEGAR, "Lo que trae la hoja Importados"),
-         ("Dimensionamiento Recargas Planta Industrial", g.PEGAR, "Lo que trae la hoja Importados")]
+LINKS = [("Aprovechamiento Recargas Planta Comercial", g.PEGAR, "Lo que trae la hoja Importados"),
+         ("Aprovechamiento Recargas Planta Industrial", g.PEGAR, "Lo que trae la hoja Importados")]
 LK = {"Comercial": "Links!$B$4", "Industrial": "Links!$B$5"}
 TIPOS = [n for n, v in g.REC]
 # peso lleno: BOM FLAMA (Resumen, peso de catálogo) y, para los carros, Word de carros (Tabla 0, carro terminado)
@@ -85,8 +85,8 @@ def fi(p, que, k=0):
 
 
 def datos_dim(planta):
-    """Valores actuales del Dimensionamiento de la planta (lo que trae cada IMPORTRANGE)."""
-    wb = load_workbook(os.path.join(g.SALIDA, f"Dimensionamiento_Recargas_Planta_{planta}.xlsx"), data_only=True)
+    """Valores actuales del Aprovechamiento de la planta (lo que trae cada IMPORTRANGE)."""
+    wb = load_workbook(os.path.join(g.SALIDA, f"Aprovechamiento_Recargas_Planta_{planta}.xlsx"), data_only=True)
     db, px, ss, pr = wb["datos_base"], wb["PROY_Indexado"], wb[g.SS], wb["parametros_recargas"]
     return {"rec": [[db.cell(2 + k, 11).value] for k in range(17)],
             "lle": [[ss.cell(g.S_TIPO + k, 2).value] for k in range(17)],
@@ -100,7 +100,7 @@ def datos_dim(planta):
 
 def h_importados(wb, datos):
     ws = hoja(wb, "Importados", [36] + [7.5] * 12 + [12, 11, 13] + [10] * 7 + [10])
-    tit(ws, 1, "Importados de los Dimensionamientos de recargas (IMPORTRANGE; el link va en la hoja Links)")
+    tit(ws, 1, "Importados de los Aprovechamientos de recargas (IMPORTRANGE; el link va en la hoja Links)")
     for p in PLANTAS:
         r0, d, lk = IMP0[p], datos[p], LK[p]
         t1 = fi(p, "tipo")
@@ -343,7 +343,7 @@ def h_resumen(wb, rf):
              ("Sustitutos que salen por día (u)", lambda i, p: f"='Cálculo'!{L(7 + 3 * i)}{tt}", "#,##0",
               "Cálculo, punto 2"),
              ("Stock de sustitutos (u)", lambda i, p: f"=Importados!$P${fi(p, 'tot')}", "#,##0",
-              "Dimensionamiento, paso 3"),
+              "Aprovechamiento, paso 3"),
              ("Paradas por día", lambda i, p: f"='Cálculo'!{L(5 + 4 * i)}{tr}", "#,##0", "Cálculo, punto 3"),
              ("Viajes por día", lambda i, p: f"='Cálculo'!{L(2 + i)}{C_CAM + 12}", "0", "Cálculo, punto 4"),
              ("Camiones", lambda i, p: f"='Cálculo'!{L(2 + i)}{C_CAM + 14}", "0", "Cálculo, punto 4"),

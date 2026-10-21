@@ -1,4 +1,4 @@
-"""Genera salida/Dimensionamiento_Recargas_Planta_Comercial.xlsx y ..._Industrial.xlsx.
+"""Genera salida/Aprovechamiento_Recargas_Planta_Comercial.xlsx y ..._Industrial.xlsx.
 
 Mismo modelo para las dos plantas; cada archivo aplica su propio % de recargas (Proyecciones, Indexado Dim
 Técnico V61 / V63; PBA Interior queda afuera porque la atienden distribuidores ajenos). Hojas: Links ->
@@ -32,8 +32,8 @@ IMP_ZON = "Indexado Dim Técnico!U61:U74"
 # hoja Links: (archivo, link, qué se importa). Los que dicen PEGAR se completan cuando estén los Sheets nuevos.
 PEGAR = "PEGAR ACÁ EL LINK DEL GOOGLE SHEET"
 LINKS = [("Proyecciones", URL_PROY, "Indexado Dim Técnico B27:K43, U61:U74, V61 y V63"),
-         ("Dimensionamiento Manuales", PEGAR, "parametros_manuales K33, K34, K39, K40, K41 y K43 (equivalencia del rodante)"),
-         ("Dimensionamiento Carros", PEGAR, "parametros_carros I29, I30, I33 e I34 (equivalencia del rodante)"),
+         ("Aprovechamiento Manuales", PEGAR, "parametros_manuales K33, K34, K39, K40, K41 y K43 (equivalencia del rodante)"),
+         ("Aprovechamiento Carros", PEGAR, "parametros_carros I29, I30, I33 e I34 (equivalencia del rodante)"),
          ("MRP (FLAMA_MRP)", PEGAR, "ESTACIONALIDAD C4:N6 (llegada de los sustitutos ABC nuevos)")]
 FUENTES = [(k, a, u, q) for k, (a, u, q) in zip(("proy", "man", "car", "mrp"), LINKS)]
 LB = None          # hoja Links del libro que se está generando (todos los IMPORTRANGE)
@@ -105,8 +105,10 @@ KG = [1, 2.5, 5, 10, 10, 10, 50, 5, 6, 2, 5, 5, 9, 25, 50, 70, 100]
 # Filas fijas de las hojas
 P_MIX = 57     # PROY_Indexado: primera fila de la matriz de esta planta (tipos en filas, rubros en columnas)
 FILA_RUB = 35      # primera fila de la estacionalidad por rubro (7 rubros)
-# datos de la estacionalidad: alumnos estatales CABA y PBA, % estatal de la planta, enero y diciembre en automotor
-F_CABA, F_PBA, F_ESTATAL, F_ENE, F_DIC, F_MEST = 44, 45, 46, 47, 48, 49
+# datos de la estacionalidad del automotor: enero, diciembre, parte del exceso en los meses de transición, exceso,
+# mes común y meses de transición (noviembre y febrero)
+F_ENE, F_DIC, F_HOM, F_EXC, F_BASE, F_TRANS = 44, 45, 46, 47, 48, 49
+F_A = 50   # peso de un mes preferido o vedado en los rubros institucionales
 FILA_TIPO = 55     # primera fila de la tabla de tipos (con su perfil mensual en E a P)
 FILA_PUESTO = 76   # primera fila de la tabla de puestos
 FILA_PCIL = 109    # primera fila del perfil de llegada de los sustitutos ABC nuevos (E01, E02, E03 del MRP)
@@ -218,23 +220,26 @@ E_MRP = [("E01 automotor (1 kg)", "ESTACIONALIDAD!C4:N4",
 FAM_ABC = {0: 0, 1: 1, 2: 1, 3: 1, 13: 2, 14: 2, 15: 2, 16: 2}   # tipo ABC -> perfil del MRP de su línea
 # Estacionalidad de las recargas por rubro (IRAM 3517-2:2020 9.2.1 y 9.4.14: cada equipo vuelve en el mes de su último
 # mantenimiento, así que solo hay estacionalidad donde una regla o un calendario fija el mes para todo el rubro)
-# Educación: alumnos en escuelas de gestión estatal (CABA: Infobae / UCA con el Relevamiento Anual; PBA: CREEBBA,
-# IAE 191). Automotor: % de recargas de enero (ITV de Córdoba: enero concentra el 12 % de las inspecciones del año,
-# Hoy Día Córdoba) y de diciembre (igual a enero: temporada de viajes)
-EST_CABA, EST_PBA, AUTO_ENE = 0.51, 0.72, 0.12
-# las estatales reciben los fondos de inicio del ciclo antes de las clases; la planta les da turno en los N meses que
-# arrancan en febrero (criterio de nivelación: desde ahí cada escuela vuelve en su mes, 9.2.1)
-MESES_EST = 3
-AUTO_DIC = AUTO_ENE
-# (rubro, regla, fuente corta para el Excel); el desarrollo de cada uno va en el Word (§3)
+# Automotor: enero (ITV de Córdoba: 12 % de las inspecciones del año, Hoy Día Córdoba) y diciembre igual a enero (RTO de
+# Mendoza: diciembre y enero son los meses de más demanda por los viajes del verano, Sitio Andino jul. 2026). Noviembre y
+# febrero llevan la mitad del exceso (criterio de transición, para que el pico no salte de un mes al otro)
+AUTO_ENE, AUTO_HOM = 0.12, 0.5
+# Rubros institucionales: meses en que el rubro prefiere (+1) o evita (−1) recargar, según sus pliegos, cámaras y
+# manuales (Word § 3.2 a 3.7); un mes preferido pesa (1 + a) y uno vedado (1 − a) contra un mes común (1)
+A_INST = 1 / 3
+# (rubro, regla, marcas por mes 0 = enero, fuente corta para el Excel); el desarrollo de cada uno va en el Word (§3)
 EST_RUBRO = [
-    ("Automotor", "vtv", "Pico en enero y diciembre; resto parejo · § 3.1"),
-    ("Edificios", "plano", "Sin mes fijo (Ley 6116, Ley 941) · § 3.3"),
-    ("Educación", "escuelas", "Estatales de febrero a abril; privadas parejo · § 3.2"),
-    ("Hoteles", "plano", "Sin mes fijo (Ley 4631, Ley 6116) · § 3.3"),
-    ("Industrias / almacenes", "plano", "Sin mes fijo (Res. SRT 463/09) · § 3.3"),
-    ("Salud", "plano", "Sin mes fijo (Dec. 4992/90) · § 3.3"),
-    ("Supermercados", "plano", "Sin mes fijo (Dec. 12/2005) · § 3.3"),
+    ("Automotor", "vtv", {}, "Temporada dic.-ene., transición nov. y feb. · § 3.1"),
+    ("Edificios", "inst", {3: 1, 4: 1, 5: 1, 0: -1, 1: -1}, "Asambleas abr.-jun. (+); receso ene.-feb. (−) · § 3.2"),
+    ("Educación", "inst", {0: 1, 1: 1, 2: 1, 6: 0.5}, "Receso de verano e inicio de clases ene.-mar. (+); "
+                                                       "receso de invierno jul. (+½) · § 3.3"),
+    ("Hoteles", "inst", {4: 1, 5: 1, 7: 1, 8: 1, 9: 1, 0: -1, 1: -1, 6: -1},
+     "Baja ocupación may.-jun. y ago.-oct. (+); temporada ene., feb. y jul. (−) · § 3.4"),
+    ("Industrias / almacenes", "plano", {}, "Sin estacionalidad (Res. SRT 463/09) · § 3.5"),
+    ("Salud", "inst", {11: 1, 0: 1, 1: 1, 5: -1, 6: -1, 7: -1}, "Verano dic.-feb. (+); campaña de invierno "
+                                                                 "jun.-ago. (−) · § 3.6"),
+    ("Supermercados", "inst", {4: 1, 5: 1, 6: 1, 7: 1, 10: -1, 11: -1, 0: -1, 1: -1},
+     "Baja venta may.-ago. (+); fiestas y verano nov.-feb. (−) · § 3.7"),
 ]
 K_ABC = [0, 1, 2, 3, 13, 14, 15, 16]   # tipos ABC que fabrica la planta industrial (manuales y carros)
 CIL_VACIO, TERMINADO, COMPRA = "Fábrica: cilindro vacío", "Fábrica: terminado", "Compra"
@@ -668,8 +673,8 @@ def h_param(wb, planta):
     nota(ws, FILA_RUB - 2, "IRAM 3517-2 9.2.1 y 9.4.14: cada equipo vuelve en el mes de su último mantenimiento · § 3")
     cab(ws, FILA_RUB - 1, ["Rubro", "Fuente / criterio", "", ""] + MESES + ["Total"])
     ws.merge_cells(start_row=FILA_RUB - 1, start_column=2, end_row=FILA_RUB - 1, end_column=4)
-    ene, dic, est = f"$B${F_ENE}", f"$B${F_DIC}", f"$B${F_ESTATAL}"
-    for c, (rb, regla, fu) in enumerate(EST_RUBRO):
+    ene, dic, base, trans = f"$B${F_ENE}", f"$B${F_DIC}", f"$B${F_BASE}", f"$B${F_TRANS}"
+    for c, (rb, regla, marca, fu) in enumerate(EST_RUBRO):
         r = FILA_RUB + c
         celda(ws, r, 1, rb, neg=True)
         celda(ws, r, 2, fu)
@@ -677,29 +682,29 @@ def h_param(wb, planta):
         for m in range(12):
             if regla == "plano":
                 v = "=1/12"
-            elif regla == "escuelas":
-                v = f"=IF(AND({m + 1}>=2,{m + 1}<=1+$B${F_MEST}),{est}/$B${F_MEST},0)+(1-{est})/12"
+            elif regla == "inst":
+                tot = sum(marca.values())
+                v = f"=(1+$B${F_A}*{marca.get(m, 0):g})/(12+$B${F_A}*{tot:g})"
             else:
-                v = f"={ene}" if m == 0 else (f"={dic}" if m == 11 else f"=(1-{ene}-{dic})/10")
+                v = (f"={ene}" if m == 0 else f"={dic}" if m == 11 else f"={trans}" if m in (1, 10) else f"={base}")
             celda(ws, r, 5 + m, v, "0.0%")
         celda(ws, r, 17, f"=SUM(E{r}:P{r})", "0%", res=True)
-    cab(ws, F_CABA - 1, ["Dato de la estacionalidad", "Valor", "Fuente", ""])
-    ws.merge_cells(start_row=F_CABA - 1, start_column=3, end_row=F_CABA - 1, end_column=4)
-    px = "PROY_Indexado"
-    zona = (f"=(SUMIF({px}!$C$25:$C$28,{px}!$B$51,{px}!$B$25:$B$28)*B{F_CABA}"
-            f"+SUMIF({px}!$C$29:$C$37,{px}!$B$51,{px}!$B$29:$B$37)*B{F_PBA})"
-            f"/SUMIF({px}!$C$25:$C$37,{px}!$B$51,{px}!$B$25:$B$37)")
-    datos = [(F_CABA, "Alumnos en escuelas estatales — CABA", EST_CABA, True, "Infobae / UCA (Relevamiento Anual)"),
-             (F_PBA, "Alumnos en escuelas estatales — PBA", EST_PBA, True, "CREEBBA, IAE 191"),
-             (F_ESTATAL, "Estatales en las zonas de la planta", zona, False, "CABA y PBA pesados con PROY_Indexado"),
-             (F_ENE, "Automotor: recargas de enero (% del año)", AUTO_ENE, True, "ITV Córdoba: 12 % en enero"),
-             (F_DIC, "Automotor: recargas de diciembre (% del año)", f"=B{F_ENE}", False, "Igual a enero · § 3.1"),
-             (F_MEST, "Meses en que se reparten las estatales (desde febrero)", MESES_EST, True,
-              "Criterio: fondos de inicio del ciclo y turnos de la planta · § 3.2")]
-    for r, t, v, dato, fu in datos:
+    cab(ws, F_ENE - 1, ["Dato de la estacionalidad", "Valor", "Fuente", ""])
+    ws.merge_cells(start_row=F_ENE - 1, start_column=3, end_row=F_ENE - 1, end_column=4)
+    datos = [(F_ENE, "Automotor: enero (% de las recargas del año)", AUTO_ENE, "dato", "ITV Córdoba: 12 % en enero · § 3.1"),
+             (F_DIC, "Automotor: diciembre (% del año)", f"=B{F_ENE}", "calc", "Igual a enero: RTO Mendoza, dic. y ene. · § 3.1"),
+             (F_HOM, "Automotor: noviembre y febrero, parte del exceso de la temporada", AUTO_HOM, "crit",
+              "Criterio de transición · § 3.1"),
+             (F_EXC, "Automotor: exceso de la temporada sobre un mes común", f"=(12*B{F_ENE}-1)/(10-2*B{F_HOM})", "calc",
+              "Los 12 meses suman 100 %"),
+             (F_BASE, "Automotor: mes común (marzo a octubre)", f"=B{F_ENE}-B{F_EXC}", "calc", ""),
+             (F_TRANS, "Automotor: noviembre y febrero", f"=B{F_BASE}+B{F_HOM}*B{F_EXC}", "calc", ""),
+             (F_A, "Rubros institucionales: un mes preferido pesa 1 + a y uno vedado 1 − a; a =", A_INST, "crit",
+              "Criterio: las fuentes dan los meses, no cuánto · § 3.8")]
+    for r, t, v, tipo, fu in datos:
         celda(ws, r, 1, t)
-        x = celda(ws, r, 2, v, "0" if r == F_MEST else "0.0%", dato=dato, res=not dato)
-        if r == F_MEST:
+        x = celda(ws, r, 2, v, "0.0%", dato=tipo != "calc", res=tipo == "calc")
+        if tipo == "crit":
             x.fill = GRIS_C
         celda(ws, r, 3, fu)
         ws.merge_cells(start_row=r, start_column=3, end_row=r, end_column=4)
@@ -890,7 +895,7 @@ ACC_TXT = ["Dentro del umbral",
            "Plan cargado a mano que pasa el umbral"]
 
 
-# colores de la acción aplicada en el aprovechamiento (los mismos de Dimensionamiento Manuales)
+# colores de la acción aplicada en el aprovechamiento (los mismos de Aprovechamiento Manuales)
 COLOR_ACC = {"Agrega turno": "4A86E8", "Agrega máquina": "FF00FF", "Agrega operario (puesto manual)": "E06666",
              "Tercerizado": "FF9900", "Revisar": "FFFF00"}
 
@@ -1138,7 +1143,7 @@ def generar(planta, plan=None):
     LB.escribir(wb)
     wb.active = wb.sheetnames.index("Resumen Capacidad")
     os.makedirs(SALIDA, exist_ok=True)
-    ruta = os.path.join(SALIDA, f"Dimensionamiento_Recargas_Planta_{planta}.xlsx")
+    ruta = os.path.join(SALIDA, f"Aprovechamiento_Recargas_Planta_{planta}.xlsx")
     wb.save(ruta)
     return ruta
 
@@ -1206,16 +1211,15 @@ def modelo_demanda(planta):
     perfil = {k: E_MRP[FAM_ABC[k]][2] for k in K_ABC}
     # estacionalidad por rubro y perfil de cada tipo (mix de rubros de la planta)
     prof_r = []
-    caba = sum(pz for z, pz, pl in ZONAS[:4] if pl == planta)
-    pba = sum(pz for z, pz, pl in ZONAS[4:13] if pl == planta)
-    estatal = (caba * EST_CABA + pba * EST_PBA) / (caba + pba)
-    for rb, regla, fu in EST_RUBRO:
+    exc = (12 * AUTO_ENE - 1) / (10 - 2 * AUTO_HOM)
+    base = AUTO_ENE - exc
+    for rb, regla, marca, fu in EST_RUBRO:
         if regla == "vtv":
-            prof_r.append([AUTO_ENE if m == 0 else AUTO_DIC if m == 11 else (1 - AUTO_ENE - AUTO_DIC) / 10
+            prof_r.append([AUTO_ENE if m in (0, 11) else base + AUTO_HOM * exc if m in (1, 10) else base
                            for m in range(12)])
-        elif regla == "escuelas":
-            prof_r.append([(1 - estatal) / 12 + (estatal / MESES_EST if 1 <= m <= MESES_EST else 0)
-                           for m in range(12)])
+        elif regla == "inst":
+            w = [1 + A_INST * marca.get(m, 0) for m in range(12)]
+            prof_r.append([x / sum(w) for x in w])
         else:
             prof_r.append([1 / 12] * 12)
     prof_t = []
@@ -1244,7 +1248,7 @@ def modelo_demanda(planta):
             dem[s][i] = pico / val(6)
     extra = {"stock": stock, "alta": alta, "ciclo_r": ciclo_r, "min_r": min_r, "ciclo_t": ciclo_t, "fr": fr,
              "tiempos": tiempos, "crit": {(r, j): cr(r, j) for r in crit for j in range(8)}, "eq": val(9),
-             "perfil": prof_t, "estatal": estatal}
+             "perfil": prof_t}
     return dem, cap, [r for (_, _, r, _, _, _, _) in PUESTOS], val(7), val(8), val(10), extra
 
 

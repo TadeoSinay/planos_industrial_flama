@@ -17,8 +17,8 @@ Concepto (croquis del usuario, octubre 2026)
 
 Fuentes (las mismas de la tabla Dimensionamiento_de_areas_v10.xlsx)
 -------------------------------------------------------------------
-W-MAN  Proceso de manuales (Word).          X-MAN  Dimensionamiento Manuales (máquina y cantidad 2035).
-W-CAR  Proceso de carros (Word, v10).       X-CAR  Dimensionamiento Carros.
+W-MAN  Proceso de manuales (Word).          X-MAN  Aprovechamiento Manuales (máquina y cantidad 2035).
+W-CAR  Proceso de carros (Word, v10).       X-CAR  Aprovechamiento Carros.
 X-ALM  Dimensionamiento Almacenes MP v5.    X-DT   Dimensionamiento_TecnicoV2 (dotación, servicios, PT).
 ET     ET´s Máquinas.                       Presupuestos y catálogos de la carpeta INVESTIGACION PROVEEDORES.
 """

@@ -2,7 +2,7 @@
 chapa de 0,9 mm), las dos guillotinas en serie, la verificación de cuchillas y topes, el nesting (¿es el mejor corte?),
 las piezas del plano, el esquema de embutido de cúpulas y fondos y las guillotinas compartidas por manuales y carros.
 Los números salen del Excel Analisis_alternativas_corte_chapa.xlsx (hojas Corte, Datos, Nesting, Cálculo y Resumen) y
-del Dimensionamiento de Manuales (tiempos con manipulación); la geometría de las figuras se recalcula acá con el mismo
+del Aprovechamiento de Manuales (tiempos con manipulación); la geometría de las figuras se recalcula acá con el mismo
 criterio y se controla contra el Excel."""
 
 import json
@@ -27,7 +27,7 @@ import generar_comparacion_corte as GC  # noqa: E402
 SALIDA = os.path.join(RAIZ, "salida")
 XLSX = os.path.join(SALIDA, "Analisis_alternativas_corte_chapa.xlsx")
 DOCX = os.path.join(SALIDA, "Esquema_de_corte_en_guillotina.docx")
-MAN = os.path.join(SALIDA, "Dimensionamiento_Manuales.xlsx")
+MAN = os.path.join(SALIDA, "Aprovechamiento_Manuales.xlsx")
 NODE_PATH = os.environ.get("NODE_PATH", "/tmp/claude-0/-home-user-TP-optimizacion/"
                                         "15292aaf-e550-5dee-a83e-77fd9177a6ef/scratchpad/jw/node/node_modules")
 NAR, VER, GRI = "#D9622B", "#2E7D5B", "#F6E3DA"
@@ -81,7 +81,7 @@ def excel():
     out["dsc"] = bloque(ne, GC.ND0, len(DC.DISC) + 1)
     out["cor_d"] = [{k: v for k, v in zip(COLS, x)} for x in bloque(co, GC.DC0, len(DC.DISC), 1, 25)]
     out["anio"] = int(dat["Año de referencia"])
-    # tiempos con manipulación y guillotinas compartidas (Dimensionamiento de Manuales)
+    # tiempos con manipulación y guillotinas compartidas (Aprovechamiento de Manuales)
     wm = load_workbook(MAN, data_only=True)
     pm = wm["parametros_manuales"]
     out["t_man"] = bloque(pm, 124, 5, 1, 10)
@@ -469,13 +469,13 @@ def bloques(X, geo, M, tmp):
     b.append({"t": "sub", "x": "FLAMA S.A. · Cuerpos de 1 a 100 kg en hoja estándar, con dos guillotinas en serie: "
                                "G1 Ermaksan CNC HGS 2600-6 (franjas) y G2 QC12Y 6 × 2500 (piezas), y discos de cúpulas "
                                "y fondos en fleje. Medidas de los planos de recipiente. Números del Excel «Análisis "
-                               "alternativas corte chapa» y del Dimensionamiento de Manuales."})
+                               "alternativas corte chapa» y del Aprovechamiento de Manuales."})
     h1("1. Cómo se corta")
     p("Cada cuerpo sale de dos cortes: el **1.er corte** separa la hoja en franjas y el **2.º corte** separa cada "
       "franja en piezas (desarrollos). Cada corte tiene su máquina:")
     bul(f"**Guillotina 1**, [Ermaksan CNC HGS 2600-6]({URL_ERM}): largo de corte {n(M['L1'])} mm, 6 mm de espesor, "
         f"tope trasero motorizado de {n(M['tope1'])} mm. La ficha da 24 golpes por minuto; se toman "
-        f"{nz(M['gpm1'])}, como en el Dimensionamiento de Manuales. Hace **solo el 1.er corte**: la hoja entra con el "
+        f"{nz(M['gpm1'])}, como en el Aprovechamiento de Manuales. Hace **solo el 1.er corte**: la hoja entra con el "
         "lado corto paralelo a la cuchilla y el tope fija el ancho de la franja.")
     bul("**El 1.er corte va siempre por el lado corto de la hoja** (1.000, 1.220 o 1.500 mm). Una franja de 3.000 mm "
         "pesa el doble y el operario no la puede mover; así, la franja más larga mide 1.500 mm (sección 3).")
@@ -519,7 +519,7 @@ def bloques(X, geo, M, tmp):
         pr = X["prom"]
         nota(f"25 y 50 kg: la tabla da cada uno en su hoja. Con el corte combinado (sección 5.2), la hoja de 3,2 mm "
              f"da en promedio {n(pr[0], 2)} cuerpos, {n(pr[1], 2)} golpes de G1 y {n(pr[2], 2)} de G2 por hoja "
-             f"(plan {X['anio']}); esos son los valores que van a los Dimensionamientos.")
+             f"(plan {X['anio']}); esos son los valores que van a los Aprovechamientos.")
     g1, g2 = X["B_g1"][-1], X["B_g2"][-1]
     p(f"Con la demanda de 2035 la G1 trabaja **{n(g1)} h** y la G2 **{n(g2)} h** al año a ritmo de máquina (hoja "
       "Cálculo del Excel, opción D).")
@@ -850,7 +850,7 @@ def guillotinas_compartidas(X, M):
     tm = X["t_man"][4]
     b.nota(f"25 y 50 kg con el promedio del corte combinado; 70 y 100 kg con la hoja mixta. Tiempo tipo de manuales "
            f"(ponderado por los recipientes de 2035): G1 {n(tm[7], 2)} s y G2 {n(tm[8], 2)} s por cuerpo.")
-    b.p("En el Dimensionamiento de Manuales, la carga de carros se pasa a unidades equivalentes de manuales (tiempo de "
+    b.p("En el Aprovechamiento de Manuales, la carga de carros se pasa a unidades equivalentes de manuales (tiempo de "
         "carros ÷ tiempo tipo) y se suma mes a mes en los puestos de G1 y G2 (hojas «Demanda puesto»). La G1 suma "
         "además las tiras de los accesorios de carros (8,6 min por día en el pico, W-CAR). Resultado:")
     u = X["util"]["Resumen cap. sin sobrestock"]
@@ -894,7 +894,7 @@ def final(X, tresb):
               "USD 10.700 FOB.",
               "Molinari Maquinarias, ficha de la guillotina Panther HG (formulario de cotización): HG 6 × 2500, 20 golpes "
               "por minuto.",
-              "Dimensionamiento de Manuales del grupo: golpes por minuto de G1 y G2; soldadora longitudinal TIG Firesafer "
+              "Aprovechamiento de Manuales del grupo: golpes por minuto de G1 y G2; soldadora longitudinal TIG Firesafer "
               "para el 1 kg.",
               "W-MAN, «Corte de chapa»: tiempo por corte y manipulación por hoja de manuales. W-CAR, «Corte de chapa»: "
               "tiempo por corte, minutos por hoja y tiras de accesorios de carros.",
@@ -944,7 +944,7 @@ def bloque_1kg(X, x, M):
                              "0,9 mm cumple. La 3.2.4.1 admite una costura longitudinal y dos transversales."})
     b.append({"t": "b", "x": "El cuerpo de chapa se cilindra y lleva soldadura longitudinal TIG, que el caño no tenía: "
                              "proceso automático en atmósfera inerte, admitido por la IRAM 3523, 3.2.4.2. Se adoptó la "
-                             "soldadora longitudinal Firesafer con fuente TIG (Dimensionamiento de Manuales)."})
+                             "soldadora longitudinal Firesafer con fuente TIG (Aprovechamiento de Manuales)."})
     return b
 
 
