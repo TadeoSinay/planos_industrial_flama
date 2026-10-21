@@ -59,21 +59,30 @@ CIL_CAR = [[0.0, 0.0, 14.4, 50.2, 93.0, 135.0, 191.0, 247.0, 277.0, 322.0],
 
 CORTE = os.path.join(g.SALIDA, "Analisis_alternativas_corte_chapa.xlsx")
 FUENTES_MAN = [
-    ("proy", "Proyecciones", g.URL_PROY, "Indexado Dim Técnico B3:K6 y B15:K18 → datos_base"),
+    ("proy", "Proyecciones", g.URL_PROY,
+     "Indexado Dim Técnico B3:K10 y B15:K22 → datos_base y carros en las guillotinas compartidas"),
     ("com", "Dimensionamiento Recargas Planta Comercial", g.PEGAR,
-     "sobrestock_sustitutos B73:K76: alta de sustitutos ABC (cilindros vacíos) → datos_base"),
+     "sobrestock_sustitutos B73:K76 y B86:K89: alta de sustitutos ABC (cilindros vacíos)"),
     ("ind", "Dimensionamiento Recargas Planta Industrial", g.PEGAR,
-     "sobrestock_sustitutos B73:K76: alta de sustitutos ABC (terminados) → datos_base"),
-    ("mrp", "MRP (FLAMA_MRP)", g.PEGAR, "ESTACIONALIDAD C4:N5 (E01 y E02) → parametros_manuales filas 12 a 15"),
+     "sobrestock_sustitutos B73:K76 y B86:K89: alta de sustitutos ABC (terminados)"),
+    ("mrp", "MRP (FLAMA_MRP)", g.PEGAR, "ESTACIONALIDAD C4:N6 (E01, E02 y E03) → parametros_manuales"),
     ("corte", "Análisis alternativas corte chapa", g.PEGAR,
-     "Corte B19:G22 (piezas, golpes y tandas por hoja; golpes por minuto) → parametros_manuales filas 118 a 127")]
+     "Corte B19:G27 (piezas y golpes por hoja; golpes por minuto) → parametros_manuales filas 118 a 137")]
 FUENTES_CAR = [
     ("proy", "Proyecciones", g.URL_PROY, "Indexado Dim Técnico B7:K10 y B19:K22 → datos_base"),
     ("com", "Dimensionamiento Recargas Planta Comercial", g.PEGAR,
      "sobrestock_sustitutos B86:K89: alta de sustitutos ABC (cilindros vacíos) → datos_base"),
     ("ind", "Dimensionamiento Recargas Planta Industrial", g.PEGAR,
      "sobrestock_sustitutos B86:K89: alta de sustitutos ABC (terminados) → datos_base"),
-    ("mrp", "MRP (FLAMA_MRP)", g.PEGAR, "ESTACIONALIDAD C6:N6 (E03) → parametros_carros filas 12 a 15")]
+    ("mrp", "MRP (FLAMA_MRP)", g.PEGAR, "ESTACIONALIDAD C6:N6 (E03) → parametros_carros filas 12 a 15"),
+    ("corte", "Análisis alternativas corte chapa", g.PEGAR,
+     "Corte B23:G27 (piezas y golpes por hoja de 25 a 100 kg; golpes por minuto) → parametros_carros filas 66 a 73"),
+    ("man", "Dimensionamiento Manuales", g.PEGAR,
+     "Resumen cap. sin sobrestock filas 3, 4, 32, 33, 61 y 62 → guillotinas compartidas (consolidado)")]
+# modelo de tiempos de guillotina (W-MAN y W-CAR): minutos por corte con el golpe incluido y manipulación por hoja
+T_MAN = [(0.3, 2), (0.3, 2), (0.3, 2), (0.4, 3)]           # 1 kg (como 2,5 kg), 2,5, 5 y 10 kg
+T_CAR = [(0.4, "=10.6-12*0.4"), (0.4, "=8.8-9*0.4"), (0.6, "=14.5-8*0.6"), (0.6, "=14.5-8*0.6")]
+FILA_CORTE_CAR = [0, 1, 4, 4]        # 70 y 100 kg salen de la hoja mixta (fila 5 del bloque de rodantes)
 ANIOS_TXT = [str(a) for a in g.ANIOS]
 PED_MAN = f"sobrestock_sustitutos!B{g.S_ALTA}:K{g.S_ALTA + 3}"
 PED_CAR = f"sobrestock_sustitutos!B{g.S_ALTA + 13}:K{g.S_ALTA + 16}"
@@ -250,6 +259,184 @@ def valores_corte(r0, n):
     return [[ws.cell(r0 + i, 2 + j).value for j in range(6)] for i in range(n)]
 
 
+def corte_manuales(pm, LB, ped):
+    """Bloque CORTE DE CHAPA de parametros_manuales: tiempos de W-MAN y carga de carros en las guillotinas."""
+    pm["A117"].value = ("CORTE DE CHAPA: DOS GUILLOTINAS EN SERIE (Word «Esquema de corte en guillotina»: G1 Ermaksan CNC "
+                        "HGS 2600-6, G2 QC12Y 6 × 2500)")
+    pm["A120"].value = "Parte de la manipulación por hoja que va a la guillotina 1 (el resto, a la 2)"
+    pm["B120"].value = 0.5
+    pm["B120"].number_format = "0%"
+    pm["C120"].value = "Criterio: traer la hoja (G1) y recargar las franjas (G2) llevan lo mismo"
+    pm["A121"].value = "Tiempos por corte y manipulación por hoja"
+    pm["B121"].value = None
+    pm["C121"].value = ("W-MAN, «Corte de chapa»: 0,3 min por corte y 2 min por hoja (0,4 y 3 en 2,0 mm); el 1 kg como el "
+                        "2,5 kg. Carros: W-CAR (0,4 y 0,6 min por corte; min por hoja − cortes)")
+    cab = ["Modelo", "Hoja (mm)", "Piezas por hoja", "Golpes G1 por hoja", "Golpes G2 por hoja",
+           "Tiempo por corte (min)", "Manipulación por hoja (min)", "G1 (s/cuerpo)", "G2 (s/cuerpo)",
+           "Recipientes 2035 (peso)"]
+    for j, t in enumerate(cab):
+        estilo(pm.cell(123, min(1 + j, 9)), pm.cell(123, 1 + j))
+        pm.cell(123, 1 + j).value = t
+    for k in range(4):
+        r = 124 + k
+        for col in "FGHIJ":
+            estilo(pm[f"D{r}"], pm[f"{col}{r}"])
+        pm[f"F{r}"].value, pm[f"G{r}"].value = T_MAN[k]
+        pm[f"H{r}"].value = f"=(D{r}*MAX(F{r},1/$B$118)+G{r}*$B$120)*60/C{r}"
+        pm[f"I{r}"].value = f"=(E{r}*MAX(F{r},1/$B$119)+G{r}*(1-$B$120))*60/C{r}"
+        pm[f"J{r}"].value = f"=datos_base!$K${2 + k}+datos_base!$K${9 + k}"
+        for col, fmt in (("F", "0.0"), ("G", "0.0"), ("H", "0.0"), ("I", "0.0"), ("J", "#,##0")):
+            pm[f"{col}{r}"].number_format = fmt
+    pm["G128"].value = None
+    for col in "HI":
+        estilo(pm["G124"], pm[f"{col}128"])
+        pm[f"{col}128"].value = f"=SUMPRODUCT({col}124:{col}127,$J$124:$J$127)/SUM($J$124:$J$127)"
+        pm[f"{col}128"].number_format = "0.0"
+    pm["K20"].value, pm["K21"].value = "=$H$128", "=$I$128"
+    pm["A129"].value = ("Piezas y golpes por hoja: Excel de corte (hoja Links). El tiempo tipo es uno solo por puesto: se "
+                        "pondera por los recipientes de 2035 (terminados + cilindros vacíos).")
+    # carros en las guillotinas compartidas
+    estilo(pm["A117"], pm["A131"])
+    pm["A131"].value = "GUILLOTINAS COMPARTIDAS: CARGA DE CARROS EN G1 Y G2 (los puestos 2 y 3 quedan consolidados)"
+    pm["A132"].value = ("Mismo modelo de tiempos con los datos de W-CAR. La carga de carros pasa a unidades equivalentes de "
+                        "manuales (tiempo de carros ÷ tiempo tipo del puesto) y se suma en las hojas Demanda puesto.")
+    car = ["25 kg", "50 kg", "70 kg", "100 kg"]
+    pos = LB.imp("corte", "Corte!B23:G27", valores_corte(23, 5), "0.00",
+                 "piezas y golpes por hoja (25 a 100 kg y hoja mixta)", car + ["Hoja mixta 70 + 100 kg"],
+                 ["Piezas por hoja", "Golpes G1 por hoja", "Golpes G2 por hoja", "Tandas G2 por hoja",
+                  "Golpes/min G1", "Golpes/min G2"])
+    cab2 = cab[:7] + ["G1 (min/cuerpo)", "G2 (min/cuerpo)"]
+    for j, t in enumerate(cab2):
+        estilo(pm.cell(123, 1 + j), pm.cell(133, 1 + j))
+        pm.cell(133, 1 + j).value = t
+    for k in range(4):
+        r = 134 + k
+        for col in "ABCDEFGHI":
+            estilo(pm[f"{col}124"], pm[f"{col}{r}"])
+        pm[f"A{r}"].value = car[k]
+        pm[f"B{r}"].value = "1.500 × 3.000"
+        for j, col in enumerate("CDE"):
+            pm[f"{col}{r}"].value = "=" + LB.ref(pos, FILA_CORTE_CAR[k], j)
+        pm[f"F{r}"].value, pm[f"G{r}"].value = T_CAR[k]
+        pm[f"H{r}"].value = f"=(D{r}*MAX(F{r},1/$B$118)+G{r}*$B$120)/C{r}"
+        pm[f"I{r}"].value = f"=(E{r}*MAX(F{r},1/$B$119)+G{r}*(1-$B$120))/C{r}"
+        for col in "FGHI":
+            pm[f"{col}{r}"].number_format = "0.00"
+    # carros a fabricar por año
+    tc = LB.imp("proy", "Indexado Dim Técnico!B7:K10", TERM_CAR, "#,##0", "carros terminados", car, ANIOS_TXT)
+    cc = LB.imp("proy", "Indexado Dim Técnico!B19:K22", CIL_CAR, "#,##0", "cilindros de carros vacíos", car, ANIOS_TXT)
+    ic = LB.imp("ind", PED_CAR, ped["Industrial"][4:], "#,##0", "alta de sustitutos ABC terminados (carros)", car,
+                ANIOS_TXT)
+    co = LB.imp("com", PED_CAR, ped["Comercial"][4:], "#,##0", "alta de sustitutos ABC cilindros (carros)", car,
+                ANIOS_TXT)
+    estilo(pm["A123"], pm["A139"])
+    pm["A139"].value = "Carros a fabricar (terminados + cilindros + sustitutos)"
+    for i in range(10):
+        estilo(pm["B123"], pm.cell(139, 2 + i))
+        pm.cell(139, 2 + i).value = g.ANIOS[i]
+    for k in range(4):
+        r = 140 + k
+        estilo(pm["A124"], pm[f"A{r}"])
+        pm[f"A{r}"].value = f"Carro {car[k]}"
+        for i in range(10):
+            x = pm.cell(r, 2 + i)
+            estilo(pm["J124"], x)
+            x.value = ("=" + LB.ref(tc, k, i) + "+" + LB.ref(cc, k, i) + "+" + LB.ref(ic, k, i, "ind") + "+"
+                       + LB.ref(co, k, i, "com"))
+    e03 = LB.imp("mrp", g.E_MRP[2][1], [g.E_MRP[2][2]], "0.0%", g.E_MRP[2][0], [g.E_MRP[2][0]], g.MESES)
+    estilo(pm["A124"], pm["A145"])
+    pm["A145"].value = "Perfil de producción de carros (MRP, E03)"
+    for m in range(12):
+        x = pm.cell(145, 2 + m)
+        estilo(pm["F124"], x)
+        x.value = "=" + LB.ref(e03, 0, m)
+        x.number_format = "0.0%"
+    for r0, col, kt, txt in ((147, "H", "K20", "G1"), (159, "I", "K21", "G2")):
+        estilo(pm["A123"], pm[f"A{r0}"])
+        pm[f"A{r0}"].value = f"Carga de carros en {txt} (unidades equivalentes de manuales por mes)"
+        for m in range(12):
+            estilo(pm["B123"], pm.cell(r0, 2 + m))
+            pm.cell(r0, 2 + m).value = g.MESES[m]
+        for i in range(10):
+            r = r0 + 1 + i
+            estilo(pm["A124"], pm[f"A{r}"])
+            pm[f"A{r}"].value = g.ANIOS[i]
+            y = L(2 + i)
+            for m in range(12):
+                x = pm.cell(r, 2 + m)
+                estilo(pm["J124"], x)
+                x.value = (f"=IF(${kt}=0,0,SUMPRODUCT(${y}$140:${y}$143,${col}$134:${col}$137)*60*"
+                           f"{L(2 + m)}$145/${kt})")
+                x.number_format = "#,##0.0"
+    pm["A171"].value = ("Tiras de accesorios de carros en la G1: 8,6 min/día en el pico (W-CAR), en la disponibilidad "
+                        "del puesto 2 (fila 53).")
+
+
+def corte_carros(pc, LB):
+    """parametros_carros: corte de cuerpos en G1 y G2 con el modelo de Manuales y los tiempos de W-CAR."""
+    car = ["25 kg", "50 kg", "70 kg", "100 kg"]
+    pos = LB.imp("corte", "Corte!B23:G27", valores_corte(23, 5), "0.00",
+                 "piezas y golpes por hoja (25 a 100 kg y hoja mixta)", car + ["Hoja mixta 70 + 100 kg"],
+                 ["Piezas por hoja", "Golpes G1 por hoja", "Golpes G2 por hoja", "Tandas G2 por hoja",
+                  "Golpes/min G1", "Golpes/min G2"])
+    estilo(pc["A43"], pc["A66"])
+    pc["A66"].value = "CORTE DE CUERPOS EN LAS GUILLOTINAS G1 Y G2 (compartidas con manuales; mismo modelo que Manuales)"
+    pc["A67"].value = "Parte de la manipulación por hoja que va a la guillotina 1"
+    pc["B67"].value = 0.5
+    pc["B67"].number_format = "0%"
+    pc["C67"].value = "Criterio: igual que en Manuales (parametros_manuales B120)"
+    cab = ["Modelo", "Piezas por hoja", "Golpes G1 por hoja", "Golpes G2 por hoja", "Golpes/min G1", "Golpes/min G2",
+           "Tiempo por corte (min)", "Manipulación por hoja (min)", "G1 (min/cuerpo)", "G1 + G2 (min/cuerpo)",
+           "G2 (min/cuerpo)"]
+    for j, t in enumerate(cab):
+        estilo(pc["B44"], pc.cell(68, 1 + j))
+        pc.cell(68, 1 + j).value = t
+    for k in range(4):
+        r = 69 + k
+        for j in range(11):
+            estilo(pc["D45"], pc.cell(r, 1 + j))
+        pc[f"A{r}"].value = f"Carro {car[k]}"
+        for j, col in enumerate("BCD"):
+            pc[f"{col}{r}"].value = "=" + LB.ref(pos, FILA_CORTE_CAR[k], j)
+        pc[f"E{r}"].value = "=" + LB.ref(pos, 0, 4)
+        pc[f"F{r}"].value = "=" + LB.ref(pos, 0, 5)
+        pc[f"G{r}"].value, pc[f"H{r}"].value = T_CAR[k]
+        pc[f"I{r}"].value = f"=(C{r}*MAX(G{r},1/E{r})+H{r}*$B$67)/B{r}"
+        pc[f"K{r}"].value = f"=(D{r}*MAX(G{r},1/F{r})+H{r}*(1-$B$67))/B{r}"
+        pc[f"J{r}"].value = f"=I{r}+K{r}"
+        for col in "BCDGHIJK":
+            pc[f"{col}{r}"].number_format = "0.00"
+    pc["A73"].value = ("W-CAR, «Corte de chapas»: 0,4 min por corte en 3,2 mm y 0,6 en 4,75 mm; manipulación = min por "
+                       "hoja − cortes × min por corte (25 kg: 10,6 y 12 cortes; 50 kg: 8,8 y 9; mixta: 14,5 y 8). En el "
+                       "puesto 2 se suman las tiras y patas del W-CAR.")
+
+
+def consolidado_carros(ws, LB):
+    """Resumen Capacidad de Carros: aprovechamiento de G1 y G2 consolidado (lo calcula Manuales)."""
+    nom = ["Guillotina 1 (manuales + carros)", "Guillotina 2 (manuales + carros)"]
+    rv = load_workbook(os.path.join(g.SALIDA, "Dimensionamiento_Manuales.xlsx"), data_only=True)
+    rv = rv["Resumen cap. sin sobrestock"]
+    bloques = [("Aprovechamiento consolidado", "Resumen cap. sin sobrestock!B3:K4", 3, "0%"),
+               ("Máquinas", "Resumen cap. sin sobrestock!B32:K33", 32, "0"),
+               ("Turnos", "Resumen cap. sin sobrestock!B61:K62", 61, "0")]
+    estilo(ws["A1"], ws["A65"])
+    ws["A65"].value = "GUILLOTINAS COMPARTIDAS CON MANUALES (consolidado en el Dimensionamiento de Manuales)"
+    r = 66
+    for t, rng, r0, fmt in bloques:
+        vals = [[rv.cell(r0 + k, 2 + i).value for i in range(10)] for k in range(2)]
+        pos = LB.imp("man", rng, vals, fmt, t.lower(), nom, ANIOS_TXT)
+        for k in range(2):
+            estilo(ws["A2"], ws[f"A{r + k}"])
+            ws[f"A{r + k}"].value = f"{t}: {nom[k]}"
+            for i in range(10):
+                x = ws.cell(r + k, 2 + i)
+                estilo(ws["B23"], x)
+                x.value = "=" + LB.ref(pos, k, i)
+                x.number_format = fmt
+        r += 2
+    ws[f"A{r}"].value = "El puesto 2 de arriba es el operario de corte de carros; las máquinas se dimensionan en Manuales."
+
+
 def manuales(ped):
     """Versión 4 del grupo (26 puestos) con la hoja Links y todo indexado."""
     wb = load_workbook(os.path.join(REF, "Dimensionamiento_Manuales.xlsx"))
@@ -289,26 +476,27 @@ def manuales(ped):
     for c in "ABC":
         estilo(pm[f"{c}8"], pm[f"{c}9"])
     pm["B9"].number_format = "0"
-    # corte de chapa: piezas, golpes y tandas por hoja y golpes por minuto del Excel de corte
+    # corte de chapa: piezas y golpes por hoja y golpes por minuto del Excel de corte; tiempos de W-MAN
     pos = LB.imp("corte", "Corte!B19:G22", valores_corte(19, 4), "0.00",
                  "piezas, golpes y tandas por hoja y golpes por minuto (1 a 10 kg)", modelos,
                  ["Piezas por hoja", "Golpes G1 por hoja", "Golpes G2 por hoja", "Tandas G2 por hoja",
                   "Golpes/min G1", "Golpes/min G2"])
-    refs(pm, 124, 3, LB, pos, 4, 4)
+    refs(pm, 124, 3, LB, pos, 4, 3)
     pm["B118"].value = "=" + LB.ref(pos, 0, 4)
     pm["B119"].value = "=" + LB.ref(pos, 0, 5)
-    pm["A117"].value = ("CORTE DE CHAPA: DOS GUILLOTINAS EN SERIE (Excel «Análisis alternativas corte chapa» y Word "
-                        "«Esquema de corte en guillotina»: G1 Ermaksan CNC HGS 2600-6, G2 QC12Y 6 × 2500)")
-    pm["C118"].value = "Excel de corte (hoja Links). La ficha de la Ermaksan da 24; el grupo toma 20"
-    pm["C119"].value = "Excel de corte (hoja Links): QC12Y 6 × 2500"
-    pm["A129"].value = ("Piezas, golpes y tandas por hoja: Excel de corte (hoja Links). El tiempo tipo es uno solo por "
-                        "puesto: se pondera por los recipientes de 2035 (terminados + cilindros vacíos). La manipulación "
-                        "es editable.")
-    pm["C20"].value = "Guillotina hidráulica Ermaksan CNC HGS 2600-6 (tope 1.000 mm)"
-    pm["O20"].value = ("Golpes de G1 por hoja ÷ golpes/min + manipulación por hoja, ÷ piezas por hoja; promedio "
-                       "ponderado (bloque CORTE DE CHAPA, fila 117)")
-    pm["O21"].value = ("Reemplaza al corte láser de tubo: el 1 kg pasa a chapa. Golpes de G2 por hoja ÷ golpes/min + "
-                       "manipulación por tanda, ÷ piezas por hoja; promedio ponderado (fila 117)")
+    corte_manuales(pm, LB, ped)
+    pm["C20"].value = "Guillotina hidráulica Ermaksan CNC HGS 2600-6 (tope 1.000 mm), compartida con carros"
+    pm["C21"].value = "Guillotina hidráulica QC12Y 6 × 2500 (tope 800 mm), compartida con carros"
+    for r, t in ((20, "Corte de chapa — 1.er corte en franjas (guillotina 1, manuales + carros)"),
+                 (21, "Corte de chapa — 2.º corte en piezas (guillotina 2, manuales + carros)")):
+        pm[f"B{r}"].value = t
+        pm[f"B{r + 33}"].value = t
+    pm["O20"].value = ("(Golpes G1 × min por corte + parte de la manipulación por hoja) ÷ piezas; promedio ponderado "
+                       "(fila 128). La carga de carros se suma en Demanda puesto (filas 148 a 157)")
+    pm["O21"].value = ("(Golpes G2 × min por corte + resto de la manipulación) ÷ piezas; promedio ponderado (fila 128). "
+                       "La carga de carros se suma en Demanda puesto (filas 160 a 169)")
+    pm["E53"].value = "=C53*D53/60+8.6*$B$2/60"
+    pm["G53"].value = "Más 8,6 min/día de tiras de accesorios de carros (W-CAR: placas 1,7 + patas 1,9 + 5,0)"
     hojas = [("Resumen cap. sin sobrestock", "Demanda puesto sin sobrestock"),
              ("Resumen cap. con sobrestock", "Demanda puesto con sobrestock")]
     uno = {(k, i): (1, 1) for k in range(N_MAN) for i in range(10)}
@@ -321,6 +509,13 @@ def manuales(ped):
                     f"(parametros_manuales!$M${19 + k}*{mq}*{tu}*parametros_manuales!$B$6))")
         resumen(ws, N_MAN, R_MAQ_M, R_TUR_M, util, REC_MAN, "parametros_manuales!$B$8", ("M13", "N13"), 14)
         escribir_tablas(ws, N_MAN, R_MAQ_M, R_TUR_M, uno)
+    for dn in ("Demanda puesto sin sobrestock", "Demanda puesto con sobrestock"):
+        d = wb[dn]
+        for i in range(10):
+            for k, r0 in ((1, 148), (2, 160)):
+                for m in range(12):
+                    x = d.cell(28 * i + 2 + k, 2 + m)
+                    x.value = f"{x.value}+parametros_manuales!${L(2 + m)}${r0 + i}"
     wb["Resumen cap. con sobrestock"]["O1"].value = ("Máquinas y turnos: regla del 90 % con el 2.° turno en un solo "
                                                      "año (parametros_manuales B8 y B9); se pueden cambiar a mano.")
     LB.escribir(wb)
@@ -377,11 +572,16 @@ def carros(ped):
     pc["B9"].number_format = "0"
     pc["A8"].value = "Umbral de aprovechamiento"
     pc["C8"].value = "Límite duro (análisis de riesgos) · Word de recargas § 8"
-    # guillotinas nuevas (compartidas con manuales); los tiempos siguen siendo los del W-CAR
+    # guillotinas compartidas con manuales: el corte de cuerpos sale del mismo modelo que Manuales (W-CAR)
     pc["C20"].value = ("Guillotinas Ermaksan CNC HGS 2600-6 (1.er corte) y QC12Y 6 × 2500 (2.º corte), compartidas con "
                        "manuales + mesa elevadora de tijera 3 t + ventosas")
-    pc["A42"].value = ((pc["A42"].value or "") + " Corte: tiempos del W-CAR (una sola guillotina); con G1 y G2 en serie "
-                       "falta que el grupo los separe por máquina.")
+    corte_carros(pc, LB)
+    for col, viejo in (("D", "10.6/9"), ("E", "8.8/6"), ("F", "14.5/4"), ("G", "14.5/4")):
+        f = pc[f"{col}20"].value
+        assert f.startswith("=" + viejo), f
+        pc[f"{col}20"].value = f"=$J${69 + 'DEFG'.index(col)}" + f[1 + len(viejo):]
+    pc["A42"].value = ((pc["A42"].value or "") + " Corte: cuerpos con G1 y G2 (filas 66 a 73, mismo modelo que Manuales) "
+                       "más las tiras y patas del W-CAR; la carga de las guillotinas se consolida en Manuales.")
     pw = wb["Proceso (Word)"]
     pw["F6"].value = (pw["F6"].value or "").replace(
         "Guillotina CENA 8 × 3200 NC E21 (USD 36.800 + IVA, compartida con manuales)",
@@ -395,6 +595,7 @@ def carros(ped):
     def util(k, i, mq, tu):
         return f"=IF({mq}*{tu}=0,0,'Demanda por puesto'!$P${20 * i + 2 + k}/({mq}*{tu}))"
     resumen(ws, 18, 23, 44, util, REC_CAR, "parametros_carros!$B$8", ("M8", "N8"), 9)
+    consolidado_carros(ws, LB)
     LB.escribir(wb)
     wb.active = wb.sheetnames.index("Resumen Capacidad")
     wb.save(sal)

@@ -95,6 +95,10 @@ CORTE = [
      "Proceso de carros: la hoja mixta lleva 1 cuerpo de 100 kg y 3 de 70 kg."),
     ("mix100", "Cuerpos de 100 kg por hoja mixta", 1, "u", F0, "Proceso de carros."),
     ("mix70", "Cuerpos de 70 kg por hoja mixta", 3, "u", F0, "Proceso de carros."),
+    ("comb", "¿Combinar 25 y 50 kg en la hoja de 3,2 mm (corte en tres etapas)?", "SI", "SI/NO", None,
+     "Hoja Nesting: el aprovechamiento de la chapa de 3,2 mm sube del 85 % al 90 %."),
+    ("tresb", "¿Discos en fleje de dos filas al tresbolillo?", "NO", "SI/NO", None,
+     "Corte, sección C: necesita matriz de dos discos o alimentador en zigzag (sin cotización)."),
 ]
 MAQ = [
     ("gpm1", "Guillotina 1 (franjas) Ermaksan CNC HGS 2600-6: golpes por minuto", 20, "golpes/min", F0,
@@ -461,6 +465,8 @@ def ds(col, i):
 
 # ------------------------------------------------------------------ Cálculo: plan de filas (se arma antes que Corte)
 U0, D0, NETO = 8, 16, 25
+NP0, NPROM = 26, 52   # hoja Nesting: primera fila de los patrones de 3,2 mm y de sus promedios por hoja
+KP = (1, 3, 4)       # patrones de 3,2 mm que usa el plan (P2 = ⅓ P1 + ⅔ P3: mismas hojas, no suma)
 GRUPOS = ["0,9", "1,25", "1,6", "2,0", "3,2", "4,75"]
 GK = {"0,9": "09", "1,25": "125", "1,6": "16", "2,0": "20", "3,2": "32", "4,75": "475"}
 R = {"U0": U0, "U5": U0 + 5, "U6": U0 + 6, "U7": U0 + 7, "U3": U0 + 3, "D0": D0, "D7": D0 + 7, "NETO": NETO}
@@ -504,12 +510,25 @@ def _plan():
     f("B_h70", "Hojas de 70 kg solas", "hojas", F1, "=({c}{U6}-{mix70}*{c}{B_mix})/Corte!$I${HS6}")
     f("B_h100", "Hojas de 100 kg solas", "hojas", F1, "=({c}{U7}-{mix100}*{c}{B_mix})/Corte!$I${HS7}")
 
+    n25, n50 = "{c}{U4}", "{c}{U5}"
+    f("B_p1", "Hojas de 3,2 mm, patrón P1 (6 de 25 kg + 3 de 50 kg)", "hojas", F1,
+      f'=IF({{comb}}="SI",MIN({n25}/Nesting!$E${NP0},{n50}/Nesting!$F${NP0}),0)')
+    f("B_p3", "Hojas de 3,2 mm, patrón P3 (6 de 50 kg)", "hojas", F1,
+      f'=IF({{comb}}="SI",({n50}-{{c}}{{B_p1}}*Nesting!$F${NP0})/Nesting!$F${NP0 + 2},{n50}/Corte!$I${{HS5}})')
+    f("B_p4", "Hojas de 3,2 mm, patrón P4 (9 de 25 kg)", "hojas", F1,
+      f'=IF({{comb}}="SI",({n25}-{{c}}{{B_p1}}*Nesting!$E${NP0})/Nesting!$E${NP0 + 3},{n25}/Corte!$I${{HS4}})')
+
     def hojas(col):
-        return (f"SUMPRODUCT({{c}}${{U0}}:{{c}}${{U5}}/Corte!$I${{HS0}}:$I${{HS5}}*Corte!${col}${{HS0}}:${col}${{HS5}})"
-                f"+{{c}}{{B_h70}}*Corte!${col}${{HS6}}+{{c}}{{B_h100}}*Corte!${col}${{HS7}}"
+        if col in ("P", "R"):     # golpes: los de cada patrón (hoja Nesting)
+            c32 = "+".join(f"{{c}}{{B_p{k}}}*Nesting!${'G' if col == 'P' else 'H'}${NP0 + k - 1}" for k in KP)
+        else:                     # masa y USD: misma hoja de 3,2 mm para los tres patrones
+            c32 = f"({{c}}{{B_p1}}+{{c}}{{B_p3}}+{{c}}{{B_p4}})*Corte!${col}${{HS4}}"
+        return (f"SUMPRODUCT({{c}}${{U0}}:{{c}}${{U3}}/Corte!$I${{HS0}}:$I${{HS3}}*Corte!${col}${{HS0}}:${col}${{HS3}})"
+                f"+{c32}+{{c}}{{B_h70}}*Corte!${col}${{HS6}}+{{c}}{{B_h100}}*Corte!${col}${{HS7}}"
                 f"+{{c}}{{B_mix}}*Corte!${col}${{HMIX}}")
     f("B_hc", "Hojas para cuerpos", "hojas", F0,
-      "=SUMPRODUCT({c}${U0}:{c}${U5}/Corte!$I${HS0}:$I${HS5})+{c}{B_h70}+{c}{B_h100}+{c}{B_mix}")
+      "=SUMPRODUCT({c}${U0}:{c}${U3}/Corte!$I${HS0}:$I${HS3})+{c}{B_p1}+{c}{B_p3}+{c}{B_p4}"
+      "+{c}{B_h70}+{c}{B_h100}+{c}{B_mix}")
     f("B_tc", "Acero de hojas para cuerpos", "t", F1, "=(" + hojas("W") + ")/1000")
     f("B_uc", "Costo de las hojas para cuerpos", "USD", F0, "=" + hojas("X"))
     f("B_g1", "Horas de la guillotina 1 (1.er corte: franjas)", "h", F1,
@@ -579,8 +598,10 @@ def _plan():
     f("R_cost", "COSTO ANUAL REFERENCIA", "USD", F0, "={c}{R_u}+{c}{R_vs}+{c}{R_fin}+{c}{R_mo}+{c}{R_mt}")
     t("Opción D: compras por año")
     for i, fm in enumerate(FORM):
-        tpl = {6: "={c}{B_h70}", 7: "={c}{B_h100}"}.get(i, f"={{c}}{{U{i}}}/Corte!$I${{HS{i}}}")
-        f(f"Dh{i}", f"Hojas para cuerpos de {fm}", "hojas", F0, tpl)
+        tpl = {4: "={c}{B_p4}", 5: "={c}{B_p3}", 6: "={c}{B_h70}", 7: "={c}{B_h100}"}.get(
+            i, f"={{c}}{{U{i}}}/Corte!$I${{HS{i}}}")
+        f(f"Dh{i}", f"Hojas para cuerpos de {fm}" + (" solos" if i in (4, 5, 6, 7) else ""), "hojas", F0, tpl)
+    f("Dhc", "Hojas combinadas 25 + 50 kg (patrón P1)", "hojas", F0, "={c}{B_p1}")
     f("Dhm", "Hojas mixtas 70 + 100 kg", "hojas", F0, "={c}{B_mix}")
     for i, d in enumerate(DC.DISC):
         f(f"Dr{i}", f"Rollos de fleje: {d['pieza'].lower()} {d['formato']}", "rollos", F1,
@@ -695,10 +716,10 @@ def h_corte(wb):
     for i in range(9):
         r, rs = EX0 + i, HS0 + i
         c(ws, f"A{r}", f"=A{rs}")
-        c(ws, f"B{r}", f"=I{rs}", F0)
-        c(ws, f"C{r}", f"=P{rs}", F2)
-        c(ws, f"D{r}", f"=R{rs}", F2)
-        c(ws, f"E{r}", f"=O{rs}/N{rs}", F2)
+        base = [f"I{rs}", f"P{rs}", f"R{rs}", f"O{rs}/N{rs}"]
+        for j, col in enumerate("BCDE"):
+            v = base[j] if i not in (4, 5) else fx(f'IF({{comb}}="SI",Nesting!$B${NPROM + j},{base[j]})')
+            c(ws, f"{col}{r}", "=" + v, F0 if j == 0 and i not in (4, 5) else F2)
         c(ws, f"F{r}", fx("={gpm1}"), F0)
         c(ws, f"G{r}", fx("={gpm2}"), F0)
     # B) bobina por formato
@@ -728,7 +749,9 @@ def h_corte(wb):
                         "Ancho de fleje (mm)", "Paso (mm)", "Aprovech. del fleje", "kg de fleje por disco",
                         "USD de fleje por disco", "Peso de rollo (t)", "Hoja: lado corto = largo de la tira", "lado largo",
                         "Tiras por hoja", "Discos por tira", "Discos por hoja", "Aprovech. de la hoja",
-                        "kg de hoja por disco", "USD de hoja por disco"])
+                        "kg de hoja por disco", "USD de hoja por disco", "Fleje 1 fila: ancho (mm)",
+                        "Aprovech. 1 fila", "Fleje 2 filas al tresbolillo: ancho (mm)", "Aprovech. 2 filas",
+                        "kg por disco, 1 fila", "kg por disco, 2 filas"])
     fmi = {f: i for i, f in enumerate(FORM)}
     for i, d in enumerate(DC.DISC):
         r = DC0 + i
@@ -738,9 +761,15 @@ def h_corte(wb):
         c(ws, f"C{r}", f"={ds('D', i)}", "0.00")
         c(ws, f"D{r}", fx(f"=MAX({{pf}}*C{r},{{pmin}})"), F2)
         c(ws, f"E{r}", fx(f"={{pb}}*D{r}"), F2)
-        c(ws, f"F{r}", f"=B{r}+2*E{r}", "0.0")
+        c(ws, f"F{r}", fx(f'=IF({{tresb}}="SI",V{r},T{r})'), "0.0")
         c(ws, f"G{r}", f"=B{r}+D{r}", "0.0")
-        c(ws, f"H{r}", fx(f"=PI()*B{r}^2/4/(F{r}*G{r})*(1-{{despunte}})"), FP)
+        c(ws, f"H{r}", fx(f'=IF({{tresb}}="SI",W{r},U{r})'), FP)
+        c(ws, f"T{r}", f"=B{r}+2*E{r}", "0.0")
+        c(ws, f"U{r}", fx(f"=PI()*B{r}^2/4/(T{r}*G{r})*(1-{{despunte}})"), FP)
+        c(ws, f"V{r}", f"=B{r}+G{r}*SQRT(3)/2+2*E{r}", "0.0")
+        c(ws, f"W{r}", fx(f"=2*PI()*B{r}^2/4/(V{r}*G{r})*(1-{{despunte}})"), FP)
+        c(ws, f"X{r}", f"={ds('S', i)}/U{r}", F3)
+        c(ws, f"Y{r}", f"={ds('S', i)}/W{r}", F3)
         c(ws, f"I{r}", f"={ds('S', i)}/H{r}", F3)
         c(ws, f"J{r}", f"=I{r}*{precio(e, 'pF')}", F3)
         fr = fmi[d["formato"]]
@@ -751,7 +780,7 @@ def h_corte(wb):
         c(ws, f"L{r}", hw, F0, dato=True)
         c(ws, f"M{r}", hl, F0, dato=True)
         # tiras cortadas por el lado corto de la hoja (mismo criterio que los cuerpos)
-        c(ws, f"N{r}", f"=INT(M{r}/F{r})", F0)
+        c(ws, f"N{r}", f"=INT(M{r}/T{r})", F0)
         c(ws, f"O{r}", f"=INT((L{r}-D{r})/G{r})", F0)
         c(ws, f"P{r}", f"=N{r}*O{r}", F0)
         c(ws, f"Q{r}", f"=P{r}*PI()*B{r}^2/4/(L{r}*M{r})", FP)
@@ -862,6 +891,180 @@ def _bobina_madre(ws):
         r = rp + 4
     g.nota(ws, r - 1, "Patrones y participaciones por programación lineal sobre la demanda 2026-2035 (mínimo acero "
                       "comprado); si cambia la demanda o una medida, hay que recalcularlos.")
+
+
+# ------------------------------------------------------------------ Nesting
+CAND = [("1 kg", 1220, 2440, "Q12"), ("1 kg", 1000, 2000, "Q13"), ("2,5 kg", 1220, 2440, "Q8"),
+        ("5 kg", 1000, 2000, "Q7"), ("5 kg", 1220, 2440, "Q15"), ("10 kg", 1500, 3000, "Q9"),
+        ("10 kg", 1220, 2440, "Q16"), ("25 kg", 1500, 3000, "Q10"), ("25 kg", 1500, 3000, "Q17"),
+        ("50 kg", 1500, 3000, "Q10"), ("50 kg", 1500, 3000, "Q17"), ("70 kg", 1500, 3000, "Q11"),
+        ("70 kg", 1500, 3000, "Q18"), ("100 kg", 1500, 3000, "Q11"), ("100 kg", 1500, 3000, "Q18")]
+# patrones de 3,2 mm (1500 × 3000): (nombre, franjas, 25 kg, 50 kg, etapas, golpes G1, golpes G2, tandas de G2)
+PAT32 = [("P1", "3 franjas de 995,5: 1 de 50 kg (640) + 2 de 25 kg (tramo de 858,5 cortado en 493 + 493)", 6, 3, 3,
+          3, 6, 3),
+         ("P2", "2 franjas de 995,5 con 2 de 50 kg + 1 franja como P1 (= ⅓ P1 + ⅔ P3)", 2, 5, 3, 3, 4, 2),
+         ("P3", "3 franjas de 995,5 con 2 de 50 kg", 0, 6, 2, 3, 3, 1.5),
+         ("P4", "3 franjas de 858,5 con 3 de 25 kg", 9, 0, 2, 3, 4.5, 1.5)]
+PAT475 = [("3 de 70 kg + 1 de 100 kg (hoja mixta)", 3, 1), ("4 de 70 kg", 4, 0), ("3 de 100 kg", 0, 3),
+          ("1 de 70 kg + 2 de 100 kg", 1, 2)]
+NA0, NC0, ND0 = 6, 59, 67      # filas: hojas candidatas, patrones de 4,75 mm, discos
+
+
+def h_nesting(wb):
+    ws = g.hoja(wb, "Nesting", [30, 11, 11, 9, 11, 10, 12, 12, 10, 10, 11, 10, 11, 12, 30])
+    titulo(ws, "Nesting: ¿es el mejor corte?",
+           "Todas las hojas cotizadas y todos los patrones de guillotina con el 1.er corte por el lado corto (hasta "
+           "tres etapas). Los patrones salen de enumerarlos todos; la mezcla, de programación lineal.")
+    seccion(ws, NA0 - 2, "A) La hoja que conviene para cada formato (corte en dos etapas)")
+    g.cab(ws, NA0 - 1, ["Formato", "Hoja: lado corto (mm)", "lado largo (mm)", "Espesor (mm)", "Cotización",
+                        "USD/kg", "Franjas × piezas", "Piezas por hoja", "Aprovech.", "Masa de la hoja (kg)",
+                        "kg por cuerpo", "USD por cuerpo", "La más barata", "En Corte"])
+    for j, (fm, W, C, q) in enumerate(CAND):
+        r = NA0 + j
+        i = FORM.index(fm)
+        al, de, e = pz("F", i), pz("G", i), pz("E", i)
+
+        def feas(a, b):
+            return fx(f"AND({a}<={{tope1}},{a}<={{L2}},B{r}<={{L1}},OR({b}<={{tope2}},AND(INT(B{r}/{b})=1,"
+                      f"B{r}-{b}<={{tope2}})))")
+        p1 = f"IF({feas(al, de)},INT(C{r}/{al})*INT(B{r}/{de}),0)"
+        p2 = f"IF({feas(de, al)},INT(C{r}/{de})*INT(B{r}/{al}),0)"
+        c(ws, f"A{r}", fm)
+        c(ws, f"B{r}", W, F0, dato=True)
+        c(ws, f"C{r}", C, F0, dato=True)
+        c(ws, f"D{r}", f"={e}", "0.00")
+        c(ws, f"E{r}", q)
+        c(ws, f"F{r}", "=" + N["cot"][q], "0.0000")
+        c(ws, f"G{r}", f'=IF({p1}>={p2},INT(C{r}/{al})&" × "&INT(B{r}/{de}),INT(C{r}/{de})&" × "&INT(B{r}/{al}))')
+        c(ws, f"H{r}", f"=MAX({p1},{p2})", F0)
+        c(ws, f"I{r}", f"=IF(H{r}=0,0,H{r}*{al}*{de}/(B{r}*C{r}))", FP)
+        c(ws, f"J{r}", fx(f"=B{r}*C{r}*D{r}*{{dens}}/1000000"), F1)
+        c(ws, f"K{r}", f"=IF(H{r}=0,0,J{r}/H{r})", F3)
+        c(ws, f"L{r}", f"=IF(H{r}=0,0,K{r}*F{r})", F2)
+        filas = [NA0 + k for k, x in enumerate(CAND) if x[0] == fm]
+        rng = f"$L${filas[0]}:$L${filas[-1]}"
+        c(ws, f"M{r}", f'=IF(L{r}=MIN({rng}),"Sí","")', neg=True)
+        c(ws, f"N{r}", f'=IF(AND(B{r}=Corte!$B${HS0 + i},C{r}=Corte!$C${HS0 + i},F{r}={precio(e, "pH")}),"Sí","")')
+    r = NA0 + len(CAND)
+    g.nota(ws, r, "Cotizaciones de la hoja Datos (sección 5). 25 y 50 kg y 70 y 100 kg se pueden combinar en la misma "
+                  "hoja: secciones B y C.")
+    # B) 3,2 mm combinada
+    rb = NP0 - 3
+    seccion(ws, rb, "B) 3,2 mm: 25 y 50 kg en la misma hoja de 1.500 × 3.000 (corte en tres etapas)")
+    g.nota(ws, rb + 1, "En una franja de 995,5 mm (desarrollo del 50 kg) entran, a lo largo, una pieza de 50 kg (640) "
+                       "y un tramo de 858,5 que se corta a lo largo en dos piezas de 25 kg (493 + 493).")
+    g.cab(ws, NP0 - 1, ["Patrón", "Franjas", "", "", "25 kg por hoja", "50 kg por hoja", "Golpes G1 por hoja",
+                        "Golpes G2 por hoja", "Tandas de G2 por hoja", "Etapas", "Aprovech."])
+    ws.merge_cells(start_row=NP0 - 1, start_column=2, end_row=NP0 - 1, end_column=4)
+    a25, d25, a50, d50 = pz("F", 4), pz("G", 4), pz("F", 5), pz("G", 5)
+    for k, (nom, txt, n25, n50, et, g1, g2, ta) in enumerate(PAT32):
+        r = NP0 + k
+        c(ws, f"A{r}", nom, neg=True)
+        c(ws, f"B{r}", txt)
+        ws.merge_cells(start_row=r, start_column=2, end_row=r, end_column=4)
+        for col, v, fmt in (("E", n25, F0), ("F", n50, F0), ("G", g1, F2), ("H", g2, F2), ("I", ta, F2),
+                            ("J", et, F0)):
+            c(ws, f"{col}{r}", v, fmt, dato=True)
+        c(ws, f"K{r}", f"=(E{r}*{a25}*{d25}+F{r}*{a50}*{d50})/(Corte!$B${HS0 + 4}*Corte!$C${HS0 + 4})", FP)
+    r = NP0 + len(PAT32)
+    g.nota(ws, r, "Golpes de G2 en P1: cada tanda de 2 franjas lleva 2 golpes (pieza de 50 kg y tramo) y cada tanda "
+                  "de 2 tramos girados, 2 más (493 y el recorte). El plan usa P1, P3 y P4: P2 da las mismas hojas.")
+    rc = r + 2
+    seccion(ws, rc, "Controles de P1 (con las medidas del plano)")
+    W, C = f"Corte!$B${HS0 + 4}", f"Corte!$C${HS0 + 4}"
+    ctl = [("Dos piezas de 25 kg a lo ancho de la franja de 50 kg", f"=2*{a25}", f"={d50}", "<="),
+           ("Pieza de 50 kg + tramo de 25 kg a lo largo de la franja", f"={a50}+{d25}", f"={W}", "<="),
+           ("Tres franjas a lo largo de la hoja", f"=3*{d50}", f"={C}", "<="),
+           ("Franja dentro del tope de G1", f"={d50}", fx("={tope1}"), "<="),
+           ("Corte a lo largo (493) dentro del tope de G2", f"={a25}", fx("={tope2}"), "<=")]
+    g.cab(ws, rc + 1, ["Control", "Medida (mm)", "Límite (mm)", "", "Resultado"])
+    for k, (t, v, lim, op) in enumerate(ctl):
+        r = rc + 2 + k
+        c(ws, f"A{r}", t)
+        c(ws, f"B{r}", v, "0.0")
+        c(ws, f"C{r}", lim, "0.0")
+        c(ws, f"E{r}", f'=IF(B{r}<=C{r},"OK (sobran "&TEXT(C{r}-B{r},"0.0")&" mm)","No entra")')
+    r = rc + 2 + len(ctl)
+    g.nota(ws, r, "Sobran 1,5 mm a lo largo de la franja: la chapa laminada en caliente viene con tolerancia de ancho "
+                  "+0 (nunca más angosta), así que el recorte final siempre existe.")
+    # plan del año de referencia
+    rp = r + 2
+    seccion(ws, rp, "Plan del año de referencia: cada formato en su hoja o combinados (mezcla de patrones)")
+    g.cab(ws, rp + 1, ["Concepto", "Separados (2 etapas)", "Combinados", "Diferencia"])
+    U4, U5 = (anio_ref(f"Cálculo!$C${R[k]}:$L${R[k]}") for k in ("U4", "U5"))
+    pk = {k: anio_ref(f"Cálculo!$C${R['B_p' + str(k)]}:$L${R['B_p' + str(k)]}") for k in KP}
+    masa = f"Corte!$W${HS0 + 4}"
+    filas = [("Cuerpos de 25 kg", f"={U4}", f"={U4}", F0),
+             ("Cuerpos de 50 kg", f"={U5}", f"={U5}", F0),
+             ("Hojas de 3,2 mm", f"={U4}/Corte!$I${HS0 + 4}+{U5}/Corte!$I${HS0 + 5}",
+              "=" + "+".join(pk[k] for k in KP), F1),
+             ("Acero (t)", f"=B{{h}}*{masa}/1000", f"=C{{h}}*{masa}/1000", F1),
+             ("Aprovechamiento", f"=({U4}*{a25}*{d25}+{U5}*{a50}*{d50})/(B{{h}}*{W}*{C})",
+              f"=({U4}*{a25}*{d25}+{U5}*{a50}*{d50})/(C{{h}}*{W}*{C})", FP),
+             ("Costo del acero (USD)", f"=B{{t}}*1000*{precio(pz('E', 4), 'pH')}",
+              f"=C{{t}}*1000*{precio(pz('E', 4), 'pH')}", F0)]
+    rh = rp + 2 + 2
+    rt = rp + 2 + 3
+    for k, (t, v1, v2, fmt) in enumerate(filas):
+        r = rp + 2 + k
+        c(ws, f"A{r}", t)
+        c(ws, f"B{r}", v1.replace("{h}", str(rh)).replace("{t}", str(rt)), fmt)
+        c(ws, f"C{r}", v2.replace("{h}", str(rh)).replace("{t}", str(rt)), fmt)
+        c(ws, f"D{r}", f"=C{r}-B{r}", fmt)
+    r = rp + 2 + len(filas)
+    g.nota(ws, r + 1, "Plan: P1 hasta cubrir el 25 kg (o el 50 kg, si es menos de la mitad) y el resto en P3 o P4. Es el "
+                      "mínimo de hojas (Word «Esquema de corte en guillotina», 5.2).")
+    c(ws, f"A{r}", "Combinar conviene", neg=True)
+    c(ws, f"B{r}", f'=IF(C{rt}<B{rt},"Sí: ahorra "&TEXT(B{rh}-C{rh},"0")&" hojas y USD "&TEXT(B{rt + 2}-C{rt + 2},'
+                   f'"#,##0")&" en el año","No")', neg=True)
+    ws.merge_cells(start_row=r, start_column=2, end_row=r, end_column=5)
+    # promedios del plan para los Dimensionamientos (25 y 50 kg)
+    re_ = r + 2
+    seccion(ws, re_, "Promedio por hoja de 3,2 mm con el plan elegido (va a Corte, tabla para los Dimensionamientos)")
+    tot = "(" + "+".join(pk[k] for k in KP) + ")"
+    prom = [("Piezas por hoja", f"=IF({tot}=0,0,({U4}+{U5})/{tot})"),
+            ("Golpes G1 por hoja", "=IF({t}=0,0,(" + "+".join(f"{pk[k]}*G{NP0 + k - 1}" for k in KP) + ")/{t})"),
+            ("Golpes G2 por hoja", "=IF({t}=0,0,(" + "+".join(f"{pk[k]}*H{NP0 + k - 1}" for k in KP) + ")/{t})"),
+            ("Tandas de G2 por hoja", "=IF({t}=0,0,(" + "+".join(f"{pk[k]}*I{NP0 + k - 1}" for k in KP) + ")/{t})")]
+    for k, (t, v) in enumerate(prom):
+        r = re_ + 1 + k
+        c(ws, f"A{r}", t)
+        c(ws, f"B{r}", v.replace("{t}", tot), F2)
+    assert re_ + 1 == NPROM, re_
+    # C) 4,75 mm
+    seccion(ws, NC0 - 2, "C) 4,75 mm: 70 y 100 kg en la hoja de 1.500 × 3.000")
+    g.cab(ws, NC0 - 1, ["Patrón", "70 kg por hoja", "100 kg por hoja", "", "Aprovech."])
+    a70, d70, a100, d100 = pz("F", 6), pz("G", 6), pz("F", 7), pz("G", 7)
+    for k, (t, n70, n100) in enumerate(PAT475):
+        r = NC0 + k
+        c(ws, f"A{r}", t)
+        c(ws, f"B{r}", n70, F0, dato=True)
+        c(ws, f"C{r}", n100, F0, dato=True)
+        c(ws, f"E{r}", f"=(B{r}*{a70}*{d70}+C{r}*{a100}*{d100})/(Corte!$B${HS0 + 7}*Corte!$C${HS0 + 7})", FP)
+    g.nota(ws, NC0 + len(PAT475), "La mezcla óptima es la del plan actual: hojas mixtas hasta agotar los 70 kg y el resto "
+                                  "de 100 kg solos (77,5 % en 2035).")
+    # D) discos
+    seccion(ws, ND0 - 2, "D) Discos: fleje de una fila o de dos filas al tresbolillo (detalle en Corte, sección C)")
+    g.cab(ws, ND0 - 1, ["Pieza", "Ancho 1 fila (mm)", "Aprovech. 1 fila", "Ancho 2 filas (mm)", "Aprovech. 2 filas",
+                        "kg de fleje por año, 1 fila", "kg, 2 filas", "Ahorro (kg)"])
+    for i, d in enumerate(DC.DISC):
+        r, rc_ = ND0 + i, DC0 + i
+        ud = anio_ref(f"Cálculo!$C${R[f'D{i}']}:$L${R[f'D{i}']}")
+        c(ws, f"A{r}", f"={'Corte!A' + str(rc_)}")
+        c(ws, f"B{r}", f"=Corte!$T${rc_}", "0.0")
+        c(ws, f"C{r}", f"=Corte!$U${rc_}", FP)
+        c(ws, f"D{r}", f"=Corte!$V${rc_}", "0.0")
+        c(ws, f"E{r}", f"=Corte!$W${rc_}", FP)
+        c(ws, f"F{r}", f"={ud}*Corte!$X${rc_}", F0)
+        c(ws, f"G{r}", f"={ud}*Corte!$Y${rc_}", F0)
+        c(ws, f"H{r}", f"=F{r}-G{r}", F0)
+    r = ND0 + len(DC.DISC)
+    c(ws, f"A{r}", "Total", neg=True)
+    for col in "FGH":
+        c(ws, f"{col}{r}", f"=SUM({col}{ND0}:{col}{r - 1})", F0, neg=True)
+    g.nota(ws, r + 1, "Dos filas al tresbolillo: centros de una fila corridos medio paso y separados paso × √3/2, así "
+                      "entre discos de filas vecinas queda el mismo puente de avance.")
+    ws.freeze_panes = "B4"
 
 
 # ------------------------------------------------------------------ Cálculo
@@ -1007,10 +1210,11 @@ def main():
     h_demanda(wb)
     h_piezas(wb)
     h_corte(wb)
+    h_nesting(wb)
     h_calculo(wb)
     wb.remove(h_resumen_placeholder)
     h_resumen(wb)
-    orden = ["Links", "Resumen", "Datos", "Demanda", "Piezas", "Corte", "Cálculo"]
+    orden = ["Links", "Resumen", "Datos", "Demanda", "Piezas", "Corte", "Nesting", "Cálculo"]
     wb._sheets = [wb[n] for n in orden]
     wb.active = 1
     for ws in wb.worksheets:
