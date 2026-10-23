@@ -1,14 +1,9 @@
 {
   "framework": null,
   "installCommand": "echo sin dependencias",
-  "buildCommand": "echo app ya armada en trazabilidad/app/index.html",
-  "outputDirectory": "trazabilidad/app",
+  "buildCommand": "mkdir -p dist/gestion && cp trazabilidad/simple/index.html dist/index.html && cp trazabilidad/app/index.html dist/gestion/index.html",
+  "outputDirectory": "dist",
   "cleanUrls": true,
-  "rewrites": [
-    { "source": "/m/:serie", "destination": "/index.html" },
-    { "source": "/r/:remito", "destination": "/index.html" },
-    { "source": "/p/:sscc", "destination": "/index.html" }
-  ],
   "headers": [
     { "source": "/(.*)", "headers": [{ "key": "X-Content-Type-Options", "value": "nosniff" }, { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }] }
   ]
