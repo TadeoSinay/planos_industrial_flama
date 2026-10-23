@@ -132,6 +132,45 @@ td.n, th.n { text-align: right; font-variant-numeric: tabular-nums }
 .lugar .cod { display: grid; gap: 1px; border: 0; background: none; padding: 0; text-align: left; cursor: pointer; min-width: 0 }
 .lugar .cod b { font: 600 11.5px var(--cond); white-space: nowrap; overflow: hidden; text-overflow: ellipsis } .lugar .cod:hover b { color: var(--accent) }
 .lugar .cod i { display: block; height: 4px; background: linear-gradient(to right, var(--c) var(--w), #d9dde2 var(--w)); border-radius: 2px }
+/* formato de almacenamiento */
+svg.fmt { display: block; flex: none }
+.fmt-nom { display: flex; gap: 10px; align-items: center } .fmt-txt { font-size: 12.5px; font-weight: 600; color: var(--text-2) }
+.lug-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 4px }
+.saltos button { display: inline-flex; align-items: center; gap: 5px }
+.tarjeta .t1 svg.fmt { opacity: .95 }
+/* semáforo */
+.sem-ley { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px }
+.sem-ley > div { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 2px 10px; font-size: 13px }
+.sem-ley > div span:last-child { grid-column: 2; color: var(--text-2) } .sem-ley .luz { grid-row: span 2; margin-top: 2px }
+.sem-ley .sem-barra-ley { grid-column: 1 / -1; grid-template-columns: 260px minmax(0, 1fr); align-items: center }
+.luz { width: 16px; height: 16px; border-radius: 50%; display: inline-block; flex: none; background: #d5d9de; box-shadow: inset 0 0 0 1px rgb(0 0 0 / 12%) }
+.luz.rojo { background: #e0182f; box-shadow: 0 0 0 3px #fbd3d8 } .luz.amarillo { background: #f2b200; box-shadow: 0 0 0 3px #fdeec2 } .luz.verde { background: #1f9d48; box-shadow: 0 0 0 3px #cfeed8 }
+.sem-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr)); gap: 14px; align-items: start }
+.sem-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; scroll-margin-top: 90px; min-width: 0 }
+.sem-card > header { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: center }
+.sem-card h3 { font: 700 17px var(--cond); text-transform: uppercase; letter-spacing: .03em; margin-bottom: 6px }
+.semaforo { background: #1f252c; border-radius: 14px; padding: 7px; display: grid; gap: 6px; width: 50px }
+.lamp { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: #3a424c; color: #6b7480 }
+.lamp b { font: 700 16px var(--cond) } .lamp.on { color: #fff } .lamp.on.amarillo { color: #1c2229 }
+.lamp.rojo.on { background: #e0182f; box-shadow: 0 0 12px #e0182f } .lamp.amarillo.on { background: #f2b200; box-shadow: 0 0 12px #f2b200 } .lamp.verde.on { background: #1f9d48; box-shadow: 0 0 12px #1f9d48 }
+.regla { background: var(--surface-2); border-left: 3px solid var(--mp); border-radius: 3px; padding: 8px 10px; font-size: 13px; margin: 10px 0 }
+.sem-lista details summary { cursor: pointer; color: var(--muted); font-weight: 600; font-size: 13px; padding: 6px 0 }
+.sem-fila { display: grid; grid-template-columns: 18px minmax(0, 1fr) minmax(0, 1.05fr); gap: 3px 10px; align-items: center; width: 100%; text-align: left; background: none; border: 0; border-top: 1px solid var(--border); padding: 8px 2px; cursor: pointer; color: var(--text) }
+.sem-fila:hover { background: var(--surface-2) } .sem-fila .luz { grid-row: span 2; width: 14px; height: 14px }
+.sem-cod { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap } .sem-cod b { font-size: 12px }
+.sem-txt { font-size: 12.5px; color: var(--text-2); text-align: right } .sem-bulto { font-size: 11.5px; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.sem-barra { position: relative; height: 10px; background: var(--surface-3); border-radius: 3px; display: block }
+.sem-barra i { position: absolute; top: 0; bottom: 0; left: 0 } .sem-barra i.r { background: #f3a3ad; border-radius: 3px 0 0 3px } .sem-barra i.a { background: #f8d77a } .sem-barra i.v { background: #9ed8b0 }
+.sem-barra u { position: absolute; top: -4px; bottom: -4px; width: 3px; margin-left: -1.5px; background: var(--text); border-radius: 1px }
+/* despacho */
+.pasos-d { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; padding-top: 8px }
+.paso-d { position: relative; border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; background: var(--surface-2); display: flex; flex-direction: column; gap: 6px }
+.paso-d .n { position: absolute; top: -10px; left: 12px; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; font: 700 13px var(--cond) }
+.paso-d h3 { font: 700 16px var(--cond); text-transform: uppercase; letter-spacing: .03em } .paso-d p { margin: 0; font-size: 13px; color: var(--text-2); flex: 1 }
+.paso-d .donde { font-size: 12px; font-weight: 600; color: var(--accent) }
+svg.fig-paso { width: 100%; height: auto; max-height: 130px; display: block; background: #fff; border-radius: 4px }
+.sem-pt { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 6px 0; border-top: 1px solid var(--border); font-size: 13px }
+.sem-pt .der { text-align: right } .sem-pt .mut { font-size: 11.5px }
 /* PT zonificado */
 .zonas { display: grid; gap: 14px; grid-template-columns: repeat(12, minmax(0, 1fr)) }
 .zona { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; min-width: 0 }
@@ -271,6 +310,7 @@ ul.actividad .hora { color: var(--muted); font-size: 12.5px; padding-top: 1px }
 .toasts { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 120 }
 .toast { background: var(--barra); color: #fff; padding: 10px 14px; border-radius: var(--radius); font-weight: 600; box-shadow: 0 8px 24px rgb(0 0 0 / 20%); border-left: 4px solid var(--accent); max-width: 420px }
 @media (min-width: 1001px) { .encabezado { flex-wrap: nowrap } .marca .textos { display: none } }
+@media (min-width: 1001px) and (max-width: 1440px) { .pestanas a { padding: 0 6px; font-size: 13.5px } .encabezado { gap: 10px } .busqueda { min-width: 130px } #btn-nuevo { padding: 8px 10px } }
 @media (max-width: 1300px) and (min-width: 1001px) { .indicador .valor { font-size: 36px } .indicador { padding: 14px 14px 12px } .indicador::before { left: 14px } }
 @media (min-width: 1500px) { .marca .textos { display: flex } }
 @media (max-width: 1000px) {
@@ -279,8 +319,10 @@ ul.actividad .hora { color: var(--muted); font-size: 12.5px; padding-top: 1px }
   .layout { grid-template-columns: 1fr; height: auto } .lienzo { height: max(520px, 70vh) } .lado { max-height: 70vh }
   .busqueda { order: 3; max-width: none; flex-basis: 100% }
   .indicadores { grid-template-columns: repeat(2, 1fr) } .indicador { border-left: 0; border-top: 1px solid var(--border) }
+  .sem-ley, .pasos-d { grid-template-columns: 1fr 1fr } .sem-ley .sem-barra-ley { grid-template-columns: 1fr }
   .mapa-cuerpo { grid-template-columns: 1fr } .extremo { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 4px 10px }
 }
+@media (max-width: 600px) { .sem-ley, .pasos-d { grid-template-columns: 1fr } .sem-fila { grid-template-columns: 18px minmax(0, 1fr) } .sem-txt, .sem-bulto { text-align: left; grid-column: 2 } }
 </style>
 </head>
 <body>
@@ -533,7 +575,7 @@ const colorLinea = (l) => /Reventa/.test(l || "") ? "var(--ext)" : /^Carros/.tes
 function tarjeta(m) {
   const s = S.stock[m.cod];
   return `<button class="tarjeta" data-mp="${esc(m.cod)}" style="--c:${colorLinea(m.linea)}">
-    <span class="t1"><b>${esc(m.cod)}</b><span class="mut" style="font-size:11px">${esc(m.ref)}</span></span>
+    <span class="t1"><b>${esc(m.cod)}</b><span class="mut" style="font-size:11px;display:flex;align-items:center;gap:4px">${esc(m.ref)}${figFormato((ALM[m.alm] || {}).pref, fraccion(m), COLOR_EST[estado(m)], 22, 18)}</span></span>
     <span class="mat">${esc(m.mat.replace(/\s*\(.*\)$/, ""))}</span>${barra(m)}
     <span class="t3"><span class="num">${s ? nf(s.u, 0) : "—"} ${esc(m.um)}</span><span>pedir en ${nf(m.pp, 0)}</span></span></button>`;
 }
@@ -607,10 +649,11 @@ const COLOR_EST = { crit: "var(--critical)", pedir: "var(--warn)", ped: "var(--i
 const PEOR = ["crit", "pedir", "ped", "ok", "sin"];
 const ultimoConteo = (alm) => D.mp.filter((m) => m.alm === alm).map((m) => S.stock[m.cod])
   .filter((s) => s && /^(Planilla|Conteo)/.test(s.src)).map((s) => s.t).sort().pop();
-function lugarHtml(h) {
-  if (!h.cods.length) return `<div class="lugar libre"><em>${h.id}</em><span>libre</span></div>`;
+function lugarHtml(h, pref) {
+  if (!h.cods.length) return `<div class="lugar libre"><span class="lug-cab"><em>${h.id}</em>${figFormato(pref, 0, "#fff", 38, 31)}</span><span>libre</span></div>`;
   const est = h.cods.map(([c]) => estado(MP[c])).sort((a, b) => PEOR.indexOf(a) - PEOR.indexOf(b))[0];
-  return `<div class="lugar e-${est}"><em>${h.id}</em>${h.cods.map(([c, f]) => {
+  const prin = MP[h.cods.slice().sort((a, b) => b[1] - a[1])[0][0]];
+  return `<div class="lugar e-${est}"><span class="lug-cab"><em>${h.id}</em>${figFormato(pref, fraccion(prin), COLOR_EST[estado(prin)], 38, 31)}</span>${h.cods.map(([c, f]) => {
     const m = MP[c], s = S.stock[c], e = estado(m), w = s ? Math.min(100, s.u / (Math.max(m.max, m.pp) || 1) * 100) : 0;
     return `<button class="cod" data-mp="${esc(c)}" title="${esc(c)} · ${esc(m.mat)}${f < 1 ? ` · ${Math.round(f * 100)} % del lugar` : ""} · ${s ? nf(s.u, 1) + " " + esc(m.um) : "sin conteo"}">
       <b>${esc(c)}</b><i style="--w:${w.toFixed(0)}%;--c:${COLOR_EST[e]}"></i></button>`; }).join("")}</div>`;
@@ -622,11 +665,11 @@ function almacenHtml(a) {
   if (hs.length && hs[0].mod) {
     const mods = [...new Set(hs.map((h) => h.mod))], niv = Math.max(...hs.map((h) => h.niv));
     cuerpo = `<div class="rack-mp">${mods.map((md) => `<div class="modulo">${Array.from({ length: niv }, (_, i) => niv - i).map((n) =>
-      `<div class="nivel">${["A", "B"].map((l) => { const h = hs.find((x) => x.mod === md && x.niv === n && x.lado === l); return h ? lugarHtml(h) : `<div class="lugar nada"></div>`; }).join("")}</div>`).join("")}
+      `<div class="nivel">${["A", "B"].map((l) => { const h = hs.find((x) => x.mod === md && x.niv === n && x.lado === l); return h ? lugarHtml(h, a.pref) : `<div class="lugar nada"></div>`; }).join("")}</div>`).join("")}
       <span class="pie">módulo ${md}</span></div>`).join("")}</div>`;
-  } else cuerpo = `<div class="fila-mp">${hs.map(lugarHtml).join("")}</div>`;
-  return `<section class="alm-card ${al ? "con-alarma" : ""}" id="alm-${a.pref}"><header><div><h3>${esc(a.alm)}</h3>
-      <span class="mut">${esc(a.est)} · ${hs.length} lugares${a.m2 ? ` · ${nf(a.m2, 1)} m²` : ""} · ${ms.length} códigos</span></div>
+  } else cuerpo = `<div class="fila-mp">${hs.map((h) => lugarHtml(h, a.pref)).join("")}</div>`;
+  return `<section class="alm-card ${al ? "con-alarma" : ""}" id="alm-${a.pref}"><header><div class="fmt-nom">${figFormato(a.pref, 1, "var(--surface-3)", 46, 38)}<div><h3>${esc(a.alm)}</h3>
+      <span class="fmt-txt">${esc(FORMATO[a.pref] || "")}</span><br><span class="mut">${esc(a.est)} · ${hs.length} lugares${a.m2 ? ` · ${nf(a.m2, 1)} m²` : ""} · ${ms.length} códigos</span></div></div>
       ${al ? `<span class="pill crit">${al} para pedir</span>` : `<span class="pill ok">sin faltantes</span>`}</header>
     ${cuerpo}
     <footer><span class="mut">Último conteo: ${uc ? esc(uc) : "—"}</span><span class="acciones">
@@ -637,10 +680,11 @@ function vAlmacen() {
   const ley = [["crit", "Bajo seguridad"], ["pedir", "Pedir"], ["ped", "Pedido en camino"], ["ok", "Bien"], ["sin", "Sin conteo"]];
   return `${bandaEjemplo()}<div class="cab"><div><h1>Almacén de MP</h1>
     <p>Cada lugar con su código fijo. El color es el estado del código; la barra, el stock contra el máximo.</p></div>
-    <div class="filtros"><button class="btn pri" data-a="planilla">Cargar planilla</button><button class="btn" data-a="bajarPlanilla">Descargar planilla</button></div></div>
+    <div class="filtros"><button class="btn pri" data-a="planilla">Cargar planilla</button><button class="btn" data-a="bajarPlanilla">Descargar planilla</button><a class="btn" href="#semaforo">Semáforo</a></div></div>
     <div class="saltos">${ALMS.map((a) => { const n = D.mp.filter((m) => m.alm === a.alm && ["crit", "pedir"].includes(estado(m))).length;
-      return `<button data-salto="alm-${a.pref}">${esc(a.corto)}${n ? ` <b>${n}</b>` : ""}</button>`; }).join("")}</div>
-    <div class="leyenda" style="margin:0 0 12px">${ley.map(([k, t]) => `<span><i style="background:${COLOR_EST[k]}"></i>${t}</span>`).join("")}<span><i style="background:transparent;border:1px dashed var(--border-strong)"></i>Libre</span></div>
+      return `<button data-salto="alm-${a.pref}">${figFormato(a.pref, 1, "var(--surface-3)", 20, 16)}${esc(a.corto)}${n ? ` <b>${n}</b>` : ""}</button>`; }).join("")}</div>
+    <div class="leyenda" style="margin:0 0 12px">${ley.map(([k, t]) => `<span><i style="background:${COLOR_EST[k]}"></i>${t}</span>`).join("")}<span><i style="background:transparent;border:1px dashed var(--border-strong)"></i>Libre</span>
+      <span class="mut">· El dibujo de cada lugar es el formato en que se guarda, lleno según el stock contra el máximo.</span></div>
     <div class="almacenes">${ALMS.map(almacenHtml).join("")}</div>
     <details class="fuente"><summary>De dónde salen los lugares</summary>Lugares de cada almacén: ${esc(D.fuente.mp.split(" y ")[1] || "Almacenes")}, columna E.
       Cada código ocupa los lugares enteros de su columna U de Stock_MP (cuánto ocupa el stock máximo) y los restos de varios códigos comparten un lugar
@@ -661,6 +705,104 @@ function dlgConteo(alm) {
     });
     guardar(); cerrar(); pintar(); toast("Conteo guardado");
   });
+}
+
+// ---------------------------------------------------------------- formato de almacenamiento (dibujo)
+// Cómo se guarda cada almacén (MP-FLAMA2035 › Almacenes, columnas C e I): pilas sobre tacos, rollos acostados en rack,
+// brazos de cantilever, big bags, pallets en rack, estantería liviana, jaula de cilindros. El dibujo se llena con el
+// stock contra el máximo y toma el color del estado.
+const FORMATO = {
+  CH: "Paquetes de hojas apilados sobre tacos", FL: "Rollos acostados, un código por pallet, en rack", CA: "Atados en los brazos del cantilever",
+  PQ: "Big bags en el piso, de a 2", EM: "Pallets en rack selectivo", ID: "Cajas y rollos en estantería liviana", IM: "Pallets y cajas en rack selectivo",
+  IR: "Tambores y bidones en rack", SO: "Pallets en rack selectivo", GA: "Cilindros y baterías en jaula", CC: "Contenedores de casquetes en rack",
+  IC: "Pallets y cajas en rack", RV: "Matafuegos por modelo en la zona de reventa del PT",
+};
+function figFormato(pref, frac = 1, col = "var(--good)", w = 34, h = 28) {
+  const L = "#59626d", V = "#fff", f = Math.max(0, Math.min(1, frac || 0));
+  const k = (n) => f > 0 ? Math.max(1, Math.round(f * n)) : 0;
+  const r = (x, y, ww, hh, on, rx = 0.6) => `<rect x="${x}" y="${y}" width="${ww}" height="${hh}" rx="${rx}" fill="${on ? col : V}" stroke="${L}" stroke-width=".8"/>`;
+  const pallet = `<rect x="3" y="24.5" width="28" height="2" fill="${L}"/><rect x="4" y="26.5" width="3" height="1.3" fill="${L}"/><rect x="15.5" y="26.5" width="3" height="1.3" fill="${L}"/><rect x="27" y="26.5" width="3" height="1.3" fill="${L}"/>`;
+  let g;
+  switch (pref) {
+    case "CH": { const n = k(6); g = [5, 15.5, 26].map((x) => `<rect x="${x}" y="24.5" width="3" height="3" fill="${L}"/>`).join("") + Array.from({ length: 6 }, (_, i) => r(3, 21.4 - i * 3.6, 28, 3, i < n, 0.3)).join(""); break; }
+    case "FL": { const n = k(3); g = pallet + Array.from({ length: 3 }, (_, i) => r(4, 18 - i * 7, 26, 6, i < n, 3)).join(""); break; }
+    case "CA": { const n = k(3); g = `<rect x="3" y="2" width="3" height="25" fill="${L}"/><rect x="1" y="26" width="9" height="1.6" fill="${L}"/>` +
+      [6, 13.5, 21].map((y, i) => `<line x1="6" y1="${y + 3}" x2="32" y2="${y + 1.5}" stroke="${L}" stroke-width="1.2"/>` +
+        [0, 1, 2].map((j) => `<circle cx="${12 + j * 6.5}" cy="${y + 0.2}" r="2.3" fill="${2 - i < n ? col : V}" stroke="${L}" stroke-width=".7"/>`).join("")).join(""); break; }
+    case "PQ": { const hh = 19.5 * f; g = `<path d="M10 6.5 q2 -4.5 4 0 M20 6.5 q2 -4.5 4 0" fill="none" stroke="${L}" stroke-width=".9"/><rect x="6" y="6" width="22" height="20.5" rx="3" fill="${V}" stroke="${L}" stroke-width=".8"/>` +
+      (hh > 0 ? `<rect x="6.5" y="${(26 - hh).toFixed(1)}" width="21" height="${hh.toFixed(1)}" rx="2.5" fill="${col}"/>` : ""); break; }
+    case "GA": { const n = k(4); g = `<rect x="1.5" y="1.5" width="31" height="25.5" fill="none" stroke="#b9bec5" stroke-dasharray="1.5 1"/>` +
+      Array.from({ length: 4 }, (_, i) => r(4.5 + i * 6.8, 7, 5.2, 19, i < n, 2.4) + `<rect x="${6 + i * 6.8}" y="4" width="2.2" height="3" fill="${L}"/>`).join(""); break; }
+    case "ID": { const n = k(6); g = `<path d="M2 2 V27 M32 2 V27 M2 13.5 H32 M2 26.5 H32" stroke="${L}" stroke-width="1.1" fill="none"/>` +
+      Array.from({ length: 6 }, (_, i) => r(4 + (i % 3) * 9.3, i < 3 ? 18.3 : 5.3, 8, 8, i < n, 0.5)).join(""); break; }
+    case "RV": { const n = k(3); g = pallet + Array.from({ length: 3 }, (_, i) => `<rect x="${6 + i * 8.5}" y="9" width="6" height="15.5" rx="2.5" fill="${i < n ? col : V}" stroke="${L}" stroke-width=".8"/><rect x="${7.8 + i * 8.5}" y="6" width="2.4" height="3" fill="${L}"/>`).join(""); break; }
+    case "CC": { const n = k(4); g = `<path d="M3 8 V26 H31 V8" fill="none" stroke="${L}" stroke-width="1.2"/>` +
+      Array.from({ length: 4 }, (_, i) => `<path d="M7 ${24 - i * 4} Q17 ${16 - i * 4} 27 ${24 - i * 4} Z" fill="${i < n ? col : V}" stroke="${L}" stroke-width=".8"/>`).join(""); break; }
+    case "IR": { const hh = 15.5 * f; g = pallet + [5, 18].map((x) => `<rect x="${x}" y="8.5" width="11" height="16" rx="1.2" fill="${V}" stroke="${L}" stroke-width=".8"/>` +
+      (hh > 0 ? `<rect x="${x + 0.5}" y="${(24.5 - hh).toFixed(1)}" width="10" height="${hh.toFixed(1)}" fill="${col}"/>` : "") + `<line x1="${x}" y1="13.5" x2="${x + 11}" y2="13.5" stroke="${L}" stroke-width=".5"/><line x1="${x}" y1="19.5" x2="${x + 11}" y2="19.5" stroke="${L}" stroke-width=".5"/>`).join(""); break; }
+    default: { const n = k(6); g = pallet + Array.from({ length: 6 }, (_, i) => r(4 + (i % 2) * 13.5, 18.4 - Math.floor(i / 2) * 7.2, 12.5, 6.4, i < n, 0.4)).join(""); }
+  }
+  return `<svg class="fmt" viewBox="0 0 34 28" width="${w}" height="${h}" aria-hidden="true">${g}</svg>`;
+}
+const fraccion = (m) => { const s = S.stock[m.cod]; return s ? s.u / (Math.max(m.max, m.pp) || 1) : 0; };
+
+// ---------------------------------------------------------------- semáforo de cada almacén
+// Rojo: bajo la seguridad · amarillo: en el punto de pedido o con el pedido en camino · verde: sobre el punto de pedido.
+// Se cuenta en bultos, que es lo que se ve en el almacén (Stock_MP M y N: unidad de compra y su contenido). La regla de
+// la tarjeta kanban de cada formato es criterio: sale de cómo se dispone cada almacén (Almacenes, columna I).
+const REGLA = {
+  CH: "Una pila por formato, con una marca en el poste a la altura del punto de pedido. Se toma el paquete de arriba: cuando la pila baja a la marca, la tarjeta de la pila va al tablero de pedidos.",
+  FL: "Un código por pallet. El pallet que deja el stock en el punto de pedido lleva la tarjeta: cuando la pinza lo baja al piso del rack, la tarjeta va al tablero.",
+  CA: "Un atado por brazo y una medida por nivel. El brazo del punto de pedido está pintado de amarillo: cuando queda a la vista, se pide.",
+  PQ: "Big bags de a 2 por fecha de llegada; bolsas y cajas sobre pallet. El bulto del punto de pedido lleva la tarjeta colgada: cuando se empieza, va al tablero.",
+  RACK: "Abajo el pallet o la caja en uso, arriba la reposición (Word de MP, sección 8). El bulto del punto de pedido lleva la tarjeta: cuando se baja o se abre, la tarjeta va al tablero.",
+  ID: "Doble cajón: el segundo cajón (o rollo) es el punto de pedido y tiene su tarjeta. Cuando se empieza el segundo, se pide. Obleas y estampillas en el estante con candado.",
+  GA: "Cilindros llenos con capuchón y baterías conectadas al manifold. Cuando quedan los llenos del punto de pedido, se pide; el vacío vuelve al proveedor con la tarjeta.",
+  RV: "Lugares por modelo en la zona de reventa del PT. El lugar del punto de pedido lleva la tarjeta: cuando se despacha la última unidad de ese lugar, se pide.",
+};
+const reglaDe = (a) => REGLA[a.pref] || REGLA.RACK;
+const LUZ = { crit: "rojo", pedir: "amarillo", ped: "amarillo", ok: "verde", sin: "apagado" };
+const enBultos = (m, u) => u / (m.cont || 1);
+function filaSemaforo(m) {
+  const s = S.stock[m.cod], e = estado(m), ss = enBultos(m, m.ss), pp = Math.max(ss, enBultos(m, m.pp)), mx = Math.max(pp, enBultos(m, m.max)) || 1;
+  const hay = s ? enBultos(m, s.u) : null, tope = Math.max(mx, hay || 0) * 1.04, pc = (x) => (x / tope * 100).toFixed(1);
+  const ppN = Math.ceil(pp - 1e-9), cuando = ppN <= 1 ? "al abrir el último bulto" : `cuando quedan ${nf(ppN)} bultos`;
+  const d = hay == null ? 0 : hay < 10 ? 1 : 0;
+  return `<button class="sem-fila" data-mp="${esc(m.cod)}" title="${esc(m.bulto)}"><span class="luz ${LUZ[e]}"></span>
+    <span class="sem-cod"><b class="mono">${esc(m.cod)}</b> ${esc(m.mat.replace(/\s*\(.*\)$/, ""))}</span>
+    <span class="sem-txt">${hay != null ? `hay <b class="num">${nf(hay, d)}</b>` : "sin conteo"} · pedir ${cuando}${e === "ped" ? ' · <span class="pill info">pedido en camino</span>' : ""}</span>
+    <span class="sem-barra"><i class="r" style="width:${pc(ss)}%"></i><i class="a" style="left:${pc(ss)}%;width:${pc(pp - ss)}%"></i><i class="v" style="left:${pc(pp)}%;width:${pc(mx - pp)}%"></i>${hay != null ? `<u style="left:${pc(Math.min(hay, tope))}%"></u>` : ""}</span>
+    <span class="sem-bulto mut">bulto: ${esc(m.bulto)} · máximo ${nf(mx, mx < 10 ? 1 : 0)}</span></button>`;
+}
+const lampara = (cls, n, t) => `<span class="lamp ${cls} ${n ? "on" : ""}" title="${t}"><b class="num">${n}</b></span>`;
+function tarjetaSemaforo(a) {
+  const ms = D.mp.filter((m) => m.alm === a.alm).sort((x, y) => PEOR.indexOf(estado(x)) - PEOR.indexOf(estado(y)));
+  const c = (ks) => ms.filter((m) => ks.includes(estado(m))).length, verdes = ms.filter((m) => ["ok", "sin"].includes(estado(m)));
+  const resto = ms.filter((m) => !verdes.includes(m));
+  return `<section class="sem-card" id="sem-${a.pref}"><header>
+      <div class="semaforo" aria-label="Semáforo">${lampara("rojo", c(["crit"]), "Bajo la seguridad")}${lampara("amarillo", c(["pedir", "ped"]), "En el punto de pedido o pedido")}${lampara("verde", c(["ok"]), "Sobre el punto de pedido")}</div>
+      <div class="sem-tit"><h3>${esc(a.alm)}</h3><span class="fmt-nom">${figFormato(a.pref, 1, "var(--surface-3)", 40, 33)}<span><b>${esc(FORMATO[a.pref] || a.est)}</b><br><span class="mut">${esc(a.est)} · ${a.lug} lugares · ${ms.length} códigos</span></span></span></div></header>
+    <p class="regla"><b>Cómo funciona el kanban acá</b> <span class="pill idle">criterio</span><br>${esc(reglaDe(a))}</p>
+    <div class="sem-lista">${resto.map(filaSemaforo).join("") || `<p class="mut" style="margin:4px 0">Todo en verde.</p>`}
+      ${verdes.length ? `<details><summary>${verdes.length} en verde o sin conteo</summary>${verdes.map(filaSemaforo).join("")}</details>` : ""}</div></section>`;
+}
+function vSemaforo() {
+  const c = (k) => D.mp.filter((m) => k.includes(estado(m))).length;
+  return `${bandaEjemplo()}<div class="cab"><div><h1>Semáforo de los almacenes</h1>
+    <p>Cada almacén con su semáforo y la regla de su tarjeta kanban. Se cuenta en bultos, como se ve en la estantería.</p></div>
+    <div class="filtros"><button class="btn pri" data-a="planilla">Cargar planilla</button><a class="btn" href="#almacen">Ver los lugares</a></div></div>
+    <div class="sem-ley">
+      <div><span class="luz rojo"></span><b>Rojo · bajo la seguridad</b><span>Quedó menos que la seguridad (Stock_MP, col. L). Pedido urgente y avisar a la línea. <b class="num">${c(["crit"])}</b> códigos.</span></div>
+      <div><span class="luz amarillo"></span><b>Amarillo · pedir</b><span>Llegó al punto de pedido (seguridad + lo que se consume mientras llega, L + K): la tarjeta va al tablero y sale el pedido. <b class="num">${c(["pedir", "ped"])}</b> códigos.</span></div>
+      <div><span class="luz verde"></span><b>Verde · hay stock</b><span>Sobre el punto de pedido. No se hace nada hasta la próxima revisión. <b class="num">${c(["ok"])}</b> códigos.</span></div>
+      <div class="sem-barra-ley"><span class="sem-barra"><i class="r" style="width:18%"></i><i class="a" style="left:18%;width:27%"></i><i class="v" style="left:45%;width:51%"></i><u style="left:60%"></u></span>
+        <span class="mut">La barra va de 0 al máximo (col. S) en bultos: rojo hasta la seguridad, amarillo hasta el punto de pedido, verde hasta el máximo. La raya negra es lo que hay.</span></div></div>
+    <div class="saltos">${ALMS.map((a) => { const n = D.mp.filter((m) => m.alm === a.alm && ["crit", "pedir"].includes(estado(m))).length;
+      return `<button data-salto="sem-${a.pref}">${esc(a.corto)}${n ? ` <b>${n}</b>` : ""}</button>`; }).join("")}</div>
+    <div class="sem-grid">${ALMS.map(tarjetaSemaforo).join("")}</div>
+    <details class="fuente"><summary>De dónde salen los números</summary>${esc(D.fuente.mp)}. Bultos = unidades ÷ contenido del bulto (Stock_MP, col. N).
+      «Pedir cuando quedan N bultos» redondea el punto de pedido hacia arriba al bulto entero: se pide un poco antes, nunca después (criterio).
+      La revisión periódica de cada proveedor (Word de MP, sección 9) sigue igual; el semáforo avisa si entre dos revisiones algo cruza el punto de pedido.</details>`;
 }
 
 // ---------------------------------------------------------------- planilla de conteo (Excel)
@@ -852,15 +994,137 @@ function dlgSlot(id) {
     <form class="campos" id="fMover"><div class="campo"><label for="mvSlot">Mover a</label><select id="mvSlot">${libres().map((s) => `<option>${s}</option>`).join("")}</select></div>
       <div class="campo" style="align-self:end"><button class="btn" type="submit">Mover</button></div></form>
     <form class="campos" id="fDesp"><div class="campo"><label for="dRem">Remito</label><input id="dRem" required></div>
+      <div class="campo"><label for="dN">Unidades</label><input id="dN" type="number" min="1" value="${p.cant}"></div>
       <div class="campo"><label for="dVeh">Vehículo</label><select id="dVeh">${D.desp.slice(0, 3).map((x) => `<option ${x.veh === v ? "selected" : ""}>${esc(x.veh)}</option>`).join("")}</select></div>
       <div class="campo" style="align-self:end"><button class="btn pri" type="submit">Despachar</button></div></form>`);
   $("#fMover").addEventListener("submit", (ev) => { ev.preventDefault(); const to = $("#mvSlot").value; S.pallets[to] = p; delete S.pallets[id]; guardar(); cerrar(); pintar(); toast(`${p.id} a ${to}`); });
   $("#fDesp").addEventListener("submit", (ev) => {
     ev.preventDefault();
-    S.regs.push({ id: "DES-" + String(sig("DES")).padStart(4, "0"), f: "DES", t: ahora(), res: "Despachado", v: { remito: $("#dRem").value, veh: $("#dVeh").value, pallet: p.id, prod: p.prod, cant: p.cant, series: p.series, lote: p.lote, slot: id } });
-    S.rev.forEach((r) => { if (r.slot === id) { r.estado = "Despachado"; r.remito = $("#dRem").value; } });
-    delete S.pallets[id]; guardar(); cerrar(); pintar(); toast(`${p.id} despachado`);
+    const r = despachar(id, $("#dN").value, $("#dRem").value, $("#dVeh").value);
+    cerrar(); pintar(); if (r) toast(`${r.id}: ${r.v.cant} u, series ${r.v.series}`);
   });
+}
+
+// ---------------------------------------------------------------- despacho: la salida con el n° de serie
+// El n° de serie nace en el marcado del cuerpo (FAB-02), se repite en la etiqueta de serie (planos FL_MAT hoja 4: etiqueta
+// GS1 de n° de serie en el costado), pasa a la etiqueta del pallet al liberar el lote (FAB-11) y sale escrito en el remito
+// (registro DES). El QR de la etiqueta de serie es para el cliente; adentro de la planta se usa el número impreso.
+const rangoSerie = (s) => { const m = /^\s*(\d+)\s*[–-]\s*(\d+)\s*$/.exec(String(s || "")); return m ? [+m[1], +m[2]] : null; };
+const n6 = (x) => String(x).padStart(6, "0");
+// Despacha n unidades de un pallet: si las series son un rango, salen las primeras y el resto queda en el pallet.
+function despachar(slot, n, remito, veh) {
+  const p = S.pallets[slot]; if (!p) return null;
+  const r = rangoSerie(p.series);
+  n = r ? Math.max(1, Math.min(+n || p.cant, p.cant)) : p.cant;
+  const salen = r ? (n === 1 ? String(r[0]) : `${r[0]}-${r[0] + n - 1}`) : p.series;
+  const reg = { id: "DES-" + String(sig("DES")).padStart(4, "0"), f: "DES", t: ahora(), res: "Despachado",
+    v: { remito, veh, pallet: p.id, prod: p.prod, cant: n, series: salen, lote: p.lote, slot } };
+  S.regs.push(reg);
+  if (r && n < p.cant) { p.cant -= n; p.series = r[0] + n === r[1] ? String(r[1]) : `${r[0] + n}-${r[1]}`; }
+  else { S.rev.forEach((x) => { if (x.slot === slot && x.estado === "En PT") { x.estado = "Despachado"; x.remito = remito; } }); delete S.pallets[slot]; }
+  guardar();
+  return reg;
+}
+function figCuerpo(serie) {
+  return `<svg viewBox="0 0 150 96" class="fig-paso" role="img" aria-label="Marcado en el cuerpo"><defs><linearGradient id="gcu" x1="0" x2="1"><stop offset="0" stop-color="#8e1a14"/><stop offset=".5" stop-color="#c8312a"/><stop offset="1" stop-color="#7a1611"/></linearGradient></defs>
+    <path d="M8 30 Q8 12 40 12 Q72 12 72 30 Z" fill="url(#gcu)"/><rect x="8" y="30" width="64" height="66" fill="url(#gcu)"/>
+    <line x1="40" y1="31" x2="40" y2="96" stroke="#5a0d09" stroke-width="1.4" stroke-dasharray="4 2"/>
+    <rect x="12" y="35" width="27" height="6" fill="none" stroke="#fff" stroke-width=".8"/>
+    <path d="M39 38 L80 30 M39 41 L80 58" stroke="#1c2229" stroke-width=".6"/>
+    <rect x="80" y="26" width="66" height="36" rx="3" fill="#a52520" stroke="#1c2229"/>
+    <text x="84" y="40" font-size="7.6" fill="#ffe5e2" font-family="Consolas, monospace" textLength="50" lengthAdjust="spacingAndGlyphs">FLAMA S.A.</text>
+    <text x="84" y="52" font-size="7.6" fill="#ffe5e2" font-family="Consolas, monospace" textLength="50" lengthAdjust="spacingAndGlyphs">N°${n6(serie)} 26</text>
+    <rect x="136" y="44" width="7" height="9" fill="none" stroke="#ffe5e2" stroke-width=".7"/>
+    <text x="113" y="74" font-size="6.5" fill="#4f5863" text-anchor="middle" font-family="Barlow, Arial">a 15 mm de la costura</text><text x="113" y="83" font-size="6.5" fill="#4f5863" text-anchor="middle" font-family="Barlow, Arial">y 20 mm del borde</text></svg>`;
+}
+function figEtqSerie(serie, modelo = "ABC 5 kg") {
+  return `<svg viewBox="0 0 150 96" class="fig-paso" role="img" aria-label="Etiqueta de n° de serie"><rect x="0" y="8" width="150" height="88" rx="6" fill="#c8312a"/>
+    <rect x="22" y="22" width="106" height="60" rx="3" fill="#fff" stroke="#59626d"/>
+    <text x="30" y="38" font-size="8" font-family="Barlow, Arial" font-weight="700" fill="#1c2229">FLAMA S.A. · ${esc(modelo)}</text>
+    <text x="30" y="57" font-size="13" font-family="Consolas, monospace" font-weight="700" fill="#1c2229" textLength="62" lengthAdjust="spacingAndGlyphs">N° ${n6(serie)}</text>
+    <text x="30" y="72" font-size="7" font-family="Barlow, Arial" fill="#4f5863">Fab. 10/26 · lote OP</text>
+    <g fill="#1c2229">${[0, 1, 2, 3, 4].map((i) => [0, 1, 2, 3, 4].map((j) => ((i * 3 + j * 5) % 3 ? `<rect x="${103 + j * 4}" y="${46 + i * 4}" width="3.6" height="3.6"/>` : "")).join("")).join("")}</g>
+    <text x="113" y="74" font-size="5" text-anchor="middle" fill="#858d97" font-family="Barlow, Arial">QR cliente</text></svg>`;
+}
+function figEtqPallet(p, slot) {
+  const r = rangoSerie(p.series);
+  return `<svg viewBox="0 0 150 96" class="fig-paso" role="img" aria-label="Etiqueta de pallet"><rect x="4" y="4" width="142" height="88" rx="3" fill="#fff" stroke="#1c2229" stroke-width="1.4"/>
+    <rect x="4" y="4" width="142" height="16" fill="#1c2229"/><text x="10" y="15.5" font-size="8.5" fill="#fff" font-family="Barlow, Arial" font-weight="700">PALLET ${esc(p.id)}</text>
+    <text x="140" y="15.5" font-size="8" fill="#fff" text-anchor="end" font-family="Barlow, Arial">lugar ${esc(slot)}</text>
+    <g font-family="Barlow, Arial" font-size="7.5" fill="#1c2229"><text x="10" y="33">${esc(p.prod)}</text><text x="10" y="45">${nf(p.cant)} u · lote ${esc(p.lote || "—")}</text>
+    <text x="10" y="59" font-family="Consolas, monospace" font-size="9" font-weight="700">Series ${r ? `${n6(r[0])}–${n6(r[1])}` : esc(String(p.series).slice(0, 18))}</text>
+    <text x="10" y="72">Fabricado ${fecha(p.ffab)} · liberó ${esc(p.quien || "Calidad")}</text><text x="10" y="84" fill="#858d97">FAB-11 ${esc(p.reg || "")}</text></g></svg>`;
+}
+function figRemito(r) {
+  return `<svg viewBox="0 0 150 96" class="fig-paso" role="img" aria-label="Remito"><rect x="14" y="4" width="122" height="88" fill="#fff" stroke="#59626d"/>
+    <g font-family="Barlow, Arial" fill="#1c2229"><text x="22" y="18" font-size="9" font-weight="700">REMITO ${esc(r.remito)}</text><text x="22" y="30" font-size="7" fill="#4f5863">${esc(r.veh)}</text>
+    <line x1="22" y1="36" x2="128" y2="36" stroke="#dde1e6"/><text x="22" y="48" font-size="7.5">${nf(r.cant)} × ${esc(r.prod)}</text>
+    <text x="22" y="62" font-size="8.5" font-family="Consolas, monospace" font-weight="700">Series ${esc(r.series)}</text><text x="22" y="76" font-size="7" fill="#4f5863">Lote ${esc(r.lote || "—")}</text></g></svg>`;
+}
+const DESP_LUZ = (u, p) => u <= p.ss ? ["rojo", "bajo la seguridad: producir"] : u <= p.ss + p.porp ? ["amarillo", "programar el próximo lote"] : ["verde", u >= p.max ? "en el máximo" : "hay stock"];
+function vDespacho() {
+  const ff = fifo(), conRango = (p) => (rangoSerie(p.series) ? 0 : 1);
+  const pals = Object.entries(S.pallets).sort((a, b) => conRango(a[1]) - conRango(b[1]) || (a[1].ffab || "").localeCompare(b[1].ffab || ""));
+  const ej = pals.find(([, p]) => rangoSerie(p.series) && /^Nuevo/.test(p.prod)) || pals[0];
+  const des = S.regs.filter((r) => r.f === "DES").slice().reverse();
+  const ultimo = des[0] ? des[0].v : { remito: "R-0001-00000", veh: "Camión chico", cant: 48, prod: "Nuevo 5 kg (en caja)", series: "5480-5527", lote: "OP 26-10-08" };
+  const serie = ej ? (rangoSerie(ej[1].series) || [5480])[0] : 5480;
+  const paso = (n, t, fig, txt, donde) => `<article class="paso-d"><span class="n">${n}</span>${fig}<h3>${t}</h3><p>${txt}</p><span class="donde">${donde}</span></article>`;
+  const enStock = (prod) => Object.values(S.pallets).filter((x) => x.prod === prod).reduce((a, x) => a + (+x.cant || 0), 0);
+  const anden = ZONAS.find((z) => z.k === "anden").slots.filter((s) => S.pallets[s]);
+  return `${bandaEjemplo()}<div class="cab"><div><h1>Salida y despacho</h1>
+    <p>Cómo sale cada matafuego con su número: del cuerpo a la etiqueta de serie, al pallet y al remito. Con ese número se vuelve atrás hasta la colada de la chapa.</p></div>
+    <div class="filtros"><a class="btn" href="#pt">Kanban de PT</a><a class="btn" href="#marcado">Identificación sin QR</a></div></div>
+    <section class="panel" style="margin-bottom:18px"><header><h2>El número de punta a punta</h2><span class="mut" style="font-size:12.5px">Ejemplo con los datos cargados</span></header>
+      <div class="cuerpo pasos-d">
+        ${paso(1, "Marcado en el cuerpo", figCuerpo(serie), `La Pannier graba «FLAMA S.A. N° serie año» arriba, a la izquierda de la costura, en el puesto 6. Es el número que no se borra.`, "FAB-02 · rango de series del lote")}
+        ${paso(2, "Etiqueta de serie", figEtqSerie(serie, ej ? ej[1].prod.replace(/^(Nuevo|Cilindro) /, "ABC ").replace(/ \(.*\)$/, "").replace(/^Carro (\d+) kg terminado$/, "Carro ABC $1 kg") : "ABC 5 kg"), `En el etiquetado se pega en el costado la etiqueta con el mismo número impreso. El QR es para el cliente; acá se lee el número.`, "FAB-11 · «etiqueta igual al marcado»")}
+        ${ej ? paso(3, "Etiqueta del pallet", figEtqPallet(ej[1], ej[0]), `Calidad libera el lote y arma el pallet: producto, cantidad, lote, series desde–hasta, fecha y lugar en el PT.`, "FAB-11 · lugar en el kanban de PT") : ""}
+        ${paso(4, "Remito", figRemito(ultimo), `El día del vehículo el pallet pasa al andén y sale con remito. Las series que salen quedan en el registro; si sale parte del pallet, el resto sigue con sus series.`, "Despacho · registro DES")}
+      </div>
+      <p class="cuerpo mut" style="font-size:13px;margin:0">Ante un reclamo, el cliente da el número del cuerpo o de la etiqueta; en <a href="#traza">Trazabilidad</a> aparece el remito, el lote, cada ficha (soldaduras, PH, pintado, pérdidas) y la colada de la chapa.</p></section>
+    <div class="grid">
+      <section class="panel c7"><header><h2>Despachar</h2><span class="mut" style="font-size:12.5px">Primero sale el más viejo (marcado con borde en el PT)</span></header>
+        <form class="cuerpo campos" id="fDespacho">
+          <div class="campo ancho"><label for="dpPal">Pallet</label><select id="dpPal">${pals.map(([s, p]) => `<option value="${s}">${ff.has(s) ? "★ " : ""}${s} · ${esc(p.prod)} · ${nf(p.cant)} u · series ${esc(String(p.series).slice(0, 24))} · ${fecha(p.ffab)}</option>`).join("")}</select></div>
+          <div class="campo"><label for="dpN">Unidades que salen</label><input id="dpN" type="number" min="1" step="1"></div>
+          <div class="campo"><label for="dpRem">Remito</label><input id="dpRem" required placeholder="R-0001-00000"></div>
+          <div class="campo"><label for="dpVeh">Vehículo</label><select id="dpVeh">${D.desp.slice(0, 3).map((x) => `<option>${esc(x.veh)}</option>`).join("")}</select></div>
+          <div class="campo ancho"><div class="aviso" id="dpVista">Elegí un pallet.</div></div>
+          <div class="campo"><button class="btn pri" type="submit">Registrar el despacho</button></div></form></section>
+      <section class="panel c5"><header><h2>Semáforo del PT</h2><span class="pill idle">criterio</span></header><div class="cuerpo">
+        <p class="mut" style="font-size:12.5px;margin:0 0 6px">Rojo: bajo la seguridad (Stock_PT, col. H), hay que producir · amarillo: a menos de un pallet de la seguridad, programar el lote · verde: hay stock.</p>
+        ${D.pt.map((p) => { const u = enStock(p.prod), [l, t] = DESP_LUZ(u, p); return `<div class="sem-pt"><span class="luz ${l}"></span><span>${esc(p.prod)}<br><span class="mut">${t}</span></span><span class="num der">${nf(u)} u<br><span class="mut">seg. ${nf(p.ss)} · máx. ${nf(p.max)}</span></span></div>`; }).join("")}</div></section>
+      <section class="panel c5"><header><h2>Andén y próximas salidas</h2></header><div class="cuerpo tabla"><table><tbody>
+        ${D.desp.slice(0, 3).map((v) => { const p = proxima(v.veh); return `<tr><td><b>${esc(v.veh)}</b><br><span class="mut">${esc(v.dias)}</span></td><td class="n">${p ? fecha(p.f) : "—"}</td></tr>`; }).join("")}</tbody></table>
+        <p style="margin:10px 0 4px"><b>En el andén:</b> ${anden.length ? anden.map((s) => `${s} · ${esc(S.pallets[s].prod)} (${nf(S.pallets[s].cant)} u)`).join(" — ") : "vacío"}</p></div></section>
+      <section class="panel c7"><header><h2>Últimos despachos</h2><span class="mut num">${des.length}</span></header><div class="cuerpo tabla">
+        ${des.length ? `<table><thead><tr><th>Cuándo</th><th>Remito</th><th>Vehículo</th><th>Producto</th><th class="n">u</th><th>Series</th></tr></thead><tbody>
+        ${des.slice(0, 12).map((r) => `<tr><td class="num">${esc(r.t.slice(5))}</td><td class="mono">${esc(r.v.remito)}</td><td>${esc(String(r.v.veh).split(" · ")[0])}</td><td>${esc(r.v.prod)}</td><td class="n">${nf(r.v.cant)}</td>
+          <td><a href="#" data-q="${esc((rangoSerie(r.v.series) || [r.v.series])[0])}" class="mono">${esc(String(r.v.series).slice(0, 22))}</a></td></tr>`).join("")}</tbody></table>` : `<div class="vacio">Sin despachos todavía.</div>`}</div></section>
+      <section class="panel c12"><header><h2>Qué número sale en cada caso</h2></header><div class="cuerpo tabla"><table>
+        <thead><tr><th>Qué sale</th><th>Número que se sigue</th><th>Dónde está</th><th>Etiquetas que lleva</th><th>Registro</th></tr></thead><tbody>
+        <tr><td>Matafuego o cilindro propio</td><td>N° de serie + año</td><td>Marcado en el cuerpo y etiqueta de serie</td><td>Etiqueta del producto, etiqueta de serie, estampilla IRAM, oblea, faja y precinto</td><td>FAB-11 → despacho</td></tr>
+        <tr><td>Carro terminado</td><td>N° de serie + año + presión de ensayo</td><td>Marcado en el cuerpo y etiqueta de serie</td><td>Ídem, en el carro</td><td>FAB-11 → despacho (Master)</td></tr>
+        <tr><td>Equipo de recarga</td><td>Orden de servicio + n° grabado por su fabricante</td><td>Recipiente del cliente</td><td>Marbete del año, oblea, etiqueta de servicio y precinto (IRAM 3517-2 9.4.13, 9.6, 9.4.14)</td><td>REC-04</td></tr>
+        <tr><td>Revendido</td><td>N° de serie del fabricante</td><td>Su etiqueta o grabado</td><td>Las de su fabricante; FLAMA no reetiqueta</td><td>REV-01 → despacho</td></tr></tbody></table></div></section>
+    </div>`;
+}
+function armarDespacho() {
+  const f = $("#fDespacho"); if (!f) return;
+  const ver = () => {
+    const s = $("#dpPal").value, p = S.pallets[s]; if (!p) { $("#dpVista").textContent = "No hay pallets en el PT."; return; }
+    const r = rangoSerie(p.series), n = Math.max(1, Math.min(+$("#dpN").value || p.cant, p.cant));
+    if (!r && n < p.cant) $("#dpN").value = p.cant;
+    $("#dpVista").innerHTML = r ? `Salen <b class="mono">${n === 1 ? r[0] : `${r[0]}–${r[0] + n - 1}`}</b> (${n} u)${n < p.cant ? ` · quedan <b class="mono">${r[0] + n}–${r[1]}</b> en ${s}` : ` · el lugar ${s} queda libre`}.`
+      : `Las series de este pallet son una lista: sale el pallet entero (${nf(p.cant)} u).`;
+  };
+  $("#dpPal").onchange = () => { const p = S.pallets[$("#dpPal").value]; $("#dpN").value = p ? p.cant : "";
+    const v = p && VEH(p.prod); if (v) $("#dpVeh").value = v; ver(); };
+  $("#dpN").oninput = ver;
+  $("#dpPal").onchange();
+  f.onsubmit = (ev) => { ev.preventDefault(); const r = despachar($("#dpPal").value, $("#dpN").value, $("#dpRem").value, $("#dpVeh").value);
+    if (r) { pintar(); toast(`${r.id}: ${r.v.cant} u, series ${r.v.series}`); } };
 }
 
 // ---------------------------------------------------------------- formularios
@@ -950,7 +1214,9 @@ const FORMS = [
     campos: [f.fecha(), f.oper("Liberó"), f.sel("prod", "Producto", D.pt.map((p) => p.prod).concat(["Sustituto propio", "Recipiente de carro (a pintar)", "Recipiente de carro (pintado)"]), { req: true }),
       f.num("cant", "Unidades", { req: true }), f.lote(), f.txt("series", "Series (desde–hasta o lista)", "Las del marcado Pannier", true),
       { k: "ffab", l: "Fecha de fabricación", tipo: "fecha", req: true }, { k: "slot", l: "Lugar en el PT", tipo: "slot", req: true },
-      f.si("pesada", "Pesada final dentro de la tolerancia"), f.si("ident", "Etiqueta, precinto y seguro colocados"), f.obs()],
+      f.si("pesada", "Pesada final dentro de la tolerancia"), f.si("ident", "Etiqueta, precinto y seguro colocados"),
+      f.si("etqser", "Etiqueta de n° de serie con el mismo número que el marcado", "Se controla la primera y la última del lote"),
+      f.txt("estamp", "Estampillas IRAM (desde–hasta)", "Una por unidad (IRAM, Anexo R)"), f.obs()],
     efecto: (r) => { if (r.res === "Conforme") S.pallets[r.v.slot] = { id: "PAL-" + String(sig("PAL")).padStart(4, "0"), prod: r.v.prod, cant: r.v.cant, lote: r.v.lote, series: r.v.series, ffab: r.v.ffab, quien: r.v.oper, t: r.t, reg: r.id }; } },
   { id: "REC-01", nombre: "Recepción de MP de recargas", linea: "rec", puestos: [],
     normas: ["IRAM 3517-2:2020 9.9 y tabla 6 (agentes certificados)", "9.9.1.6 (no mezclar ABC con BC)", "9.4.9 (gas impulsor)"],
@@ -1676,7 +1942,7 @@ function bandaEjemplo() {
 }
 
 // ---------------------------------------------------------------- shell
-const MENU = [["dashboard", "Dashboard"], ["mp", "Kanban MP"], ["almacen", "Almacén MP"], ["pt", "Kanban PT"], ["formularios", "Fichas"], ["layout", "Layout"], ["traza", "Trazabilidad"]];
+const MENU = [["dashboard", "Dashboard"], ["mp", "Kanban MP"], ["semaforo", "Semáforo"], ["almacen", "Almacén"], ["pt", "Kanban PT"], ["despacho", "Despacho"], ["formularios", "Fichas"], ["layout", "Layout"], ["traza", "Trazabilidad"]];
 function menu(actual) {
   const al = D.mp.filter((m) => ["crit", "pedir"].includes(estado(m))).length;
   const cuenta = { mp: al ? `<b class="alerta">${al}</b>` : "", pt: Object.keys(S.pallets).length ? `<b>${Object.keys(S.pallets).length}</b>` : "" };
@@ -1693,10 +1959,11 @@ function pintar() {
   menu(h);
   // el layout no se redibuja entero si ya está en pantalla: así no se pierde el zoom
   if (h === "layout" && $("#plano")) { actualizarLayout(); return; }
-  const V = { dashboard: vDashboard, mp: vMP, almacen: vAlmacen, pt: vPT, formularios: vFormularios, traza: vTraza, revendidos: vRevendidos, marcado: vMarcado, layout: vLayout };
+  const V = { dashboard: vDashboard, mp: vMP, semaforo: vSemaforo, almacen: vAlmacen, pt: vPT, despacho: vDespacho, formularios: vFormularios, traza: vTraza, revendidos: vRevendidos, marcado: vMarcado, layout: vLayout };
   $("#vista").innerHTML = h.startsWith("f-") ? vForm(h.slice(2)) : (V[h] || vDashboard)();
   if (h.startsWith("f-")) armarForm(h.slice(2));
   if (h === "layout") { prepararZoom(); actualizarLayout(); }
+  if (h === "despacho") armarDespacho();
   const fA = $("#fAlm"), fL = $("#fLin"), fQ = $("#fQ");
   if (fA) { fA.onchange = () => { F.alm = fA.value; pintar(); }; fL.onchange = () => { F.lin = fL.value; pintar(); }; fQ.oninput = () => { F.q = fQ.value; const p = fQ.selectionStart; pintar(); const n = $("#fQ"); n.focus(); n.setSelectionRange(p, p); }; }
   const fb = $("#fBus");

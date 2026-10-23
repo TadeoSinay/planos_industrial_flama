@@ -155,8 +155,40 @@ def bloques():
                     sum(1 for m in MP if m["alm"] == a_["alm"]), sum(1 for h in hs if not h["cods"])])
     tabla(["Almacén", "Estantería", "Lugares", "Suma de U", "Códigos", "Libres"], fil, [28, 30, 10, 11, 10, 11], num=[2, 3, 4, 5])
     add("nota", "Lugares: Almacenes, filas 19 a 31 (13 de reventa en el PT, Balanceo › Pulmones sección 6). Suma de U: Stock_MP, columna U.")
-    img("03_almacen.png", "Figura 6. Almacén de MP: cada lugar con su código, coloreado por el estado del código, con la barra "
-        "de stock contra el máximo. Arriba, accesos a cada almacén con la cantidad para pedir.", 15)
+    p("Cada lugar se dibuja en el formato en que se guarda (Almacenes, columnas C e I): paquetes de hojas sobre tacos, "
+      "rollos acostados en el pallet, atados en los brazos del cantilever, big bags, pallets en rack, cajas en estantería "
+      "liviana, cilindros en la jaula y matafuegos en pallet. El dibujo se llena con el stock contra el máximo y toma el "
+      "color del estado del código; el mismo dibujo aparece en cada tarjeta del kanban.")
+    img("03_almacen.png", "Figura 6. Almacén de MP: cada lugar con su código y el dibujo de su formato, lleno según el stock "
+        "y coloreado por el estado. Arriba, accesos a cada almacén con la cantidad para pedir.", 15)
+    add("h2", "2.3 Semáforo de cada almacén")
+    p("La pestaña «Semáforo» muestra, para cada almacén, cuántos códigos hay en rojo, amarillo y verde, y cómo funciona la "
+      "tarjeta kanban en su formato. Cada código se mira en bultos, que es lo que se ve en la estantería: bultos = unidades "
+      "÷ contenido del bulto (Stock_MP, columna N).")
+    tabla(["Luz", "Cuándo", "Qué se hace"], [
+        ["Rojo", "Stock ≤ seguridad (L)", "Pedido urgente; se avisa a la línea y a compras."],
+        ["Amarillo", "Stock ≤ punto de pedido (L + K), o pedido en camino", "La tarjeta del bulto pasa al tablero de pedidos y sale el pedido hasta el máximo."],
+        ["Verde", "Stock sobre el punto de pedido", "Nada hasta la próxima revisión del proveedor."],
+    ], [14, 38, 48])
+    b("**En bultos enteros.** «Pedir cuando quedan N bultos» redondea el punto de pedido hacia arriba al bulto entero "
+      "(criterio: se pide un poco antes, nunca después). Si el punto de pedido es menos de un bulto, la regla es «pedir al "
+      "abrir el último bulto».")
+    fil = []
+    for a_ in ALM:
+        regla = {"CH": "Marca en el poste de cada pila a la altura del punto de pedido; cuando la pila baja a la marca, la tarjeta va al tablero.",
+                 "FL": "El pallet de rollos que deja el stock en el punto de pedido lleva la tarjeta; cuando la pinza lo baja, va al tablero.",
+                 "CA": "Brazo del punto de pedido pintado de amarillo: cuando queda a la vista, se pide.",
+                 "PQ": "El big bag (o la bolsa) del punto de pedido lleva la tarjeta colgada; cuando se empieza, va al tablero.",
+                 "ID": "Doble cajón: el segundo cajón tiene la tarjeta; cuando se empieza, se pide.",
+                 "GA": "Cilindros llenos con capuchón; cuando quedan los del punto de pedido, se pide; el vacío vuelve con la tarjeta.",
+                 "RV": "El lugar del punto de pedido en la zona de reventa lleva la tarjeta."}.get(B.PREF[a_["alm"]],
+                 "Abajo el bulto en uso, arriba la reposición; el bulto del punto de pedido lleva la tarjeta y va al tablero al bajarlo o abrirlo.")
+        fil.append([a_["alm"], a_["est"], regla])
+    tabla(["Almacén", "Formato", "Tarjeta kanban (criterio)"], fil, [26, 22, 52])
+    add("nota", "Disposición de cada almacén: MP-FLAMA2035 › Almacenes, columna I, y Word de MP, sección 8 (abajo lo que se usa, "
+                "arriba la reposición). La tarjeta física es criterio de este sistema; la app muestra el mismo semáforo con los conteos.")
+    img("03c_semaforo.png", "Figura 7. Semáforo de los almacenes: luces por almacén, la regla de la tarjeta de su formato y cada "
+        "código con su barra en bultos (rojo hasta la seguridad, amarillo hasta el punto de pedido, verde hasta el máximo).", 15)
 
     # ------------------------------------------------------------------ 3
     add("h1", "3. Kanban de producto terminado")
@@ -172,7 +204,7 @@ def bloques():
         ["Sustitutos", 22, "8 propios + 14 comprados", "Balanceo › Pulmones, sección 6"],
         ["Rama de pintura (carros)", 58, "Espera del pintor 29 + pintados 29", "PTPINTADO › Pintura B33:B34"],
     ], [20, 9, 46, 25], num=[1])
-    img("05_kanban_pt.png", "Figura 7. Kanban de PT con pallets de la prueba: rack, piso, andén, reventa, sustitutos, "
+    img("05_kanban_pt.png", "Figura 8. Kanban de PT con pallets de la prueba: rack, piso, andén, reventa, sustitutos, "
         "pintura, días fijos de despacho y stock contra máximo.", 15)
     add("h2", "3.1 Despacho por días fijos y stock máximo")
     tabla(["Vehículo · qué lleva", "Días", "Salidas por semana"], [[d["veh"], d["dias"], n(d["salidas"], 1)] for d in DESP],
@@ -181,6 +213,29 @@ def bloques():
           [[x["prod"], n(x["ventas"]), x["ss"], n(x["max"]), x["porp"], x["pallets"]] for x in PT],
           [34, 15, 12, 15, 12, 12], num=[1, 2, 3, 4, 5])
     add("nota", "Stock máximo = stock por sobrestock + seguridad (5 días de venta) + pallet en armado (PTPINTADO › Stock_PT, filas 63 a 78).")
+    add("h2", "3.2 Salida y despacho con el n° de serie")
+    p("La pestaña «Despacho» muestra el número de punta a punta y registra la salida. El número nace en el cuerpo y se "
+      "repite en cada etiqueta hasta el remito:")
+    tabla(["Paso", "Dónde está el número", "Qué se controla", "Registro"], [
+        ["1. Marcado", "Grabado en el cuerpo con la Pannier: «FLAMA S.A. N° serie año», arriba a la izquierda de la costura", "Rango de series del lote, colada de la chapa", "FAB-02"],
+        ["2. Etiqueta de serie", "Etiqueta de n° de serie en el costado (planos FL_MAT, hoja 4), con el mismo número impreso; el QR es para el cliente", "Que la etiqueta tenga el mismo número que el marcado (primera y última del lote)", "FAB-11"],
+        ["3. Etiqueta del pallet", "PAL-nnnn: producto, cantidad, lote, series desde–hasta, fecha de fabricación, lugar", "Liberación del lote, pesada, estampillas IRAM (una por unidad, Anexo R)", "FAB-11"],
+        ["4. Remito", "Remito con el vehículo y las series que salen", "Sale primero el pallet más viejo; si sale parte, el resto queda con sus series", "Despacho (DES)"],
+    ], [15, 35, 34, 16])
+    b("**Despacho parcial.** Si las series del pallet son un rango, salen las primeras N y el pallet queda con el resto "
+      "del rango (por ejemplo, salen 15184–15193 y quedan 15194–15471). El vehículo se propone según el producto "
+      "(Despacho, filas 25 a 28: camión chico los nuevos en caja, sider los cilindros, Master los carros).")
+    b("**Reclamo.** Con el número del cuerpo o de la etiqueta, la búsqueda trae el remito, el lote, cada ficha y la colada.")
+    b("**Semáforo del PT (criterio).** Rojo: stock bajo la seguridad (Stock_PT, col. H), hay que producir; amarillo: a menos "
+      "de un pallet de la seguridad, programar el próximo lote; verde: hay stock.")
+    tabla(["Qué sale", "Número que se sigue", "Etiquetas que lleva"], [
+        ["Matafuego o cilindro propio", "N° de serie + año (marcado y etiqueta de serie)", "Etiqueta del producto, etiqueta de serie, estampilla IRAM, oblea, faja y precinto"],
+        ["Carro terminado", "N° de serie + año + presión de ensayo", "Ídem, en el carro"],
+        ["Equipo de recarga", "Orden de servicio + n° grabado por su fabricante", "Marbete del año, oblea, etiqueta de servicio y precinto (IRAM 3517-2 9.4.13, 9.6, 9.4.14)"],
+        ["Revendido", "N° de serie del fabricante", "Las de su fabricante; FLAMA no reetiqueta"],
+    ], [24, 34, 42])
+    img("05b_despacho.png", "Figura 9. Despacho: el número del cuerpo a la etiqueta de serie, al pallet y al remito; el "
+        "formulario de despacho (con despacho parcial) y el semáforo del PT.", 15)
 
     # ------------------------------------------------------------------ 4
     add("h1", "4. Fichas de control de los procesos críticos")
@@ -198,7 +253,7 @@ def bloques():
         ["FAB-08", "Detección y corrección de defectos", "man 18 y 19", "Defecto, series, acción, si vuelve a PH", "Corrección con soldadura → repite la PH (criterio)", "ISO 5817 C · DOC-02 R2"],
         ["FAB-09", "Pintado", "man 20 · car 12 (pintor externo)", "Lote de polvo, Sa 2½, horas desde el granallado, HR, 5 lecturas de película, adherencia, MEK, color", "≤ 4 h · HR ≤ 85 % · 60 a 100 µm, ninguna < 48 · clase 0 ó 1", "DOC-01 · ISO 2808 · ISO 2409 · ASTM D5402"],
         ["FAB-10", "Ensayo de pérdidas", "man 24 · car 14-17", "Método, zona verde al presurizar y a las 24 h, sin pérdidas", "Sin pérdidas; 24 h en verde (criterio)", "IRAM 3517-2 9.4.10 · DOC-02 R7, R8"],
-        ["FAB-11", "Producto terminado", "man 26 · car 16", "Producto, unidades, series, fecha de fabricación, lugar en el PT, pesada y etiquetas", "Pesada en tolerancia; identificación completa", "DOC-02 R9"],
+        ["FAB-11", "Producto terminado", "man 26 · car 16", "Producto, unidades, series, fecha de fabricación, lugar en el PT, pesada, etiqueta de serie igual al marcado, estampillas IRAM", "Pesada en tolerancia; identificación completa", "DOC-02 R9 · IRAM Anexo R"],
         ["REC-01", "MP de recargas", "almacén", "Agente, lote, certificado, rótulo", "Agente normalizado con certificado; sin mezclar ABC y BC", "IRAM 3517-2 9.9, tabla 6, 9.9.1.6"],
         ["REC-02", "Inspección interior", "rec 9 y 13", "OS, n° grabado, agente, videoscopio, humedad, corrosión, daño", "Seco; corrosión o abolladura → inutilizar", "IRAM 3517-2 9.8.2 · 9.7.1.2 · 9.7.1.3 · 9.12"],
         ["REC-03", "Ensayo de pérdidas (recarga)", "rec 20", "OS, n° grabado, método, zona verde, sin pérdidas", "Sin pérdidas; inmersión fuera del recinto", "IRAM 3517-2 9.4.10 · 9.4.8"],
@@ -208,9 +263,9 @@ def bloques():
     tabla(["Ficha", "Proceso", "Puestos", "Qué registra", "Criterio que marca", "Norma"], F, [7, 14, 11, 30, 21, 17])
     add("nota", "Puestos: man = manuales, car = carros, rec = recargas, con el número de Balanceo-FLAMA2035 › Carga. "
                 "Las cláusulas se citan; no se transcriben.")
-    img("04_ficha_ph.png", "Figura 8. Ficha FAB-07 (prueba hidráulica): el tiempo de 45 s queda en rojo porque la norma pide "
+    img("04_ficha_ph.png", "Figura 10. Ficha FAB-07 (prueba hidráulica): el tiempo de 45 s queda en rojo porque la norma pide "
         "1 minuto, y la ficha se guarda como no conforme.", 15)
-    img("08_fichas.png", "Figura 9. Las 16 fichas agrupadas por línea, con sus puestos y la cantidad de registros.", 15)
+    img("08_fichas.png", "Figura 11. Las 16 fichas agrupadas por línea, con sus puestos y la cantidad de registros.", 15)
 
     # ------------------------------------------------------------------ 5
     add("h1", "5. Cómo se une todo: la búsqueda de trazabilidad")
@@ -220,7 +275,7 @@ def bloques():
       "cada ficha cuyo rango lo contiene, en orden: marcado, soldaduras, espesor, PH, defectos, pintado, pérdidas, PT.")
     b("**Hacia adelante.** El pallet guarda sus series y su lugar; al despacharlo queda el remito y el vehículo.")
     b("**Revendidos y recargas.** Se buscan por el n° del fabricante o por la orden de servicio.")
-    img("07_traza.png", "Figura 10. Búsqueda del n° 20400: el lote que lo contiene (con acceso a su recorrido) y las "
+    img("07_traza.png", "Figura 12. Búsqueda del n° 20400: el lote que lo contiene (con acceso a su recorrido) y las "
         "fichas cuyo rango lo incluye, en orden.", 15)
 
     # ------------------------------------------------------------------ 6
@@ -239,9 +294,9 @@ def bloques():
     p("Al tocar un lote (desde el layout, el dashboard o la búsqueda) se dibuja su recorrido por los pasillos: verde lo que "
       "ya tiene ficha, punteado lo que falta y un punto rojo intermitente en su última ficha. El panel lista los pasos y "
       "marca «sin ficha» los puestos con ficha que el lote pasó sin cargarla.")
-    img("06_layout.png", "Figura 11. Recorrido de un lote de ABC 10 kg: con ficha hasta la prueba hidráulica; falta del "
+    img("06_layout.png", "Figura 13. Recorrido de un lote de ABC 10 kg: con ficha hasta la prueba hidráulica; falta del "
         "secado al despacho.", 15)
-    img("06b_layout_almacen.png", "Figura 12. Almacén de MP en el layout: códigos para pedir por almacén.", 15)
+    img("06b_layout_almacen.png", "Figura 14. Almacén de MP en el layout: códigos para pedir por almacén.", 15)
 
     # ------------------------------------------------------------------ 7
     add("h1", "7. Quién hace qué")
@@ -249,7 +304,7 @@ def bloques():
         ["Almacén", "Cuenta con la planilla y la sube; registra retiros; emite el pedido de la tarjeta; carga FAB-01 / REC-01 al recibir", "En cada revisión del proveedor y en cada recepción"],
         ["Operario del puesto", "Carga la ficha de su puesto con el lote y el rango de series", "Al cerrar cada tanda o lote"],
         ["Calidad", "Revisa las no conformes; libera el lote con FAB-11", "Al terminar el lote"],
-        ["Depósito de PT", "Ubica el pallet, mueve al andén y despacha con remito", "Los días fijos de cada vehículo"],
+        ["Depósito de PT", "Ubica el pallet, mueve al andén y despacha con remito y series (pestaña Despacho)", "Los días fijos de cada vehículo"],
         ["Recargas", "REC-02 a REC-04 por orden de servicio", "En cada equipo"],
     ], [18, 57, 25])
 
@@ -257,6 +312,7 @@ def bloques():
     add("h1", "8. Lo que queda como criterio o por confirmar")
     b("15 mm y 20 mm del marcado (ubicación fija en la chapa): criterio para librar el cordón y el bordón.")
     b("Reparto de códigos en los lugares (sección 2.2) y frecuencia de conteo por almacén: criterio, a ajustar en planta.")
+    b("Tarjeta kanban física de cada formato y redondeo al bulto entero (sección 2.3): criterio. Semáforo del PT (sección 3.2): criterio.")
     b("Colores del PT por mes (4 que rotan): criterio; se pueden alinear con la regla de colores del Word de carros.")
     b("Reventa y sustitutos no tienen sector propio en el plano rev10: la app los muestra como zonas del PT. La recepción "
       "de revendidos se ubica en el sector «Trazabilidad PT».")
