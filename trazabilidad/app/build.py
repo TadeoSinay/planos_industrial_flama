@@ -1,6 +1,7 @@
-"""Arma app/index.html (POC de la app de trazabilidad) desde plantilla.html: lee el Plan mensual real de los Excel de
+"""Arma app/index.html (POC de la app de trazabilidad) desde plantilla.html + js/*.js + img/*.webp: lee el Plan mensual real de los Excel de
 Aprovechamiento (como hará la app con Google Sheets), arma los lotes del mes, reserva las series y genera los QR reales
 (segno) del lote de ejemplo. Uso: python3 build.py [año] [mes 1-12]."""
+import base64
 import json
 import os
 import sys
@@ -11,6 +12,7 @@ from openpyxl import load_workbook
 AQUI = os.path.dirname(os.path.abspath(__file__))
 SALIDA = os.path.join(os.path.dirname(os.path.dirname(AQUI)), "salida")
 URL = "https://trazabilidad-flama.vercel.app/m/"
+JS = ["base.js", "recorrido.js", "clientes.js", "manual.js", "desvios.js", "inicio.js", "app.js"]   # orden de carga
 MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
 # tamaño de lote = lo que entra en el carro de transporte interno del modelo (criterio de la POC, lo fija PCP)
 LOTE = {"ABC 1 kg": 60, "ABC 2,5 kg": 48, "ABC 5 kg": 48, "ABC 10 kg": 24, "Carro ABC 25 kg": 4, "Carro ABC 50 kg": 4,
@@ -43,6 +45,23 @@ def qr_path(texto):
             else:
                 x += 1
     return {"n": len(m), "d": "".join(d)}
+
+
+def imagenes():
+    """app/img/*.webp (las arma imagenes.py) como data URI: la página es un solo archivo."""
+    carpeta = os.path.join(AQUI, "img")
+    return {os.path.splitext(f)[0]: "data:image/webp;base64," + base64.b64encode(open(os.path.join(carpeta, f), "rb").read()).decode()
+            for f in sorted(os.listdir(carpeta)) if f.endswith(".webp")} | \
+        {"familia_x": json.load(open(os.path.join(carpeta, "familia.json")))}
+
+
+def logo():
+    """Logo oficial si está en app/logo.svg o app/logo.png; si no, la app usa la marca provisoria."""
+    for nombre, tipo in (("logo.svg", "image/svg+xml"), ("logo.png", "image/png")):
+        ruta = os.path.join(AQUI, nombre)
+        if os.path.exists(ruta):
+            return f"data:{tipo};base64," + base64.b64encode(open(ruta, "rb").read()).decode()
+    return None
 
 
 def main(anio=2026, mes=3):
@@ -83,6 +102,9 @@ def main(anio=2026, mes=3):
     with open(os.path.join(AQUI, "plantilla.html"), encoding="utf-8") as fh:
         html = fh.read()
     html = html.replace("/*__DATOS__*/null", json.dumps(datos, ensure_ascii=False, separators=(",", ":")))
+    html = html.replace("/*__IMG__*/null", json.dumps(imagenes()))
+    html = html.replace("/*__LOGO__*/null", json.dumps(logo()))
+    html = html.replace("/*__JS__*/", "\n".join(open(os.path.join(AQUI, "js", f), encoding="utf-8").read() for f in JS))
     with open(os.path.join(AQUI, "index.html"), "w", encoding="utf-8") as fh:
         fh.write(html)
     print("ok", demo["op"], series[0], "…", series[-1], len(lotes), "lotes")

@@ -1,147 +1,225 @@
 <title>FLAMA Trazabilidad</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Caveat:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700;800&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600;700&family=Caveat:wght@500;700&display=swap">
 <style>
-/* Layout: banda superior con el lote · columna de pasos · escena con el dispositivo real · ficha del paso con lo que se escribe */
+/* Layout: banda de marca grafito con navegación por vistas · Inicio editorial (render + chapa grabada) ·
+   Recorrido en 3 columnas (pasos · dispositivo real · ficha) · Atención, Manual y Desvíos como documentos/tableros */
 :root {
-  --bg: #E9EDF0;          /* chapa granallada */
+  --bg: #EEF0F1;            /* acero granallado */
   --surface: #FFFFFF;
-  --surface-2: #F3F6F8;
-  --ink: #162027;
-  --ink-2: #4B5A66;
-  --ink-3: #7A8995;
-  --line: #D3DBE1;
-  --red: #C42A1E;         /* rojo matafuego */
-  --red-soft: #FBE7E4;
-  --yellow: #E2A800;      /* faja de sustituto */
-  --yellow-soft: #FFF4D1;
-  --green: #22764A;
-  --green-soft: #E2F3E8;
+  --surface-2: #F4F6F7;
+  --ink: #15191C;           /* grafito */
+  --ink-2: #48535B;
+  --ink-3: #75828B;
+  --line: #D6DCE0;
+  --red: #C8241A;           /* rojo matafuego */
+  --red-2: #E4473A;
+  --red-soft: #FBE6E3;
+  --yellow: #E2A800;        /* faja de sustituto */
+  --yellow-soft: #FFF3CC;
+  --green: #1F7445;
+  --green-soft: #E0F2E7;
   --blue: #1D5B8C;
-  --blue-soft: #E3EEF7;
+  --blue-soft: #E2EDF6;
+  --violet: #6A4C93;        /* oblea PBA */
+  --violet-soft: #EEE8F6;
   --paper: #FCFBF7;
   --lcd: #0F2A1E;
   --lcd-ink: #8FF0B4;
-  --shadow: 0 1px 2px rgb(22 32 39 / 6%), 0 8px 24px rgb(22 32 39 / 8%);
+  --band: #15191C;          /* banda de marca: siempre grafito */
+  --band-2: #20262B;
+  --band-ink: #EEF1F2;
+  --band-ink-2: #A8B3BA;
+  --chart-1: #C8241A; --chart-2: #1D5B8C; --chart-3: #E2A800; --chart-grid: #E3E7EA;
+  --shadow: 0 1px 2px rgb(21 25 28 / 6%), 0 10px 28px rgb(21 25 28 / 9%);
   --f-display: "Saira Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
   --f-body: "Public Sans", "Segoe UI", system-ui, sans-serif;
   --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   --f-hand: "Caveat", "Comic Sans MS", cursive;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #0F1418; --surface: #172026; --surface-2: #1D272E; --ink: #E6ECEF; --ink-2: #A5B3BD; --ink-3: #7D8C97;
-  --line: #2B363E; --red: #FF5B4D; --red-soft: #3A1B19; --yellow: #F2C230; --yellow-soft: #3A3014; --green: #4CC27D;
-  --green-soft: #173225; --blue: #6DB2E6; --blue-soft: #16293A; --paper: #F4F1E8; --lcd: #0B1F16; --lcd-ink: #8FF0B4;
+  --bg: #0E1215; --surface: #161C20; --surface-2: #1C2328; --ink: #E7ECEE; --ink-2: #A9B5BD; --ink-3: #7F8D97;
+  --line: #2A343B; --red: #FF5B4D; --red-2: #FF7B6F; --red-soft: #3A1A18; --yellow: #F2C230; --yellow-soft: #3A3014;
+  --green: #4CC27D; --green-soft: #15301F; --blue: #6DB2E6; --blue-soft: #15283A; --violet: #B79BE0; --violet-soft: #2A2238;
+  --paper: #F4F1E8; --band: #0A0D0F; --band-2: #151A1E; --chart-grid: #263037;
+  --chart-1: #FF5B4D; --chart-2: #6DB2E6; --chart-3: #F2C230;
   --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 10px 30px rgb(0 0 0 / 35%); color-scheme: dark } }
 :root[data-theme="dark"] {
-  --bg: #0F1418; --surface: #172026; --surface-2: #1D272E; --ink: #E6ECEF; --ink-2: #A5B3BD; --ink-3: #7D8C97;
-  --line: #2B363E; --red: #FF5B4D; --red-soft: #3A1B19; --yellow: #F2C230; --yellow-soft: #3A3014; --green: #4CC27D;
-  --green-soft: #173225; --blue: #6DB2E6; --blue-soft: #16293A; --paper: #F4F1E8; --lcd: #0B1F16; --lcd-ink: #8FF0B4;
+  --bg: #0E1215; --surface: #161C20; --surface-2: #1C2328; --ink: #E7ECEE; --ink-2: #A9B5BD; --ink-3: #7F8D97;
+  --line: #2A343B; --red: #FF5B4D; --red-2: #FF7B6F; --red-soft: #3A1A18; --yellow: #F2C230; --yellow-soft: #3A3014;
+  --green: #4CC27D; --green-soft: #15301F; --blue: #6DB2E6; --blue-soft: #15283A; --violet: #B79BE0; --violet-soft: #2A2238;
+  --paper: #F4F1E8; --band: #0A0D0F; --band-2: #151A1E; --chart-grid: #263037;
+  --chart-1: #FF5B4D; --chart-2: #6DB2E6; --chart-3: #F2C230;
   --shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 10px 30px rgb(0 0 0 / 35%); color-scheme: dark }
 
 * { box-sizing: border-box }
-body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f-body); margin: 0 }
-body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--ink) }
-button, input, select { font: inherit; color: inherit }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--f-body); margin: 0 }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--band) }
+button, input, select, textarea { font: inherit; color: inherit }
 button { cursor: pointer }
 :focus-visible { outline: 3px solid var(--blue); outline-offset: 2px }
+h1, h2, h3 { text-wrap: balance }
 .mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums }
 .wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)) }
+.ancho { max-width: 1480px; margin: 0 auto }
+.ceja { font: 600 12px/1 var(--f-body); letter-spacing: .12em; text-transform: uppercase; color: var(--red) }
+.sub { color: var(--ink-3); font-size: 13px; margin: 0 0 14px }
+.nota { font-size: 12.5px; color: var(--ink-3) }
+a { color: var(--blue) }
 
-/* ---------- banda superior */
-.top { background: var(--ink); color: #EEF2F4; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5 }
-:root[data-theme="dark"] .top, :root:not([data-theme="light"]) .top { }
-.top-in { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; padding-block: 12px; max-width: 1480px; margin: 0 auto }
-.marca { display: flex; align-items: center; gap: 10px; min-width: 0 }
-.marca svg { flex: none }
-.marca b { font: 700 22px/1 var(--f-display); letter-spacing: .02em; text-transform: uppercase }
-.marca span { display: block; font-size: 12px; color: #A9B6BF }
-.lote { display: flex; align-items: center; gap: 14px; margin-left: auto; flex-wrap: wrap }
-.chip { font: 600 12px/1 var(--f-mono); padding: 6px 9px; border-radius: 4px; background: #24323B; color: #EEF2F4; white-space: nowrap }
-.barra { display: flex; height: 10px; width: 260px; max-width: 70vw; border-radius: 2px; overflow: hidden; background: #2C3A44 }
-.barra i { display: block; height: 100% }
-.leyenda { display: flex; gap: 12px; font-size: 11.5px; color: #C9D3D9; flex-wrap: wrap }
-.leyenda i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; vertical-align: -1px }
-.ejemplo { font-size: 11.5px; color: #F6C64A; font-weight: 600; letter-spacing: .04em; text-transform: uppercase }
+/* ---------- banda de marca */
+.top { background: var(--band); color: var(--band-ink); position: sticky; top: env(safe-area-inset-top, 0px); z-index: 6; border-bottom: 3px solid var(--red) }
+.top-in { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 26px; padding-block: 10px; max-width: 1480px; margin: 0 auto }
+.marca { display: flex; align-items: center; gap: 11px; min-width: 0; text-decoration: none; color: inherit }
+.marca .logo { height: 38px; width: auto; display: block }
+.marca .wm { font: 800 27px/1 var(--f-display); letter-spacing: .06em; font-style: italic }
+.marca .wm small { font: 600 12px/1 var(--f-display); letter-spacing: .08em; font-style: normal; margin-left: 3px; color: var(--band-ink-2) }
+.marca .tag { display: block; font: 500 11px/1.2 var(--f-body); color: var(--band-ink-2); letter-spacing: .04em; margin-top: 3px }
+.vistas { display: flex; gap: 2px; flex-wrap: wrap }
+.vistas a { color: var(--band-ink-2); text-decoration: none; font: 600 15px/1 var(--f-display); letter-spacing: .06em; text-transform: uppercase; padding: 10px 12px; border-radius: 6px }
+.vistas a:hover { color: var(--band-ink); background: var(--band-2) }
+.vistas a[aria-current="page"] { color: #fff; background: var(--red) }
+.ejemplo { margin-left: auto; font: 600 11px/1.2 var(--f-body); color: #F6C64A; letter-spacing: .06em; text-transform: uppercase; border: 1px solid #5A4A1A; padding: 5px 8px; border-radius: 4px }
+@media (max-width: 760px) { .top { position: relative; top: 0 } .ejemplo { margin-left: 0 } .vistas a { padding: 8px 9px; font-size: 14px } .pasos, .toc { top: 12px } }
 
-/* ---------- grilla principal */
+/* ---------- inicio */
+.heroe { background: var(--band); color: var(--band-ink); overflow: hidden; position: relative }
+.heroe::after { content: ""; position: absolute; inset: auto -10% -60% 30%; height: 120%; background: radial-gradient(closest-side, rgb(200 36 26 / 34%), transparent 70%); pointer-events: none }
+.heroe-in { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 30px; align-items: center; padding-block: 46px 0; position: relative; z-index: 1 }
+@media (max-width: 900px) { .heroe-in { grid-template-columns: minmax(0, 1fr) } .heroe-img { max-height: 420px } }
+.heroe h1 { font: 800 clamp(44px, 7vw, 92px)/.9 var(--f-display); letter-spacing: -.005em; margin: 14px 0 18px; text-transform: uppercase }
+.heroe h1 em { font-style: normal; color: var(--red-2) }
+.heroe p.lead { font-size: 18px; color: #C9D2D8; max-width: 52ch; margin: 0 0 24px }
+.heroe .ceja { color: var(--red-2) }
+.heroe-fig { position: relative; display: flex; justify-content: center; align-items: flex-end; min-height: 100% }
+.heroe-img { height: min(560px, 62vh); width: auto; max-width: 100%; display: block; filter: drop-shadow(0 30px 30px rgb(0 0 0 / 55%)); position: relative; z-index: 1 }
+.callout { position: absolute; z-index: 2; font: 600 12px/1.25 var(--f-body); color: var(--band-ink); background: rgb(21 25 28 / 82%); border: 1px solid #3A444B; padding: 6px 9px; border-radius: 6px; max-width: 190px }
+.callout b { display: block; font: 700 13px/1.1 var(--f-display); letter-spacing: .06em; text-transform: uppercase; color: #fff }
+.callout::before { content: ""; position: absolute; width: 36px; height: 1.5px; background: #8FA0AB; top: 50% }
+.callout.izq::before { right: -37px } .callout.der::before { left: -37px }
+@media (max-width: 560px) { .callout { display: none } }
+.chapa { margin-top: 22px; background: linear-gradient(180deg, #5B666E, #3D474E 55%, #4A555C); border-radius: 4px; padding: 14px 18px; box-shadow: inset 0 1px 0 rgb(255 255 255 / 18%), inset 0 -2px 0 rgb(0 0 0 / 35%); max-width: 640px }
+.chapa .grab { font: 700 clamp(15px, 2.2vw, 22px)/1.3 var(--f-mono); letter-spacing: .14em; color: #20272C; text-shadow: 0 1px 0 rgb(255 255 255 / 28%), 0 -1px 0 rgb(0 0 0 / 45%); white-space: nowrap; overflow-x: auto }
+.chapa small { display: block; font: 500 11.5px/1.3 var(--f-body); color: #D3DADF; margin-top: 6px; letter-spacing: .02em }
+.cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 22px }
+.btn { border: 1.5px solid var(--line); background: var(--surface); border-radius: 6px; padding: 9px 14px; font-weight: 600; font-size: 14px; text-decoration: none; color: var(--ink); display: inline-flex; align-items: center; gap: 6px }
+.btn:hover { border-color: var(--ink-3) }
+.btn.pri { background: var(--red); border-color: var(--red); color: #fff }
+.btn.ok { background: var(--green); border-color: var(--green); color: #fff }
+.btn.osc { background: transparent; border-color: #4A555C; color: var(--band-ink) }
+.btn.osc:hover { border-color: #8FA0AB }
+.btn.sm { padding: 6px 10px; font-size: 13px }
+.btn:disabled { opacity: .45; cursor: not-allowed }
+.cifras { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid #2E373D; margin-top: 40px; position: relative; z-index: 1 }
+@media (max-width: 760px) { .cifras { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+.cifras div { padding: 18px 18px 22px 0 }
+.cifras b { display: block; font: 700 clamp(28px, 3.4vw, 40px)/1 var(--f-display); color: #fff; font-variant-numeric: tabular-nums }
+.cifras span { font-size: 12.5px; color: var(--band-ink-2) }
+.sec { padding-block: 48px }
+.sec h2 { font: 800 clamp(30px, 3.6vw, 46px)/.98 var(--f-display); text-transform: uppercase; margin: 8px 0 12px; letter-spacing: .005em }
+.sec p.lead { color: var(--ink-2); max-width: 66ch; margin: 0 0 22px; font-size: 16.5px }
+.familia { background: linear-gradient(180deg, var(--surface), var(--surface-2)); border: 1px solid var(--line); border-radius: 14px; padding: 26px 22px 14px; overflow-x: auto }
+.familia img { display: block; width: 100%; min-width: 620px; height: auto }
+.familia .esc { position: relative; height: 30px; min-width: 620px; font: 600 13px/1.2 var(--f-display); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); border-top: 2px solid var(--ink); margin-top: 2px }
+.familia .esc span { position: absolute; top: 8px; transform: translateX(-50%); white-space: nowrap }
+.familia .esc span:first-child { transform: none }
+.ruta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px }
+@media (max-width: 980px) { .ruta { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+@media (max-width: 520px) { .ruta { grid-template-columns: minmax(0, 1fr) } }
+.ruta figure { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column }
+.ruta img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; max-width: 100% }
+.ruta figcaption { padding: 12px 14px 14px; font-size: 13.5px; color: var(--ink-2) }
+.ruta figcaption b { display: block; font: 700 17px/1.1 var(--f-display); letter-spacing: .04em; text-transform: uppercase; color: var(--ink); margin-bottom: 4px }
+.ruta .n { font: 700 12px/1 var(--f-mono); color: var(--red) }
+.puertas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px }
+@media (max-width: 980px) { .puertas { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+@media (max-width: 520px) { .puertas { grid-template-columns: minmax(0, 1fr) } }
+.puerta { display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; transition: transform .15s ease, box-shadow .15s ease }
+.puerta:hover { transform: translateY(-2px); box-shadow: var(--shadow) }
+.puerta b { font: 700 22px/1 var(--f-display); text-transform: uppercase; letter-spacing: .03em }
+.puerta span { font-size: 13.5px; color: var(--ink-2) }
+.puerta i { font-style: normal; margin-top: auto; font: 600 13px/1 var(--f-body); color: var(--red) }
+.normas { display: flex; flex-wrap: wrap; gap: 8px }
+.normas span { font: 600 12.5px/1 var(--f-mono); padding: 8px 10px; border-radius: 4px; background: var(--surface); border: 1px solid var(--line) }
+
+/* ---------- recorrido */
 .app { display: grid; grid-template-columns: 250px minmax(0, 1fr) 380px; gap: 22px; max-width: 1480px; margin: 0 auto; padding-block: 22px 40px }
 @media (max-width: 1240px) { .app { grid-template-columns: 230px minmax(0, 1fr) } .ficha { grid-column: 1 / -1 } }
 @media (max-width: 820px) { .app { grid-template-columns: minmax(0, 1fr) } }
-
-/* ---------- lista de pasos */
-.pasos { display: flex; flex-direction: column; gap: 18px; align-self: start; position: sticky; top: 86px }
+.lotebar { background: var(--surface); border-bottom: 1px solid var(--line) }
+.lotebar-in { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding-block: 10px; max-width: 1480px; margin: 0 auto; font-size: 13px }
+.chip { font: 600 12px/1 var(--f-mono); padding: 6px 9px; border-radius: 4px; background: var(--surface-2); border: 1px solid var(--line); white-space: nowrap }
+.barra { display: flex; height: 10px; width: 260px; max-width: 70vw; border-radius: 2px; overflow: hidden; background: var(--line) }
+.barra i { display: block; height: 100% }
+.leyenda { display: flex; gap: 12px; font-size: 11.5px; color: var(--ink-3); flex-wrap: wrap }
+.leyenda i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 5px; vertical-align: -1px }
+.pasos { display: flex; flex-direction: column; gap: 18px; align-self: start; position: sticky; top: 92px }
 @media (max-width: 820px) { .pasos { position: static; flex-direction: row; overflow-x: auto; gap: 14px; padding-bottom: 6px } }
 .grupo h3 { font: 600 12px/1 var(--f-body); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 8px }
 .grupo ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px }
 @media (max-width: 820px) { .grupo ol { flex-direction: row } .grupo { flex: none } }
-.paso-btn { display: grid; grid-template-columns: 30px 1fr; align-items: center; gap: 8px; width: 100%; text-align: left;
-  border: 0; background: none; padding: 7px 8px; border-radius: 6px; color: var(--ink-2) }
+.paso-btn { display: grid; grid-template-columns: 30px 1fr; align-items: center; gap: 8px; width: 100%; text-align: left; border: 0; background: none; padding: 7px 8px; border-radius: 6px; color: var(--ink-2) }
 .paso-btn:hover { background: var(--surface) }
-.paso-btn .n { font: 700 15px/1 var(--f-display); width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%;
-  border: 1.5px solid var(--line); color: var(--ink-3); background: var(--surface) }
+.paso-btn .n { font: 700 15px/1 var(--f-display); width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; border: 1.5px solid var(--line); color: var(--ink-3); background: var(--surface) }
 .paso-btn .t { font-size: 13.5px; line-height: 1.25 }
 .paso-btn .t small { display: block; font-size: 11.5px; color: var(--ink-3) }
 .paso-btn[aria-current="step"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow) }
 .paso-btn[aria-current="step"] .n { background: var(--red); border-color: var(--red); color: #fff }
 .paso-btn.hecho .n { background: var(--green-soft); border-color: var(--green); color: var(--green) }
 @media (max-width: 820px) { .paso-btn { width: auto; white-space: nowrap } .paso-btn .t small { display: none } }
-
-/* ---------- escena */
 .escena { min-width: 0; display: flex; flex-direction: column; gap: 16px }
-.cab .ceja { font: 600 12px/1 var(--f-body); letter-spacing: .1em; text-transform: uppercase; color: var(--red) }
-.cab h1 { font: 700 clamp(28px, 3.4vw, 40px)/1.02 var(--f-display); margin: 6px 0 6px; text-wrap: balance; letter-spacing: .005em }
+.cab h1 { font: 800 clamp(30px, 3.6vw, 44px)/1 var(--f-display); margin: 8px 0 8px; text-transform: uppercase; letter-spacing: .005em }
 .cab p { margin: 0; color: var(--ink-2); max-width: 70ch }
 .nav { display: flex; justify-content: space-between; gap: 10px }
-.btn { border: 1.5px solid var(--line); background: var(--surface); border-radius: 6px; padding: 9px 14px; font-weight: 600; font-size: 14px }
-.btn:hover { border-color: var(--ink-3) }
-.btn.pri { background: var(--red); border-color: var(--red); color: #fff }
-.btn.ok { background: var(--green); border-color: var(--green); color: #fff }
-.btn.sm { padding: 6px 10px; font-size: 13px }
-.btn:disabled { opacity: .45; cursor: not-allowed }
+.escenario { background: radial-gradient(120% 90% at 50% 0%, var(--surface-2), var(--bg)); border-radius: 14px; padding: 26px 18px; display: grid; place-items: center; border: 1px solid var(--line); position: relative; overflow: hidden }
+.escenario.foto { background-size: cover; background-position: center }
+.escenario.foto::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgb(14 18 21 / 55%), rgb(14 18 21 / 80%)) }
+.escenario > * { position: relative }
+.normref { display: flex; flex-wrap: wrap; gap: 6px }
+.normref span { font: 600 11.5px/1 var(--f-mono); padding: 5px 7px; border-radius: 4px; background: var(--violet-soft); color: var(--violet) }
 
-/* ---------- marcos de dispositivo */
-.escenario { background: radial-gradient(120% 90% at 50% 0%, var(--surface-2), var(--bg)); border-radius: 14px; padding: 26px 18px; display: grid; place-items: center; border: 1px solid var(--line) }
+/* dispositivos */
 .pc { width: 100%; max-width: 860px; border-radius: 10px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow); border: 1px solid var(--line) }
 .pc-bar { display: flex; align-items: center; gap: 7px; padding: 9px 12px; background: var(--surface-2); border-bottom: 1px solid var(--line) }
 .pc-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--line) }
 .pc-bar .url { margin-left: 10px; font: 12px/1 var(--f-mono); color: var(--ink-3); background: var(--surface); padding: 6px 10px; border-radius: 5px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.pc-head { display: flex; align-items: center; gap: 10px; padding: 9px 22px; border-bottom: 1px solid var(--line); background: var(--band); color: var(--band-ink); font: 600 12px/1 var(--f-body); letter-spacing: .04em }
+.pc-head .logo { height: 20px }
+.pc-head span { margin-left: auto; color: var(--band-ink-2) }
 .pc-in { padding: 20px 22px; min-height: 380px }
-.tel { width: 340px; max-width: 100%; border-radius: 38px; padding: 12px; background: #1B2228; box-shadow: var(--shadow) }
-.tel-in { border-radius: 28px; overflow: hidden; background: var(--surface); min-height: 600px; display: flex; flex-direction: column }
+.tel { width: 350px; max-width: 100%; border-radius: 40px; padding: 12px; background: #1B2228; box-shadow: var(--shadow) }
+.tel-in { border-radius: 30px; overflow: hidden; background: var(--surface); min-height: 620px; display: flex; flex-direction: column }
 .tel-top { height: 26px; display: grid; place-items: center }
 .tel-top i { width: 90px; height: 6px; border-radius: 3px; background: var(--line) }
-.tel-body { padding: 8px 18px 22px; display: flex; flex-direction: column; gap: 12px; flex: 1 }
+.tel-brand { display: flex; align-items: center; gap: 8px; padding: 8px 18px; background: var(--band); color: var(--band-ink); font: 600 11.5px/1 var(--f-body) }
+.tel-brand .logo { height: 18px }
+.tel-brand span { margin-left: auto; color: var(--band-ink-2) }
+.tel-body { padding: 12px 18px 22px; display: flex; flex-direction: column; gap: 12px; flex: 1 }
 .hoja { width: 100%; max-width: 720px; background: var(--paper); color: #1d2328; padding: 26px 30px; box-shadow: 0 2px 4px rgb(0 0 0 / 10%), 0 18px 40px rgb(0 0 0 / 14%); border-radius: 2px; transform: rotate(-.35deg) }
 .maquina { width: 100%; max-width: 640px; background: linear-gradient(#3B464E, #2A333A); border-radius: 12px; padding: 18px; box-shadow: var(--shadow) }
 .maquina .lcd { background: var(--lcd); color: var(--lcd-ink); font-family: var(--f-mono); border-radius: 6px; padding: 16px 18px; min-height: 230px; box-shadow: inset 0 0 0 2px #061109 }
 .maquina .placa { display: flex; justify-content: space-between; color: #C9D3D9; font: 600 12px/1 var(--f-body); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 12px }
-
-/* ---------- piezas de pantalla */
 .h2 { font: 700 22px/1.1 var(--f-display); margin: 0 0 4px; letter-spacing: .01em }
-.sub { color: var(--ink-3); font-size: 13px; margin: 0 0 14px }
 .tabla { width: 100%; border-collapse: collapse; font-size: 13.5px }
 .tabla th { text-align: left; font-weight: 600; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); padding: 7px 8px; border-bottom: 1.5px solid var(--line) }
 .tabla td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top }
 .tabla td.num, .tabla th.num { text-align: right; font-variant-numeric: tabular-nums }
+.tabla td.nw { white-space: nowrap }
 .tscroll { overflow-x: auto; min-width: 0 }
 .pill { display: inline-block; font: 600 11.5px/1 var(--f-body); padding: 4px 7px; border-radius: 999px; white-space: nowrap }
 .pill.ok { background: var(--green-soft); color: var(--green) }
 .pill.no { background: var(--red-soft); color: var(--red) }
-.pill.av { background: var(--yellow-soft); color: #8A6400 }
-:root[data-theme="dark"] .pill.av { color: var(--yellow) }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pill.av { color: var(--yellow) } }
+.pill.av { background: var(--yellow-soft); color: var(--ink) }
 .pill.in { background: var(--blue-soft); color: var(--blue) }
+.pill.vi { background: var(--violet-soft); color: var(--violet) }
 .fila { display: flex; gap: 10px; flex-wrap: wrap; align-items: center }
 .campo { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--ink-2) }
-.campo input, .campo select { border: 1.5px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--surface); color: var(--ink); min-width: 0 }
-.aviso { border-radius: 8px; padding: 10px 12px; font-size: 13.5px; display: flex; gap: 10px; align-items: flex-start }
+.campo input, .campo select, .campo textarea { border: 1.5px solid var(--line); border-radius: 6px; padding: 8px 10px; background: var(--surface); color: var(--ink); min-width: 0 }
+.aviso { border-radius: 8px; padding: 10px 12px; font-size: 13.5px; display: block }
 .aviso.ok { background: var(--green-soft); color: var(--green) }
 .aviso.no { background: var(--red-soft); color: var(--red) }
-.aviso.av { background: var(--yellow-soft); color: #7A5900 }
-:root[data-theme="dark"] .aviso.av { color: var(--yellow) }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .aviso.av { color: var(--yellow) } }
+.aviso.av { background: var(--yellow-soft); color: var(--ink) }
 .aviso.in { background: var(--blue-soft); color: var(--blue) }
 .grande { font: 700 34px/1 var(--f-display); letter-spacing: .02em }
 .lector { display: flex; gap: 10px; align-items: stretch; flex-wrap: wrap }
@@ -150,18 +228,15 @@ button { cursor: pointer }
 @media (max-width: 640px) { .dos { grid-template-columns: minmax(0, 1fr) } }
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px }
 .kpi { background: var(--surface-2); border-radius: 8px; padding: 10px 12px }
-.kpi b { display: block; font: 700 26px/1 var(--f-display) }
+.kpi b { display: block; font: 700 26px/1 var(--f-display); font-variant-numeric: tabular-nums }
 .kpi span { font-size: 12px; color: var(--ink-3) }
-
-/* etiqueta impresa */
-.etq { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center; background: #fff; color: #111; border-radius: 6px; padding: 10px 12px; border: 1px solid #cfd6db; width: 300px; max-width: 100%; box-shadow: 0 2px 6px rgb(0 0 0 / 12%) }
+.etq { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center; background: #fff; color: #111; border-radius: 6px; padding: 10px 12px; border: 1px solid #cfd6db; width: 310px; max-width: 100%; box-shadow: 0 2px 6px rgb(0 0 0 / 12%) }
 .etq .qr svg { width: 96px; height: 96px; display: block }
 .etq b { font: 700 13px/1.1 var(--f-body); letter-spacing: .02em }
 .etq .num { font: 700 21px/1.05 var(--f-mono); margin: 3px 0 }
 .etq small { font-size: 11px; color: #444 }
+.etq .lg { height: 13px; vertical-align: -2px }
 .etiquetas { display: flex; gap: 10px; flex-wrap: wrap }
-
-/* hoja de ruta en papel */
 .hoja h2 { font: 700 22px/1 var(--f-display); margin: 0; letter-spacing: .02em; text-transform: uppercase }
 .hoja .meta { font-size: 12.5px; margin: 6px 0 14px }
 .hoja table { border-collapse: collapse; width: 100%; font-size: 12px }
@@ -169,24 +244,21 @@ button { cursor: pointer }
 .hoja th { background: #eef0ee; font-weight: 600 }
 .mano { font-family: var(--f-hand); font-size: 19px; color: #1d4f8c; line-height: 1 }
 .mano.rojo { color: #b3261e }
-.hoja td.mono { white-space: nowrap; font-size: 10.5px !important }
-.tabla td.nw { white-space: nowrap }
 .caja-tilde { width: 22px; height: 20px; text-align: center; padding: 0 !important; cursor: pointer }
 .series-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 14px }
 @media (max-width: 640px) { .series-grid { grid-template-columns: minmax(0, 1fr) } }
 .qrbox svg { display: block }
-
-/* ---------- ficha lateral */
 .ficha { display: flex; flex-direction: column; gap: 14px; min-width: 0 }
-.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0 }
 .card h4 { margin: 0 0 8px; font: 600 12px/1 var(--f-body); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3) }
-.dl { display: grid; grid-template-columns: 92px 1fr; gap: 6px 10px; font-size: 13.5px; margin: 0 }
+.dl { display: grid; grid-template-columns: 96px 1fr; gap: 6px 10px; font-size: 13.5px; margin: 0 }
 .dl dt { color: var(--ink-3) }
-.dl dd { margin: 0 }
+.dl dd { margin: 0; min-width: 0 }
 .sheet { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface) }
 .sheet-head { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--surface-2); border-bottom: 1px solid var(--line); font-size: 12.5px }
-.sheet-head .ic { width: 16px; height: 16px; border-radius: 3px; background: var(--green); display: grid; place-items: center; color: #fff; font-size: 10px; font-weight: 700 }
+.sheet-head .ic { width: 16px; height: 16px; border-radius: 3px; background: var(--green); display: grid; place-items: center; color: #fff; font-size: 9px; font-weight: 700 }
 .sheet-head .ic.db { background: var(--blue) }
+.sheet-head .ic.gov { background: var(--violet) }
 .sheet table { border-collapse: collapse; width: 100%; font: 11.5px/1.3 var(--f-mono) }
 .sheet th { background: var(--surface-2); color: var(--ink-3); font-weight: 600; text-align: left; padding: 5px 7px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); white-space: nowrap }
 .sheet td { padding: 5px 7px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); white-space: nowrap }
@@ -194,8 +266,6 @@ button { cursor: pointer }
 .sheet .tabs { display: flex; gap: 2px; padding: 0 6px; background: var(--surface-2); border-top: 1px solid var(--line); font-size: 11.5px; overflow-x: auto }
 .sheet .tabs span { padding: 5px 9px; color: var(--ink-3); white-space: nowrap }
 .sheet .tabs span.on { background: var(--surface); color: var(--green); font-weight: 600; border-bottom: 2px solid var(--green) }
-
-/* ---------- registro */
 .registro { max-width: 1480px; margin: 0 auto 40px }
 .registro details { background: var(--surface); border: 1px solid var(--line); border-radius: 10px }
 .registro summary { padding: 12px 16px; cursor: pointer; font-weight: 600 }
@@ -206,10 +276,13 @@ button { cursor: pointer }
 .tl li { display: grid; grid-template-columns: 12px 1fr; gap: 10px; font-size: 13px }
 .tl li::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--green); margin-top: 4px }
 .tl li.r::before { background: var(--red) }
-.tabs-tel { display: flex; border-bottom: 1px solid var(--line) }
-.tabs-tel button { flex: 1; border: 0; background: none; padding: 8px; font-weight: 600; color: var(--ink-3); border-bottom: 2px solid transparent }
+.tl li.p::before { background: var(--surface); border: 2px solid var(--line) }
+.tabs-tel { display: flex; border-bottom: 1px solid var(--line); overflow-x: auto }
+.tabs-tel button { flex: 1; border: 0; background: none; padding: 8px 6px; font-weight: 600; font-size: 13px; color: var(--ink-3); border-bottom: 2px solid transparent; white-space: nowrap }
 .tabs-tel button[aria-selected="true"] { color: var(--red); border-color: var(--red) }
 .estado-grande { border-radius: 10px; padding: 14px; text-align: center }
+.legal { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 11.5px; border-top: 1px solid var(--line); padding-top: 10px; margin-top: auto }
+.legal a, .legal button { color: var(--ink-2); background: none; border: 0; padding: 0; text-decoration: underline; font-size: 11.5px }
 .arq { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: stretch }
 @media (max-width: 760px) { .arq { grid-template-columns: minmax(0, 1fr) } }
 .arq .col { display: flex; flex-direction: column; gap: 8px }
@@ -218,474 +291,124 @@ button { cursor: pointer }
 .arq .blk.s { border-color: var(--green) }
 .arq .blk.d { border-color: var(--blue) }
 .arq .blk.p { border-color: var(--red) }
+.arq .blk.g { border-color: var(--violet) }
 .arq h5 { margin: 0; font: 600 11.5px/1 var(--f-body); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3) }
+
+/* ---------- vistas de documento y tablero */
+.cabeza { background: var(--band); color: var(--band-ink) }
+.cabeza-in { max-width: 1480px; margin: 0 auto; padding-block: 34px 30px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: end }
+@media (max-width: 760px) { .cabeza-in { grid-template-columns: minmax(0, 1fr) } }
+.cabeza h1 { font: 800 clamp(34px, 4.6vw, 60px)/.95 var(--f-display); text-transform: uppercase; margin: 10px 0 10px }
+.cabeza p { margin: 0; color: #C9D2D8; max-width: 70ch }
+.cabeza .ceja { color: var(--red-2) }
+.cabeza .doc-id { font: 600 12px/1.6 var(--f-mono); color: var(--band-ink-2); text-align: right }
+@media (max-width: 760px) { .cabeza .doc-id { text-align: left } }
+.cuerpo { max-width: 1480px; margin: 0 auto; padding-block: 26px 48px }
+.dos-col { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; align-items: start }
+@media (max-width: 1000px) { .dos-col { grid-template-columns: minmax(0, 1fr) } }
+.bloque { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; min-width: 0 }
+.bloque h3 { font: 700 22px/1.1 var(--f-display); text-transform: uppercase; letter-spacing: .03em; margin: 0 0 4px }
+.pila { display: flex; flex-direction: column; gap: 22px; min-width: 0 }
+.matriz td:first-child { white-space: nowrap; font: 600 12px/1.35 var(--f-mono); color: var(--violet) }
+.matriz td { font-size: 13px }
+.matriz td .pill { margin-top: 4px }
+
+/* manual */
+.manual { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 28px; max-width: 1480px; margin: 0 auto; padding-block: 26px 48px }
+@media (max-width: 900px) { .manual { grid-template-columns: minmax(0, 1fr) } .toc { position: static !important } }
+.toc { position: sticky; top: 92px; align-self: start; display: flex; flex-direction: column; gap: 2px; font-size: 13.5px }
+.toc a { color: var(--ink-2); text-decoration: none; padding: 6px 10px; border-radius: 6px; display: grid; grid-template-columns: 28px 1fr }
+.toc a:hover { background: var(--surface) }
+.toc a span { font: 600 12px/1.5 var(--f-mono); color: var(--ink-3) }
+.doc { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: clamp(18px, 3vw, 40px); min-width: 0 }
+.doc section { padding-block: 10px 22px; border-bottom: 1px solid var(--line); scroll-margin-top: 96px }
+.doc section:last-child { border-bottom: 0 }
+.doc h2 { font: 800 28px/1.05 var(--f-display); text-transform: uppercase; margin: 12px 0 10px; display: flex; gap: 12px; align-items: baseline }
+.doc h2 span { font: 700 15px/1 var(--f-mono); color: var(--red) }
+.doc h3 { font: 700 18px/1.2 var(--f-display); letter-spacing: .03em; text-transform: uppercase; margin: 18px 0 6px }
+.doc p, .doc li { max-width: 78ch; color: var(--ink-2) }
+.doc p b, .doc li b { color: var(--ink) }
+.proc { border: 1px solid var(--line); border-radius: 10px; margin: 12px 0; overflow: hidden }
+.proc summary { padding: 11px 14px; cursor: pointer; display: grid; grid-template-columns: 70px 1fr auto; gap: 10px; align-items: center; background: var(--surface-2) }
+.proc summary b { font: 700 13px/1 var(--f-mono); color: var(--red) }
+.proc summary span { font-weight: 600 }
+.proc summary small { color: var(--ink-3); font-size: 12px }
+.proc > div { padding: 12px 14px }
+.fotos-campo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 12px 0 }
+@media (max-width: 640px) { .fotos-campo { grid-template-columns: minmax(0, 1fr) } }
+.fotos-campo figure { margin: 0 }
+.fotos-campo img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 8px; display: block; max-width: 100% }
+.fotos-campo figcaption { font-size: 12px; color: var(--ink-3); margin-top: 6px }
+.buscador { background: var(--band); color: var(--band-ink); border-radius: 12px; padding: 18px; margin: 14px 0 }
+.buscador form { display: flex; gap: 10px; flex-wrap: wrap }
+.buscador input { flex: 1; min-width: 200px; font: 600 18px/1 var(--f-mono); padding: 11px 13px; border-radius: 8px; border: 1.5px solid #4A555C; background: var(--band-2); color: var(--band-ink) }
+.buscador .sug { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: var(--band-ink-2); align-items: center }
+.buscador .sug button { font: 600 12px/1 var(--f-mono); padding: 6px 8px; border-radius: 4px; border: 1px solid #4A555C; background: transparent; color: var(--band-ink) }
+.traza { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; margin-top: 14px }
+@media (max-width: 760px) { .traza { grid-template-columns: minmax(0, 1fr) } }
+.traza .lado { background: var(--surface); color: var(--ink); border-radius: 10px; padding: 14px }
+.traza h5 { margin: 0 0 10px; font: 700 15px/1 var(--f-display); letter-spacing: .06em; text-transform: uppercase }
+.arbol { list-style: none; margin: 0; padding: 0; font-size: 13px }
+.arbol li { padding: 5px 0 5px 16px; border-left: 2px solid var(--line); position: relative }
+.arbol li::before { content: ""; position: absolute; left: -2px; top: 13px; width: 10px; height: 2px; background: var(--line) }
+.arbol li b { font-family: var(--f-mono); font-size: 12.5px }
+
+/* desvíos */
+.tiles { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px }
+@media (max-width: 1100px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)) } }
+@media (max-width: 560px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)) } }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; border-top: 4px solid var(--line) }
+.tile.ok { border-top-color: var(--green) } .tile.av { border-top-color: var(--yellow) } .tile.no { border-top-color: var(--red) }
+.tile b { font: 700 30px/1 var(--f-display); font-variant-numeric: tabular-nums }
+.tile span { font-size: 12.5px; color: var(--ink-2) }
+.tile small { font-size: 11.5px; color: var(--ink-3) }
+.graf { width: 100%; height: auto; display: block }
+.graf text { fill: var(--ink-3); font: 11px var(--f-body) }
+.graf .t-ink { fill: var(--ink) }
+.graf .eje { stroke: var(--line) }
+.graf .grid { stroke: var(--chart-grid) }
+.lim { stroke-dasharray: 5 4 }
+.filtros { display: flex; gap: 6px; flex-wrap: wrap }
+.filtros button { border: 1.5px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 11px; font-size: 12.5px; font-weight: 600; color: var(--ink-2) }
+.filtros button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink) }
+.sev { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px }
+.rd-det td { background: var(--surface-2) }
+.porques { margin: 6px 0; padding-left: 20px; font-size: 13px }
+.pie { border-top: 1px solid var(--line); padding-block: 22px 40px; font-size: 12.5px; color: var(--ink-3) }
+.pie-in { max-width: 1480px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center }
+.pie .logo { height: 22px }
 </style>
 
 <header class="top">
   <div class="top-in wrap">
-    <div class="marca">
-      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect x="10" y="9" width="14" height="22" rx="6" fill="#C42A1E"/><rect x="14" y="4" width="6" height="6" rx="1" fill="#C9D3D9"/><path d="M20 6h7v3h-7z" fill="#C9D3D9"/><rect x="11" y="24" width="12" height="2.2" fill="#111"/></svg>
-      <div><b>FLAMA · Trazabilidad</b><span>Prueba de concepto · recorrido de un lote real del Plan mensual</span></div>
-    </div>
-    <div class="lote">
-      <span class="ejemplo">Datos de ejemplo</span>
-      <span class="chip" id="chipLote">—</span>
-      <div>
-        <div class="barra" id="barra" aria-label="Estado de los equipos del lote"></div>
-        <div class="leyenda" id="leyenda"></div>
-      </div>
-    </div>
+    <a class="marca" href="#inicio" data-v="inicio" aria-label="FLAMA S.A. · inicio"><span id="logoTop"></span><span><span class="wm">FLAMA<small>S.A.</small></span><span class="tag">Trazabilidad de matafuegos</span></span></a>
+    <nav class="vistas" aria-label="Secciones">
+      <a href="#inicio" data-v="inicio">Inicio</a>
+      <a href="#recorrido" data-v="recorrido">Recorrido</a>
+      <a href="#clientes" data-v="clientes">Atención al cliente</a>
+      <a href="#manual" data-v="manual">Manual</a>
+      <a href="#desvios" data-v="desvios">Desvíos</a>
+    </nav>
+    <span class="ejemplo" title="Las órdenes, series y cantidades salen del Plan mensual real; nombres de clientes, lotes de insumo y mediciones son de ejemplo">Prueba de concepto · datos de ejemplo</span>
   </div>
 </header>
 
-<div class="app wrap">
-  <nav class="pasos" id="pasos" aria-label="Pasos del recorrido"></nav>
-  <main class="escena">
-    <div class="cab"><div class="ceja" id="ceja"></div><h1 id="titulo"></h1><p id="bajada"></p></div>
-    <div class="escenario" id="escenario"></div>
-    <div class="nav"><button class="btn" id="ant">← Paso anterior</button><button class="btn pri" id="sig">Paso siguiente →</button></div>
-  </main>
-  <aside class="ficha" id="ficha"></aside>
-</div>
+<main id="vista"></main>
 
-<section class="registro wrap">
-  <details open>
+<section class="registro wrap" id="registroSec">
+  <details>
     <summary>Registro de eventos de esta sesión (cada uno guarda el hash del anterior)</summary>
     <div class="tscroll"><table class="tabla" id="registro"><thead><tr><th>#</th><th>Hora</th><th>Evento</th><th>Referencia</th><th>Puesto / quién</th><th>Hash (SHA-256)</th></tr></thead><tbody></tbody></table></div>
   </details>
 </section>
 
+<footer class="pie wrap"><div class="pie-in"><span id="logoPie"></span><span>FLAMA S.A. · Sistema de trazabilidad · prueba de concepto</span><span>Base normativa: IRAM 3517-2 · Res. 349/07 (PBA) · Res. 32-AGC/15 (CABA) · Ley 24.240 · Ley 25.326 · IRAM-ISO 10002</span></div></footer>
+
 <script>
 const D = /*__DATOS__*/null;
-const $ = (s, el = document) => el.querySelector(s);
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const n0 = x => Math.round(x).toLocaleString("es-AR");
-const nf = (x, d = 2) => Number(x).toLocaleString("es-AR", { minimumFractionDigits: d, maximumFractionDigits: d });
-const DEMO = D.demo, SERIES = DEMO.series, REJ = SERIES[16];   // el equipo 17 del lote falla la prueba hidráulica
-const OTRO = SERIES[30];                                         // el que se usa para la inutilización (años después)
-const AA = String(D.anio).slice(2);
-
-function qr(key, size = 96) {
-  const q = D.qr[key]; if (!q) return "";
-  return `<svg viewBox="-2 -2 ${q.n + 4} ${q.n + 4}" width="${size}" height="${size}" role="img" aria-label="QR ${esc(key)}"><rect x="-2" y="-2" width="${q.n + 4}" height="${q.n + 4}" fill="#fff"/><path d="${q.d}" fill="#000"/></svg>`;
-}
-function dm(texto, size = 64) {           // DataMatrix ilustrativo (patrón con borde en L), solo para mostrar
-  let h = 0; for (const c of texto) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  let r = ""; const n = 18;
-  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
-    h = (h * 1103515245 + 12345) >>> 0;
-    const on = j === 0 || i === n - 1 || (i === 0 && j % 2 === 0) || (j === n - 1 && i % 2 === 1) || (i > 0 && j > 0 && i < n - 1 && j < n - 1 && (h >> 16) % 2);
-    if (on) r += `<rect x="${j}" y="${i}" width=".9" height=".9"/>`;
-  }
-  return `<svg viewBox="0 0 18 18" width="${size}" height="${size}" aria-hidden="true"><g fill="currentColor">${r}</g></svg>`;
-}
-
-// ---------------------------------------------------------------- estado y registro con hash
-const S = { paso: 0, opOk: false, grabados: 0, tildes: {}, foto: null, cerrado: false, impresos: [], ultimo: null,
-  cajas: 0, pallet: false, despachado: false, cot: "", salida: false, recibido: false, danio: false,
-  instalado: null, recarga: null, inutil: false, tab: "com", eventos: [] };
-SERIES.forEach((s, i) => S.tildes[s] = { esp: true, ph: s !== REJ, carga: s !== REJ, perd: s !== REJ });
-
-async function sha(t) {
-  try { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t));
-    return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join(""); }
-  catch (e) { let h = 0; for (const c of t) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h.toString(16).padStart(8, "0") + "…"; }
-}
-async function evento(tipo, ref, quien, datos = {}) {
-  const prev = S.eventos.length ? S.eventos[S.eventos.length - 1].hash : "0".repeat(64);
-  const hora = new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  const e = { n: S.eventos.length + 1, hora, tipo, ref, quien, datos };
-  e.hash = await sha(prev + JSON.stringify(e));
-  S.eventos.push(e); pintarRegistro(); pintarBarra();
-}
-function pintarRegistro() {
-  $("#registro tbody").innerHTML = S.eventos.slice().reverse().map(e => `<tr class="nuevo-in"><td class="mono">${e.n}</td><td class="mono">${e.hora}</td><td>${esc(e.tipo)}</td><td class="mono">${esc(e.ref)}</td><td>${esc(e.quien)}</td><td class="mono hash">${e.hash.slice(0, 16)}…</td></tr>`).join("")
-    || `<tr><td colspan="6" style="color:var(--ink-3)">Todavía no hay eventos. Confirmá la orden en el paso 1 y seguí el recorrido: cada acción queda acá.</td></tr>`;
-}
-
-// ---------------------------------------------------------------- estado de cada equipo (para la barra)
-function estados() {
-  const c = { reservado: 0, grabado: 0, rechazo: 0, identificado: 0, despachado: 0 };
-  SERIES.forEach((s, i) => {
-    if (S.cerrado && s === REJ) c.rechazo++;
-    else if (S.despachado && S.impresos.includes(s)) c.despachado++;
-    else if (S.impresos.includes(s)) c.identificado++;
-    else if (i < S.grabados) c.grabado++;
-    else c.reservado++;
-  });
-  return c;
-}
-const COL = { reservado: "#56656F", grabado: "#6DB2E6", identificado: "#4CC27D", despachado: "#F2C230", rechazo: "#FF5B4D" };
-function pintarBarra() {
-  const c = estados(), t = SERIES.length;
-  $("#barra").innerHTML = Object.entries(c).map(([k, v]) => v ? `<i style="width:${v / t * 100}%;background:${COL[k]}" title="${k}: ${v}"></i>` : "").join("");
-  $("#leyenda").innerHTML = Object.entries(c).map(([k, v]) => `<span><i style="background:${COL[k]}"></i>${k} ${v}</span>`).join("");
-  $("#chipLote").textContent = `${DEMO.op} · ${DEMO.modelo} · ${SERIES[0]} a ${SERIES[SERIES.length - 1]}`;
-}
-
-// ---------------------------------------------------------------- piezas reutilizables
-const pc = (url, html) => `<div class="pc"><div class="pc-bar"><i></i><i></i><i></i><span class="url">trazabilidad-flama.vercel.app/${url}</span></div><div class="pc-in">${html}</div></div>`;
-const tel = html => `<div class="tel"><div class="tel-in"><div class="tel-top"><i></i></div><div class="tel-body">${html}</div></div></div>`;
-const etiqueta = (s, tit = DEMO.modelo, l2 = "fabricado " + D.mesNombre.toLowerCase() + " " + D.anio, l3 = "escaneá para ver su historia") =>
-  `<div class="etq nuevo-in"><div class="qr">${qr(s)}</div><div><b>FLAMA · ${esc(tit)}</b><div class="num">${esc(s)}</div><small>${esc(l2)}<br>${esc(l3)}</small></div></div>`;
-function sheet(fuente, archivo, hoja, cols, filas, tabs, nuevas = []) {
-  const ic = fuente === "db" ? `<span class="ic db">DB</span>` : `<span class="ic">S</span>`;
-  return `<div class="sheet"><div class="sheet-head">${ic}<span><b>${esc(archivo)}</b> › ${esc(hoja)}</span></div>
-  <div class="tscroll"><table><thead><tr>${cols.map(c => `<th>${esc(c)}</th>`).join("")}</tr></thead><tbody>
-  ${filas.map((f, i) => `<tr class="${nuevas.includes(i) ? "nuevo" : ""}">${f.map(c => `<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>
-  ${tabs ? `<div class="tabs">${tabs.map(t => `<span class="${t === hoja ? "on" : ""}">${esc(t)}</span>`).join("")}</div>` : ""}</div>`;
-}
-const TABS_DB = ["OP", "SERIES", "EVENTOS", "LOTES_INSUMO", "AGREGACION", "CUSTODIA", "FICHAS"];
-const lotesMes = () => D.lotes.filter(l => !l.modelo.startsWith("Carro"));
-
-// ---------------------------------------------------------------- los pasos
-const PASOS = [
- { id: "orden", g: "En planta", t: "Orden del lote", r: "PCP", disp: "pc",
-   bajada: `La app lee el Plan mensual del Excel de Aprovechamiento (${D.mesNombre} ${D.anio}), arma los lotes y reserva las series. Nadie tipea cantidades.`,
-   quien: "Planificación (PCP)", donde: "Oficina PCP", equipo: "PC e impresora A4 (ya están)", tiempo: "≈ 5 min por semana",
-   hace: "Abre «Nueva orden», revisa los lotes propuestos (puede cambiar el tamaño) y confirma.",
-   falla: "Si el Plan mensual cambia después, las órdenes ya confirmadas no se tocan: las nuevas toman la diferencia.",
-   pantalla() {
-     const filas = D.filas.filter(f => f.origen === "Aprovechamiento_Manuales").map(f =>
-       `<tr><td>${esc(f.producto)}</td><td>${esc(f.tipo)}</td><td class="num mono">${nf(f.valor, 1)}</td><td class="num mono"><b>${n0(f.cant)}</b></td></tr>`).join("");
-     const lt = lotesMes();
-     const ops = lt.map(l => `<tr${l.op === DEMO.op ? ' style="background:var(--yellow-soft)"' : ""}><td class="mono nw">${l.op}</td><td class="nw">${esc(l.modelo)}</td><td class="num mono">${l.cant}</td><td class="mono nw">${String(l.desde).padStart(6, "0")} → ${String(l.hasta).padStart(6, "0")}</td></tr>`).join("");
-     return pc("pcp/nueva-orden", `<div class="h2">Nueva orden · ${D.mesNombre} ${D.anio}</div><p class="sub">Leído de Aprovechamiento_Manuales › Plan mensual › ${D.rangos.man} (columna ${D.mesNombre})</p>
-      <div class="dos"><div class="tscroll"><table class="tabla"><thead><tr><th>Producto</th><th>Tipo</th><th class="num">Plan</th><th class="num">A fabricar</th></tr></thead><tbody>${filas}</tbody></table></div>
-      <div class="tscroll"><table class="tabla"><thead><tr><th>Orden</th><th>Modelo</th><th class="num">u</th><th>Series ${AA}-…</th></tr></thead><tbody>${ops}</tbody></table></div></div>
-      <p class="sub" style="margin-top:12px">Las series de ${D.mesNombre.toLowerCase()} arrancan en ${AA}-${String(D.previas + 1).padStart(6, "0")}: siguen a las ${n0(D.previas)} de los meses anteriores. Lote = lo que entra en el carro del modelo.</p>
-      <div class="fila">${S.opOk ? `<span class="aviso ok">✓ ${lt.length} órdenes confirmadas · hojas de ruta y archivos de marcado listos</span>` : `<button class="btn pri" data-a="confirmar">Confirmar ${lt.length} órdenes e imprimir</button>`}</div>`);
-   },
-   escribe() {
-     const lt = lotesMes();
-     return [sheet("s", "Aprovechamiento_Manuales", "Plan mensual", ["A", "B", "C", "F (" + D.mesNombre + ")"],
-       D.filas.filter(f => f.origen === "Aprovechamiento_Manuales").slice(0, 4).map(f => [D.anio, f.producto, f.tipo, nf(f.valor, 1)]),
-       ["Links", "datos_base", "Plan mensual", "Demanda puesto"]),
-       sheet("db", "Base de trazabilidad", "OP", ["op", "modelo", "cant", "serie_desde", "serie_hasta", "estado"],
-         lt.slice(0, 6).map(l => [l.op, l.modelo, l.cant, `${AA}-${String(l.desde).padStart(6, "0")}`, `${AA}-${String(l.hasta).padStart(6, "0")}`, S.opOk ? "EMITIDA" : "PROPUESTA"]),
-         TABS_DB, S.opOk ? lt.slice(0, 6).map((_, i) => i) : [])];
-   } },
- { id: "hoja", g: "En planta", t: "Hoja de ruta y archivo de marcado", r: "PCP", disp: "hoja",
-   bajada: "Sale por la impresora A4 con las 48 series ya cargadas. Viaja dentro del carro y es el registro de cada puesto.",
-   quien: "PCP", donde: "Oficina → carro del lote", equipo: "Impresora A4 (ya está)", tiempo: "1 hoja por lote",
-   hace: "Imprime la hoja y deja el archivo de series para la marcadora (por USB o red).",
-   falla: "Si la hoja se pierde, se reimprime: los datos de cabecera están en la base; lo escrito a mano se recupera de la foto del cierre.",
-   pantalla() { return hojaRuta(false); },
-   escribe() {
-     return [sheet("db", "Base de trazabilidad", "SERIES", ["serie", "op", "modelo", "estado"],
-       SERIES.slice(0, 5).map(s => [s, DEMO.op, DEMO.modelo, "RESERVADA"]).concat([["…", "", "", ""]]), TABS_DB),
-       `<div class="card"><h4>Archivo para la marcadora</h4><pre class="mono" style="margin:0;font-size:12px;white-space:pre-wrap">${esc(DEMO.op.replace(" ", "_"))}.csv\n${SERIES.slice(0, 4).map(s => `FLAMA S.A.;N° ${s};${AA};${s.replace("-", "")}`).join("\n")}\n…  (48 renglones)</pre></div>`];
-   } },
- { id: "grabado", g: "En planta", t: "Grabado en la planchuela", r: "Guillotina 2 + Pannier", disp: "maquina",
-   bajada: "La marcadora graba cada planchuela con la serie que sigue en el archivo. El operario no tipea nada.",
-   quien: "Operario de G2", donde: "Salida de la guillotina 2", equipo: "Pannier (ya está)", tiempo: "0 s extra",
-   hace: "Apoya la planchuela contra los topes y aprieta marcar. La máquina avanza sola a la serie siguiente.",
-   falla: "Si una planchuela sale mal grabada, se anula esa serie en la hoja y se sigue con la próxima: el número no se reutiliza.",
-   pantalla() {
-     const g = S.grabados, s = SERIES[Math.min(g, SERIES.length - 1)];
-     return `<div class="maquina"><div class="placa"><span>Pannier · marcado profundo</span><span>Trabajo ${esc(DEMO.op)}</span></div>
-      <div class="lcd"><div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap"><div style="color:var(--lcd-ink)">${dm(s, 92)}</div>
-      <div><div style="font-size:13px;opacity:.75">PRÓXIMA</div><div style="font-size:30px;font-weight:600">FLAMA S.A.  N° ${esc(g < SERIES.length ? s : "—")}  ${AA}</div>
-      <div style="font-size:13px;opacity:.75;margin-top:6px">grabadas ${g} / ${SERIES.length} · profundidad 0,20–0,25 mm · franja 130 × 12 mm</div></div></div>
-      <div style="height:8px;background:#163b2a;border-radius:3px;margin-top:16px;overflow:hidden"><div style="height:100%;width:${g / SERIES.length * 100}%;background:var(--lcd-ink)"></div></div></div>
-      <div class="fila" style="margin-top:14px"><button class="btn ok" data-a="grabar1" ${g >= SERIES.length ? "disabled" : ""}>Marcar planchuela</button><button class="btn" data-a="grabarTodo" ${g >= SERIES.length ? "disabled" : ""}>Marcar las ${SERIES.length - g} que faltan</button></div></div>`;
-   },
-   escribe() {
-     return [sheet("db", "Base de trazabilidad", "EVENTOS", ["serie", "evento", "puesto", "fuente"],
-       SERIES.slice(Math.max(0, S.grabados - 4), S.grabados).map(s => [s, "GRABADO", "G2", "archivo Pannier"]).concat(S.grabados ? [] : [["—", "", "", ""]]), TABS_DB,
-       S.grabados ? [0, 1, 2, 3] : [])];
-   } },
- { id: "puestos", g: "En planta", t: "Puestos: firma y tilde en la hoja", r: "Puestos 4 a 23", disp: "hoja",
-   bajada: "Cada puesto firma una vez por lote y anota sus insumos. En espesor, prueba hidráulica, carga y pérdidas, una tilde por equipo.",
-   quien: "Operarios de cada puesto", donde: "En el puesto, sobre el carro", equipo: "Lapicera", tiempo: "≈ 2 s por equipo en los controles; 15 s por lote en el resto",
-   hace: "Tocá un casillero de la hoja para cambiar ✓ por ✗: el equipo 17 ya viene marcado como falla en la prueba hidráulica.",
-   falla: "El equipo con ✗ sale del carro con su número; el resto del lote sigue.",
-   pantalla() { return hojaRuta(true); },
-   escribe() {
-     return [`<div class="aviso in">En este paso no se escribe nada en el sistema: todo queda en el papel firmado. Entra en el cierre (paso 5).</div>`];
-   } },
- { id: "cierre", g: "En planta", t: "Cierre de la hoja", r: "Calidad", disp: "tel",
-   bajada: "Al terminar el lote, calidad saca una foto de la hoja firmada y confirma los rechazos. Recién ahí se puede etiquetar.",
-   quien: "Supervisor de calidad", donde: "Fin de línea", equipo: "Su celular", tiempo: "≈ 1 min por lote",
-   hace: "Adjunta la foto (archivo o cámara), revisa los rechazos que la app propone desde las tildes y cierra.",
-   falla: "Si la foto no se lee bien se repite; sin cierre el lote queda bloqueado en etiquetado.",
-   pantalla() {
-     const rech = SERIES.filter(s => !S.tildes[s].ph || !S.tildes[s].carga || !S.tildes[s].perd || !S.tildes[s].esp);
-     return tel(`<div class="h2">Cerrar ${esc(DEMO.op)}</div><p class="sub" style="margin:0">${esc(DEMO.modelo)} · ${SERIES.length} grabados</p>
-      <label class="campo" for="foto">Foto de la hoja firmada<input id="foto" type="file" accept="image/*" data-a="foto"></label>
-      ${S.foto ? `<div class="aviso ok">✓ ${esc(S.foto)}</div>` : `<div class="aviso av">Falta la foto de la hoja</div>`}
-      <div class="campo">Insumos anotados<div class="mono" style="font-size:12.5px;color:var(--ink)">CU-0303 · AL-2602 · G-77 · PP-2603-2 · PO-2603 · VA-118</div></div>
-      <div class="campo">Rechazos (de las tildes)<div class="fila">${rech.map(s => `<span class="pill no mono">${s} · PH</span>`).join("") || "<span class='pill ok'>ninguno</span>"}</div></div>
-      <div style="margin-top:auto">${S.cerrado ? `<div class="aviso ok">✓ Lote cerrado: ${SERIES.length - rech.length} aptos, ${rech.length} rechazo</div>` : `<button class="btn ok" style="width:100%" data-a="cerrar">Cerrar lote</button>`}</div>`);
-   },
-   escribe() {
-     return [sheet("db", "Base de trazabilidad", "LOTES_INSUMO", ["op", "puesto", "insumo", "lote", "firma"],
-       [[DEMO.op, "4-7", "cúpulas", "CU-0303", "✓"], [DEMO.op, "9-12", "alambre / gas", "AL-2602 / G-77", "✓"], [DEMO.op, "19", "pintura", "PP-2603-2", "✓"], [DEMO.op, "20", "polvo", "PO-2603", "✓"], [DEMO.op, "21", "válvulas", "VA-118", "✓"]],
-       TABS_DB, S.cerrado ? [0, 1, 2, 3, 4] : []),
-       sheet("db", "Base de trazabilidad", "EVENTOS", ["serie", "evento", "motivo"], [[REJ, "RECHAZO", "fuga en PH"]], TABS_DB, S.cerrado ? [0] : [])];
-   } },
- { id: "etiquetado", g: "En planta", t: "Etiquetado: una lectura por equipo", r: "Puesto 24 / C-15", disp: "pc",
-   bajada: "El operario lee el grabado con el lector de mano y la impresora saca la etiqueta de ese equipo. Si es un rechazo, la pantalla lo frena.",
-   quien: "Operario de etiquetado", donde: "Puesto 24 (manuales) · C-15 (carros)", equipo: "PC e impresora (ya están) + lector de mano para grabados (nuevo)", tiempo: "≈ 2 s por equipo",
-   hace: "Probá: escribí una serie y apretá Enter (el lector hace exactamente eso), o usá los botones.",
-   falla: "Si el lector no lee, se tipea el número grabado; queda marcado como lectura manual.",
-   pantalla() {
-     const aptos = SERIES.filter(s => s !== REJ), falta = aptos.filter(s => !S.impresos.includes(s));
-     let msg = "";
-     if (!S.cerrado) msg = `<div class="aviso no">El lote no está cerrado (paso 5): no se puede etiquetar.</div>`;
-     else if (S.ultimo && S.ultimo.ok) msg = `<div class="aviso ok">✓ ${esc(S.ultimo.s)} → etiqueta impresa</div>`;
-     else if (S.ultimo) msg = `<div class="aviso no">✗ ${esc(S.ultimo.s)} → ${esc(S.ultimo.motivo)}</div>`;
-     return pc("etiquetado/puesto-24", `<div class="fila" style="justify-content:space-between"><div><div class="h2">Leé el grabado</div><p class="sub" style="margin:0">Lote abierto: ${esc(DEMO.op)} · ${esc(DEMO.modelo)} · ${aptos.length} aptos</p></div><span class="pill in">impresos ${S.impresos.length} / ${aptos.length}</span></div>
-      <form class="lector" data-f="leer" style="margin:14px 0"><input id="lectura" autocomplete="off" placeholder="${esc(falta[0] || SERIES[0])}" aria-label="Lectura del grabado"><button class="btn pri" type="submit">Leer</button></form>
-      <div class="fila" style="margin-bottom:14px"><button class="btn sm" data-a="leerSig" ${!falta.length ? "disabled" : ""}>Simular lectura del siguiente</button><button class="btn sm" data-a="leerRech">Simular lectura del rechazo ${esc(REJ)}</button><button class="btn sm" data-a="leerTodo" ${!falta.length ? "disabled" : ""}>Leer los ${falta.length} restantes</button></div>
-      ${msg}<div class="etiquetas" style="margin-top:14px">${S.impresos.slice(-3).reverse().map(s => etiqueta(s)).join("")}</div>`);
-   },
-   escribe() {
-     return [sheet("db", "Base de trazabilidad", "EVENTOS", ["serie", "evento", "lectura", "puesto"],
-       S.impresos.slice(-4).reverse().map(s => [s, "IDENTIFICADO", "lector", "24"]).concat(S.impresos.length ? [] : [["—", "", "", ""]]), TABS_DB, S.impresos.length ? [0] : []),
-       `<div class="card"><h4>Etiqueta de serie</h4><p style="margin:0;font-size:13.5px">45 × 25 mm, poliéster con cinta de resina, del lado de la pared. El QR es la dirección <span class="mono">${esc(D.url)}&lt;serie&gt;</span>: la misma página para el cliente y para FLAMA.</p></div>`];
-   } },
- { id: "embalaje", g: "En planta", t: "Embalaje y pallet", r: "Puesto 25", disp: "pc",
-   bajada: "Cada caja lleva la misma serie que el equipo. Al cerrar el pallet se leen las cajas y sale la etiqueta del pallet.",
-   quien: "Operario de embalaje", donde: "Puesto 25", equipo: "La misma PC, lector e impresora", tiempo: "1 lectura por caja",
-   hace: "Cerrá el pallet: una sola etiqueta queda unida a los equipos del lote.",
-   falla: "Una caja sin leer no deja cerrar el pallet; la pantalla dice cuál falta.",
-   pantalla() {
-     const aptos = SERIES.filter(s => s !== REJ), listo = S.impresos.length >= aptos.length;
-     return pc("despacho/pallet", `<div class="h2">Armar pallet</div><p class="sub">${esc(DEMO.op)} · cajas leídas ${listo ? aptos.length : S.impresos.length} de ${aptos.length}</p>
-      ${!listo ? `<div class="aviso av">Faltan equipos por etiquetar (paso 6).</div>` : ""}
-      <div class="dos" style="margin-top:12px"><div><div class="kpis"><div class="kpi"><b>${aptos.length}</b><span>equipos</span></div><div class="kpi"><b>${aptos.length}</b><span>cajas</span></div><div class="kpi"><b>1</b><span>pallet</span></div></div>
-      <div style="margin-top:14px">${S.pallet ? `<div class="aviso ok">✓ Pallet cerrado · SSCC 0 0779xxx 000000457 4</div>` : `<button class="btn pri" data-a="pallet" ${listo ? "" : "disabled"}>Cerrar pallet e imprimir etiqueta</button>`}</div></div>
-      <div>${S.pallet ? `<div class="etq" style="width:100%"><div class="qr">${qr("SSCC")}</div><div><b>PALLET · SSCC</b><div class="num" style="font-size:16px">(00) 0779xxx<br>000000457 4</div><small>${aptos.length} u · ${esc(DEMO.modelo)} · ${esc(DEMO.op)}</small></div></div>` : ""}</div></div>`);
-   },
-   escribe() {
-     return [sheet("db", "Base de trazabilidad", "AGREGACION", ["padre", "hijo", "tipo"],
-       [["SSCC …0457", "C-" + SERIES[0].slice(3), "pallet→caja"], ["C-" + SERIES[0].slice(3), SERIES[0], "caja→equipo"], ["…", "…", ""]], TABS_DB, S.pallet ? [0, 1] : [])];
-   } },
- { id: "despacho", g: "Del camión al cliente", t: "Despacho y carga", r: "Depósito PT", disp: "pc",
-   bajada: "El remito sale con el anexo de series y un QR. La app suma los equipos con gas para el control de transporte.",
-   quien: "Depósito y chofer", donde: "Playa de despacho", equipo: "PC del depósito + lector", tiempo: "1 lectura por pallet",
-   hace: "Cargá el COT si el traslado lo necesita y despachá.",
-   falla: "Si un pallet no se lee al subir, el remito no se cierra.",
-   pantalla() {
-     const u = SERIES.length - 1;
-     return pc("despacho/remito", `<div class="fila" style="justify-content:space-between;align-items:flex-start"><div><div class="h2">Remito R 0001-00004521</div><p class="sub">Cliente: Matafuegos Sur (distribuidor) · ${u} equipos · 1 pallet</p></div><div class="qrbox">${qr("REMITO", 84)}</div></div>
-      <div class="dos"><div class="campo">Carta de porte<span style="color:var(--ink)">suscripta por FLAMA como cargador (CCyCN art. 1298)</span></div>
-      <label class="campo" for="cot">COT de ARBA (si supera los umbrales)<input id="cot" value="${esc(S.cot)}" placeholder="código COT" data-i="cot"></label></div>
-      <div class="aviso av" style="margin-top:12px">Carga con gas: ${u} extintores UN 1044 clase 2.2. Verificá la cantidad exenta de la Res. 195/97 vigente antes de despachar.</div>
-      <div class="fila" style="margin-top:12px"><span class="pill in">equipos de pie</span><span class="pill in">seguro y precinto puestos</span><span class="pill in">pallet con film y fajas</span></div>
-      <div style="margin-top:14px">${S.despachado ? `<div class="aviso ok">✓ Despachado · ${u} equipos salen de FLAMA</div>` : `<button class="btn pri" data-a="despachar" ${S.pallet ? "" : "disabled"}>Despachar</button>${S.pallet ? "" : ` <span class="sub">Cerrá el pallet primero (paso 7).</span>`}`}</div>`);
-   },
-   escribe() {
-     return [sheet("db", "Base de trazabilidad", "CUSTODIA", ["serie / SSCC", "de", "a", "documento"],
-       [["SSCC …0457", "FLAMA", "Transportes Ruta 3", "R 0001-00004521"]], TABS_DB, S.despachado ? [0] : [])];
-   } },
- { id: "chofer", g: "Del camión al cliente", t: "El chofer confirma la salida", r: "Transportista", disp: "tel",
-   bajada: "Lee el QR del remito con su celular: se abre una página, no hay app que bajar.",
-   quien: "Chofer", donde: "Al salir de planta", equipo: "Su celular", tiempo: "≈ 30 s",
-   hace: "Confirma la carga: queda EN TRÁNSITO a su nombre.",
-   falla: "Sin señal, la página guarda la confirmación y la manda cuando vuelve la conexión.",
-   pantalla() {
-     return tel(`<div class="h2">Remito 0001-00004521</div><p class="sub" style="margin:0">FLAMA → Matafuegos Sur</p>
-      <div class="kpis"><div class="kpi"><b>1</b><span>pallet</span></div><div class="kpi"><b>${SERIES.length - 1}</b><span>equipos</span></div></div>
-      <label class="campo" for="patente">Patente<input id="patente" value="AB123CD"></label>
-      <div style="margin-top:auto">${S.salida ? `<div class="aviso ok">✓ En tránsito · ${new Date().toLocaleDateString("es-AR")}</div>` : `<button class="btn ok" style="width:100%" data-a="salida" ${S.despachado ? "" : "disabled"}>Confirmar carga y salir</button>`}</div>`);
-   },
-   escribe() { return [sheet("db", "Base de trazabilidad", "CUSTODIA", ["SSCC", "estado", "chofer"], [["…0457", "EN TRÁNSITO", "AB123CD"]], TABS_DB, S.salida ? [0] : [])]; } },
- { id: "distribuidor", g: "Del camión al cliente", t: "Recibe el distribuidor", r: "Distribuidor", disp: "tel",
-   bajada: "Cuenta, revisa y confirma desde el mismo QR del remito. Si algo llegó golpeado, lo marca con foto.",
-   quien: "Distribuidor", donde: "Su depósito", equipo: "Su celular", tiempo: "≈ 1 min por entrega",
-   hace: "Marcá un daño si querés ver cómo queda registrado, y confirmá.",
-   falla: "Si no confirma, el chofer trae el remito firmado y PCP lo carga; la custodia queda en el último que confirmó.",
-   pantalla() {
-     return tel(`<div class="h2">¿Llegó todo?</div><p class="sub" style="margin:0">Remito 0001-00004521 · ${SERIES.length - 1} equipos</p>
-      <label class="fila" for="danio" style="gap:8px"><input id="danio" type="checkbox" ${S.danio ? "checked" : ""} data-a="danio"> Hay un equipo dañado</label>
-      ${S.danio ? `<div class="aviso av">${esc(SERIES[5])} con golpe en la cúpula · foto adjunta</div>` : ""}
-      <label class="campo" for="recibe">Recibe<input id="recibe" value="L. Gómez · DNI 30.111.222"></label>
-      <div style="margin-top:auto">${S.recibido ? `<div class="aviso ok">✓ Recibido por Matafuegos Sur</div>` : `<button class="btn ok" style="width:100%" data-a="recibir" ${S.salida ? "" : "disabled"}>Confirmar recepción</button>`}</div>`);
-   },
-   escribe() { return [sheet("db", "Base de trazabilidad", "CUSTODIA", ["serie / SSCC", "de", "a", "obs."], [["…0457", "transportista", "Matafuegos Sur", S.danio ? "1 dañado" : "ok"]], TABS_DB, S.recibido ? [0] : [])]; } },
- { id: "instalacion", g: "Del camión al cliente", t: "Instalación llave en mano", r: "Instalador", disp: "tel",
-   bajada: "El instalador cuelga el equipo, lee su QR y carga dónde quedó. El cliente firma en la pantalla.",
-   quien: "Instalador", donde: "En la propiedad del cliente", equipo: "Su celular", tiempo: "≈ 1 min por equipo",
-   hace: "La app controla las alturas de IRAM 3517-2 (6.2.14 y 7.3) antes de dejar firmar.",
-   falla: "Si el cliente instala solo, el equipo queda registrado cuando escanea el QR por primera vez.",
-   pantalla() {
-     const alt = S.instalado ? S.instalado.alt : 1.35, sen = S.instalado ? S.instalado.sen : 2.2;
-     const okA = alt <= 1.5, okS = sen >= 2 && sen <= 2.5, s = SERIES[2];
-     return tel(`<div class="h2">${esc(s)}</div><p class="sub" style="margin:0">${esc(DEMO.modelo)} · Matafuegos Sur → Panadería La Espiga</p>
-      <label class="campo" for="dir">Dirección y sector<input id="dir" value="Av. Mitre 1450 · salón de ventas"></label>
-      <div class="fila"><label class="campo" for="alt" style="flex:1">Parte superior (m)<input id="alt" type="number" step="0.05" value="${alt}" data-i="alt"></label><label class="campo" for="sen" style="flex:1">Cartel (m)<input id="sen" type="number" step="0.05" value="${sen}" data-i="sen"></label></div>
-      <div class="fila"><span class="pill ${okA ? "ok" : "no"}">${okA ? "✓" : "✗"} ≤ 1,5 m (6.2.14)</span><span class="pill ${okS ? "ok" : "no"}">${okS ? "✓" : "✗"} 2,0–2,5 m (7.3)</span></div>
-      <div style="margin-top:auto">${S.instalado && S.instalado.firmado ? `<div class="aviso ok">✓ Acta firmada · equipo EN SERVICIO</div>` : `<button class="btn ok" style="width:100%" data-a="firmar" ${okA && okS && S.recibido ? "" : "disabled"}>Firmar acta de entrega</button>`}</div>`);
-   },
-   escribe() { return [sheet("db", "Base de trazabilidad", "CUSTODIA", ["serie", "a", "ubicación"], [[SERIES[2], "Panadería La Espiga", "Av. Mitre 1450 · salón"]], TABS_DB, S.instalado && S.instalado.firmado ? [0] : [])]; } },
- { id: "cliente", g: "Del camión al cliente", t: "Lo que ve el cliente en el QR", r: "Cliente / inspector", disp: "tel",
-   bajada: "Una página con dos solapas: comercial (lenguaje simple) y técnica (para inspectores y recargadores habilitados).",
-   quien: "Cliente, inspector DPS / AGC", donde: "Donde esté el equipo", equipo: "Su celular", tiempo: "—",
-   hace: "Cambiá de solapa: las dos leen la misma historia.",
-   falla: "Si la etiqueta se perdió, el recargador lee el grabado y la reimprime.",
-   pantalla() {
-     const s = SERIES[2], hist = [["Fabricado y controlado", D.mesNombre + " " + D.anio], ["Despachado", S.despachado ? "sí" : "pendiente"], ["Instalado en Av. Mitre 1450", S.instalado && S.instalado.firmado ? "sí" : "pendiente"]];
-     const com = `<div class="estado-grande" style="background:var(--green-soft);color:var(--green)"><div class="grande">VIGENTE</div><div>Próximo mantenimiento ${D.mesNombre.toLowerCase()} ${D.anio + 1}</div></div>
-       <dl class="dl"><dt>Equipo</dt><dd>${esc(DEMO.modelo)} · clases A, B y C</dd><dt>Prueba hidráulica</dt><dd>vence ${D.mesNombre.toLowerCase()} ${D.anio + 5}</dd><dt>Vida útil</dt><dd>hasta ${D.anio + 20}</dd></dl>
-       <ul class="tl">${hist.map(h => `<li><span><b>${esc(h[0])}</b> · ${esc(h[1])}</span></li>`).join("")}</ul><button class="btn pri">Pedir mantenimiento</button>`;
-     const tec = `<dl class="dl"><dt>Orden</dt><dd class="mono">${esc(DEMO.op)}</dd><dt>Chapa</dt><dd class="mono">H-0412 · colada 4521</dd><dt>PH fábrica</dt><dd>3,5 MPa · 1 min ✓</dd><dt>Polvo</dt><dd class="mono">PO-2603</dd><dt>Válvula</dt><dd class="mono">VA-118</dd><dt>Custodia</dt><dd>${S.instalado && S.instalado.firmado ? "Panadería La Espiga" : S.recibido ? "Matafuegos Sur" : "FLAMA"}</dd><dt>Eventos</dt><dd>${S.eventos.length} · cadena de hashes ✓</dd></dl>`;
-     return tel(`<div class="fila" style="justify-content:space-between"><div><div class="h2">${esc(s)}</div><p class="sub" style="margin:0">FLAMA S.A.</p></div><div style="color:var(--ink)">${dm(s, 44)}</div></div>
-      <div class="tabs-tel" role="tablist"><button role="tab" aria-selected="${S.tab === "com"}" data-a="tabCom">Comercial</button><button role="tab" aria-selected="${S.tab === "tec"}" data-a="tabTec">Técnica</button></div>
-      ${S.tab === "com" ? com : tec}`);
-   },
-   escribe() { return [`<div class="aviso in">Leer el QR no escribe nada: la página consulta la base. Si el cliente registra la ubicación, se agrega un evento.</div>`]; } },
- { id: "recarga", g: "Servicio", t: "Recarga anual: recepción y ficha nueva", r: "Recargas", disp: "pc",
-   bajada: `Un año después el equipo vuelve. La recepción lee el grabado y la app aplica las reglas de IRAM 3517-2.`,
-   quien: "Recepción de recargas", donde: "Planta de recargas", equipo: "Tablet e impresora (ya previstas) + lector", tiempo: "≈ 1 min por equipo",
-   hace: "Elegí el estado del equipo y mirá qué decide la app. Si es apto, el servicio cierra la ficha rev. 1.",
-   falla: "Si la regla dice inutilizar, la app no deja recargarlo.",
-   pantalla() {
-     const r = S.recarga || { corr: false, golpe: false, hecho: false };
-     const inutil = r.corr || r.golpe;
-     return pc("recargas/recepcion", `<div class="fila" style="justify-content:space-between"><div><div class="h2">${esc(SERIES[2])} · ${esc(DEMO.modelo)}</div><p class="sub" style="margin:0">Fabricado ${D.mesNombre.toLowerCase()} ${D.anio} · ficha rev. 0 · sustituto entregado: SUS-ABC5-014</p></div><span class="pill in">recepción ${D.mesNombre.toLowerCase()} ${D.anio + 1}</span></div>
-      <div class="dos" style="margin-top:14px"><div class="campo">Revisión
-       <label class="fila" for="rc1"><input id="rc1" type="checkbox" data-a="rCorr" ${r.corr ? "checked" : ""}> Corrosión (9.7.1.3 b)</label>
-       <label class="fila" for="rc2"><input id="rc2" type="checkbox" data-a="rGolpe" ${r.golpe ? "checked" : ""}> Daño mecánico o abolladura (anexo F)</label>
-       <span class="pill ok">fecha y n° de serie legibles ✓</span><span class="pill ok">vida útil hasta ${D.anio + 20} ✓</span></div>
-      <div>${inutil ? `<div class="aviso no">La regla manda INUTILIZAR (IRAM 3517-2 9.12). No se puede recargar.</div>` :
-        `<table class="tabla"><tbody><tr><td>Marbete</td><td>color del año ${D.anio + 1}</td></tr><tr><td>Polvo</td><td class="mono">PO-2702 · 5,12 kg</td></tr><tr><td>Precinto</td><td class="mono">P-27-00881</td></tr><tr><td>Etiqueta</td><td>nueva, mismo QR (9.4.14)</td></tr></tbody></table>
-        <div style="margin-top:10px">${r.hecho ? `<div class="aviso ok">✓ Ficha rev. 1 cerrada · vuelve al cliente</div>` : `<button class="btn ok" data-a="servicio">Cerrar servicio</button>`}</div>`}</div></div>`);
-   },
-   escribe() { return [sheet("db", "Base de trazabilidad", "FICHAS", ["serie", "rev", "agente", "masa", "precinto", "próx."],
-     [[SERIES[2], "0", "PO-2603", "5,14", "fábrica", (D.anio + 1) + ""], [SERIES[2], "1", "PO-2702", "5,12", "P-27-00881", (D.anio + 2) + ""]], TABS_DB, S.recarga && S.recarga.hecho ? [1] : [])]; } },
- { id: "inutilizacion", g: "Servicio", t: "Inutilización y bloqueo", r: "Recargas", disp: "pc",
-   bajada: "Cuando la regla lo manda, se perfora, se labra el acta del anexo G y el número queda bloqueado para siempre.",
-   quien: "Recargas", donde: "Planta de recargas", equipo: "PC + impresora", tiempo: "≈ 5 min por equipo",
-   hace: "Inutilizá el equipo de ejemplo y después mirá qué muestra su QR.",
-   falla: "El equipo queda 30 días en depósito a disposición del propietario antes de la disposición final (anexo G).",
-   pantalla() {
-     return pc("recargas/inutilizacion", `<div class="h2">Acta de inutilización · ${esc(OTRO)}</div><p class="sub">Motivo: corrosión en la pollera (IRAM 3517-2 9.7.1.3 b)</p>
-      <table class="tabla"><tbody><tr><td>Agente</td><td>retirado · 5,1 kg a disposición final (9.12.1 a)</td></tr><tr><td>Recipiente</td><td>2 orificios Ø 10 mm en lugar visible, lejos de la franja grabada (9.12.1 c)</td></tr>
-      <tr><td>Manguera</td><td>cortada en 2 (9.12.1 d)</td></tr><tr><td>Depósito</td><td>30 días desde el acta (anexo G)</td></tr></tbody></table>
-      <div style="margin-top:14px">${S.inutil ? `<div class="aviso no">Serie ${esc(OTRO)} BLOQUEADA · leer su QR muestra «INUTILIZADO»</div>` : `<button class="btn pri" data-a="inutilizar">Firmar acta e inutilizar</button>`}</div>`);
-   },
-   escribe() { return [sheet("db", "Base de trazabilidad", "SERIES", ["serie", "estado", "acta"], [[OTRO, S.inutil ? "BAJA" : "EN SERVICIO", S.inutil ? "AG-27-0019" : ""]], TABS_DB, S.inutil ? [0] : [])]; } },
- { id: "datos", g: "Sistema", t: "Cómo se conecta con los Sheets", r: "Todo el sistema", disp: "pc",
-   bajada: "Los Sheets de producción entran por la izquierda; la base guarda cada evento; los reportes vuelven a Sheets todas las noches.",
-   quien: "—", donde: "—", equipo: "Vercel + base Postgres + Google Sheets", tiempo: "—",
-   hace: "Mirá qué se lee, qué se guarda y qué se devuelve a Sheets, con los rangos exactos.",
-   falla: "Si la app se cae, la copia diaria en Sheets y las hojas de ruta en papel permiten seguir.",
-   pantalla() {
-     const vol = 284463 + 3107;
-     return pc("sistema", `<div class="arq">
-      <div class="col"><h5>Se lee (Google Sheets)</h5>
-       <div class="blk s"><b>Aprovechamiento_Manuales › Plan mensual</b>${esc(D.rangos.man)} del año · col. D a O = Ene a Dic · al abrir «Nueva orden»</div>
-       <div class="blk s"><b>Aprovechamiento_Carros › Plan mensual</b>${esc(D.rangos.car)} · igual</div>
-       <div class="blk s"><b>FLAMA_BOM › MODELOS</b>modelo, GTIN, presión de ensayo, masa: para las fichas</div>
-       <div class="blk s"><b>FLAMA_MRP › lotes de insumo</b>lotes vigentes de polvo, válvulas, pintura</div></div>
-      <div class="col"><h5>Se guarda (base de la app)</h5>
-       ${TABS_DB.map(t => `<div class="blk d"><b>${t}</b>${{ OP: "orden, modelo, cantidad, rango de series, hoja de ruta (PDF)", SERIES: "una fila por equipo y su estado actual", EVENTOS: "qué, cuándo, dónde, quién, hash anterior y propio", LOTES_INSUMO: "insumos de cada lote (del cierre)", AGREGACION: "equipo → caja → pallet", CUSTODIA: "quién lo tiene y desde cuándo", FICHAS: "rev. 0 de fábrica y rev. n de cada servicio" }[t]}</div>`).join("")}</div>
-      <div class="col"><h5>Vuelve a Sheets (todas las noches)</h5>
-       <div class="blk p"><b>FLAMA_Trazabilidad › OP</b>órdenes del mes y su avance</div>
-       <div class="blk p"><b>FLAMA_Trazabilidad › Rendimiento</b>aptos / grabados por lote, rechazos por puesto</div>
-       <div class="blk p"><b>FLAMA_Trazabilidad › Custodia</b>equipos por distribuidor y cliente</div>
-       <div class="blk p"><b>FLAMA_Trazabilidad › Vencimientos</b>mantenimientos y PH del mes</div>
-       <div class="aviso in">Se leen con IMPORTRANGE desde el MRP y el Balanceo, como los demás Excel.</div></div></div>
-      <div class="aviso av" style="margin-top:14px">Por qué la base no es un Sheet: en 2035 el Plan mensual llega a ≈ ${n0(vol)} equipos por año. Con unos 3 eventos por equipo son ≈ ${n0(vol * 3)} filas por año; un Google Sheet admite 10 millones de celdas, que con 8 columnas se llenan en poco más de un año.</div>`);
-   },
-   escribe() { return [`<div class="card"><h4>Conexiones</h4><dl class="dl"><dt>Sheets → app</dt><dd>API de Google Sheets con una cuenta de servicio de solo lectura</dd><dt>App → Sheets</dt><dd>tarea nocturna que reescribe las pestañas de FLAMA_Trazabilidad</dd><dt>Lector</dt><dd>USB en modo teclado: escribe en la pantalla</dd><dt>Impresora</dt><dd>desde el navegador (Zebra Browser Print o PDF)</dd><dt>Marcadora</dt><dd>archivo de series por USB o red</dd><dt>Celulares</dt><dd>el QR abre una página web</dd></dl></div>`]; } },
-];
-
-// ---------------------------------------------------------------- hoja de ruta (papel)
-function hojaRuta(interactiva) {
-  const fila = (p, ins, f) => `<tr><td>${p}</td><td>${ins}</td><td class="mano">${f ? "12/03" : ""}</td><td class="mano">${f ? "J. Pérez" : ""}</td></tr>`;
-  const col = arr => `<table><thead><tr><th>Serie</th><th>Esp.</th><th>PH</th><th>Carga</th><th>Pérd.</th></tr></thead><tbody>${arr.map(s => {
-    const t = S.tildes[s];
-    const c = (k, v) => `<td class="caja-tilde mano ${v ? "" : "rojo"}" ${interactiva ? `data-t="${s}|${k}" tabindex="0" role="button" aria-label="${s} ${k}"` : ""}>${interactiva ? (v ? "✓" : "✗") : ""}</td>`;
-    return `<tr><td class="mono" style="font-size:11px">${s}</td>${c("esp", t.esp)}${c("ph", t.ph)}${c("carga", t.carga)}${c("perd", t.perd)}</tr>`; }).join("")}</tbody></table>`;
-  const tercio = Math.ceil(SERIES.length / 3);
-  return `<div class="hoja"><div style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start"><div><h2>Hoja de ruta del lote</h2>
-    <div class="meta"><b>${esc(DEMO.op)}</b> · ${esc(DEMO.modelo)} · ${SERIES.length} u · series ${SERIES[0]} a ${SERIES[SERIES.length - 1]}<br>Chapa H-0412 (colada 4521) · emitida por PCP · viaja en el carro</div></div><div class="qrbox">${qr("OP", 74)}</div></div>
-    <table style="margin-bottom:12px"><thead><tr><th>Puesto</th><th>Insumo (anotar o pegar etiqueta)</th><th>Fecha</th><th>Firma</th></tr></thead><tbody>
-    ${fila("2 · G2 + Pannier", `grabados ${SERIES[0].slice(-3)}–${SERIES[SERIES.length - 1].slice(-3)}`, interactiva)}${fila("4–7 · Cúpulas", `<span class="mano">CU-0303</span>`, interactiva)}${fila("8–12 · Soldaduras", `<span class="mano">AL-2602 / G-77</span>`, interactiva)}${fila("16–19 · Pintura", `<span class="mano">PP-2603-2</span>`, interactiva)}${fila("20–22 · Carga", `<span class="mano">PO-2603 / VA-118</span>`, interactiva)}</tbody></table>
-    <div class="series-grid">${col(SERIES.slice(0, tercio))}${col(SERIES.slice(tercio, 2 * tercio))}${col(SERIES.slice(2 * tercio))}</div>
-    <p style="font-size:12px;margin:10px 0 0">Cierre (calidad): rechazos <span class="mano rojo">${interactiva ? SERIES.filter(s => !Object.values(S.tildes[s]).every(Boolean)).join(", ") || "—" : ""}</span> · firma <span class="mano">${interactiva ? "M. Ruiz" : ""}</span></p></div>`;
-}
-
-// ---------------------------------------------------------------- render
-function pintarNav() {
-  const grupos = [...new Set(PASOS.map(p => p.g))];
-  $("#pasos").innerHTML = grupos.map(g => `<div class="grupo"><h3>${esc(g)}</h3><ol>${PASOS.map((p, i) => p.g !== g ? "" :
-    `<li><button class="paso-btn ${hecho(i) ? "hecho" : ""}" data-p="${i}" ${i === S.paso ? 'aria-current="step"' : ""}><span class="n">${hecho(i) && i !== S.paso ? "✓" : i + 1}</span><span class="t">${esc(p.t)}<small>${esc(p.r)}</small></span></button></li>`).join("")}</ol></div>`).join("");
-}
-function hecho(i) {
-  return [S.opOk, S.opOk, S.grabados >= SERIES.length, S.cerrado, S.cerrado, S.impresos.length >= SERIES.length - 1, S.pallet, S.despachado, S.salida, S.recibido,
-    !!(S.instalado && S.instalado.firmado), !!(S.instalado && S.instalado.firmado), !!(S.recarga && S.recarga.hecho), S.inutil, false][i];
-}
-function pintar() {
-  const p = PASOS[S.paso];
-  $("#ceja").textContent = `${p.g} · paso ${S.paso + 1} de ${PASOS.length}`;
-  $("#titulo").textContent = p.t;
-  $("#bajada").textContent = p.bajada;
-  $("#escenario").innerHTML = p.pantalla();
-  $("#ficha").innerHTML = `<div class="card"><h4>Quién, dónde y con qué</h4><dl class="dl"><dt>Quién</dt><dd>${esc(p.quien)}</dd><dt>Dónde</dt><dd>${esc(p.donde)}</dd><dt>Equipo</dt><dd>${esc(p.equipo)}</dd><dt>Tiempo</dt><dd>${esc(p.tiempo)}</dd></dl></div>
-    <div class="card"><h4>Qué hace</h4><p style="margin:0;font-size:14px">${esc(p.hace)}</p></div>
-    <div class="card"><h4>Se escribe en</h4><div style="display:flex;flex-direction:column;gap:10px">${p.escribe().join("")}</div></div>
-    <div class="card"><h4>Si falla</h4><p style="margin:0;font-size:14px">${esc(p.falla)}</p></div>`;
-  $("#ant").disabled = S.paso === 0; $("#sig").disabled = S.paso === PASOS.length - 1;
-  pintarNav(); pintarBarra();
-  try { history.replaceState(null, "", "#" + p.id); } catch (e) {}
-}
-function ir(i) { S.paso = Math.max(0, Math.min(PASOS.length - 1, i)); S.ultimo = null; pintar(); window.scrollTo({ top: 0, behavior: "smooth" }); }
-
-// ---------------------------------------------------------------- acciones
-async function leer(s) {
-  s = s.trim().toUpperCase().replace(/^N°\s*/, "");
-  if (/^\d{8}$/.test(s)) s = s.slice(0, 2) + "-" + s.slice(2);
-  if (!S.cerrado) { S.ultimo = { s, ok: false, motivo: "lote sin cerrar" }; }
-  else if (!SERIES.includes(s)) { S.ultimo = { s, ok: false, motivo: "no pertenece al lote abierto" }; }
-  else if (s === REJ) { S.ultimo = { s, ok: false, motivo: "BLOQUEADO: rechazo en la prueba hidráulica" }; await evento("BLOQUEO EN ETIQUETADO", s, "puesto 24"); }
-  else if (S.impresos.includes(s)) { S.ultimo = { s, ok: false, motivo: "ya tiene etiqueta (reimpresión solo con supervisor)" }; }
-  else { S.impresos.push(s); S.ultimo = { s, ok: true }; await evento("IDENTIFICADO", s, "puesto 24 · lector"); }
-  pintar(); const i = $("#lectura"); if (i) i.focus();
-}
-const ACC = {
-  async confirmar() { S.opOk = true; for (const l of lotesMes().slice(0, 3)) await evento("OP EMITIDA", l.op, "PCP", { modelo: l.modelo }); await evento("SERIES RESERVADAS", `${SERIES[0]}…${SERIES[SERIES.length - 1]}`, "PCP"); pintar(); },
-  async grabar1() { if (!S.opOk) { await ACC.confirmar(); } if (S.grabados < SERIES.length) { S.grabados++; await evento("GRABADO", SERIES[S.grabados - 1], "G2 · Pannier"); } pintar(); },
-  async grabarTodo() { if (!S.opOk) await ACC.confirmar(); const d = S.grabados; S.grabados = SERIES.length; await evento("GRABADO (lote)", `${SERIES[d]}…${SERIES[SERIES.length - 1]}`, "G2 · Pannier"); pintar(); },
-  async cerrar() { if (S.grabados < SERIES.length) { S.grabados = SERIES.length; await evento("GRABADO (lote)", DEMO.op, "G2 · Pannier"); }
-    S.cerrado = true; await evento("HOJA CERRADA", DEMO.op, "calidad · celular", { foto: S.foto || "sin foto" });
-    for (const s of SERIES.filter(s => !Object.values(S.tildes[s]).every(Boolean))) await evento("RECHAZO", s, "calidad"); pintar(); },
-  async leerSig() { const f = SERIES.filter(s => s !== REJ && !S.impresos.includes(s)); if (f.length) await leer(f[0]); },
-  async leerRech() { await leer(REJ); },
-  async leerTodo() { if (!S.cerrado) return leer(SERIES[0]); const f = SERIES.filter(s => s !== REJ && !S.impresos.includes(s)); S.impresos.push(...f); S.ultimo = { s: f[f.length - 1], ok: true }; await evento("IDENTIFICADO (lote)", `${f.length} equipos`, "puesto 24 · lector"); pintar(); },
-  async pallet() { S.pallet = true; S.cajas = SERIES.length - 1; await evento("PALLET CERRADO", "SSCC …0457", "puesto 25"); pintar(); },
-  async despachar() { S.despachado = true; await evento("DESPACHADO", "R 0001-00004521", "depósito PT", { cot: S.cot }); pintar(); },
-  async salida() { S.salida = true; await evento("EN TRÁNSITO", "SSCC …0457", "chofer · celular"); pintar(); },
-  async danio() { S.danio = !S.danio; pintar(); },
-  async recibir() { S.recibido = true; await evento("RECIBIDO", "SSCC …0457", "Matafuegos Sur · celular", { danio: S.danio }); pintar(); },
-  async firmar() { S.instalado = Object.assign(S.instalado || { alt: 1.35, sen: 2.2 }, { firmado: true }); await evento("INSTALADO", SERIES[2], "instalador · celular"); pintar(); },
-  tabCom() { S.tab = "com"; pintar(); }, tabTec() { S.tab = "tec"; pintar(); },
-  rCorr() { S.recarga = Object.assign(S.recarga || { corr: false, golpe: false, hecho: false }, { corr: !(S.recarga && S.recarga.corr) }); pintar(); },
-  rGolpe() { S.recarga = Object.assign(S.recarga || { corr: false, golpe: false, hecho: false }, { golpe: !(S.recarga && S.recarga.golpe) }); pintar(); },
-  async servicio() { S.recarga = Object.assign(S.recarga || {}, { hecho: true }); await evento("SERVICIO · FICHA REV. 1", SERIES[2], "recargas"); pintar(); },
-  async inutilizar() { S.inutil = true; await evento("INUTILIZADO · BAJA", OTRO, "recargas", { acta: "AG-27-0019" }); pintar(); },
-};
-document.addEventListener("click", async e => {
-  const p = e.target.closest("[data-p]"); if (p) return ir(+p.dataset.p);
-  const t = e.target.closest("[data-t]"); if (t) { const [s, k] = t.dataset.t.split("|"); S.tildes[s][k] = !S.tildes[s][k]; return pintar(); }
-  const a = e.target.closest("[data-a]"); if (a && ACC[a.dataset.a] && a.type !== "file") { if (a.type === "checkbox") return ACC[a.dataset.a](); e.preventDefault(); return ACC[a.dataset.a](); }
-});
-document.addEventListener("keydown", e => { const t = e.target.closest("[data-t]"); if (t && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); t.click(); } });
-document.addEventListener("change", e => {
-  if (e.target.id === "foto" && e.target.files[0]) { S.foto = e.target.files[0].name; pintar(); }
-});
-document.addEventListener("input", e => {
-  const k = e.target.dataset.i; if (!k) return;
-  if (k === "cot") S.cot = e.target.value;
-  if (k === "alt" || k === "sen") { S.instalado = Object.assign(S.instalado || { alt: 1.35, sen: 2.2 }, { [k]: parseFloat(e.target.value) || 0 }); const pos = e.target.id; pintar(); const el = document.getElementById(pos); if (el) { el.focus(); const v = el.value; el.value = ""; el.value = v; } }
-});
-document.addEventListener("submit", e => { if (e.target.dataset.f === "leer") { e.preventDefault(); const v = $("#lectura").value; if (v) leer(v); } });
-$("#ant").addEventListener("click", () => ir(S.paso - 1));
-$("#sig").addEventListener("click", () => ir(S.paso + 1));
-const ini = PASOS.findIndex(p => "#" + p.id === location.hash);
-S.paso = ini >= 0 ? ini : 0;
-pintarRegistro(); pintar();
+const IMG = /*__IMG__*/null;
+const LOGO = /*__LOGO__*/null;
+</script>
+<script>
+/*__JS__*/
 </script>
