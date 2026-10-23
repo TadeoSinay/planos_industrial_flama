@@ -1,7 +1,8 @@
-"""Word «Sistema de trazabilidad FLAMA» v3 (salida/Sistema_de_trazabilidad_FLAMA.docx): dónde va el marcado y cuánto
+"""Word «Sistema de trazabilidad FLAMA» v4 (salida/Sistema_de_trazabilidad_FLAMA.docx): dónde va el marcado y cuánto
 perfora (renders del modelo 3D), sistema por lote con hoja de ruta y lecturas en dos puntos, intraplanta y extraplanta
-paso a paso con restricciones, etiquetas, tecnología, interfaces y transparencia. Geometría: cuerpos.json; renders:
-render_3d.py (render/*.png)."""
+paso a paso con restricciones, etiquetas, tecnología, interfaces y transparencia; la app (prueba de concepto), atención
+al cliente, manual MT-01 y análisis de desvíos. Geometría: cuerpos.json; renders: render_3d.py (render/*.png);
+capturas y tablas de la app: app/capturas.js (capturas/*.png y app/contenido.json)."""
 import json
 import os
 import subprocess
@@ -41,6 +42,12 @@ U_195 = "https://www.argentina.gob.ar/normativa/nacional/resoluci%C3%B3n-195-199
 U_UNECE = "https://unece.org/DAM/trans/danger/publi/unrec/rev13/Spanish/03_Part3.pdf"
 U_CABA = "https://buenosaires.gob.ar/gcaba_historico/infraestructura/logistica-nocturna-en-carriles-exclusivos"
 
+U_24240 = "http://servicios.infoleg.gob.ar/infolegInternet/anexos/0-4999/638/texact.htm"
+U_25326 = "http://servicios.infoleg.gob.ar/infolegInternet/anexos/60000-64999/64790/texact.htm"
+U_424 = "https://www.argentina.gob.ar/normativa/nacional/norma-342869/texto"
+APP = os.path.join(AQUI, "app")
+URL_APP = "https://trazabilidad-flama.vercel.app"
+
 ORDEN = ["1kg", "2.5kg", "5kg", "10kg", "25kg", "50kg", "70kg", "100kg"]
 
 
@@ -54,6 +61,137 @@ def render(bl, salida, pie):
 
 def g(x):
     return f"{x:g}".replace(".", ",")
+
+
+def secciones_v4(add, p, bul, tabla, img):
+    """11 a 14: la app, atención al cliente, manual MT-01 y desvíos. Las tablas vienen de app/contenido.json (las
+    mismas de la app)."""
+    with open(os.path.join(APP, "contenido.json"), encoding="utf-8") as fh:
+        A = json.load(fh)
+    dm = A["DEMO"]
+
+    # ================================================================== 11
+    add("h1", "11. La app (prueba de concepto)")
+    p(f"La app se arma sola desde el Plan mensual de los Excel de Aprovechamiento. El ejemplo sigue el lote real "
+      f"**{dm['op']}** ({dm['modelo']}, series {dm['desde']} a {dm['hasta']}, partida {A['PARTIDA']['id']} de "
+      f"{A['PARTIDA']['u']} u). Las órdenes, series y cantidades son las del plan; los nombres de clientes, los lotes de "
+      f"insumo y las mediciones son de ejemplo y la app lo dice en cada pantalla. Es una sola página web: se publica en "
+      f"Vercel ({URL_APP}) y el QR de cada equipo abre {URL_APP}/m/<serie>.")
+    tabla(["Vista", "Para quién", "Qué muestra"], [
+        ["Inicio", "Dirección, clientes, inspectores", "El equipo, el número grabado, la familia a escala y el recorrido"],
+        ["Recorrido", "Planta, depósito, recargas", "16 pasos con la pantalla real, quién, dónde, qué se escribe y qué "
+                                                    "norma aplica"],
+        ["Atención al cliente", "Cliente y atención", "Portal del QR, reclamos con plazo, datos personales, baja y "
+                                                       "arrepentimiento"],
+        ["Manual", "Todo FLAMA", "Manual MT-01 con un buscador de traza que funciona"],
+        ["Desvíos", "Calidad y dirección", "Cartas de control, Pareto y registro de desvíos"],
+    ], [3.2, 4.6, 9.2])
+    img("cap_inicio", "Inicio de la app: el render del 5 kg del lado pared con la franja grabada y la etiqueta de serie.")
+    add("h2", "11.1 Los 16 pasos del recorrido")
+    tabla(["#", "Paso", "Quién", "Con qué", "Norma"], [[str(i + 1), x["t"], x["quien"], x["equipo"],
+                                                         "; ".join(x["normas"]) or "—"] for i, x in enumerate(A["PASOS"])],
+          [0.8, 4, 3.4, 4, 4.8])
+    for k, pie in (("cap_orden", "Paso 1: la orden lee el Plan mensual, arma los lotes y la partida DPS."),
+                   ("cap_hoja", "Paso 4: la hoja de ruta con las tildes por equipo; el 17 falla la prueba hidráulica."),
+                   ("cap_etiquetado", "Paso 6: el lector lee el grabado; el rechazo queda bloqueado y cada etiqueta "
+                                      "lleva su estampilla de fabricación DPS."),
+                   ("cap_instalacion", "Paso 11: la instalación pide los datos de la jurisdicción (CABA: tarjeta del "
+                                       "SGM), controla las alturas y emite la garantía."),
+                   ("cap_reclamo", "Paso 13: el reclamo entra con el equipo identificado y su traza completa."),
+                   ("cap_recarga", "Paso 14: presupuesto, sustituto habilitado, cambio total de polvo si está bajo de "
+                                   "peso y constancia del servicio.")):
+        img(k, pie)
+    add("h2", "11.2 Publicarla en Vercel")
+    bul("Carpeta trazabilidad/app del repositorio: index.html es la app completa (un solo archivo).",
+        "vercel.json manda /m/<serie>, /r/<remito> y /p/<pallet> a la misma página, que abre la vista que corresponde.",
+        "En Vercel: Add New → Project → importar el repositorio → Root Directory trazabilidad/app → Framework «Other» → "
+        "Deploy. Cada push a la rama vuelve a publicarla.",
+        "Para actualizar los datos: python3 build.py <año> <mes> lee el Plan mensual y rearma index.html.")
+
+    # ================================================================== 12
+    add("h1", "12. Atención al cliente")
+    p("El cliente no tiene que buscar nada: escanea el QR del equipo y desde ahí pide servicio, reclama, ve qué datos "
+      "suyos tiene FLAMA, se da de baja de los avisos o se arrepiente de una compra web. Del lado de FLAMA el reclamo "
+      "llega con el lote, los insumos, los ensayos y la custodia del equipo. La página pública del QR muestra solo "
+      "datos del equipo, nunca del dueño.")
+    img("cap_qr", "Lo que ve quien escanea el QR: estado, vencimientos, historia y los enlaces legales al pie.", 7)
+    add("h2", "12.1 Plazos de respuesta")
+    tabla(["Pedido", "Acuse", "Primera respuesta", "Resolución", "Base"], A["PLAZOS"], [4.4, 2.2, 2.8, 3.6, 4])
+    p("Los plazos que fija la ley se cumplen tal cual. Los marcados **criterio** los fija FLAMA y se miden en Desvíos.")
+    add("h2", "12.2 Cómo se trata un reclamo (IRAM-ISO 10002)")
+    bul("Recibido: entra por el QR, el mail o el teléfono y se carga igual.", "Acuse: número y plazo en el momento.",
+        "Evaluado: seguridad primero; si el equipo puede no funcionar, sustituto en 48 h (criterio).",
+        "Investigado: la traza muestra lote, insumos, ensayos y otros reclamos del mismo lote.",
+        "Respondido: por escrito, con la vía de conciliación (Ventanilla Federal, COPREC, Ley 26.993).",
+        "Cerrado: encuesta de una pregunta; la causa pasa a Desvíos.")
+    img("cap_clientes", "Portal del cliente y bandeja de reclamos con su etapa y su plazo.")
+    add("h2", "12.3 Matriz normativa")
+    tabla(["Norma", "Qué exige", "Cómo lo cumple la app", "Dónde"], A["MATRIZ"], [3.6, 4.6, 6.2, 2.6])
+
+    # ================================================================== 13
+    add("h1", "13. Manual de seguimiento y trazabilidad (MT-01)")
+    p("**Objeto.** Fijar cómo se identifica cada matafuego, qué se registra en cada etapa y cómo se reconstruye su "
+      "historia. **Alcance:** manuales ABC de 1 a 10 kg, carros de 25 a 100 kg, sustitutos y recargas. La unidad de "
+      "trazabilidad es la **serie**; la de registro en planta, el **lote** (un carro); la del certificado de "
+      "fabricación, la **partida** (≥ 100 u, Res. 349/07 art. 21).")
+    add("h2", "13.1 Responsabilidades")
+    tabla(["Actividad", "PCP", "Producción", "Calidad", "Resp. técnico", "Recargas / instalador", "Atención"],
+          A["RACI"], [5, 1.6, 2, 1.8, 2.2, 2.6, 1.8])
+    p("R: lo hace · A: lo aprueba · C: se lo consulta · I: se le informa. El responsable técnico y el responsable "
+      "operativo de taller son los de la Res. 349/07 art. 7 y 8.")
+    add("h2", "13.2 Procedimientos")
+    tabla(["Código", "Procedimiento", "Responsable", "Pasos", "Registro", "Control"],
+          [[c, t, q, " ".join(f"{i + 1}) {x}" for i, x in enumerate(ps)), reg, ctl] for c, t, q, _, ps, reg, ctl in A["PROCS"]],
+          [1.4, 3, 2.4, 5.6, 2.4, 2.2])
+    add("h2", "13.3 Registros")
+    tabla(["Registro", "Soporte", "Se guarda"], [
+        ["Hoja de ruta F-01", "papel en el carro + foto en la base", "vida útil + 6 años (criterio)"],
+        ["Planilla de ensayos por partida F-02", "base, visada por el RT", "6 años mínimo (IRAM 3517-2 9.4.16)"],
+        ["Libro de actas DPS", "libro rubricado; la app arma los asientos", "según autoridad (Res. 349/07 art. 19)"],
+        ["Contraste de manómetros", "base", "cada 15 días (Res. 349/07 art. 20)"],
+        ["Eventos con hash", "base + copia nocturna en Sheets", "vida útil + 6 años (criterio)"],
+        ["Fichas de servicio F-05 y actas F-06", "base + papel firmado", "6 años mínimo"],
+        ["Reclamos F-08 y desvíos F-07", "base", "6 años (criterio)"],
+    ], [5.4, 6, 5.6])
+    p("La base con datos de titulares se inscribe en el registro de la Agencia de Acceso a la Información Pública "
+      "(Ley 25.326 art. 21). En la base nada se borra: un error se corrige con un evento nuevo que apunta al anterior; "
+      "en papel, las enmiendas las salva el responsable técnico (Res. 349/07 art. 43 y 45).")
+    add("h2", "13.4 Buscar la traza y retiro preventivo")
+    p("Cualquier persona autorizada busca una serie, una orden, un lote de insumo o un remito y ve hacia atrás (de "
+      "dónde viene) y hacia adelante (dónde está). Meta: menos de 2 minutos (criterio), probada con un simulacro por "
+      "semestre. Si un insumo resulta defectuoso, la misma búsqueda da las series afectadas, dónde están y a quién "
+      "avisar (P-12).")
+    img("cap_buscar", "Búsqueda del lote de polvo PO-2603: órdenes, series, distribuidores y titulares a avisar.")
+    add("h2", "13.5 Contingencias")
+    tabla(["Si pasa esto", "Se hace esto"], [
+        ["Se corta internet en planta", "la hoja de ruta sigue en papel; cierre y etiquetado se cargan al volver"],
+        ["El lector no lee el grabado", "se tipea el número; queda como lectura manual y se revisa en el cierre"],
+        ["Se pierde la etiqueta QR", "el recargador lee el grabado y reimprime con el mismo QR"],
+        ["Grabado ilegible y sin etiqueta", "sin número no hay trazabilidad: se inutiliza (IRAM 3517-2 anexo F)"],
+        ["Se cae la base", "se trabaja con la copia nocturna en Sheets"],
+        ["Falta el contraste del manómetro", "la prueba hidráulica queda bloqueada (Res. 349/07 art. 20)"],
+    ], [6, 11])
+
+    # ================================================================== 14
+    add("h1", "14. Análisis de desvíos")
+    dv = A["DV"]
+    p(f"Las cartas y el Pareto se arman con los eventos de la base. En la prueba de concepto las órdenes son las del "
+      f"Plan mensual y los rechazos, masas y reclamos son **simulados** con semilla fija: {dv['rech']} rechazos en "
+      f"{dv['N']} equipos manuales del mes ({g(round(100 * (1 - dv['rech'] / dv['N']), 1))} % a la primera).")
+    add("h2", "14.1 Reglas que abren un desvío solas")
+    tabla(["Qué se mira", "Umbral", "Dónde", "Qué hace la app"], A["REGLAS"], [4, 5, 3, 5])
+    add("h2", "14.2 Gráficos")
+    img("cap_pareto", "Pareto de rechazos por causa.")
+    img("cap_cartap", f"Carta p de fallas en PH por lote (órdenes de 20 equipos o más; p̄ = "
+                      f"{g(round(100 * dv['pb'], 1))} %).")
+    img("cap_carga", f"Carta de valores individuales de la masa de carga del lote {dm['op']}: x̄ = "
+                     f"{g(round(dv['media'] / 1000, 3))} kg, LCS {g(round(dv['lcs'] / 1000, 3))}, LCI "
+                     f"{g(round(dv['lci'] / 1000, 3))}; tolerancia DOC-02 5,00-5,30 kg.")
+    add("h2", "14.3 Registro de desvíos")
+    tabla(["RD", "Origen", "Qué pasó", "Severidad", "Causa (último porqué)", "Acción", "Estado"],
+          [[r["cod"], r["origen"], r["que"], r["sev"], r["porq"][-1], r["accion"], r["estado"]] for r in A["RDS"]],
+          [1.8, 1.6, 3.6, 1.6, 3.4, 3.6, 1.4])
+    p("Ningún desvío se cierra sin la verificación: la prueba, en datos, de que no volvió a pasar.")
 
 
 def bloques(fig):
@@ -80,15 +218,28 @@ def bloques(fig):
 
     add("titulo", "Sistema de trazabilidad FLAMA")
     add("sub", "Marcado del recipiente, trazabilidad en planta y fuera de ella, recarga, retorno, inutilización y "
-               "revendidos · versión 3")
+               "revendidos, atención al cliente, manual y desvíos · versión 4")
     p("Un número por recipiente, grabado en el cuerpo cuando se corta la chapa, que no se pierde nunca. Todo lo demás "
       "(etiqueta, QR, app, legajo) cuelga de ese número. Las normas se citan por cláusula, sin transcribirlas; donde "
       "un valor es una decisión de diseño y no un requisito se marca **criterio**. Las medidas de los cuerpos, la "
       "etiqueta, la oblea, los sellos, los triángulos del eje y la faja salen del modelo 3D de los planos "
       "(trazabilidad/cuerpos.json).")
 
+    add("h1", "Novedades de la versión 4")
+    tabla(["Pediste", "Dónde está"], [
+        ["La app con diseño de FLAMA", "Sección 11: cinco vistas (inicio, recorrido de 16 pasos, atención al cliente, "
+                                       "manual y desvíos) con capturas"],
+        ["Que la prueba de concepto sea realista y siga las normas", "Cada paso cita su artículo: partida y estampilla "
+         "DPS (Res. 349/07), tarjeta y proceso batch del SGM (Res. 32-AGC/15), alturas (IRAM 3517-2)"],
+        ["Normativa de atención al cliente", "Sección 12: plazos y matriz norma → cómo lo cumple la app (Ley 24.240, "
+                                             "Ley 25.326, Res. SCI 424/2020, Ley 26.993, IRAM-ISO 10002)"],
+        ["Manual de seguimiento y trazabilidad", "Sección 13: manual MT-01 con responsabilidades, registros, 12 "
+                                                 "procedimientos, búsqueda de traza y retiro preventivo"],
+        ["Análisis de desvíos", "Sección 14: reglas automáticas, cartas de control, Pareto y registro de desvíos"],
+    ], [6, 11])
+
     # ================================================================== 0
-    add("h1", "0. Qué cambió en esta versión (tus 8 puntos)")
+    add("h1", "0. Qué cambió en la versión 3 (tus 8 puntos)")
     tabla(["Pediste", "Qué hice"], [
         ["1. Que se entienda dónde va y cuánto perfora", "Renders del matafuego real de los planos con flechas (1.1), "
          "vista desde arriba con los ángulos (1.2) y corte de la pared **a escala** con lo que perfora y lo que queda "
@@ -106,7 +257,7 @@ def bloques(fig):
         ["7. Interfaz, software y hardware; que se alimente de los Excel", "Sección 8: pantallas, equipos (casi todos "
          "ya previstos en el layout) y cómo el sistema lee el Plan mensual y asigna las series por lote"],
         ["8. Todo transparente", "Sección 9: quién ve qué, cómo se corrige un error sin borrar, qué indicadores da"],
-        ["9. App en Vercel", "Siguiente paso, sobre este diseño"],
+        ["9. App en Vercel", "Sección 11: la app con el diseño de FLAMA, lista para publicar en Vercel"],
     ], [5, 12])
 
     # ================================================================== 1
@@ -464,6 +615,8 @@ def bloques(fig):
         "GTIN (alta en GS1 Argentina) o solo número de serie.", "Cantidad exenta UN 1044 y requisitos de transporte "
                                                                "vigentes.", "Umbrales vigentes del COT.")
 
+    secciones_v4(add, p, bul, tabla, img)
+
     add("h1", "Fuentes")
     for t, u in (("ISO 9001:2015 8.5.2 explicado", U_ISO), ("Lectores en modo teclado (Tallyfy)", U_HID),
                  ("Cognex DataMan 8700", U_COGNEX), ("Pryor MarkMaster Networked", U_PRYOR),
@@ -473,11 +626,13 @@ def bloques(fig):
                                                                                U_UNECE),
                  ("CCyCN art. 1298", U_CCYCN), ("ARBA: COT", U_COT), ("GCBA: logística nocturna", U_CABA),
                  ("Pannier ADP120160D", U_PANNIER), ("The Fabricator: micropercusión bajo pintura", U_FAB),
-                 ("Seguro de incendio", U_SEG)):
+                 ("Seguro de incendio", U_SEG), ("Ley 24.240 (texto actualizado)", U_24240),
+                 ("Ley 25.326 (texto actualizado)", U_25326), ("Res. SCI 424/2020", U_424)):
         add("b", f"[{t}]({u})")
     add("b", "IRAM 3523 5.1 · IRAM 3525 5.1 · IRAM 3550 5.1 · IRAM 3517-2:2020 (5.3, 6.2.14, 7.3, 9.2, 9.4.5, 9.4.13, "
-             "9.4.14, 9.4.16, 9.6, 9.7, 9.10, 9.11, 9.12, tabla 3, anexos E, F y G) · Res. 349/07 PBA (art. 32, anexo "
-             "IV). Se citan, no se transcriben. Documentos FLAMA: DOC-01, DOC-02, planos FL_MAT y FL_SUS, modelo 3D.")
+             "9.4.14, 9.4.16, 9.6, 9.7, 9.10, 9.11, 9.12, tabla 3, anexos E, F y G) · Res. 349/07 PBA (art. 7-9, 19-29, "
+             "32, 33, 43-46, anexos I-IV) · Res. 32-AGC/15 CABA (anexos I-III) · Ley 26.993 · IRAM-ISO 10002. Se "
+             "citan, no se transcriben. Documentos FLAMA: DOC-01, DOC-02, planos FL_MAT y FL_SUS, modelo 3D.")
     return b
 
 
@@ -486,6 +641,8 @@ def main():
     fig.update(F3.todas(tempfile.mkdtemp(prefix="figs_traz3_")))
     for k in ("r5kg", "r1kg", "r25kg"):
         fig[k] = os.path.join(AQUI, "render", k + ".png")
+    for f in os.listdir(os.path.join(AQUI, "capturas")):
+        fig[os.path.splitext(f)[0]] = os.path.join(AQUI, "capturas", f)
     render(bloques(fig), DOCX, "Sistema de trazabilidad FLAMA")
     print("ok", DOCX)
 

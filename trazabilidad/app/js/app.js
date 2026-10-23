@@ -56,7 +56,19 @@ document.addEventListener("pointermove", e => {
 // arranque: el # elige la vista (o el paso del recorrido); si no hay, la última vista usada
 document.getElementById("logoTop").innerHTML = logo(38);
 document.getElementById("logoPie").innerHTML = logo(22);
+// página pública que abre el QR del equipo (/m/<serie>); /r/ (remito) y /p/ (pallet) van al paso del recorrido
+function vistaQR() {
+  return `<div class="cuerpo wrap" style="max-width:520px"><div class="bloque" style="display:flex;flex-direction:column;gap:12px">${paginaQR(S.tab, S.qrSerie)}</div>
+    <p class="nota" style="text-align:center">Página que abre el QR de la etiqueta. <a href="#inicio" data-v="inicio">Ver el sistema completo</a></p></div>`;
+}
+VISTAS.qr = vistaQR;
 function desdeHash(inicio) {
+  const ruta = location.pathname.match(/\/(m|r|p)\/([^/]+)\/?$/);
+  if (inicio && ruta && !location.hash) {
+    if (ruta[1] === "m") { S.vista = "qr"; S.qrSerie = decodeURIComponent(ruta[2]); }
+    else { S.vista = "recorrido"; S.paso = PASOS.findIndex(p => p.id === (ruta[1] === "r" ? "chofer" : "embalaje")); }
+    $("#vista").innerHTML = ""; return pintar();
+  }
   const h = location.hash.slice(1);
   if (VISTAS[h]) S.vista = h;
   else if (PASOS.some(p => p.id === h)) { S.vista = "recorrido"; S.paso = PASOS.findIndex(p => p.id === h); }

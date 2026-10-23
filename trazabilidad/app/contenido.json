@@ -1,0 +1,891 @@
+{
+ "PLAZOS": [
+  [
+   "Seguridad: el equipo podría no funcionar",
+   "inmediato",
+   "contacto ≤ 24 h",
+   "sustituto ≤ 48 h",
+   "criterio FLAMA · IRAM 3517-2 9.4.5"
+  ],
+  [
+   "Garantía del equipo",
+   "inmediato",
+   "≤ 2 días hábiles",
+   "≤ 10 días hábiles",
+   "Ley 24.240 art. 11-17 · plazos: criterio"
+  ],
+  [
+   "Deficiencia de una recarga",
+   "inmediato",
+   "≤ 2 días hábiles",
+   "sin costo, si aparece dentro de 30 días",
+   "Ley 24.240 art. 23"
+  ],
+  [
+   "Acceso a datos personales",
+   "inmediato",
+   "—",
+   "≤ 10 días corridos",
+   "Ley 25.326 art. 14"
+  ],
+  [
+   "Corrección o supresión de datos",
+   "inmediato",
+   "—",
+   "≤ 5 días hábiles",
+   "Ley 25.326 art. 16"
+  ],
+  [
+   "Arrepentimiento de compra web",
+   "código ≤ 24 h",
+   "—",
+   "10 días corridos para ejercerlo",
+   "Res. SCI 424/2020 · Ley 24.240 art. 34"
+  ],
+  [
+   "Baja de avisos o del contrato de mantenimiento",
+   "inmediata",
+   "—",
+   "—",
+   "Ley 24.240 art. 10 ter"
+  ]
+ ],
+ "MATRIZ": [
+  [
+   "Ley 24.240 art. 4",
+   "Información cierta, clara y detallada del producto.",
+   "La página del QR muestra modelo, clases de fuego, vencimientos de mantenimiento y PH, vida útil y la historia del equipo.",
+   "QR · Comercial"
+  ],
+  [
+   "Ley 24.240 art. 8 bis",
+   "Trato digno; nada intimidatorio ni vejatorio.",
+   "Avisos de vencimiento informativos (sin «multas» ni amenazas); plantillas de respuesta revisadas por calidad.",
+   "Avisos · Reclamos"
+  ],
+  [
+   "Ley 24.240 art. 10 ter",
+   "La baja se hace por el mismo medio que el alta.",
+   "Botón «Dejar de recibir avisos» en el pie de cada página del QR, sin registro previo.",
+   "Portal · Baja"
+  ],
+  [
+   "Ley 24.240 art. 11 y 14",
+   "Garantía legal de 6 meses para cosas nuevas; certificado con su contenido.",
+   "La garantía se emite al firmar el acta de instalación y queda en la ficha del equipo con su fecha de inicio.",
+   "Recorrido · paso 11"
+  ],
+  [
+   "Ley 24.240 art. 15",
+   "Constancia de reparación: qué se hizo, piezas, fechas de entrega y devolución.",
+   "Al cerrar la ficha rev. n la app manda la constancia con agente, precinto, piezas y fechas.",
+   "Recorrido · paso 14"
+  ],
+  [
+   "Ley 24.240 art. 21",
+   "Presupuesto previo al servicio.",
+   "Recepción de recargas emite el presupuesto PR antes de abrir la ficha; sin aceptación no se trabaja.",
+   "Recorrido · paso 14"
+  ],
+  [
+   "Ley 24.240 art. 23",
+   "Defectos del servicio dentro de 30 días: se corrigen sin costo.",
+   "Cada ficha de servicio muestra «garantía del servicio hasta…»; un reclamo dentro de ese plazo abre una orden sin cargo.",
+   "Reclamos"
+  ],
+  [
+   "Ley 24.240 art. 34 · Res. SCI 424/2020",
+   "Botón de arrepentimiento en ventas a distancia; código en 24 h.",
+   "Enlace en el pie del QR y de la tienda; el código sale en el momento.",
+   "Portal · Arrepentimiento"
+  ],
+  [
+   "Ley 26.993",
+   "Vías de conciliación en relaciones de consumo.",
+   "Cada respuesta informa la Ventanilla Federal y el COPREC si el cliente no queda conforme.",
+   "Reclamos"
+  ],
+  [
+   "Ley 25.326 art. 6 y 9",
+   "Informar finalidad y proteger los datos.",
+   "Aviso al titular en la instalación; la página pública del QR no muestra datos del dueño.",
+   "Recorrido · pasos 11 y 12"
+  ],
+  [
+   "Ley 25.326 art. 14 y 16",
+   "Acceso en 10 días corridos; corrección o supresión en 5 días hábiles.",
+   "Pedidos desde «Mis datos» con vencimiento calculado y alerta en Desvíos si se pasa.",
+   "Portal · Mis datos"
+  ],
+  [
+   "Ley 25.326 art. 21",
+   "Inscripción de la base de datos.",
+   "La base de trazabilidad se inscribe en el registro de la AAIP antes de salir a producción.",
+   "Manual · 6"
+  ],
+  [
+   "Res. 349/07 (PBA) art. 21-23, 32, 46",
+   "Tarjeta DPS, estampillas propias numeradas en el libro, sustituto habilitado.",
+   "La app asigna estampilla por serie y arma el libro de actas; el sustituto lleva tarjeta con sello «sustituto habilitado».",
+   "Recorrido · pasos 6, 11 y 14"
+  ],
+  [
+   "Res. 349/07 (PBA) art. 25",
+   "Condiciones que el usuario debe controlar en su equipo.",
+   "Solapa «Revisalo vos» del QR con los controles a-f en lenguaje simple.",
+   "QR · Revisalo vos"
+  ],
+  [
+   "Res. 349/07 (PBA) art. 27-29",
+   "Inutilización con corte de rosca; fechas en el tubo de pesca; oblea de PH.",
+   "Reglas de recarga e inutilización por jurisdicción con acta y aviso al propietario.",
+   "Recorrido · pasos 14 y 15"
+  ],
+  [
+   "Res. 32-AGC/15 (CABA) anexo II",
+   "Cada fabricación o recarga se registra en el SGM; la tarjeta lleva QR de validación.",
+   "La app arma el archivo del proceso batch con los datos del art. 4; el QR FLAMA no reemplaza la tarjeta oficial.",
+   "Recorrido · paso 11"
+  ],
+  [
+   "IRAM 3517-2 9.4.14 y 9.4.16",
+   "Etiqueta con n° de serie renovada en cada servicio; registros 6 años.",
+   "Etiqueta nueva con el mismo QR en cada ficha; la base guarda todo el historial con hash.",
+   "Recorrido · paso 14"
+  ],
+  [
+   "IRAM-ISO 10002",
+   "Tratamiento de quejas: visible, accesible, con respuesta, objetivo, confidencial y con mejora continua.",
+   "Reclamo desde el QR con número, etapas y plazos; cada causa se analiza en Desvíos.",
+   "Bandeja · Desvíos"
+  ]
+ ],
+ "PROCS": [
+  [
+   "P-01",
+   "Emisión de órdenes y reserva de series",
+   "PCP",
+   "orden",
+   [
+    "Abrir «Nueva orden»: la app lee el Plan mensual del mes.",
+    "Revisar tamaños de lote (carro del modelo) y agrupación en partidas ≥ 100 u.",
+    "Confirmar: se reservan las series correlativas del año.",
+    "Imprimir hojas de ruta y enviar el archivo a la marcadora."
+   ],
+   "OP en la base · hoja de ruta F-01",
+   "Series sin huecos ni repetidas: la base lo impide."
+  ],
+  [
+   "P-02",
+   "Grabado de la planchuela",
+   "Operario G2",
+   "grabado",
+   [
+    "Cargar el archivo de la OP en la Pannier.",
+    "Apoyar contra topes y marcar; la máquina avanza sola.",
+    "Si sale mal, anular la serie en la hoja (no se reutiliza)."
+   ],
+   "Evento GRABADO por serie",
+   "Control visual del primer grabado de cada lote (profundidad y legibilidad)."
+  ],
+  [
+   "P-03",
+   "Registro en puestos",
+   "Operarios 4 a 23",
+   "puestos",
+   [
+    "Firmar una vez por lote y anotar el lote de cada insumo.",
+    "En espesor, PH, carga y pérdidas: ✓ o ✗ por equipo.",
+    "Sacar del carro el equipo con ✗, con su número a la vista."
+   ],
+   "Hoja de ruta F-01 firmada",
+   "PH solo con manómetro contrastado hace ≤ 15 días (Res. 349/07 art. 20)."
+  ],
+  [
+   "P-04",
+   "Cierre de lote y visado",
+   "Calidad + responsable técnico",
+   "cierre",
+   [
+    "Fotografiar la hoja completa.",
+    "Confirmar rechazos propuestos y abrir un RD por cada uno.",
+    "El RT visa la planilla de ensayos de la partida (anexo I C)."
+   ],
+   "Foto + planilla F-02 + RD",
+   "Sin cierre no hay etiquetado."
+  ],
+  [
+   "P-05",
+   "Identificación final",
+   "Etiquetado",
+   "etiquetado",
+   [
+    "Leer el grabado con el lector.",
+    "Pegar la etiqueta QR y la estampilla de fabricación DPS que asigna la app.",
+    "Si la pantalla bloquea, separar el equipo y avisar a calidad."
+   ],
+   "Evento IDENTIFICADO + estampilla",
+   "Estampillas solo de FLAMA y numeradas en el libro (art. 46)."
+  ],
+  [
+   "P-06",
+   "Embalaje, pallet y despacho",
+   "Embalaje y depósito PT",
+   "embalaje",
+   [
+    "Leer cada caja y cerrar el pallet (SSCC).",
+    "Leer el pallet al subirlo; emitir remito con anexo de series y QR.",
+    "Controlar cantidad exenta de carga peligrosa y COT."
+   ],
+   "AGREGACION + CUSTODIA",
+   "Un pallet sin leer no deja cerrar el remito."
+  ],
+  [
+   "P-07",
+   "Recepción por el distribuidor",
+   "Comercializador",
+   "distribuidor",
+   [
+    "Escanear el QR del remito, contar y revisar.",
+    "Marcar daños con foto; se abre un RD.",
+    "Confirmar la recepción."
+   ],
+   "CUSTODIA",
+   "Sin confirmación en 48 h, alerta a ventas."
+  ],
+  [
+   "P-08",
+   "Instalación y entrega",
+   "Instalador",
+   "instalacion",
+   [
+    "Escanear el QR del equipo instalado.",
+    "Cargar ubicación y datos de la jurisdicción (tarjeta DPS o SGM).",
+    "Verificar alturas; leer el aviso de datos al titular; firmar el acta F-03."
+   ],
+   "CUSTODIA + garantía",
+   "Alturas IRAM 3517-2 6.2.14 y 7.3."
+  ],
+  [
+   "P-09",
+   "Reclamos",
+   "Atención al cliente",
+   "reclamo",
+   [
+    "Recibir (QR, mail o teléfono) y dar número.",
+    "Clasificar; si es de seguridad, sustituto ≤ 48 h.",
+    "Investigar con la traza; responder por escrito con la vía de conciliación.",
+    "Cerrar y pasar la causa a Desvíos."
+   ],
+   "RECLAMOS F-08",
+   "Plazos de la política AC-01."
+  ],
+  [
+   "P-10",
+   "Recarga y mantenimiento",
+   "Recargas",
+   "recarga",
+   [
+    "Leer el grabado; emitir presupuesto F-04 y dejar sustituto habilitado.",
+    "Revisar según IRAM 3517-2 9.7 y anexo F.",
+    "Recargar, grabar la fecha en el tubo de pesca, poner marbete, precinto y etiqueta nueva.",
+    "Cerrar ficha rev. n y enviar la constancia F-05."
+   ],
+   "FICHAS + SGM / libro DPS",
+   "Polvo bajo de peso: cambio total (art. 33)."
+  ],
+  [
+   "P-11",
+   "Inutilización",
+   "Recargas + RT",
+   "inutilizacion",
+   [
+    "Labrar el acta F-06 con el motivo.",
+    "Inutilizar según IRAM 3517-2 9.12 y, en PBA, cortar la rosca (art. 27).",
+    "Avisar al propietario; 30 días en depósito.",
+    "Bloquear la serie y asentar en SGM / libro."
+   ],
+   "SERIES = BAJA · acta",
+   "Una serie bloqueada no se puede recargar ni reetiquetar."
+  ],
+  [
+   "P-12",
+   "Retiro preventivo",
+   "Calidad + dirección",
+   null,
+   [
+    "Buscar el lote sospechoso en el buscador (punto 9).",
+    "Bloquear las series en stock y las del distribuidor.",
+    "Avisar a cada titular con el texto aprobado y coordinar el cambio sin costo.",
+    "Cerrar cuando el 100 % esté ubicado o justificado."
+   ],
+   "DESVIOS + lista de series",
+   "Simulacro una vez por semestre (criterio)."
+  ]
+ ],
+ "RACI": [
+  [
+   "Emitir OP y series",
+   "R",
+   "",
+   "",
+   "I",
+   "",
+   ""
+  ],
+  [
+   "Grabar y registrar en puestos",
+   "I",
+   "R",
+   "C",
+   "",
+   "",
+   ""
+  ],
+  [
+   "Cerrar lote y visar",
+   "",
+   "C",
+   "R",
+   "A",
+   "",
+   ""
+  ],
+  [
+   "Etiquetar y estampillar",
+   "",
+   "R",
+   "C",
+   "I",
+   "",
+   ""
+  ],
+  [
+   "Despachar y seguir la custodia",
+   "C",
+   "R",
+   "",
+   "",
+   "I",
+   ""
+  ],
+  [
+   "Instalar y entregar",
+   "",
+   "",
+   "",
+   "",
+   "R",
+   "C"
+  ],
+  [
+   "Responder reclamos",
+   "",
+   "",
+   "C",
+   "C",
+   "",
+   "R"
+  ],
+  [
+   "Recargar e inutilizar",
+   "",
+   "",
+   "C",
+   "A",
+   "R",
+   "I"
+  ],
+  [
+   "Retiro preventivo",
+   "C",
+   "C",
+   "R",
+   "A",
+   "C",
+   "R"
+  ]
+ ],
+ "REGLAS": [
+  [
+   "Prueba hidráulica con ✗",
+   "1 equipo",
+   "hoja de ruta (cierre)",
+   "bloquea la serie y abre un RD"
+  ],
+  [
+   "Fallas en PH de un lote",
+   "sobre el LCS de la carta p",
+   "cierre de lote",
+   "retiene el lote para re-ensayo"
+  ],
+  [
+   "Masa de carga",
+   "fuera de 5,00-5,30 kg (DOC-02)",
+   "carga",
+   "rechazo y RD"
+  ],
+  [
+   "Carta de carga",
+   "1 punto fuera de 3 σ o 7 seguidos del mismo lado",
+   "carga",
+   "aviso a calidad (sin rechazo)"
+  ],
+  [
+   "Contraste del manómetro de PH",
+   "más de 15 días (Res. 349/07 art. 20)",
+   "calidad",
+   "bloquea la PH"
+  ],
+  [
+   "Recepción sin confirmar",
+   "más de 48 h (criterio)",
+   "custodia",
+   "aviso a ventas"
+  ],
+  [
+   "Reclamo de seguridad",
+   "sin contacto a las 24 h (criterio)",
+   "reclamos",
+   "sube al jefe de calidad"
+  ],
+  [
+   "Pedido de datos personales",
+   "a 2 días del vencimiento legal",
+   "reclamos",
+   "aviso a atención"
+  ],
+  [
+   "Mantenimiento vencido",
+   "el mes siguiente al vencimiento",
+   "fichas",
+   "aviso al titular y al recargador"
+  ]
+ ],
+ "RDS": [
+  {
+   "cod": "RD-26-031",
+   "id": "031",
+   "origen": "Proceso",
+   "que": "Fuga en el cordón longitudinal en PH · 26-001752",
+   "ref": "OP 26-03-08",
+   "sev": "Mayor",
+   "estado": "Cerrado",
+   "resp": "Mantenimiento",
+   "porq": [
+    "¿Por qué fugó? Poro en el cordón longitudinal.",
+    "¿Por qué hubo poro? Falta de gas en el arranque.",
+    "¿Por qué faltó gas? Boquilla de la soldadora 10 con salpicaduras.",
+    "¿Por qué no se limpió? No había frecuencia definida."
+   ],
+   "accion": "Limpieza de boquilla cada 50 cordones y cambio cada 500.",
+   "verif": "0 fugas en los 3 lotes siguientes."
+  },
+  {
+   "cod": "RD-26-032",
+   "id": "032",
+   "origen": "Proceso",
+   "que": "Carta de carga fuera de control: 5,268 kg en 26-001767 (dentro de tolerancia)",
+   "ref": "balanza B-2",
+   "sev": "Menor",
+   "estado": "Abierto",
+   "resp": "Calidad",
+   "porq": [
+    "¿Por qué subió la masa? La balanza marcaba 25 g de menos.",
+    "¿Por qué? No se hizo cero al cambiar la bolsa de polvo.",
+    "¿Por qué? El cero es manual y no está en la hoja."
+   ],
+   "accion": "Cero obligatorio en la pantalla de carga al cambiar de bolsa.",
+   "verif": "Pendiente: 2 lotes sin puntos fuera de control."
+  },
+  {
+   "cod": "RD-26-033",
+   "id": "033",
+   "origen": "Custodia",
+   "que": "Equipo golpeado en tránsito · 26-001741",
+   "ref": "R 0001-00004521",
+   "sev": "Menor",
+   "estado": "En curso",
+   "resp": "Depósito PT",
+   "porq": [
+    "¿Por qué se golpeó? Se movió la fila exterior del pallet.",
+    "¿Por qué? El pallet no llevaba esquineros.",
+    "¿Por qué? No están en la instrucción de 5 kg."
+   ],
+   "accion": "Esquineros en todos los pallets de manuales.",
+   "verif": "Pendiente: 10 despachos sin daño."
+  },
+  {
+   "cod": "RD-26-034",
+   "id": "034",
+   "origen": "Proceso",
+   "que": "OP 26-03-04: 5 fallas en PH, sobre el límite de la carta p",
+   "ref": "cúpulas CU-0298",
+   "sev": "Crítica",
+   "estado": "Cerrado",
+   "resp": "Calidad + compras",
+   "porq": [
+    "¿Por qué tantas fallas? Fugas en el bordón cúpula-cuerpo.",
+    "¿Por qué? Bordón de las cúpulas fuera de medida.",
+    "¿Por qué? Lote CU-0298 con matriz gastada.",
+    "¿Por qué pasó la recepción? Se controlaba 1 de cada 200."
+   ],
+   "accion": "Lote retenido y re-ensayado al 100 %; muestreo de recepción 1 cada 50.",
+   "verif": "Carta p dentro de límites 4 semanas."
+  },
+  {
+   "cod": "RD-26-035",
+   "id": "035",
+   "origen": "Custodia",
+   "que": "Remito R 0001-00004498 sin confirmar 72 h",
+   "ref": "Distribuidor Oeste",
+   "sev": "Menor",
+   "estado": "Cerrado",
+   "resp": "Ventas",
+   "porq": [
+    "¿Por qué no confirmó? El distribuidor no tenía usuario.",
+    "¿Por qué? El alta se hacía después del primer envío."
+   ],
+   "accion": "Alta de usuarios antes del primer despacho.",
+   "verif": "Confirmaciones ≤ 48 h en el mes."
+  },
+  {
+   "cod": "RD-26-036",
+   "id": "036",
+   "origen": "Cliente",
+   "que": "Reclamo de seguridad RC-26-000116 respondido a las 27 h (plazo 24 h)",
+   "ref": "26-001198",
+   "sev": "Mayor",
+   "estado": "Abierto",
+   "resp": "Atención",
+   "porq": [
+    "¿Por qué se pasó? Entró un viernes a las 18 h.",
+    "¿Por qué nadie lo vio? No hay guardia de fin de semana.",
+    "¿Por qué? El plazo de 24 h no estaba en la guardia."
+   ],
+   "accion": "Guardia de fin de semana solo para reclamos de seguridad, con aviso al celular.",
+   "verif": "Pendiente: 100 % de seguridad en plazo por 2 meses."
+  },
+  {
+   "cod": "RD-26-037",
+   "id": "037",
+   "origen": "Registro",
+   "que": "Contraste del manómetro PH-M2 a los 17 días (máximo 15)",
+   "ref": "Res. 349/07 art. 20",
+   "sev": "Mayor",
+   "estado": "Cerrado",
+   "resp": "Calidad",
+   "porq": [
+    "¿Por qué se pasó? El técnico estaba de licencia.",
+    "¿Por qué no lo hizo otro? No había suplente asignado."
+   ],
+   "accion": "Alerta 3 días antes y suplente designado; la app bloquea la PH al día 16.",
+   "verif": "Sin vencimientos en 3 meses."
+  },
+  {
+   "cod": "RD-26-038",
+   "id": "038",
+   "origen": "Registro",
+   "que": "2 lecturas manuales en etiquetado por grabado poco profundo",
+   "ref": "Pannier · punzón",
+   "sev": "Menor",
+   "estado": "Abierto",
+   "resp": "Producción",
+   "porq": [
+    "¿Por qué no leyó? Grabado de 0,12 mm.",
+    "¿Por qué tan poco? Punzón con desgaste.",
+    "¿Por qué no se vio antes? No se mide la profundidad."
+   ],
+   "accion": "Medir profundidad en la primera planchuela de cada lote.",
+   "verif": "Pendiente: 0 lecturas manuales en 5 lotes."
+  }
+ ],
+ "DV": {
+  "N": 560,
+  "rech": 38,
+  "causas": [
+   [
+    "Fuga en PH",
+    12
+   ],
+   [
+    "Pérdida en válvula",
+    9
+   ],
+   [
+    "Espesor fuera de tolerancia",
+    6
+   ],
+   [
+    "Golpe o pintura",
+    5
+   ],
+   [
+    "Carga fuera de tolerancia",
+    4
+   ],
+   [
+    "Grabado ilegible",
+    2
+   ]
+  ],
+  "media": 5154.340425531915,
+  "lcs": 5264.094338575393,
+  "lci": 5044.586512488437,
+  "pb": 0.021778584392014518,
+  "nLotes": 11
+ },
+ "PASOS": [
+  {
+   "id": "orden",
+   "g": "En planta",
+   "t": "Orden del lote",
+   "r": "PCP",
+   "quien": "Planificación (PCP)",
+   "equipo": "PC e impresora A4 (ya están)",
+   "tiempo": "≈ 5 min por semana",
+   "normas": [
+    "Res. 349/07 art. 21 · partida mínima 100 u",
+    "IRAM 3517-2 9.4.16 · registros 6 años"
+   ],
+   "falla": "Si el Plan mensual cambia después, las órdenes ya confirmadas no se tocan: las nuevas toman la diferencia."
+  },
+  {
+   "id": "hoja",
+   "g": "En planta",
+   "t": "Hoja de ruta y archivo de marcado",
+   "r": "PCP",
+   "quien": "PCP",
+   "equipo": "Impresora A4 (ya está)",
+   "tiempo": "1 hoja por lote",
+   "normas": [
+    "Res. 349/07 art. 9 y anexo I C · planillas por partida",
+    "Res. 349/07 art. 43 · enmiendas salvadas por el RT"
+   ],
+   "falla": "Si la hoja se pierde, se reimprime: los datos de cabecera están en la base; lo escrito a mano se recupera de la foto del cierre."
+  },
+  {
+   "id": "grabado",
+   "g": "En planta",
+   "t": "Grabado en la planchuela",
+   "r": "Guillotina 2 + Pannier",
+   "quien": "Operario de G2",
+   "equipo": "Pannier (ya está)",
+   "tiempo": "0 s extra",
+   "normas": [
+    "Res. 349/07 anexo IV · cuño DPS 15 × 7 mm junto al n°",
+    "IRAM 3517-2 anexo F · n° de serie faltante → inutilizar"
+   ],
+   "falla": "Si una planchuela sale mal grabada, se anula esa serie en la hoja y se sigue con la próxima: el número no se reutiliza."
+  },
+  {
+   "id": "puestos",
+   "g": "En planta",
+   "t": "Puestos: firma y tilde en la hoja",
+   "r": "Puestos 4 a 23",
+   "quien": "Operarios de cada puesto",
+   "equipo": "Lapicera",
+   "tiempo": "≈ 2 s por equipo en los controles; 15 s por lote en el resto",
+   "normas": [
+    "DOC-02 · PH 3,5 MPa 1 min",
+    "Res. 349/07 art. 20 · contraste del manómetro cada 15 días",
+    "IRAM 2587 · deformación permanente"
+   ],
+   "falla": "El equipo con ✗ sale del carro con su número; el resto del lote sigue."
+  },
+  {
+   "id": "cierre",
+   "g": "En planta",
+   "t": "Cierre de la hoja",
+   "r": "Calidad + responsable técnico",
+   "quien": "Supervisor de calidad y responsable técnico",
+   "equipo": "Su celular",
+   "tiempo": "≈ 1 min por lote",
+   "normas": [
+    "Res. 349/07 art. 7 inc. 4 · visado de planillas",
+    "Res. 349/07 art. 19 · anomalías al libro de actas"
+   ],
+   "falla": "Si la foto no se lee bien se repite; sin cierre el lote queda bloqueado en etiquetado. Si el contraste del manómetro tiene más de 15 días, la app no deja cerrar."
+  },
+  {
+   "id": "etiquetado",
+   "g": "En planta",
+   "t": "Etiquetado: una lectura por equipo",
+   "r": "Puesto 24 / C-15",
+   "quien": "Operario de etiquetado",
+   "equipo": "PC e impresora (ya están) + lector de mano para grabados (nuevo)",
+   "tiempo": "≈ 2 s por equipo",
+   "normas": [
+    "Res. 349/07 art. 21-23 · estampilla de fabricación DPS",
+    "Res. 349/07 art. 46 · solo estampillas propias",
+    "IRAM 3550 5.2.5 · etiqueta del fabricante"
+   ],
+   "falla": "Si el lector no lee, se tipea el número grabado; queda marcado como lectura manual."
+  },
+  {
+   "id": "embalaje",
+   "g": "En planta",
+   "t": "Embalaje y pallet",
+   "r": "Puesto 25",
+   "quien": "Operario de embalaje",
+   "equipo": "La misma PC, lector e impresora",
+   "tiempo": "1 lectura por caja",
+   "normas": [
+    "GS1 · SSCC de 18 dígitos (criterio)"
+   ],
+   "falla": "Una caja sin leer no deja cerrar el pallet; la pantalla dice cuál falta."
+  },
+  {
+   "id": "despacho",
+   "g": "Del camión al cliente",
+   "t": "Despacho y carga",
+   "r": "Depósito PT",
+   "quien": "Depósito y chofer",
+   "equipo": "PC del depósito + lector",
+   "tiempo": "1 lectura por pallet",
+   "normas": [
+    "CCyCN art. 1298 · carta de porte",
+    "Res. 195/97 · cantidad exenta",
+    "ARBA · COT"
+   ],
+   "falla": "Si un pallet no se lee al subir, el remito no se cierra."
+  },
+  {
+   "id": "chofer",
+   "g": "Del camión al cliente",
+   "t": "El chofer confirma la salida",
+   "r": "Transportista",
+   "quien": "Chofer",
+   "equipo": "Su celular",
+   "tiempo": "≈ 30 s",
+   "normas": [],
+   "falla": "Sin señal, la página guarda la confirmación y la manda cuando vuelve la conexión."
+  },
+  {
+   "id": "distribuidor",
+   "g": "Del camión al cliente",
+   "t": "Recibe el distribuidor",
+   "r": "Comercializador",
+   "quien": "Distribuidor (comercializador inscripto)",
+   "equipo": "Su celular",
+   "tiempo": "≈ 1 min por entrega",
+   "normas": [
+    "Res. 349/07 art. 3 · registro de comercializadores",
+    "Res. 349/07 art. 6 · completa la tarjeta solo en su lugar"
+   ],
+   "falla": "Si no confirma en 48 h, la app avisa a ventas; la custodia queda en el último que confirmó."
+  },
+  {
+   "id": "instalacion",
+   "g": "Del camión al cliente",
+   "t": "Instalación y entrega al cliente",
+   "r": "Instalador",
+   "quien": "Instalador",
+   "equipo": "Su celular",
+   "tiempo": "≈ 1 min por equipo",
+   "normas": [
+    "IRAM 3517-2 6.2.14 y 7.3 · alturas",
+    "Res. 32-AGC/15 art. 4 · datos de la tarjeta (CABA)",
+    "Res. 349/07 art. 21 · tarjeta DPS (PBA)",
+    "Ley 24.240 art. 11 y 14 · garantía",
+    "Ley 25.326 art. 6 · información al titular"
+   ],
+   "falla": "Si el cliente instala solo, el equipo queda registrado cuando escanea el QR por primera vez y acepta los términos."
+  },
+  {
+   "id": "cliente",
+   "g": "Del camión al cliente",
+   "t": "Lo que ve quien escanea el QR",
+   "r": "Cliente / inspector",
+   "quien": "Cliente, inspector DPS / AGC",
+   "equipo": "Su celular",
+   "tiempo": "—",
+   "normas": [
+    "Res. 32-AGC/15 art. 6 · QR de validación",
+    "Res. 349/07 art. 25 · controles a-h del usuario",
+    "Ley 24.240 art. 4 · información clara",
+    "Ley 25.326 art. 9 · datos del titular protegidos"
+   ],
+   "falla": "Si la etiqueta se perdió, el recargador lee el grabado y la reimprime."
+  },
+  {
+   "id": "reclamo",
+   "g": "Del camión al cliente",
+   "t": "Reclamo y respuesta",
+   "r": "Atención al cliente",
+   "quien": "Atención al cliente + calidad",
+   "equipo": "PC",
+   "tiempo": "acuse inmediato · seguridad ≤ 24 h",
+   "normas": [
+    "IRAM-ISO 10002 · tratamiento de quejas",
+    "Ley 24.240 art. 8 bis · trato digno",
+    "Ley 24.240 art. 23 · 30 días para corregir el servicio"
+   ],
+   "falla": "Si vence el plazo, el reclamo sube al jefe de calidad y queda marcado en Desvíos."
+  },
+  {
+   "id": "recarga",
+   "g": "Servicio",
+   "t": "Recarga anual: presupuesto, servicio y ficha nueva",
+   "r": "Recargas",
+   "quien": "Recepción de recargas y taller",
+   "equipo": "Tablet e impresora (ya previstas) + lector",
+   "tiempo": "≈ 1 min de recepción por equipo",
+   "normas": [
+    "Ley 24.240 art. 21 · presupuesto",
+    "Res. 349/07 art. 32 · sustituto habilitado",
+    "Res. 349/07 art. 28 · fecha en el tubo de pesca",
+    "Res. 349/07 art. 33 · polvo bajo de peso → cambio total",
+    "IRAM 3517-2 9.4.14 · etiqueta nueva",
+    "Ley 24.240 art. 15 y 23 · constancia y garantía de servicio"
+   ],
+   "falla": "Si la regla dice inutilizar, la app no deja recargarlo."
+  },
+  {
+   "id": "inutilizacion",
+   "g": "Servicio",
+   "t": "Inutilización y bloqueo",
+   "r": "Recargas",
+   "quien": "Recargas",
+   "equipo": "PC + impresora",
+   "tiempo": "≈ 5 min por equipo",
+   "normas": [
+    "IRAM 3517-2 9.12 y anexo G · acta",
+    "Res. 349/07 art. 27 · corte de la rosca y devolución",
+    "Res. 32-AGC/15 art. 7 · asentar en el SGM"
+   ],
+   "falla": "El equipo queda 30 días en depósito a disposición del propietario antes de la disposición final (anexo G)."
+  },
+  {
+   "id": "datos",
+   "g": "Sistema",
+   "t": "Cómo se conecta con los Sheets y los registros oficiales",
+   "r": "Todo el sistema",
+   "quien": "—",
+   "equipo": "Vercel + base Postgres + Google Sheets",
+   "tiempo": "—",
+   "normas": [
+    "Ley 25.326 art. 21 · inscripción de la base",
+    "IRAM 3517-2 9.4.16 · 6 años de registro"
+   ],
+   "falla": "Si la app se cae, la copia diaria en Sheets y las hojas de ruta en papel permiten seguir."
+  }
+ ],
+ "PARTIDA": {
+  "id": "P-26-03-A",
+  "u": 144,
+  "ops": [
+   "OP 26-03-08",
+   "OP 26-03-09",
+   "OP 26-03-10"
+  ]
+ },
+ "DEMO": {
+  "op": "OP 26-03-08",
+  "modelo": "ABC 5 kg",
+  "desde": "26-001736",
+  "hasta": "26-001783",
+  "rej": "26-001752",
+  "cli": "26-001738"
+ }
+}

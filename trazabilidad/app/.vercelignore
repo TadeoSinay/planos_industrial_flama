@@ -1,0 +1,7 @@
+# Vercel publica solo la página armada (index.html); el resto es el generador
+*.py
+js/
+img/
+plantilla.html
+capturas/
+contenido.json

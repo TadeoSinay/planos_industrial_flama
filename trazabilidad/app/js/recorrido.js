@@ -318,8 +318,10 @@ function hojaRuta(interactiva) {
 }
 
 // ---------------------------------------------------------------- página pública del QR (la usan el recorrido y Atención al cliente)
-function paginaQR(tab = S.tab) {
-  const s = CLI, inst = S.instalado && S.instalado.firmado;
+function paginaQR(tab = S.tab, s = CLI) {
+  if (s === REJ) return `<div class="h2">${esc(s)}</div><div class="estado-grande" style="background:var(--red-soft);color:var(--red)"><div class="grande">NO VÁLIDO</div><div>Rechazado en fábrica (prueba hidráulica). Nunca salió a la venta.</div></div><p class="nota">Si encontraste este equipo instalado, no lo uses y avisá a FLAMA.</p>`;
+  if (!SERIES.includes(s)) return `<div class="h2">${esc(s)}</div><div class="aviso av">Esta demo tiene cargado solo el lote ${esc(DEMO.op)} (${esc(SERIES[0])} a ${esc(SERIES[SERIES.length - 1])}).</div>`;
+  const inst = S.instalado && S.instalado.firmado;
   const hist = [["Fabricado y controlado", D.mesNombre + " " + D.anio, 1], ["Despachado", S.despachado ? "sí" : "pendiente", S.despachado], ["Instalado", inst ? "sí" : "pendiente", inst], ["Mantenimiento anual", D.mesNombre + " " + (D.anio + 1), S.recarga && S.recarga.hecho]];
   const com = `<div class="estado-grande" style="background:var(--green-soft);color:var(--green)"><div class="grande">VIGENTE</div><div>Próximo mantenimiento ${MES} ${D.anio + 1}</div></div>
     <dl class="dl"><dt>Equipo</dt><dd>${esc(DEMO.modelo)} · fuegos A, B y C</dd><dt>Prueba hidráulica</dt><dd>vence ${MES} ${D.anio + 5}</dd><dt>Vida útil</dt><dd>hasta ${MES} ${D.anio + 20}</dd><dt>Garantía</dt><dd>${inst ? "6 meses desde la entrega" : "empieza al instalarlo"}</dd></dl>
