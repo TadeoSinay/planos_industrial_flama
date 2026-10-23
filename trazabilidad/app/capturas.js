@@ -16,15 +16,20 @@ async function rellenarQR(p) {
 }
 (async () => {
   fs.rmSync(OUT, { recursive: true, force: true }); fs.mkdirSync(OUT, { recursive: true });
-  const b = await chromium.launch(), p = await b.newPage({ viewport: { width: 1440, height: 900 } });
-  const foto = async (n, sel) => { await p.waitForTimeout(250); await rellenarQR(p); sel ? await p.locator(sel).screenshot({ path: path.join(OUT, n + ".png") }) : await p.screenshot({ path: path.join(OUT, n + ".png") }); };
-  const c = async s => { await p.click(s); await p.waitForTimeout(150); };
-  for (const v of ["tablero", "ordenes", "calidad", "expedicion", "recargas", "reclamos", "insumos", "reportes"]) { await p.goto(`${URL}/#${v}`); await foto("cap_" + v); }
-  await p.goto(`${URL}/#ordenes`); await c("[data-a=filtro][data-v=cerrar]"); await c("tr.click"); await foto("cap_orden");
-  await p.goto(`${URL}/#etiquetado`); await c("[data-a=leerSig]"); await c("[data-a=leerSig]"); await c("[data-a=leerRech]"); await foto("cap_etiquetado");
-  await p.goto(`${URL}/#equipos`); await p.fill("#q", "005480"); await p.waitForTimeout(200); await p.keyboard.press("Enter"); await foto("cap_equipo");
-  await p.goto(`${URL}/#recargas`); await c(".col-k:nth-child(3) .tarjeta"); await foto("cap_recarga");
-  await p.goto(`${URL}/#tablero`); await p.fill("#q", "PO-2610"); await p.waitForTimeout(200); await p.keyboard.press("Enter"); await foto("cap_lote");
+  const b = await chromium.launch(), p = await b.newPage({ viewport: { width: 1440, height: 1000 } });
+  const foto = async (n, sel) => { await p.waitForTimeout(300); await rellenarQR(p); sel ? await p.locator(sel).screenshot({ path: path.join(OUT, n + ".png") }) : await p.screenshot({ path: path.join(OUT, n + ".png") }); };
+  const c = async s => { await p.click(s); await p.waitForTimeout(200); };
+  const ir = async h => { await p.goto(`${URL}/#${h}`); await p.waitForTimeout(250); };
+  for (const v of ["tablero", "ordenes", "lotes", "calidad", "expedicion", "instalaciones", "recargas", "reclamos", "insumos", "eventos", "reportes"]) { await ir(v); await foto("cap_" + v); }
+  await ir("tablero"); await c("[data-k=tab][data-v=extra]"); await foto("cap_tablero_extra");
+  await ir("lote-26-10-08"); await foto("cap_orden");
+  await c("[data-k=ltab][data-v=hoja]"); await foto("cap_lote_hoja");
+  await c("[data-k=ltab][data-v=ens]"); await foto("cap_lote_ens");
+  await ir("etiquetado"); await c("[data-a=leerSig]"); await c("[data-a=leerSig]"); await c("[data-a=leerRech]"); await foto("cap_etiquetado");
+  await ir("equipo-26-005480"); await foto("cap_equipo");
+  await p.evaluate(() => scrollTo(0, document.body.scrollHeight)); await foto("cap_equipo_hist");
+  await ir("equipos"); await c("[data-k=etip][data-v=Cilindro]"); await c("tr.click"); await foto("cap_cilindro");
+  await ir("traza"); await c("[data-a=trazaLote] >> nth=1"); await foto("cap_lote");
   const m = await b.newPage({ viewport: { width: 400, height: 760 }, deviceScaleFactor: 2 });
   await m.goto(`${URL}/m/26-005480`); await m.waitForTimeout(300); await rellenarQR(m); await m.screenshot({ path: path.join(OUT, "cap_qr.png") });
   await b.close(); srv.close(); console.log("ok", fs.readdirSync(OUT).length, "capturas");

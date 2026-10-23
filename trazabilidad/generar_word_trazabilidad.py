@@ -78,38 +78,127 @@ def secciones_v4(add, p, bul, tabla, img):
       f"FLAMA_MRP y modelos del FLAMA_BOM). El estado de cada orden, los clientes, los remitos, el stock físico y los "
       f"reclamos son datos de prueba y el sistema lo indica. Se publica en Vercel ({URL_APP}) y el QR de cada equipo "
       f"abre {URL_APP}/m/<serie>, la única página pública.")
-    tabla(["Módulo", "Quién lo usa", "Qué se hace"], [
-        ["Tablero", "Dirección, PCP", "Producción del mes contra el plan, rendimiento, stock PT, recargas, reclamos y "
-                                      "pendientes del día"],
-        ["Órdenes", "PCP, producción", "Plan del mes, órdenes por etapa, partida DPS, series, insumos y rechazos de cada "
-                                       "lote; liberar y avanzar etapas"],
-        ["Calidad", "Calidad, responsable técnico", "Cerrar lotes (bloqueado si el contraste del manómetro venció), "
-                                                    "equipos de medición, rechazos por causa"],
-        ["Etiquetado", "Puesto 24 / C-15", "Lector del grabado, etiqueta con QR y estampilla DPS; bloquea rechazos"],
-        ["Expedición", "Depósito PT", "Stock PT, remitos con QR, salida y recepción confirmadas"],
-        ["Equipos", "Todos", "Las series del año con estado, custodia, vencimientos e historia"],
-        ["Recargas", "Plantas de recargas", "Órdenes de servicio por etapa, presupuesto, sustituto, PH, inutilización"],
-        ["Reclamos y clientes", "Atención al cliente", "Bandeja con plazos, traza del equipo, clientes y sus equipos"],
-        ["Desvíos", "Calidad", "Registro de desvíos con causa, acción y verificación"],
-        ["Insumos", "Compras", "Los 125 materiales del MRP con stock, consumo, cobertura y plazo de entrega"],
-        ["Reportes", "PCP, responsable técnico", "Libro de actas DPS, archivo batch del SGM, vencimientos, producción "
-                                                 "y registro de eventos"],
-        ["Configuración", "Administración", "Modelos del BOM, parámetros (lote, PH, plazos) y permisos por rol"],
-    ], [3.2, 4.2, 9.6])
-    for k, pie in (("cap_tablero", "Tablero: avance del mes contra el plan y pendientes del día."),
-                   ("cap_ordenes", "Órdenes: el plan del mes y cada orden con su etapa, partida DPS y rechazos."),
-                   ("cap_orden", "Detalle de una orden lista para cerrar: etapas, prueba hidráulica, lotes de insumo y "
-                                 "series."),
-                   ("cap_calidad", "Calidad: lotes para cerrar, rechazos por causa y equipos de medición con su "
-                                   "vencimiento."),
+    add("h2", "11.1 Módulos")
+    p("El menú sigue la trazabilidad: lo que pasa dentro de la planta (orden, lote, puesto, ensayo, etiqueta) y lo que "
+      "pasa afuera (remito, transportista, distribuidor, instalación, recarga). Cada orden y cada serie tienen su "
+      "propia página con dirección fija (#lote-26-10-08, #equipo-26-005480) para abrirlas desde un link o un QR.")
+    tabla(["Grupo", "Módulo", "Quién lo usa", "Qué se hace"], [
+        ["—", "Tablero", "Dirección, PCP, calidad", "Indicadores técnicos en dos pestañas: intraplanta y extraplanta "
+                                                    "(11.2 y 11.3)"],
+        ["Intraplanta", "Órdenes", "PCP, producción", "Plan del mes, órdenes por etapa, partida DPS; liberar, avanzar "
+                                                      "y cerrar"],
+        ["Intraplanta", "Historial de lotes", "PCP, calidad", "Todas las órdenes del año con filtros y exportación "
+                                                             "CSV; cada una abre su página de lote (11.4)"],
+        ["Intraplanta", "Calidad y ensayos", "Calidad, responsable técnico", "Cierre de lotes (bloqueado si el "
+                                                                           "contraste del manómetro venció), equipos de "
+                                                                           "medición, rechazos por causa"],
+        ["Intraplanta", "Etiquetado", "Puesto 24 / C-15", "Lector del grabado, etiqueta con QR y estampilla DPS; "
+                                                          "bloquea rechazos"],
+        ["Extraplanta", "Expedición", "Depósito PT", "Stock PT, remitos con transportista, patente y COT; salida y "
+                                                     "recepción confirmadas"],
+        ["Extraplanta", "Instalaciones", "Instaladores, distribuidores", "Alta del equipo en el usuario: ubicación, "
+                                                                        "altura (IRAM 3517-2), cartel y tarjeta DPS o "
+                                                                        "SGM"],
+        ["Extraplanta", "Equipos", "Todos", "Cada matafuego y cilindro del año con estado y custodia; abre su "
+                                            "página de equipo (11.5)"],
+        ["Extraplanta", "Recargas", "Plantas de recargas", "Órdenes de servicio por etapa, presupuesto, sustituto, "
+                                                           "PH, inutilización"],
+        ["Atención", "Reclamos y clientes", "Atención al cliente", "Bandeja con plazos, traza del equipo, clientes y "
+                                                                   "sus equipos"],
+        ["Gestión", "Traza y retiros", "Calidad, PCP", "Búsqueda hacia atrás y hacia adelante; retiro preventivo con "
+                                                       "avance de ubicados"],
+        ["Gestión", "Desvíos", "Calidad", "Registro de desvíos con causa, acción y verificación"],
+        ["Gestión", "Insumos", "Compras", "Los 125 materiales del MRP con stock, consumo, cobertura y plazo"],
+        ["Gestión", "Registro de eventos", "Responsable técnico, auditoría", "Todos los eventos encadenados con "
+                                                                           "SHA-256 y botón para verificar la cadena"],
+        ["Gestión", "Reportes", "PCP, responsable técnico", "Libro de actas DPS, archivo batch del SGM, "
+                                                            "vencimientos, producción"],
+        ["Gestión", "Configuración", "Administración", "Modelos del BOM, reglas de desvío, normas aplicadas, "
+                                                       "integraciones y permisos por rol"],
+    ], [2.4, 3.2, 3.8, 7.6])
+
+    add("h2", "11.2 Tablero de trazabilidad intraplanta")
+    p("Muestra cómo viene el mes en la planta: cuánto se produjo contra el plan, dónde está cada orden y si el proceso "
+      "de carga es capaz. Los cálculos usan las órdenes y series del Plan mensual; los resultados de ensayo son datos "
+      "de prueba.")
+    tabla(["Indicador", "Cómo se calcula", "Meta o límite", "Fuente"], [
+        ["Producción a depósito PT", "aptos de las órdenes en depósito PT o despachadas, contra el plan prorrateado "
+                                     "por días hábiles transcurridos", "plan del mes", "Plan mensual"],
+        ["En proceso (WIP)", "unidades de órdenes abiertas, por etapa", "—", "hoja de ruta"],
+        ["Rendimiento a la primera (FPY)", "1 − rechazos / unidades de los lotes cerrados", "criterio", "cierre de "
+                                                                                                     "lote"],
+        ["Fallas en PH", "rechazos por fuga en PH / unidades ensayadas", "3,5 MPa manuales · 4,0 MPa carros · 60 s",
+         "DOC-02"],
+        ["Cpk de carga", "min(LSE − x̄ ; x̄ − LIE) / 3σ por modelo, solo modelos con n ≥ 5", "≥ 1,33 (criterio)",
+         "banda de carga del FLAMA_BOM"],
+        ["Carta I de masa", "valores individuales del lote; límites x̄ ± 2,66 · MR̄", "LIE / LSE del BOM",
+         "control estadístico de procesos"],
+        ["Carta p de fallas en PH", "proporción por lote de 20 u o más; LCS = p̄ + 3 √(p̄(1 − p̄)/n)", "LCS según "
+                                                                                                    "el tamaño",
+         "control estadístico de procesos"],
+        ["Pareto de rechazos", "rechazos del mes por causa", "—", "cierre de lote"],
+        ["Ciclo de la orden", "emisión → depósito PT, en días", "—", "hoja de ruta"],
+        ["Partidas DPS", "partidas del mes y series reservadas", "≥ 100 u por partida", "Res. 349/07 art. 21"],
+        ["Equipos de medición", "días al vencimiento del contraste o calibración", "15 días el manómetro de PH",
+         "Res. 349/07 art. 20"],
+        ["Lotes de insumo en uso", "lotes anotados en las hojas de ruta del mes, por equipos", "—", "hoja de ruta"],
+    ], [3.6, 6.2, 3.6, 3.6])
+    img("cap_tablero", "Tablero intraplanta: producción contra el plan, WIP por etapa, capacidad de proceso, cartas "
+                       "de control, Pareto, lotes de insumo, órdenes con su puesto actual y equipos de medición.")
+
+    add("h2", "11.3 Tablero de trazabilidad extraplanta")
+    p("Muestra dónde están los equipos que salieron de la planta y qué hay que atender afuera.")
+    tabla(["Indicador", "Cómo se calcula", "Meta o límite", "Fuente"], [
+        ["Equipos en el mercado", "series del año en distribuidor o instaladas", "—", "remitos e instalaciones"],
+        ["En tránsito / sin confirmar", "series con remito sin recepción; sin confirmar si pasaron más de 48 h",
+         "48 h (criterio)", "remito"],
+        ["Despacho → recepción y recepción → instalación", "promedio en días", "—", "remito e instalación"],
+        ["Cadena de custodia", "series por tenedor: depósito PT, transportista, distribuidor, usuario, inutilizado",
+         "—", "eventos"],
+        ["Tarjetas por jurisdicción", "tarjeta DPS en PBA, SGM en CABA", "—", "Res. 349/07 · Res. 32-AGC/15"],
+        ["Vencimientos de mantenimiento", "próximos 12 meses, por mes", "anual", "IRAM 3517-2 9.2"],
+        ["Recargas contra el plan", "órdenes de servicio del mes contra el plan por agente", "plan del mes",
+         "Aprovechamiento_Recargas"],
+        ["Reclamos en plazo", "reclamos dentro de su plazo / abiertos", "plazos de 12.1", "IRAM-ISO 10002"],
+        ["Retiros preventivos", "equipos ubicados / afectados por retiro", "100 % (criterio)", "traza del lote"],
+    ], [3.6, 6.2, 3.6, 3.6])
+    img("cap_tablero_extra", "Tablero extraplanta: equipos en el mercado, custodia, jurisdicciones, vencimientos, "
+                             "remitos abiertos, recargas, reclamos y retiros.")
+
+    add("h2", "11.4 Historial de lotes")
+    p("Cada orden de producción es un lote con su página. Arriba, las series, aptos y rechazos, el ciclo, el Cpk de "
+      "carga, las estampillas DPS y el destino. Debajo, seis pestañas: resumen con las normas que aplica, hoja de ruta "
+      "puesto por puesto (equipo, lote anotado, fecha, hora y firma), ensayos de cada serie con la carta de valores "
+      "individuales, insumos y equipos de medición, distribución (remitos, distribuidores e instalaciones) y los "
+      "eventos con su hash.")
+    for k, pie in (("cap_ordenes", "Órdenes del mes con su etapa, partida DPS y rechazos."),
+                   ("cap_lotes", "Historial de lotes del año, con filtros por línea, etapa y modelo."),
+                   ("cap_orden", "Página del lote OP 26-10-08: indicadores, etapas y normas que aplica."),
+                   ("cap_lote_hoja", "Hoja de ruta del lote: puesto, operación, equipo, lote de insumo, hora y firma."),
+                   ("cap_lote_ens", "Ensayos por serie: espesor, PH, carga, N₂, pérdidas y visual; carta I de la "
+                                    "masa de carga.")):
+        img(k, pie)
+
+    add("h2", "11.5 Historial de cada matafuego y cilindro")
+    p("Cada serie tiene su página: identificación (grabado, estampilla, QR), estado y vencimientos, hacia atrás "
+      "(orden, partida, lotes de chapa con colada, cúpulas, alambre, pintura, polvo, válvula y los puestos que pasó), "
+      "ensayos de fábrica, cadena de custodia, instalación, servicios y reclamos, y el historial completo. Los cilindros "
+      "se venden vacíos: no tienen carga, presurización ni control de pérdidas, y la custodia termina en el "
+      "recargador o fabricante que los completa.")
+    for k, pie in (("cap_equipo", "Página del matafuego 26-005480: identificación, vencimientos, de dónde viene y "
+                                  "ensayos."),
+                   ("cap_equipo_hist", "Cadena de custodia e historial del mismo equipo, cada evento con el hash del "
+                                       "anterior."),
+                   ("cap_cilindro", "Página de un cilindro en producción: puestos hechos y pendientes."),
                    ("cap_etiquetado", "Etiquetado: una lectura por equipo; el rechazo queda bloqueado."),
-                   ("cap_equipo", "Ficha de un equipo: QR, orden, carga, vencimientos e historia."),
                    ("cap_expedicion", "Expedición: depósito PT y remitos abiertos."),
+                   ("cap_instalaciones", "Instalaciones: alta del equipo en el usuario con su tarjeta."),
                    ("cap_recargas", "Recargas: órdenes de servicio por etapa en las dos plantas."),
                    ("cap_insumos", "Insumos: materiales del MRP para pedir según cobertura y plazo."),
+                   ("cap_eventos", "Registro de eventos con la cadena SHA-256."),
                    ("cap_reportes", "Reportes: libro de actas DPS y archivo para el SGM de la AGC.")):
         img(k, pie)
-    add("h2", "11.2 Publicarla en Vercel")
+    add("h2", "11.6 Publicarla en Vercel")
     bul("Carpeta trazabilidad/app del repositorio: index.html es la app completa (un solo archivo).",
         "vercel.json manda /m/<serie>, /r/<remito> y /p/<pallet> a la misma página, que abre la vista que corresponde.",
         "En Vercel: Add New → Project → importar el repositorio con Root Directory ./ y Framework «Other»: el vercel.json "

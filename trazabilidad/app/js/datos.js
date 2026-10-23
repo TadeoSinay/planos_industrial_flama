@@ -178,7 +178,8 @@ function hojaRuta(o) {
   const ini = o.emision ? new Date(o.emision) : null, fin = o.cierre ? new Date(o.cierre) : HOY, span = ini ? Math.max(1, (fin - ini) / 864e5) : 0;
   const enDia = {}; // horas crecientes dentro de cada día: el orden del historial respeta la secuencia de puestos
   return ps.map((p, i) => {
-    const hecho = o.etapa > p[0] || (p[0] >= E["Para etiquetar"] && o.etapa >= p[0] + 1), enCurso = o.etapa === p[0];
+    // el embalaje (25 / C-16) es lo que pone al lote en depósito PT: en esa etapa ya está hecho
+    const hecho = o.etapa > p[0] || (p[0] === E["Depósito PT"] && o.etapa === p[0]), enCurso = !hecho && o.etapa === p[0];
     const d = Math.floor(span * i / ps.length), k = enDia[d] = (enDia[d] || 0) + 1;
     const f = ini ? new Date(+ini + d * 864e5 + (6 + 1.6 * k) * 36e5 + (hashN(i + o.op) % 50) * 6e4) : null;
     return { etapa: p[0], puesto: p[1], op: p[2], equipo: p[3], insumo: p[4] ? o.insumos[p[4]] : null, firma: hecho ? OPER[hashN(o.op + p[1]) % OPER.length] : null, fecha: hecho ? f : null, estado: hecho ? "hecho" : enCurso ? "en curso" : "pendiente" };
@@ -226,14 +227,16 @@ function equipo(n) {
 // historia completa del equipo: lo que lo identifica, cada paso con su fecha y su responsable
 function historia(e) {
   const o = e.o, ev = [], hr = hojaRuta(o), ens = ensayos(e.n, o);
-  if (o.emision) ev.push([o.emision, "Orden emitida", `${o.op} · partida ${o.partida}`, "PCP"]);
+  // fechas guardadas por día (emisión, cierre, remito): se les pone la hora típica del evento; las cargadas en la app ya traen hora
+  const hora = (d, h) => { if (!d) return d; const x = new Date(d); return x.getHours() || x.getMinutes() ? x : new Date(+x + h * 36e5); };
+  if (o.emision) ev.push([hora(o.emision, 7), "Orden emitida", `${o.op} · partida ${o.partida}`, "PCP"]);
   hr.filter(p => p.fecha && p.etapa < E["Para etiquetar"]).forEach(p => ev.push([p.fecha, p.op, `puesto ${p.puesto}${p.insumo ? " · " + p.insumo : ""}`, p.firma]));
-  if (ens) ev.push([o.cierre || HOY, e.rech ? "Rechazado: " + e.rech.causa : "Lote cerrado y visado", e.rech ? "sale del lote con su número" : `RT ${RT}`, CALIDAD, !!e.rech]);
+  if (ens) ev.push([hora(o.cierre || HOY, 17), e.rech ? "Rechazado: " + e.rech.causa : "Lote cerrado y visado", e.rech ? "sale del lote con su número" : `RT ${RT}`, CALIDAD, !!e.rech]);
   if (!e.rech && ["En depósito PT", "En tránsito", "En distribuidor", "Instalado", "Inutilizado"].includes(e.estado)) { const p = hr.find(x => x.etapa === E["Para etiquetar"]); ev.push([p && p.fecha || o.cierre, "Identificado", `estampilla DPS ${estampilla(e.n)} · etiqueta QR`, p && p.firma]); }
   if (e.remito) {
-    ev.push([e.remito.fecha, "Despachado", `${e.remito.id} · pallet SSCC ${o.pallet}`, "Depósito PT"]);
-    ev.push([e.remito.fecha, "Salida confirmada", `${e.remito.transp} · ${e.remito.patente}`, "chofer"]);
-    if (e.remito.recibido) ev.push([e.remito.recibido, "Recibido por el distribuidor", cliente(e.remito.cliente).nombre, e.remito.recibe]);
+    ev.push([hora(e.remito.fecha, 8), "Despachado", `${e.remito.id} · pallet SSCC ${o.pallet}`, "Depósito PT"]);
+    ev.push([hora(e.remito.fecha, 8.5), "Salida confirmada", `${e.remito.transp} · ${e.remito.patente}`, "chofer"]);
+    if (e.remito.recibido) ev.push([hora(e.remito.recibido, 14), "Recibido por el distribuidor", cliente(e.remito.cliente).nombre, e.remito.recibe]);
   }
   if (e.inst) ev.push([e.inst.fecha, "Instalado", `${cliente(e.inst.cliente).nombre} · ${e.inst.ubic} · ${e.inst.tarjeta}`, e.inst.instalador]);
   if (e.baja) ev.push([e.baja.fecha, "Inutilizado · baja", e.baja.motivo, "Recargas"]);
