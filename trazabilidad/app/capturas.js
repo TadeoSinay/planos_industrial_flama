@@ -30,6 +30,21 @@ async function rellenarQR(p) {
   await p.evaluate(() => scrollTo(0, document.body.scrollHeight)); await foto("cap_equipo_hist");
   await ir("equipos"); await c("[data-k=etip][data-v=Cilindro]"); await c("tr.click"); await foto("cap_cilindro");
   await ir("traza"); await c("[data-a=trazaLote] >> nth=1"); await foto("cap_lote");
+  for (const v of ["estados", "estadoseq", "amfe"]) { await ir(v); await foto("cap_" + v); }
+  await ir("amfe"); await c("[data-k=qtab][data-v=campo]"); await foto("cap_amfe_campo");
+  await c("[data-k=qtab][data-v=plan]"); await foto("cap_plan");
+  await ir("origen"); await c("[data-k=otab][data-v=intra]"); await foto("cap_origen");
+  await c("[data-k=otab][data-v=extra]"); await foto("cap_origen_extra");
+  await ir("lote-26-10-08"); await c("[data-k=ltab][data-v=est]"); await foto("cap_lote_est");
+  await c("[data-k=ltab][data-v=lot]"); await foto("cap_lote_lot");
+  // tablas de calidad para el Word: las mismas filas que muestra el sistema
+  const dat = await p.evaluate(() => ({
+    amfeP: amfe(false).map(f => [f.id, f.pto + " · " + f.op, f.modo, f.efecto, f.s, f.O, f.d, f.npr, f.accion ? f.acc : "—", f.base]),
+    amfeC: amfe(true).map(f => [f.id, f.etapa, f.modo, f.efecto, f.s, f.O, f.d, f.npr, f.accion ? f.acc : "—", f.base]),
+    plan: PLAN.map(x => [x.c, x.pto, x.car, x.esp, x.met + (x.inst.length ? " (" + x.inst.join(", ") + ")" : ""), x.mue, x.reg, x.rea]),
+    estLote: ESTADOS_LOTE.map((e, i) => [String(i), ...e, i > 0 && i < 8 ? durTxt(tiempoMedio(i)) : "—"]),
+    estEq: ESTADOS_EQ, oriI: ORIGEN_INTRA, oriE: ORIGEN_EXTRA }));
+  fs.writeFileSync(path.join(OUT, "datos_calidad.json"), JSON.stringify(dat, null, 1));
   const m = await b.newPage({ viewport: { width: 400, height: 760 }, deviceScaleFactor: 2 });
   await m.goto(`${URL}/m/26-005480`); await m.waitForTimeout(300); await rellenarQR(m); await m.screenshot({ path: path.join(OUT, "cap_qr.png") });
   await b.close(); srv.close(); console.log("ok", fs.readdirSync(OUT).length, "capturas");

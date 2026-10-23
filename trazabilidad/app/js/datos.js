@@ -28,7 +28,7 @@ const PUESTOS = {
     [4, "C-12", "Tren rodante, manguera y lanza", "Banco de armado", null], [4, "C-13", "Carga y presurización", "Balanza B-2", "polvo"],
     [4, "C-14", "Control de pérdidas", "Agua jabonosa", "valvula"], [6, "C-15", "Etiquetado e identificación", "Lector + impresora", null], [7, "C-16", "Despacho en pallet", "Lector", null]],
 };
-const CLAVE = `flama-gestion-${D.anio}-${D.mes}-${D.lotes.length}-v3`;
+const CLAVE = `flama-gestion-${D.anio}-${D.mes}-${D.lotes.length}-v4`;
 
 function semillaEstado() {
   const r = semilla(2026 * 100 + D.mes);
@@ -138,6 +138,8 @@ function semillaEstado() {
     { id: "MP-PAT", desc: "Manómetro patrón Ø100 (0-14 MPa)", ult: sumar(HOY, -410), cada: 730, tipo: "Calibración del fabricante (Res. 349/07 art. 15 l)" },
     { id: "B-1", desc: "Balanza de carga manuales (división 10 g)", ult: sumar(HOY, -150), cada: 365, tipo: "Calibración anual (criterio)" },
     { id: "B-2", desc: "Balanza de carga carros (división 50 g)", ult: sumar(HOY, -340), cada: 365, tipo: "Calibración anual (criterio)" },
+    { id: "MIC-1", desc: "Micrómetro de exteriores 0-25 mm (0,01 mm)", ult: sumar(HOY, -200), cada: 365, tipo: "Calibración anual (criterio)" },
+    { id: "EP-1", desc: "Medidor de espesor de película (ISO 2808)", ult: sumar(HOY, -11), cada: 30, tipo: "Verificación con láminas patrón (criterio)" },
   ];
   return { clientes, ordenes, remitos, recargas, reclamos, desvios, retiros, insumos, medicion, inst: {}, bajas: {}, eventos: [], nRc: 119, nRd: 66, nOs: no, nRem: nr };
 }
@@ -173,17 +175,61 @@ function masaCarga(n, o) {      // masa de carga de prueba dentro de la banda de
   return m.min + (m.max - m.min) * (0.25 + 0.5 * u);
 }
 // fecha y hora en que cada puesto firmó la hoja de ruta (de prueba, entre la emisión y el cierre)
+// fechas del lote: los puestos de proceso (etapas 1 a 4) se reparten entre la emisión y el día anterior al cierre; el día
+// del cierre, en orden: visado de calidad 8 h, etiquetado 10 h y embalaje 14 h. Un lote de un solo día se comprime.
+function fechasLote(o) {
+  if (!o.emision) return null;
+  const ini = new Date(o.emision), fin = o.cierre ? new Date(o.cierre) : new Date(HOY), dd = Math.max(0, Math.round((fin - ini) / 864e5));
+  const h = (d, hh) => new Date(+ini + d * 864e5 + hh * 36e5);
+  return { ini, dd, h, emision: h(0, 7), visado: h(dd, dd ? 8 : 15), etiq: h(dd, dd ? 10 : 16), emb: h(dd, dd ? 14 : 17) };
+}
 function hojaRuta(o) {
   const ps = PUESTOS[o.linea].filter(p => !(o.cilindro && /Carga|Presuriz|pérdidas|válvula/.test(p[2])));
-  const ini = o.emision ? new Date(o.emision) : null, fin = o.cierre ? new Date(o.cierre) : HOY, span = ini ? Math.max(1, (fin - ini) / 864e5) : 0;
-  const enDia = {}; // horas crecientes dentro de cada día: el orden del historial respeta la secuencia de puestos
+  const F = fechasLote(o), prod = ps.filter(p => p[0] <= E["Carga y armado final"]), enDia = {};
   return ps.map((p, i) => {
     // el embalaje (25 / C-16) es lo que pone al lote en depósito PT: en esa etapa ya está hecho
     const hecho = o.etapa > p[0] || (p[0] === E["Depósito PT"] && o.etapa === p[0]), enCurso = !hecho && o.etapa === p[0];
-    const d = Math.floor(span * i / ps.length), k = enDia[d] = (enDia[d] || 0) + 1;
-    const f = ini ? new Date(+ini + d * 864e5 + (6 + 1.6 * k) * 36e5 + (hashN(i + o.op) % 50) * 6e4) : null;
+    let f = null;
+    if (F) {
+      const j = prod.indexOf(p);
+      if (j >= 0) { const d = F.dd ? Math.floor(F.dd * j / prod.length) : 0, k = enDia[d] = (enDia[d] || 0) + 1;   // horas crecientes en el día
+        f = F.h(d, (F.dd ? 6 + 1.6 * k : 7 + 0.8 * k) + (hashN(i + o.op) % 40) / 60); }
+      else f = p[0] === E["Para etiquetar"] ? F.etiq : F.emb;
+    }
     return { etapa: p[0], puesto: p[1], op: p[2], equipo: p[3], insumo: p[4] ? o.insumos[p[4]] : null, firma: hecho ? OPER[hashN(o.op + p[1]) % OPER.length] : null, fecha: hecho ? f : null, estado: hecho ? "hecho" : enCurso ? "en curso" : "pendiente" };
   });
+}
+// estadios del lote: cuándo entró y salió de cada etapa, según la hoja de ruta, el visado y el remito
+function estadios(o) {
+  const F = fechasLote(o), hr = hojaRuta(o), rem = o.remito ? remito(o.remito) : null, out = [];
+  const fin = e => { const ps = hr.filter(p => p.etapa === e && p.fecha); return ps.length ? ps[ps.length - 1].fecha : null; };
+  const limites = [null, F && F.emision, fin(1), fin(2), fin(3), fin(4), o.etapa >= E["Para etiquetar"] && F ? F.visado : null,
+    o.etapa >= E["Depósito PT"] && F ? F.emb : null, rem ? hora(rem.fecha, 8) : null];
+  for (let e = 0; e <= o.etapa; e++) out.push({ e, nombre: ETAPAS[e], desde: limites[e], hasta: e < o.etapa ? limites[e + 1] : null });
+  return out;
+}
+// ensayos por lote (DOC-02 3.2, muestreo) y controles de pintura por lote (DOC-01 4): se hacen con el lote para cerrar
+const CATALOGO = { "1 kg": [8, 9, 2, 3], "2,5 kg": [9, 12, 3, 4], "5 kg": [10, 13, 5, 6], "10 kg": [18, 22, 6, 7], "25 kg": [40, 40, 5, 6], "50 kg": [45, 45, 6, 7], "70 kg": [50, 50, 7, 8], "100 kg": [55, 55, 8, 9] };   // descarga (s) y alcance (m), DOC-02 tabla 2
+function ensayosLote(o) {
+  if (o.etapa < E["Para etiquetar"]) return null;
+  const r = semilla(hashN("L" + o.op)), pe = o.carro ? PH.car : PH.man, kg = kgDe(o.modelo), c = CATALOGO[kg] || [10, 13, 5, 6];
+  const dmin = o.carro ? (kg === "25 kg" ? 10 : kg === "100 kg" ? 30 : 15) : 8;
+  return {
+    rotura: { p: pe * (2.3 + 0.6 * r()), min: 2 * pe },                                     // L1: ≥ 2 × Pe (referencia)
+    expansion: { pct: 1.5 + 5 * r(), max: 10 },                                              // L2: permanente ≤ 10 %
+    descarga: o.cilindro ? null : { s: c[0] + (c[1] - c[0] + 0.6) * r(), min: dmin, pct: 88 + 8 * r(), alc: c[2] + (c[3] - c[2]) * r(), cat: c },   // L3
+    polvo: o.cilindro ? null : o.insumos.polvo,                                              // L4: certificado IRAM 3569
+    valvula: o.cilindro ? null : o.insumos.valvula,                                          // L5: certificado IRAM 3533
+    pintura: { lect: Array.from({ length: 5 }, () => 66 + 28 * r()), adh: r() < 0.8 ? 0 : 1, mek: true },   // DOC-01: 60-100 µm, ISO 2409 clase 0-1
+  };
+}
+// retención: un lote para cerrar o etiquetar no avanza si su manómetro de PH venció o tiene un desvío abierto
+function retenido(o) {
+  if (o.etapa < E["Para cerrar"] || o.etapa > E["Para etiquetar"]) return [];
+  const m = S.medicion.find(x => x.id === (o.carro ? "PH-M2" : "PH-M1")), out = [];
+  if (m && dias(m.ult) > m.cada) out.push(`contraste de ${m.id} vencido`);
+  S.desvios.filter(d => d.estado !== "Cerrado" && d.ref === o.op).forEach(d => out.push(`desvío ${d.id} abierto`));
+  return out;
 }
 function ensayos(n, o) {
   const r = semilla(n * 7 + 3), rech = o.rech.find(x => x.n === n), kg = kgDe(o.modelo), nom = ESPESOR[kg] || 1.6;
@@ -225,13 +271,15 @@ function equipo(n) {
   return e;
 }
 // historia completa del equipo: lo que lo identifica, cada paso con su fecha y su responsable
+const F0 = o => fechasLote(o).emision;
+// fechas guardadas por día (remito, recepción): se les pone la hora típica del evento; las cargadas en la app ya traen hora
+const hora = (d, h) => { if (!d) return d; const x = new Date(d); return x.getHours() || x.getMinutes() ? x : new Date(+x + h * 36e5); };
 function historia(e) {
   const o = e.o, ev = [], hr = hojaRuta(o), ens = ensayos(e.n, o);
-  // fechas guardadas por día (emisión, cierre, remito): se les pone la hora típica del evento; las cargadas en la app ya traen hora
-  const hora = (d, h) => { if (!d) return d; const x = new Date(d); return x.getHours() || x.getMinutes() ? x : new Date(+x + h * 36e5); };
-  if (o.emision) ev.push([hora(o.emision, 7), "Orden emitida", `${o.op} · partida ${o.partida}`, "PCP"]);
+  if (o.emision) ev.push([F0(o), "Orden emitida", `${o.op} · partida ${o.partida}`, "PCP"]);
   hr.filter(p => p.fecha && p.etapa < E["Para etiquetar"]).forEach(p => ev.push([p.fecha, p.op, `puesto ${p.puesto}${p.insumo ? " · " + p.insumo : ""}`, p.firma]));
-  if (ens) ev.push([hora(o.cierre || HOY, 17), e.rech ? "Rechazado: " + e.rech.causa : "Lote cerrado y visado", e.rech ? "sale del lote con su número" : `RT ${RT}`, CALIDAD, !!e.rech]);
+  const F = fechasLote(o);
+  if (ens) ev.push([F ? F.visado : HOY, e.rech ? "Rechazado: " + e.rech.causa : "Lote cerrado y visado", e.rech ? "sale del lote con su número" : `RT ${RT}`, CALIDAD, !!e.rech]);
   if (!e.rech && ["En depósito PT", "En tránsito", "En distribuidor", "Instalado", "Inutilizado"].includes(e.estado)) { const p = hr.find(x => x.etapa === E["Para etiquetar"]); ev.push([p && p.fecha || o.cierre, "Identificado", `estampilla DPS ${estampilla(e.n)} · etiqueta QR`, p && p.firma]); }
   if (e.remito) {
     ev.push([hora(e.remito.fecha, 8), "Despachado", `${e.remito.id} · pallet SSCC ${o.pallet}`, "Depósito PT"]);

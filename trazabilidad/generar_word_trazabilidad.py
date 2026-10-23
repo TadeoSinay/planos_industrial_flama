@@ -113,6 +113,13 @@ def secciones_v4(add, p, bul, tabla, img):
                                                                            "SHA-256 y botón para verificar la cadena"],
         ["Gestión", "Reportes", "PCP, responsable técnico", "Libro de actas DPS, archivo batch del SGM, "
                                                             "vencimientos, producción"],
+        ["Intraplanta", "Estados del lote", "PCP, calidad", "Estados, Gantt de estadios, tiempo medio y lotes "
+                                                          "retenidos (11.6)"],
+        ["Intraplanta", "AMFE y plan de control", "Calidad", "AMFE de proceso con O calculada, plan de control "
+                                                            "DOC-02 / DOC-01 (11.7)"],
+        ["Extraplanta", "Estados del equipo · AMFE de campo", "Calidad, expedición", "Traspasos del equipo; modos de "
+                                                                               "falla en campo (11.6, 11.7)"],
+        ["Gestión", "Origen de los datos", "Todos", "Cómo se mide y cómo llega cada dato (11.8)"],
         ["Gestión", "Configuración", "Administración", "Modelos del BOM, reglas de desvío, normas aplicadas, "
                                                        "integraciones y permisos por rol"],
     ], [2.4, 3.2, 3.8, 7.6])
@@ -198,7 +205,73 @@ def secciones_v4(add, p, bul, tabla, img):
                    ("cap_eventos", "Registro de eventos con la cadena SHA-256."),
                    ("cap_reportes", "Reportes: libro de actas DPS y archivo para el SGM de la AGC.")):
         img(k, pie)
-    add("h2", "11.6 Publicarla en Vercel")
+    with open(os.path.join(AQUI, "capturas", "datos_calidad.json"), encoding="utf-8") as fh:
+        Q = json.load(fh)   # mismas filas que muestra el sistema (app/capturas.js)
+
+    add("h2", "11.6 Estados del lote y del equipo")
+    p("Un lote pasa por nueve estados. Cada cambio lo dispara un hecho que queda registrado (una firma en la hoja de "
+      "ruta, el visado, una lectura del grabado o del remito), así que el sistema sabe cuándo entró y salió de cada "
+      "uno: son los **estadios** del lote. Con ellos arma la línea de tiempo de cada orden, el Gantt del mes y el "
+      "tiempo medio por estado. Un lote para cerrar o para etiquetar queda **retenido** si su manómetro de PH tiene "
+      "el contraste vencido o si tiene un desvío abierto.")
+    tabla(["#", "Estado", "Entra cuando", "Quién y dónde", "Cómo se registra", "Para salir", "Tiempo medio"],
+          Q["estLote"], [0.6, 2.2, 2.8, 2.4, 3.6, 3.4, 2.0])
+    p("Tiempo medio: lotes del mes anterior y del actual que ya salieron del estado (datos de prueba).")
+    for k, pie in (("cap_estados", "Estados del lote: cantidad en cada estado, Gantt de los estadios del mes y cómo se "
+                                   "entra y se sale de cada uno."),
+                   ("cap_lote_est", "Estadios de un lote: entrada, salida y duración de cada estado.")):
+        img(k, pie)
+    p("Fuera de la planta, el estado es del **equipo** y cambia con cada traspaso leído.")
+    tabla(["Estado", "Entra cuando", "Custodia", "Cómo se registra"], Q["estEq"], [3, 5, 3, 6])
+    img("cap_estadoseq", "Estados del equipo, de la orden de servicio y del reclamo.")
+
+    add("h2", "11.7 Controles de calidad: AMFE y plan de control")
+    p("El AMFE (análisis de modo y efecto de falla) ordena qué puede fallar, qué tan grave es (S), qué tan seguido "
+      "pasa (O) y qué tan probable es detectarlo antes de que llegue al usuario (D). Las escalas de 1 a 10 son una "
+      "adaptación del manual AIAG FMEA 4.ª ed. **S y D son criterio** del equipo de FLAMA. **O no se estima**: el "
+      "sistema la calcula con sus registros (rechazos por causa de los lotes cerrados del año, remitos sin "
+      "confirmar, recargas, reclamos, retiros) y la recalcula cada vez que entra un dato. Regla de acción "
+      "(criterio): NPR = S × O × D ≥ 100, o S ≥ 9 con O ≥ 4. Los rechazos y registros de esta versión son datos de "
+      "prueba, así que las O sirven para mostrar el método, no como resultado.")
+    add("h3", "AMFE de proceso (intraplanta)")
+    tabla(["ID", "Puesto · operación", "Modo de falla", "Efecto", "S", "O", "D", "NPR", "Acción", "Base de O"],
+          [[str(x) for x in r] for r in Q["amfeP"]], [1.0, 2.2, 2.4, 2.4, 0.6, 0.6, 0.6, 0.9, 3.0, 3.3])
+    add("h3", "AMFE de campo (extraplanta)")
+    tabla(["ID", "Etapa", "Modo de falla", "Efecto", "S", "O", "D", "NPR", "Acción", "Base de O"],
+          [[str(x) for x in r] for r in Q["amfeC"]], [1.0, 1.8, 2.6, 2.6, 0.6, 0.6, 0.6, 0.9, 3.0, 3.3])
+    for k, pie in (("cap_amfe", "AMFE de proceso en el sistema: controles actuales, O calculada y acción."),
+                   ("cap_amfe_campo", "AMFE de campo: transporte, instalación, uso, recarga, atención y retiros.")):
+        img(k, pie)
+    add("h3", "Plan de control")
+    p("Sale de DOC-02 (ensayos R1 a R9 al 100 % y L1 a L5 por lote) y de DOC-01 (pintura). Para cada control dice "
+      "cómo llega al sistema y qué se hace si falla. En el sistema, cada fila muestra además el estado del "
+      "instrumento y el resultado del mes; la página de cada lote tiene la pestaña «Ensayos de lote» con L1 a L5 y la "
+      "pintura.")
+    tabla(["Cód.", "Puesto", "Característica", "Especificación", "Método (instrumento)", "Muestra", "Cómo llega",
+           "Reacción"], Q["plan"], [0.9, 2.0, 2.4, 2.8, 2.3, 1.5, 2.5, 2.6])
+    for k, pie in (("cap_plan", "Plan de control con el estado de cada instrumento y el resultado del mes."),
+                   ("cap_lote_lot", "Ensayos de lote L1 a L5 y controles de pintura de una orden.")):
+        img(k, pie)
+
+    add("h2", "11.8 Cómo se mide y cómo llega cada dato")
+    p("Dentro de la planta no hay una tablet por puesto: la hoja de ruta en papel registra las firmas, los lotes de "
+      "insumo y los ✓ / ✗ de cada serie, y se carga con una foto al cierre; las lecturas automáticas son las del "
+      "lector del grabado en etiquetado y en el pallet, y el archivo de pesadas de la balanza. Fuera de la planta, "
+      "nadie necesita una aplicación: cada traspaso se registra leyendo el QR del remito o del equipo con la cámara "
+      "del celular. Todo entra a la base como un evento encadenado con SHA-256, y de ahí salen los tableros, los "
+      "estados y el AMFE.")
+    add("h3", "Intraplanta")
+    tabla(["Dato", "Dónde nace", "Instrumento", "Quién", "Cuándo", "Cómo llega al sistema", "Validación", "Alimenta"],
+          Q["oriI"], [2.0, 2.0, 2.0, 1.5, 1.6, 3.4, 2.2, 2.3])
+    img("cap_origen", "Origen de los datos intraplanta: flujo y registros del mes por fuente.")
+    add("h3", "Extraplanta")
+    tabla(["Dato", "Dónde nace", "Instrumento", "Quién", "Cuándo", "Cómo llega al sistema", "Validación", "Alimenta"],
+          Q["oriE"], [2.0, 2.0, 2.0, 1.5, 1.6, 3.4, 2.2, 2.3])
+    img("cap_origen_extra", "Origen de los datos extraplanta.")
+    p("La masa por serie depende de la balanza: si guarda las pesadas o tiene salida USB, el archivo se sube al "
+      "cierre; si no, el operario anota el valor en la hoja (criterio, a definir con la balanza que se compre).")
+
+    add("h2", "11.9 Publicarla en Vercel")
     bul("Carpeta trazabilidad/app del repositorio: index.html es la app completa (un solo archivo).",
         "vercel.json manda /m/<serie>, /r/<remito> y /p/<pallet> a la misma página, que abre la vista que corresponde.",
         "En Vercel: Add New → Project → importar el repositorio con Root Directory ./ y Framework «Other»: el vercel.json "

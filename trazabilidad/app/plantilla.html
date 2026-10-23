@@ -153,6 +153,12 @@ table.t { width: 100%; border-collapse: collapse; font-size: 13px }
 .lista-alertas li:last-child { border: 0 }
 .lista-alertas li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; background: var(--yellow) }
 .lista-alertas li.no::before { background: var(--red) } .lista-alertas li.in::before { background: var(--blue) }
+.estados-flujo { display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px; margin-bottom: 16px }
+.estado-caja { flex: 1 1 104px; min-width: 96px; border: 1px solid var(--line); border-top: 4px solid var(--c); border-radius: 8px; background: var(--surface); padding: 8px 10px; text-decoration: none; color: var(--ink); display: flex; flex-direction: column; gap: 3px }
+.estado-caja small { color: var(--ink-3); font: 600 11px/1 var(--f-mono) } .estado-caja b { font-size: 13px; line-height: 1.2 } .estado-caja span { font-size: 12px; color: var(--ink-2) }
+.estado-caja:hover { border-color: var(--ink-3) } .flecha { align-self: center; color: var(--ink-3) }
+@media (max-width: 600px) { .flecha { display: none } .estado-caja { flex-basis: 40% } }
+.leyenda { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 8px; font-size: 12px; color: var(--ink-2) } .leyenda span { display: inline-flex; align-items: center; gap: 6px } .leyenda i { width: 11px; height: 11px; border-radius: 2px; display: inline-block }
 .etapas { display: flex; gap: 2px; flex-wrap: wrap }
 .etapas span { font: 600 11px/1 var(--f-body); padding: 6px 8px; background: var(--surface-2); color: var(--ink-3); border-radius: 4px }
 .etapas span.hecha { background: var(--green-soft); color: var(--green) }

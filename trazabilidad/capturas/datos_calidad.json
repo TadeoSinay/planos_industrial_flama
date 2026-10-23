@@ -1,0 +1,825 @@
+{
+ "amfeP": [
+  [
+   "P-04",
+   "8-12 / C-4 · Soldadura MAG",
+   "Poro o falta de penetración en el cordón",
+   "Fuga en PH; rotura en servicio si escapa",
+   10,
+   7,
+   4,
+   280,
+   "Registrar el soldador por serie para cortar la causa",
+   "81 de 5.582 · fuga en ph"
+  ],
+  [
+   "P-01",
+   "Recepción · 2 / C-2 · Chapa y corte",
+   "Espesor de chapa bajo el nominal",
+   "El recipiente no resiste la presión: rotura en servicio",
+   10,
+   6,
+   4,
+   240,
+   "Medir el espesor también al iniciar cada orden",
+   "13 de 5.582 · espesor fuera de tolerancia"
+  ],
+  [
+   "P-11",
+   "23 / C-14 · Control de pérdidas",
+   "Pérdida por válvula o junta sin detectar",
+   "Equipo despresurizado en el usuario",
+   9,
+   6,
+   4,
+   216,
+   "Control de presión a 24 h sobre una muestra de cada lote",
+   "17 de 5.582 · pérdida en válvula"
+  ],
+  [
+   "P-06",
+   "14-15 / C-9 · Secado",
+   "Humedad en el interior",
+   "El polvo se apelmaza y el equipo no descarga",
+   10,
+   3,
+   7,
+   210,
+   "Cámara de inspección interior, como en recarga (IRAM 3517-2 9.8.2)",
+   "criterio"
+  ],
+  [
+   "P-07",
+   "16-19 / C-10 · Pintura en polvo",
+   "Película bajo 60 µm o mala adherencia",
+   "Corrosión prematura; menor vida útil",
+   5,
+   6,
+   6,
+   180,
+   "Medir 5 puntos en el primer recipiente de cada turno",
+   "15 de 5.582 · golpe o pintura"
+  ],
+  [
+   "P-13",
+   "25 / C-16 · Embalaje",
+   "Golpe al armar o mover el pallet",
+   "Abolladura o pintura dañada",
+   5,
+   4,
+   8,
+   160,
+   "Esquineros y film en todos los pallets",
+   "criterio: 1 desvío de custodia en el año"
+  ],
+  [
+   "P-09",
+   "20-21 / C-13 · Carga de polvo",
+   "Polvo de otro lote o sin certificado",
+   "Agente fuera de especificación; traza equivocada",
+   8,
+   3,
+   6,
+   144,
+   "Leer el código del lote en la cargadora",
+   "criterio"
+  ],
+  [
+   "P-10",
+   "22 / C-13 · Presurización",
+   "Presión de N₂ fuera de la zona verde",
+   "Descarga incompleta; manómetro en rojo en el usuario",
+   9,
+   3,
+   5,
+   135,
+   "Verificar el regulador con el patrón al empezar cada turno",
+   "criterio"
+  ],
+  [
+   "P-08",
+   "20-21 / C-13 · Carga de polvo",
+   "Masa fuera de la banda de carga",
+   "Descarga y alcance menores (por defecto)",
+   7,
+   6,
+   3,
+   126,
+   "Cero automático de la balanza al cambiar la bolsa",
+   "21 de 5.582 · carga fuera de tolerancia"
+  ],
+  [
+   "P-03",
+   "4-7 · Embutido de cúpulas",
+   "Bordón fuera de medida",
+   "Mal encastre y fuga en la soldadura",
+   7,
+   4,
+   4,
+   112,
+   "Pedir al proveedor el control de la matriz",
+   "criterio: 1 desvío de proveedor en el año"
+  ],
+  [
+   "P-05",
+   "13 / C-8 · Prueba hidráulica",
+   "PH a menos presión o menos de 60 s",
+   "Se libera un recipiente defectuoso",
+   10,
+   2,
+   5,
+   100,
+   "Registrador de presión con salida a la base",
+   "criterio: bloqueo del sistema"
+  ],
+  [
+   "P-02",
+   "2 / C-2 · Grabado del número",
+   "Número ilegible, repetido o salteado",
+   "Sin trazabilidad: el equipo no se puede recargar (IRAM 3517-2 anexo F)",
+   9,
+   2,
+   2,
+   36,
+   "—",
+   "criterio: prevenido por el sistema"
+  ],
+  [
+   "P-12",
+   "24 / C-15 · Etiquetado",
+   "Etiqueta o estampilla de otra serie",
+   "Datos equivocados en campo y en la tarjeta DPS",
+   6,
+   2,
+   2,
+   24,
+   "—",
+   "criterio: prevenido por el sistema"
+  ]
+ ],
+ "amfeC": [
+  [
+   "C-10",
+   "Retiro",
+   "Equipo afectado que no se ubica",
+   "Queda en uso un equipo con un insumo defectuoso",
+   9,
+   10,
+   4,
+   360,
+   "Pedir la lectura del QR en cada venta del distribuidor",
+   "67 de 177 · equipos sin ubicar del RP-26-01"
+  ],
+  [
+   "C-07",
+   "Recarga",
+   "Recipiente no apto (corrosión, golpe, soldadura) que entra a recarga",
+   "Rotura si se recarga y vuelve al mercado",
+   10,
+   8,
+   3,
+   240,
+   "Foto obligatoria del recipiente al recibirlo",
+   "1 de 38 · OS para inutilizar / OS abiertas"
+  ],
+  [
+   "C-06",
+   "Recarga",
+   "Polvo bajo de peso o apelmazado",
+   "Descarga incompleta",
+   8,
+   9,
+   3,
+   216,
+   "Indicar en el QR que no se guarde en lugares húmedos",
+   "3 de 33 · recargas ABC con polvo bajo de peso / recargas ABC"
+  ],
+  [
+   "C-05",
+   "Uso",
+   "Pérdida de presión en el usuario",
+   "Manómetro en rojo: el equipo no sirve hasta recargarlo",
+   9,
+   4,
+   5,
+   180,
+   "Aviso trimestral desde el QR para el control periódico",
+   "2 de 5.186 · reclamos por presión / equipos en el mercado"
+  ],
+  [
+   "C-09",
+   "Atención",
+   "Reclamo de seguridad fuera de plazo",
+   "El usuario sigue con un equipo dudoso",
+   8,
+   10,
+   2,
+   160,
+   "Medir la guardia: reclamos de seguridad respondidos en 24 h",
+   "2 de 6 · reclamos fuera de plazo / reclamos"
+  ],
+  [
+   "C-01",
+   "Transporte",
+   "Equipo golpeado en tránsito",
+   "Abolladura en la cúpula; recipiente a revisar",
+   7,
+   4,
+   5,
+   140,
+   "Foto de la carga antes de salir",
+   "1 de 5.315 · desvíos de custodia / equipos despachados"
+  ],
+  [
+   "C-02",
+   "Recepción",
+   "Recepción no confirmada en 48 h",
+   "La custodia queda abierta: traza incompleta",
+   6,
+   7,
+   2,
+   84,
+   "—",
+   "1 de 88 · remitos sin confirmar / remitos"
+  ],
+  [
+   "C-04",
+   "Uso",
+   "Mantenimiento anual vencido",
+   "El equipo puede no funcionar en un incendio",
+   10,
+   2,
+   3,
+   60,
+   "—",
+   "0 de 5.186 · equipos con mantenimiento vencido / en el mercado"
+  ],
+  [
+   "C-12",
+   "Uso",
+   "Equipo con vida útil vencida en uso",
+   "Recipiente envejecido en servicio",
+   10,
+   2,
+   2,
+   40,
+   "—",
+   "0 de 5.186 · equipos con vida útil vencida / en el mercado"
+  ],
+  [
+   "C-08",
+   "Recarga",
+   "PH vencida sin detectar",
+   "Recipiente sin reensayar en servicio",
+   9,
+   2,
+   2,
+   36,
+   "—",
+   "0 de 38 · OS con PH vencida sin hacer"
+  ],
+  [
+   "C-11",
+   "Identificación",
+   "Etiqueta QR perdida o ilegible",
+   "Se demora la identificación del equipo",
+   4,
+   3,
+   3,
+   36,
+   "—",
+   "criterio: 3"
+  ],
+  [
+   "C-03",
+   "Instalación",
+   "Altura o cartel fuera de IRAM 3517-2",
+   "El usuario no alcanza o no ve el equipo",
+   7,
+   2,
+   2,
+   28,
+   "—",
+   "0 de 400 · instalaciones fuera de rango / instalaciones"
+  ]
+ ],
+ "plan": [
+  [
+   "R1",
+   "Recepción · 2",
+   "Espesor de chapa",
+   "≥ nominal del plano FL_REC (0,9 a 4,75 mm)",
+   "Certificado de colada + micrómetro (MIC-1)",
+   "por bobina",
+   "Ingreso de MP en Insumos: colada y espesor medido",
+   "Bobina retenida, aviso a compras y RD"
+  ],
+  [
+   "R2",
+   "8-12 / C-4",
+   "Soldaduras",
+   "ISO 5817 nivel C: sin fisuras, poros abiertos ni falta de penetración",
+   "Visual",
+   "100 %",
+   "Firma del soldador en la hoja de ruta",
+   "Reparar según la WPS o rechazar; RD si se repite en el turno (criterio)"
+  ],
+  [
+   "R3",
+   "13 / C-8",
+   "Prueba hidráulica",
+   "3,5 MPa manuales · 4,0 MPa carros · 1 min, sin caída ni deformación",
+   "Banco PH con manómetro contrastado (PH-M1, PH-M2)",
+   "100 %",
+   "Tilde ✓ / ✗ por serie en la hoja; rechazos al cierre",
+   "La serie sale del lote con su número; 2 seguidas: revisar soldadura (criterio)"
+  ],
+  [
+   "R4",
+   "14-15 / C-9",
+   "Interior seco",
+   "Sin agua ni condensación (IRAM 3517-2 4.3.3.4)",
+   "Visual",
+   "100 %",
+   "Firma en la hoja de ruta",
+   "Volver al horno"
+  ],
+  [
+   "R5",
+   "16-19 / C-10",
+   "Pintura: espesor, adherencia y curado",
+   "60 a 100 µm, ningún punto < 80 % · ISO 2409 clase 0 ó 1 · MEK sin ablandamiento",
+   "Medidor de película (ISO 2808), cuadriculado, frote MEK (EP-1)",
+   "por lote; MEK por turno",
+   "5 lecturas y clase de adherencia al cerrar el lote",
+   "Repintar el lote"
+  ],
+  [
+   "R6",
+   "20-21 / C-13",
+   "Masa de carga",
+   "1 y 2,5 kg: 0 / +100 g · 5 y 10 kg: 0 / +300 g · rodantes +3 %",
+   "Balanza calibrada (B-1, B-2)",
+   "100 %",
+   "Archivo de pesadas de la balanza o valor en la hoja",
+   "Corregir la carga; carta fuera de control: RD"
+  ],
+  [
+   "R7",
+   "22 / C-13",
+   "Presión de servicio",
+   "N₂ 1,4 MPa a 20 °C; aguja en zona verde",
+   "Manómetro del equipo verificado con el patrón (MP-PAT)",
+   "100 %",
+   "Tilde en la hoja de ruta",
+   "Ajustar el regulador y repetir"
+  ],
+  [
+   "R8",
+   "23 / C-14",
+   "Estanqueidad",
+   "Sin burbujas en inmersión; presión estable a las 24 h (criterio)",
+   "Cuba de inmersión",
+   "100 %",
+   "Tilde ✓ / ✗ por serie",
+   "Cambiar la junta o la válvula y repetir"
+  ],
+  [
+   "R9",
+   "24 / C-15",
+   "Pesada final y marcado",
+   "Masa en tolerancia; etiqueta, serie, sello IRAM, fecha, precinto y seguro",
+   "Lector del grabado + impresora",
+   "100 %",
+   "Lectura → evento IDENTIFICADO",
+   "Rechazo u otro lote: la pantalla bloquea"
+  ],
+  [
+   "L1",
+   "Laboratorio",
+   "Rotura (destructivo)",
+   "≥ 2 × Pe; rotura dúctil, sin fragmentar, fuera de la costura del cuello",
+   "Presurizar con agua hasta romper (MP-PAT)",
+   "1 por lote o turno de soldadura",
+   "Planilla F-02 por partida, visada por el RT",
+   "Lote retenido; RD y reensayo de 2 muestras (criterio)"
+  ],
+  [
+   "L2",
+   "Laboratorio",
+   "Expansión volumétrica",
+   "Permanente ≤ 10 % de la total",
+   "Camisa de agua a Pe (MP-PAT)",
+   "1 por lote",
+   "Planilla F-02",
+   "Lote retenido"
+  ],
+  [
+   "L3",
+   "Laboratorio",
+   "Descarga y alcance",
+   "Manuales ≥ 8 s y ≥ 85 %; 25 kg ≥ 10 s; 50 / 70 kg ≥ 15 s; 100 kg ≥ 30 s; alcance de catálogo",
+   "Banco de descarga",
+   "1 por lote",
+   "Planilla F-02",
+   "Lote retenido; revisar carga y válvula"
+  ],
+  [
+   "L4",
+   "Recepción",
+   "Polvo ABC",
+   "Certificado IRAM 3569 del lote; humedad y fluidez",
+   "Revisión del certificado",
+   "por lote de polvo",
+   "Ingreso de MP: lote y certificado",
+   "Lote de polvo retenido"
+  ],
+  [
+   "L5",
+   "Recepción",
+   "Manómetros y válvulas",
+   "Certificado IRAM 3533; válvula probada a Pe",
+   "Revisión del certificado + prueba (MP-PAT)",
+   "por partida",
+   "Ingreso de MP: partida y certificado",
+   "Partida retenida"
+  ]
+ ],
+ "estLote": [
+  [
+   "0",
+   "Planificada",
+   "El Plan mensual del Excel de Aprovechamiento trae la orden",
+   "PCP · oficina",
+   "Automático al leer el Excel; series reservadas",
+   "PCP la libera con la hoja de ruta impresa",
+   "—"
+  ],
+  [
+   "1",
+   "Corte y grabado",
+   "PCP libera la orden",
+   "Puesto 2 / C-2",
+   "Hoja de ruta: firma, lote de chapa y colada",
+   "Planchuelas grabadas con las series del lote",
+   "0,9 h"
+  ],
+  [
+   "2",
+   "Armado y soldadura",
+   "Termina el corte",
+   "Puestos 4-12 / C-4, C-6",
+   "Firmas, lotes de cúpulas y alambre; rechazos con su número",
+   "Soldaduras con visual R2",
+   "22,9 h"
+  ],
+  [
+   "3",
+   "PH y pintura",
+   "Termina la soldadura",
+   "Puestos 13-19 / C-8 a C-10",
+   "Tilde ✓ / ✗ de PH por serie; lote de pintura",
+   "PH (R3), secado (R4) y pintura (R5)",
+   "2,0 d"
+  ],
+  [
+   "4",
+   "Carga y armado final",
+   "Termina la pintura",
+   "Puestos 20-23 / C-12 a C-14",
+   "Lotes de polvo y válvulas; pesadas; ✓ / ✗ de pérdidas",
+   "Carga (R6), N₂ (R7) y pérdidas (R8)",
+   "2,0 d"
+  ],
+  [
+   "5",
+   "Para cerrar",
+   "Termina el control de pérdidas",
+   "Calidad",
+   "Foto de la hoja firmada; rechazos marcados en la lista; ensayos de lote L1-L5",
+   "Visado del RT; bloqueado si el contraste de PH venció o hay un desvío abierto",
+   "1,0 d"
+  ],
+  [
+   "6",
+   "Para etiquetar",
+   "Calidad cierra y el RT visa",
+   "Puesto 24 / C-15",
+   "Lector del grabado: evento IDENTIFICADO por serie",
+   "Todas las series aptas identificadas",
+   "6,0 h"
+  ],
+  [
+   "7",
+   "Depósito PT",
+   "Se arma y lee el pallet",
+   "Puesto 25 / C-16 · depósito",
+   "Lectura de cajas → etiqueta SSCC",
+   "Remito con el anexo de series",
+   "5,4 d"
+  ],
+  [
+   "8",
+   "Despachada",
+   "Sale el remito",
+   "Depósito PT · chofer",
+   "QR del remito leído por el chofer",
+   "Sigue en extraplanta",
+   "—"
+  ]
+ ],
+ "estEq": [
+  [
+   "En producción",
+   "La serie está en un lote abierto",
+   "Planta",
+   "Hoja de ruta del lote"
+  ],
+  [
+   "Para etiquetar",
+   "El lote se cerró y visó",
+   "Puesto 24 / C-15",
+   "Visado de calidad"
+  ],
+  [
+   "En depósito PT",
+   "Se leyó el grabado y se identificó",
+   "Depósito PT",
+   "Lector DPM: IDENTIFICADO; pallet SSCC"
+  ],
+  [
+   "En tránsito",
+   "El chofer leyó el QR del remito",
+   "Transportista",
+   "Celular del chofer (página web, sin app)"
+  ],
+  [
+   "En distribuidor",
+   "El distribuidor confirmó la recepción",
+   "Distribuidor",
+   "Página del remito: confirma, faltantes y daños con foto"
+  ],
+  [
+   "Instalado",
+   "El instalador registró el equipo",
+   "Usuario",
+   "Formulario de instalación: ubicación, alturas, tarjeta DPS o SGM"
+  ],
+  [
+   "Rechazado",
+   "Falló un ensayo de rutina",
+   "Planta",
+   "Marca en la lista del lote al cerrar; sale con su número"
+  ],
+  [
+   "Inutilizado",
+   "No aprueba la revisión en recarga o cumplió 20 años",
+   "Recargas",
+   "OS con motivo (IRAM 3517-2 9.7.1.3); baja con acta"
+  ]
+ ],
+ "oriI": [
+  [
+   "Orden y series",
+   "Plan mensual (Aprovechamiento_Manuales y _Carros)",
+   "Excel",
+   "PCP",
+   "al planificar la semana",
+   "El sistema lee el Excel y reserva las series del año",
+   "series únicas, sin huecos",
+   "Órdenes, estados, Gantt"
+  ],
+  [
+   "Lote de cada insumo",
+   "Puestos 2 a 22",
+   "Etiqueta del lote del proveedor",
+   "Operario",
+   "al empezar cada insumo",
+   "Anotado en la hoja de ruta → foto al cierre → calidad lo carga",
+   "el lote tiene que existir en Insumos",
+   "Traza, lotes en uso, retiros"
+  ],
+  [
+   "Firma, fecha y hora de cada puesto",
+   "Todos los puestos",
+   "Hoja de ruta F-01",
+   "Operario",
+   "al terminar el lote en el puesto",
+   "Papel en el carro → foto al cierre",
+   "sin firmas el lote no cierra",
+   "Hoja de ruta, estadios, ciclo"
+  ],
+  [
+   "Espesor de chapa",
+   "Recepción y puesto 2",
+   "Micrómetro MIC-1",
+   "Calidad",
+   "por bobina",
+   "Formulario de ingreso de MP",
+   "≥ nominal del plano",
+   "R1, AMFE P-01"
+  ],
+  [
+   "Resultado de PH por serie",
+   "Puesto 13 / C-8",
+   "Banco PH + PH-M1 / PH-M2",
+   "Operario de PH",
+   "100 %",
+   "Tilde ✓ / ✗ en la lista de series; los ✗ se marcan al cierre",
+   "PH bloqueada si el contraste venció",
+   "FPY, carta p, AMFE P-04"
+  ],
+  [
+   "Espesor y adherencia de pintura",
+   "Puestos 16-19 / C-10",
+   "EP-1, cuadriculado",
+   "Calidad",
+   "por lote",
+   "Cierre del lote: 5 lecturas y clase",
+   "60-100 µm; clase 0-1",
+   "R5, AMFE P-07"
+  ],
+  [
+   "Masa de carga por serie",
+   "Puestos 20-21 / C-13",
+   "Balanza B-1 / B-2",
+   "Operario de carga",
+   "100 %",
+   "Archivo de pesadas de la balanza subido al cierre, o valor anotado (criterio: según la balanza que se compre)",
+   "banda del BOM",
+   "Carta I, Cpk, AMFE P-08"
+  ],
+  [
+   "Presión de N₂ y pérdidas",
+   "Puestos 22-23 / C-13, C-14",
+   "Manómetro del equipo, cuba",
+   "Operario",
+   "100 %",
+   "Tilde ✓ / ✗ en la hoja",
+   "zona verde; sin burbujas",
+   "FPY, AMFE P-10 y P-11"
+  ],
+  [
+   "Rechazos (serie y causa)",
+   "Cualquier puesto",
+   "Número grabado",
+   "Operario → calidad",
+   "cuando pasa",
+   "Anotado en la hoja; calidad lo marca en la lista al cerrar",
+   "la serie es del lote",
+   "Pareto, FPY, O del AMFE"
+  ],
+  [
+   "Ensayos de lote L1-L5",
+   "Laboratorio",
+   "Rotura, camisa de agua, banco de descarga, certificados",
+   "Calidad",
+   "por lote o partida",
+   "Planilla F-02 por partida, visada por el RT",
+   "criterios DOC-02",
+   "Plan de control, visado"
+  ],
+  [
+   "Contraste y calibración",
+   "Laboratorio",
+   "Patrón MP-PAT",
+   "Calidad",
+   "PH cada 15 días",
+   "Formulario de equipos de medición",
+   "vencido → bloqueo",
+   "Equipos de medición, retención"
+  ],
+  [
+   "Identificación",
+   "Puesto 24 / C-15",
+   "Lector DPM USB + impresora",
+   "Operario",
+   "100 %",
+   "Lectura del grabado → evento IDENTIFICADO",
+   "rechazo u otro lote: bloqueado",
+   "Identificados, estampillas"
+  ],
+  [
+   "Pallet",
+   "Puesto 25 / C-16",
+   "Mismo lector",
+   "Operario",
+   "por pallet",
+   "Lectura de las cajas → etiqueta SSCC",
+   "caja sin leer: no cierra",
+   "Depósito PT"
+  ]
+ ],
+ "oriE": [
+  [
+   "Remito y anexo de series",
+   "Depósito PT",
+   "Sistema",
+   "Depósito PT",
+   "al despachar",
+   "Automático desde los pallets leídos",
+   "solo series en depósito PT",
+   "Expedición, custodia"
+  ],
+  [
+   "Salida",
+   "Camión",
+   "QR del remito en el celular",
+   "Chofer",
+   "al salir",
+   "Lectura del QR (página web, sin app) → EN TRÁNSITO",
+   "patente y COT",
+   "En tránsito, lead time"
+  ],
+  [
+   "Recepción",
+   "Distribuidor",
+   "QR del remito",
+   "Distribuidor",
+   "al recibir",
+   "Confirma; marca faltantes o daños con foto",
+   "más de 48 h sin confirmar: aviso",
+   "Sin confirmar, AMFE C-02"
+  ],
+  [
+   "Venta",
+   "Distribuidor",
+   "QR del equipo",
+   "Distribuidor",
+   "al vender",
+   "Lectura → a quién se vendió",
+   "—",
+   "Custodia, retiros"
+  ],
+  [
+   "Instalación",
+   "Usuario",
+   "QR + foto",
+   "Instalador",
+   "al instalar",
+   "Formulario: ubicación, alturas, cartel, tarjeta DPS o SGM",
+   "IRAM 3517-2 6.2.14 y 7.3",
+   "Instalaciones, jurisdicciones"
+  ],
+  [
+   "Control periódico",
+   "Usuario",
+   "QR del equipo",
+   "Usuario o recargador",
+   "trimestral (IRAM 3517-2 8.2)",
+   "Registro en la página del QR (criterio)",
+   "—",
+   "AMFE C-04 y C-05"
+  ],
+  [
+   "Consulta y reclamo",
+   "Usuario",
+   "QR, mail o teléfono",
+   "Usuario → atención",
+   "cuando quiere",
+   "Página pública /m/serie; formulario → acuse con número y plazo",
+   "sin datos del dueño en la página",
+   "Reclamos en plazo"
+  ],
+  [
+   "Orden de servicio",
+   "Planta de recargas",
+   "Lector del grabado + tablet",
+   "Recepción de recargas",
+   "al recibir",
+   "OS con fabricante, número y año",
+   "PH vencida o 20 años: bloqueo",
+   "Recargas, AMFE C-07 y C-08"
+  ],
+  [
+   "Ensayos de recarga",
+   "Taller de recargas",
+   "Banco PH, balanza",
+   "Técnico",
+   "por equipo",
+   "Resultado en la OS (DOC-03)",
+   "criterios IRAM 3517-2",
+   "AMFE C-06, inutilizados"
+  ],
+  [
+   "Tarjetas oficiales",
+   "PCP",
+   "Libro de actas DPS · archivo SGM",
+   "PCP",
+   "por partida / mensual",
+   "Reporte generado por el sistema",
+   "Res. 349/07 · Res. 32-AGC/15",
+   "Jurisdicciones"
+  ],
+  [
+   "Retiro preventivo",
+   "Calidad",
+   "Traza del lote",
+   "Calidad",
+   "al abrirlo",
+   "Equipos ubicados por QR o llamado",
+   "—",
+   "Retiros, AMFE C-10"
+  ]
+ ]
+}

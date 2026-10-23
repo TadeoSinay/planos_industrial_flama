@@ -16,14 +16,19 @@ const IC = {
   instalaciones: '<path d="M3 21h18M5 21V8l7-5 7 5v13M10 21v-6h4v6"/>',
   traza: '<circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M7 6h10M6 8l5 8M18 8l-5 8"/>',
   eventos: '<path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/>',
+  estados: '<rect x="3" y="9" width="5" height="6" rx="1"/><rect x="10" y="9" width="5" height="6" rx="1"/><rect x="17" y="9" width="4" height="6" rx="1"/><path d="M8 12h2M15 12h2"/>',
+  estadoseq: '<circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="12" r="2.5"/><path d="M7.5 12h9M13 9l3 3-3 3"/>',
+  amfe: '<path d="M4 4h16v16H4zM4 10h16M10 10v10"/><path d="M13 14l1.5 1.5L17 13"/>',
+  amfecampo: '<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><path d="M12 7v4M12 13.5h.01"/>',
+  origen: '<ellipse cx="12" cy="5.5" rx="7" ry="2.5"/><path d="M5 5.5v13c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-13M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/>',
   config: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.1-2.7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 2.7-1.1V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1.1z"/>',
 };
 const MENU = [
   ["", [["tablero", "Tablero"]]],
-  ["Trazabilidad intraplanta", [["ordenes", "Órdenes"], ["lotes", "Historial de lotes"], ["calidad", "Calidad y ensayos"], ["etiquetado", "Etiquetado"]]],
-  ["Trazabilidad extraplanta", [["expedicion", "Expedición"], ["instalaciones", "Instalaciones"], ["equipos", "Equipos"], ["recargas", "Recargas"]]],
+  ["Trazabilidad intraplanta", [["ordenes", "Órdenes"], ["estados", "Estados del lote"], ["lotes", "Historial de lotes"], ["calidad", "Calidad y ensayos"], ["amfe", "AMFE y plan de control"], ["etiquetado", "Etiquetado"]]],
+  ["Trazabilidad extraplanta", [["expedicion", "Expedición"], ["estadoseq", "Estados del equipo"], ["instalaciones", "Instalaciones"], ["equipos", "Equipos"], ["recargas", "Recargas"], ["amfecampo", "AMFE de campo"]]],
   ["Atención", [["reclamos", "Reclamos"], ["clientes", "Clientes"]]],
-  ["Gestión", [["traza", "Traza y retiros"], ["desvios", "Desvíos"], ["insumos", "Insumos"], ["eventos", "Registro de eventos"], ["reportes", "Reportes"], ["config", "Configuración"]]],
+  ["Gestión", [["origen", "Origen de los datos"], ["traza", "Traza y retiros"], ["desvios", "Desvíos"], ["insumos", "Insumos"], ["eventos", "Registro de eventos"], ["reportes", "Reportes"], ["config", "Configuración"]]],
 ];
 const VISTAS = {};               // id → { titulo, sub(), acciones(), html() } (las agrega cada módulo)
 const UI = { vista: "tablero", f: {}, pag: {}, det: null };
