@@ -5,8 +5,8 @@ de referencias/extra_fran:
   PTPINTADO-FLAMA2035.xlsx Stock_PT (stock máximo y pallets de cada producto), Almacen_PT (rack, piso, andén) y
                            Despacho (días fijos de cada vehículo)
   Balanceo-FLAMA2035.xlsx  Carga (puestos de manuales, carros y recargas, con su número)
-y de la app de gestión interna FLAMA (APP_SISTEMA_DE_GESTION_INTERNA_FLAMA): el plano rev10 (layout_rev10.json, copia de
-public/data/layout.json) y los logos (img/), para que las dos apps se vean y se ubiquen igual.
+del plano rev22 (rev22/: fondo, muros, pasillos y puestos sacados de plano_carros_rev22.pdf) y de la app de gestión
+interna FLAMA: los logos (img/) y caminos.js (recorridos por los pasillos).
 Los registros (conteos, pedidos, formularios, pallets) no se inventan: arrancan vacíos y los carga la app.
 Uso: python3 build.py"""
 import base64
@@ -242,13 +242,15 @@ def main():
     pt = libro("PTPINTADO-FLAMA2035.xlsx")
     bal = libro("Balanceo-FLAMA2035.xlsx")
     spt, apt, carros, desp = stock_pt(pt)
-    layout = json.load(open(os.path.join(AQUI, "layout_rev10.json"), encoding="utf-8"))
-    cat = json.load(open(os.path.join(AQUI, "catalogo_gestion.json"), encoding="utf-8"))
+    # plano rev22 (planta integrada carros + manuales): fondo, muros, pasillos y puestos (rev22/generar_rev22.py)
+    layout = json.load(open(os.path.join(AQUI, "rev22", "layout_rev22.json"), encoding="utf-8"))
+    cat = json.load(open(os.path.join(AQUI, "rev22", "catalogo_rev22.json"), encoding="utf-8"))
+    fondo = "data:image/webp;base64," + base64.b64encode(open(os.path.join(AQUI, "rev22", "fondo_rev22.webp"), "rb").read()).decode()
     smp, alms = stock_mp(mp), almacenes(mp)
     lug = lugares(smp, alms)
     for a in alms:
         a["lug"], a["corto"], a["pref"] = len(lug[a["alm"]]), CORTO[a["alm"]], PREF[a["alm"]]
-    D = dict(mp=smp, layout=layout, cat=cat, alm=alms, lugares=lug, pt=spt, apt=apt, carros=carros, desp=desp, puestos=puestos(bal),
+    D = dict(mp=smp, layout=layout, cat=cat, fondo=fondo, alm=alms, lugares=lug, pt=spt, apt=apt, carros=carros, desp=desp, puestos=puestos(bal),
              fuente=dict(mp="MP-FLAMA2035.xlsx › Stock_MP (filas 6 a 130) y Almacenes (filas 19 a 31)",
                          pt="PTPINTADO-FLAMA2035.xlsx › Stock_PT (filas 63 a 78), Almacen_PT y Despacho (filas 25 a 28)",
                          bal="Balanceo-FLAMA2035.xlsx › Carga (manuales 34-59, carros 74-91, recargas 104-126)"))

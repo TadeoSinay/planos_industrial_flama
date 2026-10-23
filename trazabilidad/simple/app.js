@@ -958,23 +958,26 @@ function vMarcado() {
 }
 
 // ---------------------------------------------------------------- puestos, lotes y recorridos
-// Mismo plano (rev10), mismos puestos y mismos recorridos que la app de gestión interna (catalogo_gestion.json y
-// caminos.js copiados de APP_SISTEMA_DE_GESTION_INTERNA_FLAMA). Cada ficha se carga en un puesto del plano; dónde está
-// cada lote sale de la última ficha que tiene cargada. REV es el puesto de recepción de revendidos (sector del plano
-// «Trazabilidad PT»), que la app de gestión no tiene.
+// Plano rev22 (planta integrada carros + manuales + recargas + PT único): puestos ubicados sobre el plano y recorridos
+// según sus circuitos (rev22/generar_rev22.py); caminos.js de la app de gestión lleva cada tramo por los pasillos.
+// Cada ficha se carga en un puesto del plano; dónde está cada lote sale de la última ficha que tiene cargada.
 const CAT = D.cat;
-const PUESTOS = Object.fromEntries([...CAT.puestos, { id: "REV", linea: "PT", nombre: "Recepción de revendidos", sector: "exp_trazabilidad", registro: true }]
-  .map((p, i) => [p.id, { ...p, orden: i }]));
+const PUESTOS = Object.fromEntries(CAT.puestos.map((p, i) => [p.id, { ...p, orden: i }]));
 const LIN = { REC: ["Recargas", "var(--rec)"], MAN: ["Manuales", "var(--man)"], CAR: ["Carros", "var(--car)"], MP: ["Materia prima", "var(--mp)"],
   PT: ["Producto terminado", "var(--pt)"], EXT: ["Fuera de planta", "var(--ext)"] };
-// Puesto del plano donde se carga cada ficha: [manuales, carros] (Balanceo › Carga, puestos de cada ficha)
-const PUESTO_FICHA = { "FAB-01": ["MP_TRAZ"], "FAB-02": ["MARC"], "FAB-03": ["M3", "C5"], "FAB-04": ["M6", "C6"], "FAB-05": ["M7", "C7"],
-  "FAB-06": ["M8"], "FAB-07": ["MPH", "CPH"], "FAB-08": ["M11"], "FAB-09": ["M18", "C12"], "FAB-10": ["M15", "C15"], "FAB-11": ["PTM", "C16"],
-  "REC-01": ["MP_TRAZ"], "REC-02": ["R9"], "REC-03": ["R26"], "REC-04": ["R27"], "REV-01": ["REV"] };
+// Puesto del plano rev22 donde se carga cada ficha: [manuales, carros] (en manuales 1 kg la longitudinal es la M3b TIG)
+const PUESTO_FICHA = { "FAB-01": ["MP_TRAZ"], "FAB-02": ["MARC1", "MARC2"], "FAB-03": ["M3", "C5"], "FAB-04": ["M6B", "C6"], "FAB-05": ["M7", "C7"],
+  "FAB-06": ["M8"], "FAB-07": ["PHM", "PHC"], "FAB-08": ["M11"], "FAB-09": ["M18", "C12"], "FAB-10": ["M15", "C13"], "FAB-11": ["PTM", "C16"],
+  "REC-01": ["MP_TRAZ"], "REC-02": ["R8"], "REC-03": ["R20"], "REC-04": ["R21"], "REV-01": ["REV"] };
 const FICHAS_DE = {};
 Object.entries(PUESTO_FICHA).forEach(([f, ps]) => ps.forEach((p) => (FICHAS_DE[p] = (FICHAS_DE[p] || []).concat(f))));
+FICHAS_DE.M3B = ["FAB-03"];
 const esCarro = (r) => !!(MOD(r.v.modelo) || {}).car || /^Carro|de carro/.test(r.v.prod || "");
-const puestoDe = (r) => { const p = PUESTO_FICHA[r.f]; return !p ? null : p.length > 1 && esCarro(r) ? p[1] : p[0]; };
+const puestoDe = (r) => {
+  const p = PUESTO_FICHA[r.f]; if (!p) return null;
+  if (r.f === "FAB-03" && r.v.modelo === "ABC 1 kg") return "M3B";
+  return p.length > 1 && esCarro(r) ? p[1] : p[0];
+};
 // Lotes (fichas FAB con lote) y órdenes de servicio (fichas REC con OS), con su recorrido y el paso donde están.
 function grupos() {
   const g = {};
@@ -1013,7 +1016,7 @@ const caja = (s) => s.rect || (() => { const xs = s.poly.map((p) => p[0]), ys = 
 const PUNTOS = {}, LINEA_SECTOR = {};
 (() => {
   const por = {};
-  Object.values(PUESTOS).forEach((p) => (por[p.sector] = por[p.sector] || []).push(p.id));
+  Object.values(PUESTOS).forEach((p) => { if (p.x != null) PUNTOS[p.id] = { x: p.x, y: p.y }; else (por[p.sector] = por[p.sector] || []).push(p.id); });
   Object.entries(por).forEach(([sid, ids]) => {
     const g = GEO[sid]; if (!g) return;
     const [x, y, w, h] = caja(g), hor = w >= h;
@@ -1040,6 +1043,7 @@ function textoSector(nombre, x, y, w, h, clase = "l-nombre") {
 }
 function svgPlanta() {
   const L = D.layout;
+  if (L.fondo && D.fondo) return `<image href="${D.fondo}" x="${L.fondo.x}" y="${L.fondo.y}" width="${L.fondo.w}" height="${L.fondo.h}" preserveAspectRatio="none"/>`;
   const p = [`<defs><pattern id="rayado" width="0.9" height="0.9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="0.9" height="0.9" fill="#f7f8f9"/><line x1="0" y1="0" x2="0" y2="0.9" stroke="#dfe3e8" stroke-width="0.22"/></pattern></defs>`,
     `<text class="l-orient" font-size="1.25" x="-10" y="-40.8">▲ ARRIBA · SALIDA DE PT Y RECARGAS</text>`, `<text class="l-orient" font-size="1.25" x="24.5" y="34.6">▼ ABAJO · INGRESO DE MATERIA PRIMA</text>`];
   CAT.zonas.forEach((z) => { const [x, y, w, h] = z.rect;
@@ -1062,7 +1066,7 @@ function svgPlanta() {
 }
 // Qué se cuenta en cada punto: lotes y órdenes de servicio en curso en el puesto de su última ficha; en el almacén de MP,
 // los códigos para pedir; en los puestos de PT, los lugares ocupados.
-const PT_PUESTO = { PTM: ["rack"], C16: ["carros"], C16B: ["anden"], REV: ["rv"] };
+const PT_PUESTO = { PTM: ["rack"], C16: ["carros"], ANDEN: ["anden"], REV: ["rv"], C11: ["pint"] };
 function cargaPuestos() {
   const f = LAY.filtro, c = {};
   if (f !== "ALM") enCurso().filter((x) => f === "todas" || x.linea === f).forEach((x) => {
@@ -1137,10 +1141,10 @@ function vLayout() {
 function aplicarVB() { const s = $("#plano"); if (s) s.setAttribute("viewBox", LAY.vb.map((v) => v.toFixed(2)).join(" ")); }
 function prepararZoom() {
   const svg = $("#plano");
-  LAY.vbBase = [...CAT.limites];
+  LAY.vbBase = [-4, -9, 60, 63];   // la nave con sus playas; con la ruedita se ve todo el predio
   if (!LAY.vb) LAY.vb = [...LAY.vbBase];
   aplicarVB();
-  const zoom = (f, cx, cy) => { const [x, y, w, h] = LAY.vb, nw = Math.min(LAY.vbBase[2] * 1.6, Math.max(8, w * f)), nh = nw * (h / w);
+  const zoom = (f, cx, cy) => { const [x, y, w, h] = LAY.vb, nw = Math.min(CAT.limites[2] * 1.2, Math.max(6, w * f)), nh = nw * (h / w);
     LAY.vb = [cx - (cx - x) * (nw / w), cy - (cy - y) * (nh / h), nw, nh]; aplicarVB(); };
   const aPlano = (e) => { const r = svg.getBoundingClientRect(), [x, y, w, h] = LAY.vb, k = Math.max(w / r.width, h / r.height);
     return [x + (w - r.width * k) / 2 + (e.clientX - r.left) * k, y + (h - r.height * k) / 2 + (e.clientY - r.top) * k, k]; };
@@ -1323,7 +1327,7 @@ function vDashboard() {
       <section class="panel c4"><header><div><h2>Actividad en los puestos</h2><span class="mut" style="font-size:13px">Últimas fichas cargadas.</span></div></header>
         <div class="cuerpo"><ul class="actividad">${act.map((r) => `<li style="--c:${LIN[linR(r)][1]}"><span class="hora num">${esc(r.t.slice(11) || r.t.slice(5, 10))}</span><span><b class="mono">${esc(r.id)}</b>${r.res === "No conforme" ? ' <span class="pill crit">NC</span>' : ""}<br>
           <span class="mut">${esc(r.f === "DES" ? "Despacho" : FORM[r.f].nombre)}${r.v.oper ? " · " + esc(r.v.oper) : ""}</span></span></li>`).join("") || `<div class="vacio">Sin fichas todavía.</div>`}</ul></div></section>
-      <details class="fuente c12"><summary>De dónde salen los números</summary>${esc(D.fuente.mp)} · ${esc(D.fuente.pt)} · ${esc(D.fuente.bal)} · plano rev ${esc(D.layout.revision)} y puestos de la app de gestión interna.
+      <details class="fuente c12"><summary>De dónde salen los números</summary>${esc(D.fuente.mp)} · ${esc(D.fuente.pt)} · ${esc(D.fuente.bal)} · plano rev ${esc(D.layout.revision)} (planta integrada carros + manuales) con sus puestos y circuitos.
         Lo que se carga queda guardado en este navegador. ${S.demo ? "" : `<button class="btn chico" data-a="ejemplo">Ver con datos de ejemplo</button>`} <button class="btn chico" data-a="borrar">Borrar todo lo cargado</button></details></div>`;
 }
 

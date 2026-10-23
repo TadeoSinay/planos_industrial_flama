@@ -71,8 +71,8 @@ def bloques():
       "pérdidas, PT), 4 de recargas (MP, inspección interior, pérdidas, PT) y 1 de revendidos. Cada campo con criterio se "
       "marca en verde o rojo y la ficha queda conforme o no conforme.")
     b("**Misma estructura que la app de gestión interna.** Barra de contexto, encabezado con pestañas, búsqueda y «Nueva "
-      "ficha», dashboard con mapa de flujo, y el mismo layout de planta (plano rev10, mismos puestos y recorridos) con "
-      "zoom, filtros por línea y el recorrido de cada lote.")
+      "ficha», dashboard con mapa de flujo, y el layout de planta sobre el plano rev22 con zoom, filtros por línea y el "
+      "recorrido de cada lote.")
     img("01_dashboard.png", "Figura 1. Dashboard (datos de ejemplo): indicadores, mapa de flujo por línea según la última "
         "ficha de cada lote, entradas y salidas de 14 días, lotes en curso, MP para pedir, PT y actividad de las fichas.", 15)
 
@@ -293,23 +293,35 @@ def bloques():
 
     # ------------------------------------------------------------------ 6
     add("h1", "6. Layout de planta")
-    p("Es el layout de la app de gestión interna: el mismo plano rev10, los mismos puestos y los mismos recorridos "
-      "(catalogo_gestion.json y caminos.js copiados de esa app), con zoom con la ruedita, arrastre y filtros por línea. "
-      "Cada ficha se carga en un puesto del plano; un lote está en el puesto de su última ficha. El punto de cada puesto "
+    p("El layout es el plano rev22 (plano_carros_rev22: planta integrada de carros, manuales y recargas, con el PT único "
+      "al norte y la administración al sur), puesto de fondo en metros, con zoom con la ruedita, arrastre y filtros por "
+      "línea. Encima van los 73 puestos, ubicados sobre el plano, y los recorridos de cada línea según sus circuitos "
+      "(recargas 34, manuales 2-3-16 a 24, carros 3 a 12). Cada tramo va por los pasillos del plano y no atraviesa paredes: "
+      "las paredes y portones salen del mismo PDF y los recorridos los traza caminos.js de la app de gestión interna.")
+    p("Cada ficha se carga en un puesto del plano; un lote está en el puesto de su última ficha. El punto de cada puesto "
       "muestra cuántos lotes u órdenes hay ahí (en rojo si alguno tiene una ficha no conforme); el almacén de MP, cuántos "
       "códigos hay para pedir; los puestos de PT, los lugares ocupados.")
     tabla(["Ficha", "Puesto en manuales", "Puesto en carros"], [
-        ["FAB-01 · REC-01", "MP_TRAZ (trazabilidad de MP)", "ídem"], ["FAB-02", "MARC (marcado del cuerpo)", "ídem"],
-        ["FAB-03", "M3", "C5"], ["FAB-04", "M6 (rama del cuello)", "C6"], ["FAB-05", "M7", "C7"], ["FAB-06", "M8", "—"],
-        ["FAB-07", "MPH", "CPH"], ["FAB-08", "M11", "—"], ["FAB-09", "M18", "C12 (recepción de pintados)"],
-        ["FAB-10", "M15", "C15"], ["FAB-11", "PTM", "C16"], ["REC-02 · REC-03 · REC-04", "R9 · R26 · R27 (recargas)", ""],
-        ["REV-01", "REV (sector «Trazabilidad PT»)", ""]], [26, 40, 34])
+        ["FAB-01 · REC-01", "Puesto de trazabilidad de MP (remitos)", "ídem"],
+        ["FAB-02", "Marcado de manuales (marcadora 1)", "2.1 Marcado de carros (marcadora 2)"],
+        ["FAB-03", "M3 (2,5 a 10 kg) · M3b TIG (1 kg)", "5 Soldadura longitudinal"],
+        ["FAB-04", "M6b Soldadura de cuello (rama)", "6 Soldadura de cupla"],
+        ["FAB-05", "M7 Soldadura circunferencial", "7 Armado y circunferencial"],
+        ["FAB-06", "M8 Control de espesor", "—"], ["FAB-07", "PH manuales", "PH carros"],
+        ["FAB-08", "M11 Detección y corrección", "—"], ["FAB-09", "M18 Pintura en polvo + horno", "12 Recepción de pintados"],
+        ["FAB-10", "M15 Ensayo de pérdidas", "13 Carga y presurización (con pérdidas)"],
+        ["FAB-11", "16 Almacén de PT (rack)", "16c Expedición de carros"],
+        ["REC-02 · REC-03 · REC-04", "R8 Desarme · R20 Pérdidas · R21 Precinto y despacho (recargas)", ""],
+        ["REV-01", "Trazabilidad de PT", ""]], [24, 40, 36])
+    add("nota", "Los nombres de los sectores del PDF están dibujados como trazos (no como texto): los puestos se ubicaron a "
+                "mano sobre una grilla de 1 m (±0,5 m) y quedan en trazabilidad/simple/rev22/generar_rev22.py para corregirlos.")
     p("Al tocar un lote (desde el layout, el dashboard o la búsqueda) se dibuja su recorrido por los pasillos: verde lo que "
       "ya tiene ficha, punteado lo que falta y un punto rojo intermitente en su última ficha. El panel lista los pasos y "
       "marca «sin ficha» los puestos con ficha que el lote pasó sin cargarla.")
-    img("06_layout.png", "Figura 13. Recorrido de un lote de ABC 10 kg: con ficha hasta la prueba hidráulica; falta del "
-        "secado al despacho.", 15)
-    img("06b_layout_almacen.png", "Figura 14. Almacén de MP en el layout: códigos para pedir por almacén.", 15)
+    img("06_layout.png", "Figura 13. Recorrido de un lote de manuales sobre el plano rev22: con ficha hasta la última cargada; "
+        "punteado lo que falta hasta el despacho.", 15)
+    img("06b_layout_almacen.png", "Figura 14. Recorrido de una recarga: de la playa al pulmón de entrada, recepción, recinto de "
+        "polvo, carga, pérdidas, precinto y pulmón de salida.", 15)
 
     # ------------------------------------------------------------------ 7
     add("h1", "7. Quién hace qué")
@@ -327,8 +339,9 @@ def bloques():
     b("Reparto de códigos en los lugares (sección 2.2) y frecuencia de conteo por almacén: criterio, a ajustar en planta.")
     b("Tarjeta kanban física de cada formato y redondeo al bulto entero (sección 2.3): criterio. Semáforo del PT (sección 3.2): criterio.")
     b("Colores del PT por mes (4 que rotan): criterio; se pueden alinear con la regla de colores del Word de carros.")
-    b("Reventa y sustitutos no tienen sector propio en el plano rev10: la app los muestra como zonas del PT. La recepción "
-      "de revendidos se ubica en el sector «Trazabilidad PT».")
+    b("Puestos del plano rev22 ubicados a mano sobre una grilla de 1 m (±0,5 m), porque los nombres del PDF son trazos. "
+      "Reventa y sustitutos no tienen lugar propio en el plano: la app los muestra como zonas del PT; la recepción de "
+      "revendidos se ubica en el puesto «Trazabilidad de PT».")
     b("Los datos de ejemplo (dos semanas de lotes, recargas y conteos) son para ver la app funcionando; se borran con "
       "«Empezar en limpio». Los parámetros (seguridad, punto de pedido, máximos, lugares, puestos) son los reales.")
     b("FAB-10: la lectura a las 24 h es criterio FLAMA (DOC-02 R8). FAB-06: sin tolerancia de espesor publicada, se toma ≥ nominal.")
@@ -348,7 +361,8 @@ def bloques():
     add("h1", "Fuentes")
     for t in ["MP-FLAMA2035.xlsx y .docx (Stock_MP, Almacenes)", "PTPINTADO-FLAMA2035.xlsx y .docx (Stock_PT, Almacen_PT, Despacho, Pintura)",
               "Balanceo-FLAMA2035.xlsx y .docx (Carga, Pulmones)", "PULMONES-FLAMA2035.docx",
-              "App de gestión interna FLAMA (estructura, estilo, plano rev10, puestos, recorridos y caminos por los pasillos)",
+              "Plano plano_carros_rev22.pdf (planta integrada, layout y circuitos 1 a 45)",
+              "App de gestión interna FLAMA (estructura, estilo y caminos por los pasillos)",
               "IRAM 3517-2:2020 (9.4.5, 9.4.8, 9.4.10, 9.4.13, 9.4.14, 9.6, 9.7, 9.8.2, 9.9, 9.12) · IRAM 3523 y 3550 (5.1) · Res. 349/07 PBA (art. 20, anexo IV)",
               "DOC-01 (pintura) y DOC-02 (ensayos de fabricación) del repositorio de planos",
               "ISO 9606-1, ISO 15614-1, ISO 5817, ISO 2808, ISO 2409, ASTM D5402 (se citan, no se transcriben)",
