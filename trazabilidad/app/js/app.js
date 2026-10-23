@@ -1,79 +1,48 @@
-// ================================================================ app: vistas, enlaces con #, eventos delegados y tooltip
-const VISTAS = { inicio: vistaInicio, recorrido: vistaRecorrido, clientes: vistaClientes, manual: vistaManual, desvios: vistaDesvios };
-function marcarHash(id) { try { history.replaceState(null, "", "#" + id); } catch (e) {} }
-function pintar() {
-  if (S.vista === "recorrido") { if (!$("#escenario")) $("#vista").innerHTML = vistaRecorrido(); pintarRecorrido(); }
-  else $("#vista").innerHTML = VISTAS[S.vista]();
-  document.querySelectorAll(".vistas a").forEach(a => { if (a.dataset.v === S.vista) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
-}
-function abrir(v, paso) {
-  S.vista = VISTAS[v] ? v : "inicio";
-  $("#vista").innerHTML = "";
-  if (paso != null) { const i = PASOS.findIndex(p => p.id === paso); if (i >= 0) S.paso = i; }
-  marcarHash(S.vista === "recorrido" ? PASOS[S.paso].id : S.vista);
-  try { localStorage.setItem("flama-vista", S.vista); } catch (e) {}
-  pintar(); window.scrollTo({ top: 0 });
-}
+// ================================================================ arranque y eventos
+cargar();
+$("#periodo").textContent = `${MES_TXT[D.mes - 1][0].toUpperCase() + MES_TXT[D.mes - 1].slice(1)} ${D.anio}`;
 
-document.addEventListener("click", async e => {
+document.addEventListener("click", e => {
   const v = e.target.closest("[data-v]");
-  if (v) { e.preventDefault(); if (v.dataset.ct) S.cli.tab = v.dataset.ct; return abrir(v.dataset.v, v.dataset.paso); }
-  const m = e.target.closest("[data-m]");
-  if (m) { e.preventDefault(); const s = document.getElementById("m-" + m.dataset.m); if (s) s.scrollIntoView({ behavior: "smooth" }); return; }
-  const p = e.target.closest("[data-p]"); if (p) return ir(+p.dataset.p);
-  const t = e.target.closest("[data-t]"); if (t) { const [s, k] = t.dataset.t.split("|"); S.tildes[s][k] = !S.tildes[s][k]; return pintar(); }
+  if (v && !v.matches("[data-a]")) { e.preventDefault(); return ir(v.dataset.v); }
+  const d = e.target.closest("[data-det]");
+  if (d) { e.preventDefault(); $("#resq").hidden = true; return abrirDetalle(d.dataset.det, d.dataset.det === "equipo" ? +d.dataset.id : d.dataset.id); }
   const a = e.target.closest("[data-a]");
-  if (a && ACC[a.dataset.a] && a.type !== "file") { if (a.type !== "checkbox") e.preventDefault(); return ACC[a.dataset.a](a); }
+  if (a && ACC[a.dataset.a]) { if (a.tagName === "A" || a.type === "button" || a.tagName === "BUTTON") e.preventDefault(); ACC[a.dataset.a](a); guardar(); }
+  if (!e.target.closest(".buscar")) $("#resq").hidden = true;
 });
-document.addEventListener("keydown", e => { const t = e.target.closest("[data-t]"); if (t && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); t.click(); } });
-document.addEventListener("change", e => {
-  if (e.target.id === "foto" && e.target.files[0]) { S.foto = e.target.files[0].name; pintar(); return; }
-  const k = e.target.dataset.i; if (k && e.target.tagName === "SELECT" && INPUT[k]) { INPUT[k](e.target.value); pintar(); }
-});
+document.addEventListener("change", e => { const el = e.target.closest("[data-cambio]"); if (el && ACC[el.dataset.cambio]) ACC[el.dataset.cambio](el); });
+let tIn;
 document.addEventListener("input", e => {
-  const k = e.target.dataset.i; if (!k || !INPUT[k] || e.target.tagName === "SELECT") return;
-  if (INPUT[k](e.target.value)) { const id = e.target.id; pintar(); const el = document.getElementById(id); if (el) { el.focus(); const val = el.value; el.value = ""; el.value = val; } }
+  if (e.target.id === "q") return pintarBusqueda();
+  const k = e.target.dataset.in; if (!k) return;
+  UI.f[k] = e.target.value; UI.pag[UI.vista] = 0;
+  clearTimeout(tIn); tIn = setTimeout(() => { const id = e.target.id; pintar(); const el = document.getElementById(id); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }, 220);
 });
-document.addEventListener("submit", e => {
-  const f = e.target.dataset.f; if (!f) return; e.preventDefault();
-  if (f === "leer") { const v = $("#lectura").value; if (v) leer(v); }
-  else if (FORM[f]) FORM[f]();
-});
-
-// tooltip para las marcas de los gráficos
-const tip = document.createElement("div");
-tip.setAttribute("role", "tooltip");
-tip.style.cssText = "position:fixed;z-index:20;pointer-events:none;background:var(--ink);color:var(--bg);font:600 12.5px/1.35 var(--f-body);padding:7px 10px;border-radius:6px;max-width:280px;box-shadow:var(--shadow);display:none";
-document.body.appendChild(tip);
-document.addEventListener("pointermove", e => {
-  const g = e.target.closest && e.target.closest("[data-tip]");
-  if (!g) { tip.style.display = "none"; return; }
-  tip.textContent = g.dataset.tip; tip.style.display = "block";
-  const x = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8), y = Math.max(8, e.clientY - tip.offsetHeight - 12);
-  tip.style.left = x + "px"; tip.style.top = y + "px";
+document.addEventListener("submit", e => { const f = e.target.dataset.f; if (!f || !FORM[f]) return; e.preventDefault(); FORM[f](); guardar(); });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") { if (UI.det) ACC.cerrarDetalle(); $("#resq").hidden = true; }
+  if (e.key === "Enter" && e.target.id === "q" && RES[0]) { e.preventDefault(); ACC.irRes({ dataset: { i: 0 } }); }
+  if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { e.preventDefault(); $("#q").focus(); }
 });
 
-// arranque: el # elige la vista (o el paso del recorrido); si no hay, la última vista usada
-document.getElementById("logoTop").innerHTML = logo(38);
-document.getElementById("logoPie").innerHTML = logo(22);
-// página pública que abre el QR del equipo (/m/<serie>); /r/ (remito) y /p/ (pallet) van al paso del recorrido
-function vistaQR() {
-  return `<div class="cuerpo wrap" style="max-width:520px"><div class="bloque" style="display:flex;flex-direction:column;gap:12px">${paginaQR(S.tab, S.qrSerie)}</div>
-    <p class="nota" style="text-align:center">Página que abre el QR de la etiqueta. <a href="#inicio" data-v="inicio">Ver el sistema completo</a></p></div>`;
+// página pública del QR de la etiqueta (/m/<serie>): lo que ve quien escanea el equipo, sin datos del dueño
+function paginaPublica(txt) {
+  const n = numSerie(txt), e = n ? equipo(n) : null;
+  document.body.innerHTML = `<main style="max-width:480px;margin:0 auto;padding:24px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px));display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:center;gap:10px">${logo(34)}<b style="font:800 24px/1 var(--f-display);font-style:italic;letter-spacing:.06em">FLAMA</b></div>
+    ${!e ? `<div class="aviso av">No encontramos el equipo ${esc(txt)}.</div>` : e.estado === "Rechazado" ? `<div class="aviso no"><b>${e.s}</b>: este número fue rechazado en fábrica y no salió a la venta. Si está instalado, no lo uses y avisá a FLAMA.</div>` :
+    `<div class="panel"><div class="cuerpo" style="display:flex;flex-direction:column;gap:10px"><div style="font:700 26px/1 var(--f-mono)">${e.s}</div><div class="muted">${esc(e.o.modelo)} · fuegos A, B y C</div>
+      ${pill(e.mant && new Date(e.mant) < HOY ? "Mantenimiento vencido" : "Vigente", e.mant && new Date(e.mant) < HOY ? "no" : "ok")}
+      <dl class="dl"><dt>Fabricado</dt><dd>${fecha(e.fab)}</dd><dt>Mantenimiento</dt><dd>vence ${fecha(e.mant)}</dd><dt>Prueba hidráulica</dt><dd>vence ${fecha(e.phVence)}</dd><dt>Vida útil</dt><dd>hasta ${fecha(e.vida)}</dd></dl></div></div>
+      <p class="muted" style="margin:0;font-size:12.5px">Revisalo una vez por mes: precinto y seguro puestos, aguja del manómetro en verde, sin golpes ni óxido, tarjeta oficial sana. Para servicio o reclamos, contactá a tu distribuidor o a FLAMA con este número.</p>`}</main>`;
 }
-VISTAS.qr = vistaQR;
-function desdeHash(inicio) {
-  const ruta = location.pathname.match(/\/(m|r|p)\/([^/]+)\/?$/);
-  if (inicio && ruta && !location.hash) {
-    if (ruta[1] === "m") { S.vista = "qr"; S.qrSerie = decodeURIComponent(ruta[2]); }
-    else { S.vista = "recorrido"; S.paso = PASOS.findIndex(p => p.id === (ruta[1] === "r" ? "chofer" : "embalaje")); }
-    $("#vista").innerHTML = ""; return pintar();
-  }
+
+const ruta = location.pathname.match(/\/m\/([^/]+)\/?$/);
+if (ruta) paginaPublica(decodeURIComponent(ruta[1]));
+else {
   const h = location.hash.slice(1);
-  if (VISTAS[h]) S.vista = h;
-  else if (PASOS.some(p => p.id === h)) { S.vista = "recorrido"; S.paso = PASOS.findIndex(p => p.id === h); }
-  else if (inicio) { try { const v = localStorage.getItem("flama-vista"); if (VISTAS[v]) S.vista = v; } catch (e) {} }
-  $("#vista").innerHTML = ""; pintar();
+  UI.vista = VISTAS[h] ? h : "tablero";
+  window.addEventListener("hashchange", () => { const k = location.hash.slice(1); if (VISTAS[k] && k !== UI.vista) ir(k); });
+  pintar();
 }
-window.addEventListener("hashchange", () => desdeHash(false));
-pintarRegistro(); desdeHash(true);

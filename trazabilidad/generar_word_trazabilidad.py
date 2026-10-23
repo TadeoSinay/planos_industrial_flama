@@ -64,47 +64,56 @@ def g(x):
 
 
 def secciones_v4(add, p, bul, tabla, img):
-    """11 a 14: la app, atención al cliente, manual MT-01 y desvíos. Las tablas vienen de app/contenido.json (las
-    mismas de la app)."""
-    with open(os.path.join(APP, "contenido.json"), encoding="utf-8") as fh:
+    """11 a 14: sistema de gestión, atención al cliente, manual MT-01 y desvíos. Las tablas de 12 a 14 vienen de
+    word_contenido.json; las capturas, de app/capturas.js."""
+    with open(os.path.join(AQUI, "word_contenido.json"), encoding="utf-8") as fh:
         A = json.load(fh)
     dm = A["DEMO"]
 
     # ================================================================== 11
-    add("h1", "11. La app (prueba de concepto)")
-    p(f"La app se arma sola desde el Plan mensual de los Excel de Aprovechamiento. El ejemplo sigue el lote real "
-      f"**{dm['op']}** ({dm['modelo']}, series {dm['desde']} a {dm['hasta']}, partida {A['PARTIDA']['id']} de "
-      f"{A['PARTIDA']['u']} u). Las órdenes, series y cantidades son las del plan; los nombres de clientes, los lotes de "
-      f"insumo y las mediciones son de ejemplo y la app lo dice en cada pantalla. Es una sola página web: se publica en "
-      f"Vercel ({URL_APP}) y el QR de cada equipo abre {URL_APP}/m/<serie>.")
-    tabla(["Vista", "Para quién", "Qué muestra"], [
-        ["Inicio", "Dirección, clientes, inspectores", "El equipo, el número grabado, la familia a escala y el recorrido"],
-        ["Recorrido", "Planta, depósito, recargas", "16 pasos con la pantalla real, quién, dónde, qué se escribe y qué "
-                                                    "norma aplica"],
-        ["Atención al cliente", "Cliente y atención", "Portal del QR, reclamos con plazo, datos personales, baja y "
-                                                       "arrepentimiento"],
-        ["Manual", "Todo FLAMA", "Manual MT-01 con un buscador de traza que funciona"],
-        ["Desvíos", "Calidad y dirección", "Cartas de control, Pareto y registro de desvíos"],
-    ], [3.2, 4.6, 9.2])
-    img("cap_inicio", "Inicio de la app: el render del 5 kg del lado pared con la franja grabada y la etiqueta de serie.")
-    add("h2", "11.1 Los 16 pasos del recorrido")
-    tabla(["#", "Paso", "Quién", "Con qué", "Norma"], [[str(i + 1), x["t"], x["quien"], x["equipo"],
-                                                         "; ".join(x["normas"]) or "—"] for i, x in enumerate(A["PASOS"])],
-          [0.8, 4, 3.4, 4, 4.8])
-    for k, pie in (("cap_orden", "Paso 1: la orden lee el Plan mensual, arma los lotes y la partida DPS."),
-                   ("cap_hoja", "Paso 4: la hoja de ruta con las tildes por equipo; el 17 falla la prueba hidráulica."),
-                   ("cap_etiquetado", "Paso 6: el lector lee el grabado; el rechazo queda bloqueado y cada etiqueta "
-                                      "lleva su estampilla de fabricación DPS."),
-                   ("cap_instalacion", "Paso 11: la instalación pide los datos de la jurisdicción (CABA: tarjeta del "
-                                       "SGM), controla las alturas y emite la garantía."),
-                   ("cap_reclamo", "Paso 13: el reclamo entra con el equipo identificado y su traza completa."),
-                   ("cap_recarga", "Paso 14: presupuesto, sustituto habilitado, cambio total de polvo si está bajo de "
-                                   "peso y constancia del servicio.")):
+    add("h1", "11. Sistema de gestión")
+    p(f"El sistema es la herramienta interna de FLAMA: sin portada ni textos de proceso, solo los módulos con los que se "
+      f"trabaja. Lee los datos reales del proyecto (Plan mensual de Aprovechamiento_Manuales y _Carros con las órdenes "
+      f"y series de cada mes, plan de Aprovechamiento_Recargas de las dos plantas, política de stock y consumos del "
+      f"FLAMA_MRP y modelos del FLAMA_BOM). El estado de cada orden, los clientes, los remitos, el stock físico y los "
+      f"reclamos son datos de prueba y el sistema lo indica. Se publica en Vercel ({URL_APP}) y el QR de cada equipo "
+      f"abre {URL_APP}/m/<serie>, la única página pública.")
+    tabla(["Módulo", "Quién lo usa", "Qué se hace"], [
+        ["Tablero", "Dirección, PCP", "Producción del mes contra el plan, rendimiento, stock PT, recargas, reclamos y "
+                                      "pendientes del día"],
+        ["Órdenes", "PCP, producción", "Plan del mes, órdenes por etapa, partida DPS, series, insumos y rechazos de cada "
+                                       "lote; liberar y avanzar etapas"],
+        ["Calidad", "Calidad, responsable técnico", "Cerrar lotes (bloqueado si el contraste del manómetro venció), "
+                                                    "equipos de medición, rechazos por causa"],
+        ["Etiquetado", "Puesto 24 / C-15", "Lector del grabado, etiqueta con QR y estampilla DPS; bloquea rechazos"],
+        ["Expedición", "Depósito PT", "Stock PT, remitos con QR, salida y recepción confirmadas"],
+        ["Equipos", "Todos", "Las series del año con estado, custodia, vencimientos e historia"],
+        ["Recargas", "Plantas de recargas", "Órdenes de servicio por etapa, presupuesto, sustituto, PH, inutilización"],
+        ["Reclamos y clientes", "Atención al cliente", "Bandeja con plazos, traza del equipo, clientes y sus equipos"],
+        ["Desvíos", "Calidad", "Registro de desvíos con causa, acción y verificación"],
+        ["Insumos", "Compras", "Los 125 materiales del MRP con stock, consumo, cobertura y plazo de entrega"],
+        ["Reportes", "PCP, responsable técnico", "Libro de actas DPS, archivo batch del SGM, vencimientos, producción "
+                                                 "y registro de eventos"],
+        ["Configuración", "Administración", "Modelos del BOM, parámetros (lote, PH, plazos) y permisos por rol"],
+    ], [3.2, 4.2, 9.6])
+    for k, pie in (("cap_tablero", "Tablero: avance del mes contra el plan y pendientes del día."),
+                   ("cap_ordenes", "Órdenes: el plan del mes y cada orden con su etapa, partida DPS y rechazos."),
+                   ("cap_orden", "Detalle de una orden lista para cerrar: etapas, prueba hidráulica, lotes de insumo y "
+                                 "series."),
+                   ("cap_calidad", "Calidad: lotes para cerrar, rechazos por causa y equipos de medición con su "
+                                   "vencimiento."),
+                   ("cap_etiquetado", "Etiquetado: una lectura por equipo; el rechazo queda bloqueado."),
+                   ("cap_equipo", "Ficha de un equipo: QR, orden, carga, vencimientos e historia."),
+                   ("cap_expedicion", "Expedición: depósito PT y remitos abiertos."),
+                   ("cap_recargas", "Recargas: órdenes de servicio por etapa en las dos plantas."),
+                   ("cap_insumos", "Insumos: materiales del MRP para pedir según cobertura y plazo."),
+                   ("cap_reportes", "Reportes: libro de actas DPS y archivo para el SGM de la AGC.")):
         img(k, pie)
     add("h2", "11.2 Publicarla en Vercel")
     bul("Carpeta trazabilidad/app del repositorio: index.html es la app completa (un solo archivo).",
         "vercel.json manda /m/<serie>, /r/<remito> y /p/<pallet> a la misma página, que abre la vista que corresponde.",
-        "En Vercel: Add New → Project → importar el repositorio → Root Directory trazabilidad/app → Framework «Other» → "
+        "En Vercel: Add New → Project → importar el repositorio con Root Directory ./ y Framework «Other»: el vercel.json "
+        "de la raíz publica trazabilidad/app. "
         "Deploy. Cada push a la rama vuelve a publicarla.",
         "Para actualizar los datos: python3 build.py <año> <mes> lee el Plan mensual y rearma index.html.")
 
@@ -114,7 +123,7 @@ def secciones_v4(add, p, bul, tabla, img):
       "suyos tiene FLAMA, se da de baja de los avisos o se arrepiente de una compra web. Del lado de FLAMA el reclamo "
       "llega con el lote, los insumos, los ensayos y la custodia del equipo. La página pública del QR muestra solo "
       "datos del equipo, nunca del dueño.")
-    img("cap_qr", "Lo que ve quien escanea el QR: estado, vencimientos, historia y los enlaces legales al pie.", 7)
+    img("cap_qr", "Lo que ve quien escanea el QR: estado y vencimientos del equipo, sin datos del dueño.", 7)
     add("h2", "12.1 Plazos de respuesta")
     tabla(["Pedido", "Acuse", "Primera respuesta", "Resolución", "Base"], A["PLAZOS"], [4.4, 2.2, 2.8, 3.6, 4])
     p("Los plazos que fija la ley se cumplen tal cual. Los marcados **criterio** los fija FLAMA y se miden en Desvíos.")
@@ -124,7 +133,7 @@ def secciones_v4(add, p, bul, tabla, img):
         "Investigado: la traza muestra lote, insumos, ensayos y otros reclamos del mismo lote.",
         "Respondido: por escrito, con la vía de conciliación (Ventanilla Federal, COPREC, Ley 26.993).",
         "Cerrado: encuesta de una pregunta; la causa pasa a Desvíos.")
-    img("cap_clientes", "Portal del cliente y bandeja de reclamos con su etapa y su plazo.")
+    img("cap_reclamos", "Bandeja de reclamos con su etapa y su plazo.")
     add("h2", "12.3 Matriz normativa")
     tabla(["Norma", "Qué exige", "Cómo lo cumple la app", "Dónde"], A["MATRIZ"], [3.6, 4.6, 6.2, 2.6])
 
@@ -161,7 +170,7 @@ def secciones_v4(add, p, bul, tabla, img):
       "dónde viene) y hacia adelante (dónde está). Meta: menos de 2 minutos (criterio), probada con un simulacro por "
       "semestre. Si un insumo resulta defectuoso, la misma búsqueda da las series afectadas, dónde están y a quién "
       "avisar (P-12).")
-    img("cap_buscar", "Búsqueda del lote de polvo PO-2603: órdenes, series, distribuidores y titulares a avisar.")
+    img("cap_lote", "Búsqueda de un lote de polvo: órdenes, equipos, distribuidores y stock que lo usaron.")
     add("h2", "13.5 Contingencias")
     tabla(["Si pasa esto", "Se hace esto"], [
         ["Se corta internet en planta", "la hoja de ruta sigue en papel; cierre y etiquetado se cargan al volver"],
@@ -174,19 +183,14 @@ def secciones_v4(add, p, bul, tabla, img):
 
     # ================================================================== 14
     add("h1", "14. Análisis de desvíos")
-    dv = A["DV"]
-    p(f"Las cartas y el Pareto se arman con los eventos de la base. En la prueba de concepto las órdenes son las del "
-      f"Plan mensual y los rechazos, masas y reclamos son **simulados** con semilla fija: {dv['rech']} rechazos en "
-      f"{dv['N']} equipos manuales del mes ({g(round(100 * (1 - dv['rech'] / dv['N']), 1))} % a la primera).")
+    p("Cada rechazo, recepción sin confirmar, reclamo fuera de plazo o control de medición vencido queda a la vista en "
+      "el tablero y puede abrir un registro de desvío (RD) con causa, acción correctiva y verificación. Las reglas de "
+      "abajo se revisan con cada evento; los umbrales marcados «criterio» los fija FLAMA. La tabla de 14.3 son "
+      "ejemplos de prueba.")
     add("h2", "14.1 Reglas que abren un desvío solas")
     tabla(["Qué se mira", "Umbral", "Dónde", "Qué hace la app"], A["REGLAS"], [4, 5, 3, 5])
-    add("h2", "14.2 Gráficos")
-    img("cap_pareto", "Pareto de rechazos por causa.")
-    img("cap_cartap", f"Carta p de fallas en PH por lote (órdenes de 20 equipos o más; p̄ = "
-                      f"{g(round(100 * dv['pb'], 1))} %).")
-    img("cap_carga", f"Carta de valores individuales de la masa de carga del lote {dm['op']}: x̄ = "
-                     f"{g(round(dv['media'] / 1000, 3))} kg, LCS {g(round(dv['lcs'] / 1000, 3))}, LCI "
-                     f"{g(round(dv['lci'] / 1000, 3))}; tolerancia DOC-02 5,00-5,30 kg.")
+    add("h2", "14.2 Seguimiento en el sistema")
+    img("cap_calidad", "Rechazos por causa y equipos de medición; los desvíos se cargan y cierran en el módulo Desvíos.")
     add("h2", "14.3 Registro de desvíos")
     tabla(["RD", "Origen", "Qué pasó", "Severidad", "Causa (último porqué)", "Acción", "Estado"],
           [[r["cod"], r["origen"], r["que"], r["sev"], r["porq"][-1], r["accion"], r["estado"]] for r in A["RDS"]],
@@ -227,10 +231,11 @@ def bloques(fig):
 
     add("h1", "Novedades de la versión 4")
     tabla(["Pediste", "Dónde está"], [
-        ["La app con diseño de FLAMA", "Sección 11: cinco vistas (inicio, recorrido de 16 pasos, atención al cliente, "
-                                       "manual y desvíos) con capturas"],
-        ["Que la prueba de concepto sea realista y siga las normas", "Cada paso cita su artículo: partida y estampilla "
-         "DPS (Res. 349/07), tarjeta y proceso batch del SGM (Res. 32-AGC/15), alturas (IRAM 3517-2)"],
+        ["Que la app sea solo el sistema de gestión de la empresa", "Sección 11: 13 módulos (tablero, órdenes, calidad, "
+         "etiquetado, expedición, equipos, recargas, reclamos, clientes, desvíos, insumos, reportes y configuración) con "
+         "los datos reales del plan, el MRP y el BOM"],
+        ["Que siga las normas", "Las reglas están dentro del sistema: partida y estampilla DPS (Res. 349/07), contraste "
+         "de manómetros cada 15 días, archivo batch del SGM (Res. 32-AGC/15), plazos de reclamos"],
         ["Normativa de atención al cliente", "Sección 12: plazos y matriz norma → cómo lo cumple la app (Ley 24.240, "
                                              "Ley 25.326, Res. SCI 424/2020, Ley 26.993, IRAM-ISO 10002)"],
         ["Manual de seguimiento y trazabilidad", "Sección 13: manual MT-01 con responsabilidades, registros, 12 "
