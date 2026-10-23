@@ -130,7 +130,9 @@ def bloques():
         ["Lugar", "Lugar o lugares fijos del código", "Reparto de la sección 2.2"],
         ["Código · Material · UM · Se compra en", "Identificación y unidad en que se cuenta", "Stock_MP, columnas B, C, D y M"],
         ["Seguridad · Punto de pedido · Máximo", "Las tres marcas de la tarjeta", "Stock_MP L, L + K y S"],
+        ["Consumo por día", "Lo que se usa por día hábil", "Stock_MP G (consumo del año ÷ 240)"],
         ["Stock contado", "Lo que anota el almacenero (celda amarilla)", "Conteo"],
+        ["Días de stock", "Cuántos días alcanza lo contado (fórmula)", "Stock contado ÷ consumo por día"],
         ["Estado", "BAJO SEGURIDAD, PEDIR u OK (fórmula)", "Contra seguridad y punto de pedido"],
     ], [28, 40, 32])
     b("**Cuándo se cuenta.** En cada revisión periódica del proveedor (Word de MP, sección 9) y siempre que un retiro deje "
@@ -170,6 +172,16 @@ def bloques():
         ["Amarillo", "Stock ≤ punto de pedido (L + K), o pedido en camino", "La tarjeta del bulto pasa al tablero de pedidos y sale el pedido hasta el máximo."],
         ["Verde", "Stock sobre el punto de pedido", "Nada hasta la próxima revisión del proveedor."],
     ], [14, 38, 48])
+    b("**Días de stock.** Cada código muestra cuántos días de producción alcanza lo que hay: stock ÷ consumo por día "
+      "(Stock_MP, columna G = consumo del año ÷ 240 días hábiles). La seguridad, el punto de pedido y el máximo también se "
+      "muestran en días, y cada almacén muestra su código con menos días. El punto de pedido en días es la seguridad en "
+      "días más el plazo de entrega: cuando quedan esos días, sale el pedido.")
+    fil = []
+    for m_ in [x for x in MP if x["cod"] in ("MP-01", "MP-03", "MP-05", "MP-33", "MP-25", "MP-62/M22")]:
+        dd = lambda u: n(u / m_["dia"], 1) if m_["dia"] else "—"
+        fil.append([m_["cod"], m_["mat"], n(m_["dia"], 2) + " " + m_["um"], dd(m_["ss"]), dd(m_["pp"]), dd(m_["max"])])
+    tabla(["Código", "Material", "Consumo por día", "Seguridad (d)", "Punto de pedido (d)", "Máximo (d)"], fil, [11, 33, 16, 13, 14, 13], num=[3, 4, 5])
+    add("nota", "Días hábiles. Valores de MP-FLAMA2035 › Stock_MP (G, L, L + K, S); el resto de las MP en el anexo.")
     b("**En bultos enteros.** «Pedir cuando quedan N bultos» redondea el punto de pedido hacia arriba al bulto entero "
       "(criterio: se pide un poco antes, nunca después). Si el punto de pedido es menos de un bulto, la regla es «pedir al "
       "abrir el último bulto».")
@@ -226,8 +238,9 @@ def bloques():
       "del rango (por ejemplo, salen 15184–15193 y quedan 15194–15471). El vehículo se propone según el producto "
       "(Despacho, filas 25 a 28: camión chico los nuevos en caja, sider los cilindros, Master los carros).")
     b("**Reclamo.** Con el número del cuerpo o de la etiqueta, la búsqueda trae el remito, el lote, cada ficha y la colada.")
-    b("**Semáforo del PT (criterio).** Rojo: stock bajo la seguridad (Stock_PT, col. H), hay que producir; amarillo: a menos "
-      "de un pallet de la seguridad, programar el próximo lote; verde: hay stock.")
+    b("**Semáforo del PT (criterio).** Rojo: stock bajo la seguridad (Stock_PT, col. H = 5 días de venta), hay que producir; "
+      "amarillo: a menos de un pallet de la seguridad, programar el próximo lote; verde: hay stock. Cada producto muestra sus "
+      "días de stock = unidades ÷ venta por día (Stock_PT, col. F), también en el kanban de PT y en el dashboard.")
     tabla(["Qué sale", "Número que se sigue", "Etiquetas que lleva"], [
         ["Matafuego o cilindro propio", "N° de serie + año (marcado y etiqueta de serie)", "Etiqueta del producto, etiqueta de serie, estampilla IRAM, oblea, faja y precinto"],
         ["Carro terminado", "N° de serie + año + presión de ensayo", "Ídem, en el carro"],
@@ -326,10 +339,11 @@ def bloques():
     add("salto")
     add("h1", "Anexo. Puntos de pedido de las 125 MP")
     p("MP-FLAMA2035 › Stock_MP, filas 6 a 130. Unidades en la unidad de cada código; bulto = unidad de compra; lugar = "
-      "reparto de la sección 2.2.")
-    fil = [[m["cod"], m["mat"], m["um"], n(m["ss"], 1), n(m["pp"], 1), n(m["max"], 1), m["bulto"], m["cada"], ", ".join(m["lugares"])] for m in MP]
-    tabla(["Código", "Material", "UM", "Seguridad", "Punto de pedido", "Máximo", "Se compra", "Cada (d)", "Lugar"], fil,
-          [9, 22, 5, 8, 9, 8, 15, 6, 18], num=[3, 4, 5, 7])
+      "reparto de la sección 2.2; PP (días) = punto de pedido ÷ consumo por día (col. G), en días hábiles.")
+    dias_ = lambda m, u: n(u / m["dia"], 1) if m["dia"] else "—"
+    fil = [[m["cod"], m["mat"], m["um"], n(m["ss"], 1), n(m["pp"], 1), n(m["max"], 1), dias_(m, m["pp"]), m["bulto"], m["cada"], ", ".join(m["lugares"])] for m in MP]
+    tabla(["Código", "Material", "UM", "Seguridad", "Punto de pedido", "Máximo", "PP (días)", "Se compra", "Cada (d)", "Lugar"], fil,
+          [8, 20, 5, 8, 8, 8, 7, 14, 6, 16], num=[3, 4, 5, 6, 8])
 
     add("h1", "Fuentes")
     for t in ["MP-FLAMA2035.xlsx y .docx (Stock_MP, Almacenes)", "PTPINTADO-FLAMA2035.xlsx y .docx (Stock_PT, Almacen_PT, Despacho, Pintura)",

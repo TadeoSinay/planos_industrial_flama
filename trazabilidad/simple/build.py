@@ -36,7 +36,7 @@ def stock_mp(wb):
         if not r[1]:
             continue
         ss, k, mx, cont = float(r[11] or 0), float(r[10] or 0), float(r[18] or 0), float(r[13] or 1)
-        out.append(dict(ref=r[0], cod=r[1], mat=r[2], um=r[3], prov=r[4], pico=r1(r[7], 2), pmin=r[8], pmax=r[9],
+        out.append(dict(ref=r[0], cod=r[1], mat=r[2], um=r[3], prov=r[4], dia=(round(float(r[6]), 4) if isinstance(r[6], (int, float)) else 0), pico=r1(r[7], 2), pmin=r[8], pmax=r[9],
                         ss=r1(ss), k=r1(k), pp=r1(ss + k), max=r1(mx), bulto=r[12], cont=cont, cada=r[14],
                         alm=r[17], u=(r1(r[20], 3) if isinstance(r[20], (int, float)) else 0),
                         guarda=r[21], linea=r[22], fila=i))
@@ -174,7 +174,8 @@ def planilla(mp, alms, lug, ruta):
            "3. Completar la fecha y quién contó, arriba de la tabla.",
            "4. En la app: Kanban de MP › Cargar planilla › elegir este archivo. La app lee todas las hojas y mueve las tarjetas.",
            "",
-           "Solo se completan las celdas amarillas. «Estado» se calcula solo contra la seguridad y el punto de pedido.",
+           "Solo se completan las celdas amarillas. «Estado» se calcula solo contra la seguridad y el punto de pedido; «Días de",
+           "stock» = stock contado ÷ consumo por día (Stock_MP, col. G: consumo del año ÷ 240 días hábiles).",
            "Cuándo se cuenta: en cada revisión periódica del proveedor (cada 10, 20 o 60 días hábiles según el código, Word de MP",
            "sección 9) y siempre que un retiro deje una tarjeta cerca del punto de pedido.",
            "",
@@ -183,8 +184,9 @@ def planilla(mp, alms, lug, ruta):
     for i, t in enumerate(txt, 1):
         ins.cell(i, 1, t).font = Font(name=f, bold=(i == 1), size=13 if i == 1 else 10)
     ins.column_dimensions["A"].width = 120
-    cab = ["Lugar", "Código", "Material", "UM", "Se compra en", "Seguridad", "Punto de pedido", "Máximo", "Stock contado", "Estado", "Observaciones"]
-    anchos = [16, 14, 46, 7, 26, 11, 11, 11, 13, 16, 28]
+    cab = ["Lugar", "Código", "Material", "UM", "Se compra en", "Seguridad", "Punto de pedido", "Máximo", "Consumo por día",
+           "Stock contado", "Días de stock", "Estado", "Observaciones"]
+    anchos = [16, 14, 46, 7, 26, 11, 11, 11, 11, 13, 11, 16, 28]
     for a in alms:
         ws = wb.create_sheet(CORTO[a["alm"]])
         ws["A1"] = f"Conteo · {a['alm']}"
@@ -207,23 +209,26 @@ def planilla(mp, alms, lug, ruta):
         orden = {h["id"]: i for i, h in enumerate(lug[a["alm"]])}
         ms = sorted([m for m in mp if m["alm"] == a["alm"]], key=lambda m: orden.get((m["lugares"] or ["~"])[0], 999))
         for m in ms:
-            vals = [", ".join(m["lugares"]), m["cod"], m["mat"], m["um"], m["bulto"], m["ss"], m["pp"], m["max"]]
+            vals = [", ".join(m["lugares"]), m["cod"], m["mat"], m["um"], m["bulto"], m["ss"], m["pp"], m["max"], m["dia"]]
             for j, v in enumerate(vals, 1):
                 c = ws.cell(fila, j, v)
                 c.font, c.border = Font(name=f, size=10), borde
                 if j in (6, 7, 8):
                     c.number_format = "#,##0.0"
-            ws.cell(fila, 9).fill = amarillo
-            ws.cell(fila, 9).number_format = "#,##0.0"
-            ws.cell(fila, 10, f'=IF(I{fila}="","",IF(I{fila}<=F{fila},"BAJO SEGURIDAD",IF(I{fila}<=G{fila},"PEDIR","OK")))')
-            for j in (9, 10, 11):
+                if j == 9:
+                    c.number_format = "#,##0.000"
+            ws.cell(fila, 10).fill = amarillo
+            ws.cell(fila, 10).number_format = "#,##0.0"
+            ws.cell(fila, 11, f'=IFERROR(IF(OR(J{fila}="",I{fila}=0),"",J{fila}/I{fila}),"")').number_format = "#,##0.0"
+            ws.cell(fila, 12, f'=IF(J{fila}="","",IF(J{fila}<=F{fila},"BAJO SEGURIDAD",IF(J{fila}<=G{fila},"PEDIR","OK")))')
+            for j in (10, 11, 12, 13):
                 ws.cell(fila, j).border = borde
-                ws.cell(fila, j).font = Font(name=f, size=10, bold=(j == 10))
+                ws.cell(fila, j).font = Font(name=f, size=10, bold=(j == 12))
             fila += 1
         dv = DataValidation(type="decimal", operator="greaterThanOrEqual", formula1="0", allow_blank=True,
                             error="El stock contado es un número mayor o igual a cero")
         ws.add_data_validation(dv)
-        dv.add(f"I6:I{fila - 1}")
+        dv.add(f"J6:J{fila - 1}")
         ws.freeze_panes = "C6"
         ws.print_title_rows = "5:5"
         ws.page_setup.orientation = "landscape"
