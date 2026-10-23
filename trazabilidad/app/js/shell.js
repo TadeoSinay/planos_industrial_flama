@@ -53,7 +53,7 @@ const PAGINAS = { orden: "lote", equipo: "equipo" };   // estos registros abren 
 function pintar() {
   const v = VISTAS[UI.vista];
   $("#vista").innerHTML = `<div class="cab"><div><h1>${typeof v.titulo === "function" ? v.titulo() : esc(v.titulo)}</h1>${v.sub ? `<div class="sub">${v.sub()}</div>` : ""}</div>${v.acciones ? `<div class="acciones">${v.acciones()}</div>` : ""}</div>${v.html()}`;
-  pintarMenu();
+  pintarMenu(); const rg = $("#regs"); if (rg) rg.textContent = `Registros: ${S.eventos.length}`;
   if (UI.det) abrirDetalle(UI.det.tipo, UI.det.id, true);
   hashear();
 }

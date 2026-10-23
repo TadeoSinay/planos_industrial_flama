@@ -16,7 +16,7 @@ const sumar = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); ret
 function habiles(anio, mes) { const out = []; for (let d = 1; d <= 31; d++) { const x = new Date(anio, mes - 1, d); if (x.getMonth() !== mes - 1) break; if (x.getDay() % 6) out.push(x); } return out; }
 const MES_TXT = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 
-// generador con semilla fija: los datos de prueba son siempre los mismos
+// generador con semilla fija (solo para hashes de respaldo)
 function semilla(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const hashN = s => { let h = 2166136261; for (const c of String(s)) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
 const elegir = (r, arr) => arr[Math.floor(r() * arr.length)];

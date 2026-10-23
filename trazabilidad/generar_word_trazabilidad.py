@@ -73,11 +73,14 @@ def secciones_v4(add, p, bul, tabla, img):
     # ================================================================== 11
     add("h1", "11. Sistema de gestión")
     p(f"El sistema es la herramienta interna de FLAMA: sin portada ni textos de proceso, solo los módulos con los que se "
-      f"trabaja. Lee los datos reales del proyecto (Plan mensual de Aprovechamiento_Manuales y _Carros con las órdenes "
-      f"y series de cada mes, plan de Aprovechamiento_Recargas de las dos plantas, política de stock y consumos del "
-      f"FLAMA_MRP y modelos del FLAMA_BOM). El estado de cada orden, los clientes, los remitos, el stock físico y los "
-      f"reclamos son datos de prueba y el sistema lo indica. Se publica en Vercel ({URL_APP}) y el QR de cada equipo "
-      f"abre {URL_APP}/m/<serie>, la única página pública.")
+      f"trabaja. Todo lo que muestra es real: lo que sale de los archivos del proyecto (Plan mensual de "
+      f"Aprovechamiento_Manuales y _Carros con las órdenes y series del año, capacidad y aprovechamiento por puesto, "
+      f"plan de Aprovechamiento_Recargas, política de stock y consumos del FLAMA_MRP, modelos del FLAMA_BOM, pallets y "
+      f"camiones de palletizado_PT, reparto por zona del Indexado Dim Técnico y tasas del Balanceo de materiales) y lo "
+      f"que cargan quienes operan. Nada se simula: firmas, lotes de insumo, rechazos, pesadas, ensayos, controles de "
+      f"medición, identificación, clientes, remitos, instalaciones, recargas, reclamos y desvíos arrancan vacíos y se "
+      f"registran con formularios; cada registro queda como evento con su hash. Se publica en Vercel ({URL_APP}) y el QR "
+      f"de cada equipo abre {URL_APP}/m/<serie>, la única página pública.")
     add("h2", "11.1 Módulos")
     p("El menú sigue la trazabilidad: lo que pasa dentro de la planta (orden, lote, puesto, ensayo, etiqueta) y lo que "
       "pasa afuera (remito, transportista, distribuidor, instalación, recarga). Cada orden y cada serie tienen su "
@@ -125,83 +128,75 @@ def secciones_v4(add, p, bul, tabla, img):
     ], [2.4, 3.2, 3.8, 7.6])
 
     add("h2", "11.2 Tablero de trazabilidad intraplanta")
-    p("Muestra cómo viene el mes en la planta: cuánto se produjo contra el plan, dónde está cada orden y si el proceso "
-      "de carga es capaz. Los cálculos usan las órdenes y series del Plan mensual; los resultados de ensayo son datos "
-      "de prueba.")
+    p("Arriba, lo que ya se sabe del mes por los archivos del proyecto: el plan, las series reservadas, el cuello de "
+      "botella de cada línea y los pallets a despachar. Debajo, la ejecución: se completa a medida que se registran "
+      "las etapas, los cierres y las lecturas; mientras no hay registros el panel lo dice.")
     tabla(["Indicador", "Cómo se calcula", "Meta o límite", "Fuente"], [
-        ["Producción a depósito PT", "aptos de las órdenes en depósito PT o despachadas, contra el plan prorrateado "
-                                     "por días hábiles transcurridos", "plan del mes", "Plan mensual"],
-        ["En proceso (WIP)", "unidades de órdenes abiertas, por etapa", "—", "hoja de ruta"],
-        ["Rendimiento a la primera (FPY)", "1 − rechazos / unidades de los lotes cerrados", "criterio", "cierre de "
-                                                                                                     "lote"],
-        ["Fallas en PH", "rechazos por fuga en PH / unidades ensayadas", "3,5 MPa manuales · 4,0 MPa carros · 60 s",
-         "DOC-02"],
-        ["Cpk de carga", "min(LSE − x̄ ; x̄ − LIE) / 3σ por modelo, solo modelos con n ≥ 5", "≥ 1,33 (criterio)",
-         "banda de carga del FLAMA_BOM"],
-        ["Carta I de masa", "valores individuales del lote; límites x̄ ± 2,66 · MR̄", "LIE / LSE del BOM",
-         "control estadístico de procesos"],
-        ["Carta p de fallas en PH", "proporción por lote de 20 u o más; LCS = p̄ + 3 √(p̄(1 − p̄)/n)", "LCS según "
-                                                                                                    "el tamaño",
-         "control estadístico de procesos"],
-        ["Pareto de rechazos", "rechazos del mes por causa", "—", "cierre de lote"],
-        ["Ciclo de la orden", "emisión → depósito PT, en días", "—", "hoja de ruta"],
-        ["Partidas DPS", "partidas del mes y series reservadas", "≥ 100 u por partida", "Res. 349/07 art. 21"],
-        ["Equipos de medición", "días al vencimiento del contraste o calibración", "15 días el manómetro de PH",
+        ["Plan del mes", "unidades de matafuegos y cilindros del mes", "—", "Plan mensual (Aprovechamiento_*)"],
+        ["Series reservadas y partidas DPS", "rango correlativo del año; partidas de 100 u o más por modelo", "≥ 100 u",
+         "Plan mensual · Res. 349/07 art. 21"],
+        ["Aprovechamiento por puesto", "tiempo tipo × demanda / horas disponibles, por puesto y año", "90 % (umbral del "
+                                                                                                     "proyecto)",
+         "Resumen cap. de Aprovechamiento_Manuales y _Carros"],
+        ["Pallets y camiones del mes", "plan ÷ equipos por pallet o furgón, por modelo; camión de 14 pallets", "—",
+         "palletizado_PT"],
+        ["Órdenes liberadas, a depósito PT", "órdenes con etapas registradas; series identificadas", "plan del mes",
+         "registros"],
+        ["Rendimiento a la primera", "1 − rechazos / unidades de los lotes cerrados", "criterio", "cierre de lote"],
+        ["Cpk y carta I de carga", "pesadas registradas; min(LSE − x̄ ; x̄ − LIE) / 3σ con n ≥ 5; límites x̄ ± 2,66 · "
+                                   "MR̄", "≥ 1,33 (criterio)", "banda de carga del FLAMA_BOM"],
+        ["Carta p de fallas en PH", "rechazos de PH por lote de 20 u o más; LCS = p̄ + 3 √(p̄(1 − p̄)/n)", "LCS",
+         "cierre de lote"],
+        ["Medición con control vigente", "último contraste o calibración registrado", "15 días el manómetro de PH",
          "Res. 349/07 art. 20"],
-        ["Lotes de insumo en uso", "lotes anotados en las hojas de ruta del mes, por equipos", "—", "hoja de ruta"],
     ], [3.6, 6.2, 3.6, 3.6])
-    img("cap_tablero", "Tablero intraplanta: producción contra el plan, WIP por etapa, capacidad de proceso, cartas "
-                       "de control, Pareto, lotes de insumo, órdenes con su puesto actual y equipos de medición.")
+    img("cap_tablero", "Tablero intraplanta: plan, series, aprovechamiento por puesto de las dos líneas y, debajo, la "
+                       "ejecución registrada.")
 
     add("h2", "11.3 Tablero de trazabilidad extraplanta")
-    p("Muestra dónde están los equipos que salieron de la planta y qué hay que atender afuera.")
+    p("Del proyecto: el plan de despacho del mes, el plan de recargas y el reparto del mercado por zona. Registrado: "
+      "remitos, salidas, recepciones, instalaciones, recargas, reclamos y retiros.")
     tabla(["Indicador", "Cómo se calcula", "Meta o límite", "Fuente"], [
-        ["Equipos en el mercado", "series del año en distribuidor o instaladas", "—", "remitos e instalaciones"],
-        ["En tránsito / sin confirmar", "series con remito sin recepción; sin confirmar si pasaron más de 48 h",
-         "48 h (criterio)", "remito"],
-        ["Despacho → recepción y recepción → instalación", "promedio en días", "—", "remito e instalación"],
-        ["Cadena de custodia", "series por tenedor: depósito PT, transportista, distribuidor, usuario, inutilizado",
-         "—", "eventos"],
-        ["Tarjetas por jurisdicción", "tarjeta DPS en PBA, SGM en CABA", "—", "Res. 349/07 · Res. 32-AGC/15"],
-        ["Vencimientos de mantenimiento", "próximos 12 meses, por mes", "anual", "IRAM 3517-2 9.2"],
-        ["Recargas contra el plan", "órdenes de servicio del mes contra el plan por agente", "plan del mes",
-         "Aprovechamiento_Recargas"],
-        ["Reclamos en plazo", "reclamos dentro de su plazo / abiertos", "plazos de 12.1", "IRAM-ISO 10002"],
-        ["Retiros preventivos", "equipos ubicados / afectados por retiro", "100 % (criterio)", "traza del lote"],
+        ["Despacho planificado", "pallets y furgones del plan del mes; camiones Sider de 14 pallets", "—",
+         "palletizado_PT"],
+        ["Recargas del plan", "recipientes por agente de las dos plantas", "plan del mes", "Aprovechamiento_Recargas"],
+        ["Mercado por zona", "% de recargas y de unidades nuevas revendidas por zona", "—", "MRP_MP › Indexado Dim "
+                                                                                          "Técnico"],
+        ["En tránsito / sin confirmar", "remitos con salida leída y sin recepción; más de 48 h", "48 h (criterio)",
+         "registros"],
+        ["Salida → recepción", "promedio de las recepciones registradas", "—", "registros"],
+        ["Cadena de custodia", "series por tenedor según el último traspaso registrado", "—", "registros"],
+        ["Vencimientos", "identificación + 1 año (mantenimiento) y + 5 años (PH)", "anual", "IRAM 3517-2 9.2.1 y "
+                                                                                           "anexo E"],
+        ["Reclamos en plazo", "reclamos dentro de su plazo", "plazos de 12.1", "IRAM-ISO 10002"],
     ], [3.6, 6.2, 3.6, 3.6])
-    img("cap_tablero_extra", "Tablero extraplanta: equipos en el mercado, custodia, jurisdicciones, vencimientos, "
-                             "remitos abiertos, recargas, reclamos y retiros.")
+    img("cap_tablero_extra", "Tablero extraplanta: despacho y recargas del plan, mercado por zona y lo registrado.")
 
-    add("h2", "11.4 Historial de lotes")
-    p("Cada orden de producción es un lote con su página. Arriba, las series, aptos y rechazos, el ciclo, el Cpk de "
-      "carga, las estampillas DPS y el destino. Debajo, seis pestañas: resumen con las normas que aplica, hoja de ruta "
-      "puesto por puesto (equipo, lote anotado, fecha, hora y firma), ensayos de cada serie con la carta de valores "
-      "individuales, insumos y equipos de medición, distribución (remitos, distribuidores e instalaciones) y los "
-      "eventos con su hash.")
-    for k, pie in (("cap_ordenes", "Órdenes del mes con su etapa, partida DPS y rechazos."),
-                   ("cap_lotes", "Historial de lotes del año, con filtros por línea, etapa y modelo."),
-                   ("cap_orden", "Página del lote OP 26-10-08: indicadores, etapas y normas que aplica."),
-                   ("cap_lote_hoja", "Hoja de ruta del lote: puesto, operación, equipo, lote de insumo, hora y firma."),
-                   ("cap_lote_ens", "Ensayos por serie: espesor, PH, carga, N₂, pérdidas y visual; carta I de la "
-                                    "masa de carga.")):
+    add("h2", "11.4 Cómo se registra cada lote")
+    p("Cada orden del plan es un lote con su página. Se libera desde Órdenes; después cada etapa se registra con lo "
+      "que dice la hoja de ruta firmada: quién hizo cada puesto y qué lote de insumo usó. Para cerrar, calidad carga "
+      "los rechazos de la hoja (serie y ensayo), las pesadas, los ensayos de lote L1 a L5 y los controles de pintura; "
+      "si algo no cumple el lote queda retenido. Sin contraste vigente del manómetro de PH el cierre está bloqueado.")
+    for k, pie in (("cap_ordenes", "Órdenes del mes del Plan mensual con su serie, partida DPS y etapa."),
+                   ("cap_orden", "Página del lote OP 26-10-08: series, partida, normas que aplica y botón para "
+                                 "liberarlo."),
+                   ("cap_lote_hoja", "Hoja de ruta del lote con los equipos de cada puesto (Aprovechamiento_*); se "
+                                     "completa al registrar cada etapa."),
+                   ("cap_form_cierre", "Formulario de cierre: rechazos, pesadas, L1 a L5, pintura y visado.")):
         img(k, pie)
 
     add("h2", "11.5 Historial de cada matafuego y cilindro")
-    p("Cada serie tiene su página: identificación (grabado, estampilla, QR), estado y vencimientos, hacia atrás "
-      "(orden, partida, lotes de chapa con colada, cúpulas, alambre, pintura, polvo, válvula y los puestos que pasó), "
-      "ensayos de fábrica, cadena de custodia, instalación, servicios y reclamos, y el historial completo. Los cilindros "
-      "se venden vacíos: no tienen carga, presurización ni control de pérdidas, y la custodia termina en el "
-      "recargador o fabricante que los completa.")
-    for k, pie in (("cap_equipo", "Página del matafuego 26-005480: identificación, vencimientos, de dónde viene y "
-                                  "ensayos."),
-                   ("cap_equipo_hist", "Cadena de custodia e historial del mismo equipo, cada evento con el hash del "
-                                       "anterior."),
-                   ("cap_cilindro", "Página de un cilindro en producción: puestos hechos y pendientes."),
-                   ("cap_etiquetado", "Etiquetado: una lectura por equipo; el rechazo queda bloqueado."),
-                   ("cap_expedicion", "Expedición: depósito PT y remitos abiertos."),
-                   ("cap_instalaciones", "Instalaciones: alta del equipo en el usuario con su tarjeta."),
-                   ("cap_recargas", "Recargas: órdenes de servicio por etapa en las dos plantas."),
-                   ("cap_insumos", "Insumos: materiales del MRP para pedir según cobertura y plazo."),
+    p("Cada serie tiene su página: identificación (grabado y QR), estado y vencimientos, hacia atrás (orden, partida, "
+      "lotes de insumo y puestos registrados), ensayos de fábrica, cadena de custodia, instalación, servicios y "
+      "reclamos, y el historial con los eventos de la serie, de su lote y de su remito. Los vencimientos se cuentan "
+      "desde la identificación. Los cilindros se venden vacíos: no tienen carga, presurización ni control de "
+      "pérdidas.")
+    for k, pie in (("cap_equipo", "Página del matafuego 26-005480, del plan de octubre."),
+                   ("cap_expedicion", "Expedición: depósito PT y remitos, con transportista, patente y COT cargados."),
+                   ("cap_instalaciones", "Instalaciones: alta del equipo en el usuario con su tarjeta oficial."),
+                   ("cap_recargas", "Recargas: plan del mes y órdenes de servicio registradas."),
+                   ("cap_clientes", "Clientes: alta de distribuidores y usuarios con los rubros del consolidado."),
+                   ("cap_insumos", "Insumos: los 125 materiales del MRP; el inventario se carga con cada ingreso."),
                    ("cap_eventos", "Registro de eventos con la cadena SHA-256."),
                    ("cap_reportes", "Reportes: libro de actas DPS y archivo para el SGM de la AGC.")):
         img(k, pie)
@@ -216,11 +211,9 @@ def secciones_v4(add, p, bul, tabla, img):
       "el contraste vencido o si tiene un desvío abierto.")
     tabla(["#", "Estado", "Entra cuando", "Quién y dónde", "Cómo se registra", "Para salir", "Tiempo medio"],
           Q["estLote"], [0.6, 2.2, 2.8, 2.4, 3.6, 3.4, 2.0])
-    p("Tiempo medio: lotes del mes anterior y del actual que ya salieron del estado (datos de prueba).")
-    for k, pie in (("cap_estados", "Estados del lote: cantidad en cada estado, Gantt de los estadios del mes y cómo se "
-                                   "entra y se sale de cada uno."),
-                   ("cap_lote_est", "Estadios de un lote: entrada, salida y duración de cada estado.")):
-        img(k, pie)
+    p("Tiempo medio: de los cambios de etapa registrados; «—» mientras no hay registros.")
+    img("cap_estados", "Estados del lote: cantidad en cada estado y cómo se entra y se sale de cada uno; el Gantt de "
+                       "estadios se dibuja con los cambios de etapa registrados.")
     p("Fuera de la planta, el estado es del **equipo** y cambia con cada traspaso leído.")
     tabla(["Estado", "Entra cuando", "Custodia", "Cómo se registra"], Q["estEq"], [3, 5, 3, 6])
     img("cap_estadoseq", "Estados del equipo, de la orden de servicio y del reclamo.")
@@ -228,11 +221,12 @@ def secciones_v4(add, p, bul, tabla, img):
     add("h2", "11.7 Controles de calidad: AMFE y plan de control")
     p("El AMFE (análisis de modo y efecto de falla) ordena qué puede fallar, qué tan grave es (S), qué tan seguido "
       "pasa (O) y qué tan probable es detectarlo antes de que llegue al usuario (D). Las escalas de 1 a 10 son una "
-      "adaptación del manual AIAG FMEA 4.ª ed. **S y D son criterio** del equipo de FLAMA. **O no se estima**: el "
-      "sistema la calcula con sus registros (rechazos por causa de los lotes cerrados del año, remitos sin "
-      "confirmar, recargas, reclamos, retiros) y la recalcula cada vez que entra un dato. Regla de acción "
-      "(criterio): NPR = S × O × D ≥ 100, o S ≥ 9 con O ≥ 4. Los rechazos y registros de esta versión son datos de "
-      "prueba, así que las O sirven para mostrar el método, no como resultado.")
+      "adaptación del manual AIAG FMEA 4.ª ed. **S y D son criterio** del equipo de FLAMA. **O sale de un dato**: de "
+      "los registros del sistema cuando los hay (rechazos por causa, remitos sin confirmar, recargas, reclamos, "
+      "retiros); mientras no los hay, de la tasa del proyecto cuando existe (5 % que pasa por corrección de defectos "
+      "en Aprovechamiento_Manuales, inutilizados sobre recibidos en recarga del Balanceo de materiales, rechazo en el "
+      "ensayo Puffer estimado en MP_Abastecimiento); si no hay ninguno, la columna lo dice como criterio. Regla de "
+      "acción (criterio): NPR = S × O × D ≥ 100, o S ≥ 9 con O ≥ 4.")
     add("h3", "AMFE de proceso (intraplanta)")
     tabla(["ID", "Puesto · operación", "Modo de falla", "Efecto", "S", "O", "D", "NPR", "Acción", "Base de O"],
           [[str(x) for x in r] for r in Q["amfeP"]], [1.0, 2.2, 2.4, 2.4, 0.6, 0.6, 0.6, 0.9, 3.0, 3.3])
@@ -250,7 +244,7 @@ def secciones_v4(add, p, bul, tabla, img):
     tabla(["Cód.", "Puesto", "Característica", "Especificación", "Método (instrumento)", "Muestra", "Cómo llega",
            "Reacción"], Q["plan"], [0.9, 2.0, 2.4, 2.8, 2.3, 1.5, 2.5, 2.6])
     for k, pie in (("cap_plan", "Plan de control con el estado de cada instrumento y el resultado del mes."),
-                   ("cap_lote_lot", "Ensayos de lote L1 a L5 y controles de pintura de una orden.")):
+                   ("cap_form_cierre", "Los ensayos de lote L1 a L5 y de pintura se cargan en el cierre.")):
         img(k, pie)
 
     add("h2", "11.8 Cómo se mide y cómo llega cada dato")
@@ -285,7 +279,8 @@ def secciones_v4(add, p, bul, tabla, img):
       "suyos tiene FLAMA, se da de baja de los avisos o se arrepiente de una compra web. Del lado de FLAMA el reclamo "
       "llega con el lote, los insumos, los ensayos y la custodia del equipo. La página pública del QR muestra solo "
       "datos del equipo, nunca del dueño.")
-    img("cap_qr", "Lo que ve quien escanea el QR: estado y vencimientos del equipo, sin datos del dueño.", 7)
+    img("cap_qr", "Lo que ve quien escanea el QR, sin datos del dueño: la serie 26-005480 del plan de octubre todavía no "
+                  "salió de fábrica; al identificarla muestra su estado y sus vencimientos.", 7)
     add("h2", "12.1 Plazos de respuesta")
     tabla(["Pedido", "Acuse", "Primera respuesta", "Resolución", "Base"], A["PLAZOS"], [4.4, 2.2, 2.8, 3.6, 4])
     p("Los plazos que fija la ley se cumplen tal cual. Los marcados **criterio** los fija FLAMA y se miden en Desvíos.")
@@ -332,7 +327,8 @@ def secciones_v4(add, p, bul, tabla, img):
       "dónde viene) y hacia adelante (dónde está). Meta: menos de 2 minutos (criterio), probada con un simulacro por "
       "semestre. Si un insumo resulta defectuoso, la misma búsqueda da las series afectadas, dónde están y a quién "
       "avisar (P-12).")
-    img("cap_lote", "Búsqueda de un lote de polvo: órdenes, equipos, distribuidores y stock que lo usaron.")
+    img("cap_lote", "Traza de la serie 26-005480: hacia atrás (orden, partida, insumos registrados) y hacia adelante "
+                    "(estado y custodia).")
     add("h2", "13.5 Contingencias")
     tabla(["Si pasa esto", "Se hace esto"], [
         ["Se corta internet en planta", "la hoja de ruta sigue en papel; cierre y etiquetado se cargan al volver"],
@@ -347,16 +343,20 @@ def secciones_v4(add, p, bul, tabla, img):
     add("h1", "14. Análisis de desvíos")
     p("Cada rechazo, recepción sin confirmar, reclamo fuera de plazo o control de medición vencido queda a la vista en "
       "el tablero y puede abrir un registro de desvío (RD) con causa, acción correctiva y verificación. Las reglas de "
-      "abajo se revisan con cada evento; los umbrales marcados «criterio» los fija FLAMA. La tabla de 14.3 son "
-      "ejemplos de prueba.")
+      "abajo se revisan con cada evento; los umbrales marcados «criterio» los fija FLAMA.")
     add("h2", "14.1 Reglas que abren un desvío solas")
     tabla(["Qué se mira", "Umbral", "Dónde", "Qué hace la app"], A["REGLAS"], [4, 5, 3, 5])
     add("h2", "14.2 Seguimiento en el sistema")
     img("cap_calidad", "Rechazos por causa y equipos de medición; los desvíos se cargan y cierran en el módulo Desvíos.")
     add("h2", "14.3 Registro de desvíos")
-    tabla(["RD", "Origen", "Qué pasó", "Severidad", "Causa (último porqué)", "Acción", "Estado"],
-          [[r["cod"], r["origen"], r["que"], r["sev"], r["porq"][-1], r["accion"], r["estado"]] for r in A["RDS"]],
-          [1.8, 1.6, 3.6, 1.6, 3.4, 3.6, 1.4])
+    p("El registro arranca vacío y se completa en el sistema. Cada desvío tiene estos campos:")
+    tabla(["Campo", "Qué se registra"], [
+        ["RD", "número correlativo del año (RD-26-001)"], ["Origen", "proceso, proveedor, custodia, cliente o registro"],
+        ["Referencia", "orden, serie, lote de insumo o remito"], ["Severidad", "menor, mayor o crítica"],
+        ["Qué pasó", "descripción del hecho"], ["Causa raíz", "último porqué del análisis"],
+        ["Acción correctiva", "qué se cambia y quién"], ["Verificación", "dato que muestra que no volvió a pasar"],
+        ["Estado", "abierto, en curso o cerrado"],
+    ], [4, 13])
     p("Ningún desvío se cierra sin la verificación: la prueba, en datos, de que no volvió a pasar.")
 
 
@@ -515,11 +515,11 @@ def bloques(fig):
     img("intra_pasos", "El lote de punta a punta: en qué pasos se escribe, en cuáles se lee y cuánto agrega a cada "
                        "operario.")
     img("hoja_ruta", "La hoja de ruta del lote (A4). La imprime PCP con las series ya cargadas y viaja dentro del "
-                     "carro. Ejemplo con datos inventados.", 14)
+                     "carro. Formato con la OP 26-10-08 del Plan mensual; los campos se completan en planta.", 14)
     tabla(["Paso", "Quién y dónde", "Qué hace", "Con qué", "Qué queda en el sistema", "Si falla"], [
         ["1. Orden del lote", "PCP, oficina", "El sistema lee el Plan mensual del Excel de Aprovechamiento y propone los "
          "lotes de la semana; PCP confirma", "PC + impresora A4 (existen)", "OP, modelo, cantidad, series reservadas "
-         "(26-000101…148), hoja de chapa", "—"],
+         "(26-005480…527), hoja de chapa", "—"],
         ["2. Grabado", "G2 + Pannier", "Carga el archivo de series del lote (o el primer número y la marcadora "
          "numera sola: confirmar con Pannier) y graba cada planchuela", "Pannier", "nada que tipear: las series ya "
                                                                                     "estaban asignadas", "Si una "
@@ -563,17 +563,19 @@ def bloques(fig):
         ["23 Pérdidas", "pérdida", "sin pérdida; control a 24 h (R8)"],
         ["24 Etiquetado", "masa total y marcado", "masa en tolerancia; etiqueta = grabado (R9)"],
     ], [3.6, 4, 9.4])
-    add("h2", "3.2 El legajo que resulta (ejemplo inventado)")
-    tabla(["Fecha", "Paso", "Dato", "Origen"], [
-        ["02/03/26", "Orden", "OP 26-0412 · ABC 5 kg · series 101–148 · chapa H-0412 (colada 4521)", "Plan mensual + PCP"],
-        ["02/03/26", "Grabado", "26-000123 grabado", "archivo de la Pannier"],
-        ["03/03/26", "Soldaduras", "alambre AL-2602, gas G-77, cúpulas CU-0303 · firmas", "hoja (cierre)"],
-        ["04/03/26", "PH", "26-000123 ✓ · 26-000117 ✗ fuga", "hoja (cierre)"],
-        ["06/03/26", "Pintura · carga", "pintura PP-2603-2, polvo PO-2603, válvulas VA-118 · ✓", "hoja (cierre)"],
-        ["10/03/26", "Cierre", "PDF de la hoja firmada por calidad", "celular"],
-        ["10/03/26", "Etiquetado", "26-000123 identificado; caja C-88412", "lector + impresora"],
-        ["10/03/26", "Embalaje", "pallet SSCC …0457", "lector"],
-    ], [1.8, 2.4, 8.8, 4])
+    add("h2", "3.2 El legajo que resulta")
+    p("Lo que queda registrado de cada lote, con la OP 26-10-08 del Plan mensual de octubre como referencia. Los datos "
+      "de planta (lotes de insumo, firmas, rechazos, pesadas) se completan cuando el lote pasa por cada puesto.")
+    tabla(["Paso", "Dato que se registra", "Origen"], [
+        ["Orden", "OP 26-10-08 · ABC 5 kg · 48 series 26-005480 a 26-005527 · partida P-26-10-C1", "Plan mensual + PCP"],
+        ["Grabado", "serie de cada planchuela", "archivo de la Pannier"],
+        ["Soldaduras", "lotes de alambre, gas y cúpulas; firmas", "hoja de ruta (cierre)"],
+        ["Espesor y PH", "✓ / ✗ por serie; rechazos con su número", "hoja de ruta (cierre)"],
+        ["Pintura y carga", "lotes de pintura, polvo y válvulas; pesadas; ✓ / ✗ de pérdidas", "hoja de ruta y balanza"],
+        ["Cierre", "foto de la hoja, ensayos L1 a L5, visado del RT", "celular · planilla F-02"],
+        ["Etiquetado", "lectura del grabado de cada serie apta", "lector + impresora"],
+        ["Embalaje", "pallet y sus series", "lector"],
+    ], [2.6, 9.6, 4.8])
 
     # ================================================================== 4
     add("h1", "4. Extraplanta paso a paso: del camión al cliente")
@@ -700,15 +702,15 @@ def bloques(fig):
         ["Celulares", "Foto de la hoja, remitos, instalación, consulta del QR", "cualquier celular con cámara",
          "el QR abre una página web; no hay app que bajar"],
         ["QR", "Dirección web con el número de serie", "GS1 Digital Link (con GTIN) o dirección propia",
-         "trazabilidad-flama.vercel.app/m/26-000123"],
+         "trazabilidad-flama.vercel.app/m/26-005480"],
     ], [3.2, 4.6, 3.8, 5.4])
     add("h2", "7.1 Cómo se alimenta de los Excel y asigna las series por lote")
     bul("Cada lunes PCP abre «Nueva orden»: la app lee del Plan mensual (hoja de Aprovechamiento, columna del mes) cuántos "
         "equipos de cada modelo hay que fabricar.",
         "Propone lotes del tamaño del carro de ese modelo (PCP puede cambiarlos) y reserva para cada lote un rango "
-        "correlativo de series: 26-000101 a 26-000148.",
+        "correlativo de series: OP 26-10-08, 26-005480 a 26-005527 (Plan mensual de octubre).",
         "Genera el archivo para la Pannier y la hoja de ruta con las 48 series impresas.",
-        "Las series ya pertenecen al lote: cuando el etiquetado lee 26-000123, el sistema sabe su lote, su chapa y "
+        "Las series ya pertenecen al lote: cuando el etiquetado lee 26-005480, el sistema sabe su lote, su chapa y "
         "todo lo que la hoja registró para ese lote. Así se asigna «por lote» sin cargar nada por equipo.",
         "Cuando calidad cierra la hoja, lo que se registró en papel pasa al lote y los rechazos quedan como eventos "
         "de su serie.")
@@ -724,7 +726,7 @@ def bloques(fig):
 
     # ================================================================== 8
     add("h1", "8. Interfaz y hardware")
-    img("pantallas", "Pantallas de la app (maqueta, datos inventados).")
+    img("cap_ordenes", "Órdenes del sistema con el Plan mensual de octubre de 2026.")
     tabla(["Pantalla", "Quién", "Dónde y con qué", "Qué hace", "Tiempo"], [
         ["Nueva orden", "PCP", "PC de oficina", "Lee el Plan mensual, propone lotes, reserva series, imprime hoja y "
                                                 "archivo", "minutos por semana"],

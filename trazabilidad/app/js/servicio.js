@@ -8,12 +8,11 @@ VISTAS.recargas = {
   acciones: () => `<button class="btn pri" data-a="nuevaOS">Nueva recepción</button>`,
   html() {
     const pl = fil("rpla", "Todas"), lista = S.recargas.filter(r => pl === "Todas" || r.planta === pl);
-    const hab = habiles(D.anio, D.mes), trans = hab.filter(d => d <= HOY).length;
-    const hechas = Math.round(planRecargas() * trans / hab.length) + S.recargas.filter(r => r.etapa === 5).length;
+    const hechas = S.recargas.filter(r => r.etapa === 5 && new Date(r.entregada || r.fecha).getMonth() + 1 === D.mes).length;
     const col = (i, t) => { const xs = lista.filter(r => r.etapa === i && !r.inutil);
       return `<div class="col-k"><h3>${esc(t)}<span class="muted">${xs.length}</span></h3>${xs.map(r => `<button class="tarjeta" data-det="recarga" data-id="${r.os}"><b>${r.os}</b><span>${esc(r.tipo)} · ${esc(r.marca)}</span><span class="muted">${esc(cliente(r.cliente).nombre)} · ${dias(r.fecha)} d</span>${r.ph ? pill("con PH", "vi") : ""}${r.polvoBajo ? pill("polvo bajo de peso", "av") : ""}</button>`).join("")}</div>`; };
     const inut = lista.filter(r => r.inutil);
-    return `<div class="kpis"><div class="kpi in"><span>Hechas en el mes</span><b>${n0(hechas)}</b><small>de ${n0(planRecargas())} del plan</small></div>
+    return `<div class="kpis"><div class="kpi in"><span>Entregadas en el mes</span><b>${n0(hechas)}</b><small>de ${n0(planRecargas())} del plan (Aprovechamiento_Recargas)</small></div>
       <div class="kpi av"><span>En taller</span><b>${S.recargas.filter(r => r.etapa >= 2 && r.etapa < 4 && !r.inutil).length}</b><small>incluye control final</small></div>
       <div class="kpi ok"><span>Listas para entregar</span><b>${S.recargas.filter(r => r.etapa === 4).length}</b></div>
       <div class="kpi in"><span>Sustitutos prestados</span><b>${S.recargas.filter(r => r.sustituto && r.etapa < 5).length}</b></div>
@@ -25,29 +24,32 @@ VISTAS.recargas = {
 };
 function formOS() {
   return `<div class="panel"><header><h2>Recepción</h2><button class="btn sm" data-a="cancelarOS">Cancelar</button></header><div class="cuerpo"><form class="form" data-f="crearOS">
-    <label class="campo">Cliente<select id="osCli">${S.clientes.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join("")}</select></label>
+    ${S.clientes.length ? "" : `<div class="ancho aviso av">No hay clientes cargados: dalos de alta en <a href="#clientes" data-v="clientes">Clientes</a>.</div>`}
+    <label class="campo">Cliente<select id="osCli" required>${S.clientes.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join("")}</select></label>
     <label class="campo">Tipo de equipo<select id="osTipo">${tiposRecarga().map(t => `<option>${esc(t)}</option>`).join("")}</select></label>
     <label class="campo">Marca<select id="osMarca"><option>Otra marca</option><option ${UI.f.osSerie ? "selected" : ""}>FLAMA</option></select></label>
     <label class="campo">Serie o n° grabado<input id="osNro" value="${esc(UI.f.osSerie || "")}" placeholder="si es FLAMA, la serie ${AA}-000000"></label>
-    <label class="campo">Año de fabricación<input id="osFab" type="number" value="${UI.f.osSerie ? D.anio : D.anio - 4}"></label>
+    <label class="campo">Año de fabricación (grabado)<input id="osFab" type="number" required value="${UI.f.osSerie ? D.anio : ""}"></label>
     <label class="campo">Planta<select id="osPlanta"><option>Comercial</option><option>Industrial</option></select></label>
-    <label class="campo">Sustituto<select id="osSus"><option value="">No</option><option>Sí, entregar sustituto habilitado</option></select></label>
+    <label class="campo">Sustituto entregado (n°, vacío si no)<input id="osSus"></label>
+    <label class="campo">Técnico<input id="osTec" required value="${esc(USUARIO)}"></label><label class="campo">Presupuesto (ARS)<input id="osPre" type="number" required></label>
     <label class="campo ancho">Observaciones de la recepción<input id="osObs" placeholder="estado visual, precinto, manómetro"></label>
-    <div class="ancho"><button class="btn pri" type="submit">Registrar y enviar presupuesto</button></div></form></div></div>`;
+    <div class="ancho"><button class="btn pri" type="submit" ${S.clientes.length ? "" : "disabled"}>Registrar y enviar presupuesto</button></div></form></div></div>`;
 }
 ACC.nuevaOS = () => { UI.f.nuevaOS = true; pintar(); };
 ACC.cancelarOS = () => { UI.f.nuevaOS = false; UI.f.osSerie = null; pintar(); };
 FORM.crearOS = () => {
   const tipo = $("#osTipo").value, t = [...D.recargas.comercial, ...D.recargas.industrial].find(x => x.tipo === tipo);
-  const r = { os: `OS-${AA}-${String(++S.nOs).padStart(5, "0")}`, fecha: HOY, planta: $("#osPlanta").value, tipo, agente: t ? t.agente : "", cliente: $("#osCli").value, marca: $("#osMarca").value,
-    nro: $("#osNro").value, fab: +$("#osFab").value, tecnico: OPER[S.nOs % OPER.length], etiqueta: `S-${AA}-${String(30000 + S.nOs).padStart(6, "0")}`, etapa: 1, sustituto: $("#osSus").value ? `SUS-${(S.nOs % 120) + 1}` : null, ph: false, polvoBajo: false,
-    presupuesto: Math.round((t && t.agente === "CO₂" ? 18000 : 14000) / 100) * 100, inutil: null, obs: $("#osObs").value };
+  const fab = +$("#osFab").value, edad = D.anio - fab;
+  const r = { os: `OS-${AA}-${String(++S.nOs).padStart(5, "0")}`, fecha: ahoraISO(), planta: $("#osPlanta").value, tipo, agente: t ? t.agente : "", cliente: $("#osCli").value, marca: $("#osMarca").value,
+    nro: $("#osNro").value.trim(), fab, tecnico: $("#osTec").value.trim(), etiqueta: `S-${AA}-${String(S.nOs).padStart(6, "0")}`, etapa: 1, sustituto: $("#osSus").value.trim() || null,
+    ph: edad > 0 && edad % 5 === 0, polvoBajo: false, presupuesto: +$("#osPre").value, inutil: edad >= 20 ? "Vida útil cumplida (Res. 349/07 art. 26)" : null, obs: $("#osObs").value };   // PH cada 5 años (anexo E)
   S.recargas.unshift(r); UI.f.nuevaOS = false; UI.f.osSerie = null; if (numSerie(r.nro)) registrar("Recibido para servicio", r.nro, r.os); registrar("Recepción de recarga", r.os, `${r.tipo} · ${cliente(r.cliente).nombre}`); toast(`${r.os} registrada · presupuesto enviado`); pintar(); abrirDetalle("recarga", r.os);
 };
 DETALLES.recarga = id => {
   const r = S.recargas.find(x => x.os === id); if (!r) return null;
   const c = cliente(r.cliente), pie = r.inutil ? `<button class="btn pri" data-a="osActa" data-id="${r.os}">Labrar acta e inutilizar</button>`
-    : r.etapa < 5 ? `${r.etapa >= 2 && r.etapa < 4 ? `<button class="btn" data-a="osInutil" data-id="${r.os}">Mandar a inutilizar</button>` : ""}<button class="btn pri" data-a="osAvanzar" data-id="${r.os}">${r.etapa === 1 ? "Presupuesto aprobado: a taller" : "Pasar a " + ETAPAS_OS[r.etapa + 1]}</button>` : "";
+    : r.etapa < 5 ? `${r.etapa >= 2 && r.etapa < 4 ? `<button class="btn" data-a="osInutil" data-id="${r.os}">Mandar a inutilizar</button>${r.agente === "ABC" && !r.polvoBajo ? `<button class="btn" data-a="osPolvo" data-id="${r.os}">Polvo bajo de peso</button>` : ""}` : ""}<button class="btn pri" data-a="osAvanzar" data-id="${r.os}">${r.etapa === 1 ? "Presupuesto aprobado: a taller" : "Pasar a " + ETAPAS_OS[r.etapa + 1]}</button>` : "";
   const pasos = r.agente === "ABC" ? ["Descarga y control del polvo (puffer)", r.polvoBajo ? "Polvo bajo de peso: cambio total por polvo nuevo" : "Reposición de polvo", "Desarme y limpieza", r.ph ? "Prueba hidráulica · oblea nueva" : "Prueba hidráulica no corresponde este año", "Fecha grabada en el tubo de pesca", "Carga, presurización con N₂ y control de pérdidas", "Marbete del año, precinto y etiqueta de servicio con QR"]
     : ["Descarga y control del agente", "Desarme, limpieza e inspección", r.ph ? "Prueba hidráulica" : "Prueba hidráulica no corresponde este año", "Carga y control de pérdidas", "Marbete, precinto y etiqueta de servicio con QR"];
   return { titulo: r.os, sub: `${esc(r.tipo)} · ${esc(r.marca)} · planta ${r.planta.toLowerCase()}`, pie,
@@ -59,8 +61,11 @@ DETALLES.recarga = id => {
       <dt>Garantía</dt><dd>${r.etapa === 5 ? "30 días desde la entrega" : "—"}</dd><dt>Tarjeta oficial</dt><dd>${c.jur === "CABA" ? "SGM de la AGC" : "tarjeta DPS + estampilla de control"}</dd></dl></div>
       <div><h3>Trabajo</h3><ul class="tl">${pasos.map((p, i) => `<li class="${r.etapa > 3 || (r.etapa >= 2 && i < 2) ? "" : "p"}"><time></time><i></i><span>${esc(p)}</span></li>`).join("")}</ul></div>` };
 };
-ACC.osAvanzar = el => { const r = S.recargas.find(x => x.os === el.dataset.id); r.etapa = r.etapa === 1 ? 2 : r.etapa + 1; registrar("Recarga: " + ETAPAS_OS[r.etapa], r.os); toast(`${r.os}: ${ETAPAS_OS[r.etapa]}`); pintar(); };
-ACC.osInutil = el => { const r = S.recargas.find(x => x.os === el.dataset.id); r.inutil = "Condición de inutilización en la revisión (IRAM 3517-2 anexo F)"; registrar("Recarga: a inutilizar", r.os); pintar(); };
+ACC.osAvanzar = el => { const r = S.recargas.find(x => x.os === el.dataset.id); r.etapa = r.etapa === 1 ? 2 : r.etapa + 1; if (r.etapa === 5) r.entregada = ahoraISO(); registrar("Recarga: " + ETAPAS_OS[r.etapa], r.os); toast(`${r.os}: ${ETAPAS_OS[r.etapa]}`); pintar(); };
+ACC.osInutil = el => abrirDetalle("osInut", el.dataset.id);
+DETALLES.osInut = id => ({ titulo: `Inutilizar ${id}`, sub: "Motivo de la revisión", cuerpo: `<form class="form" data-f="regOsInut"><input type="hidden" id="oiId" value="${esc(id)}"><label class="campo ancho">Motivo (IRAM 3517-2 9.7.1.3)<input id="oiM" required></label><div class="ancho"><button class="btn no" type="submit">Mandar a inutilizar</button></div></form>` });
+FORM.regOsInut = () => { const r = S.recargas.find(x => x.os === $("#oiId").value); r.inutil = $("#oiM").value.trim(); registrar("Recarga: a inutilizar", r.os, r.inutil); ACC.cerrarDetalle(); pintar(); };
+ACC.osPolvo = el => { const r = S.recargas.find(x => x.os === el.dataset.id); r.polvoBajo = true; registrar("Recarga: polvo bajo de peso, cambio total", r.os); pintar(); };
 ACC.osActa = el => { const r = S.recargas.find(x => x.os === el.dataset.id); S.recargas.splice(S.recargas.indexOf(r), 1); registrar("Acta de inutilización", r.os, r.inutil); toast(`${r.os}: acta labrada · aviso al propietario`); ACC.cerrarDetalle(); pintar(); };
 
 // ---------------------------------------------------------------- reclamos
@@ -77,7 +82,7 @@ VISTAS.reclamos = {
       ${UI.f.nuevoRC ? `<div class="panel"><header><h2>Nuevo reclamo</h2><button class="btn sm" data-a="cancelarRC">Cancelar</button></header><div class="cuerpo"><form class="form" data-f="crearRC">
         <label class="campo">Cliente<select id="rcCli">${S.clientes.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join("")}</select></label>
         <label class="campo">Tipo<select id="rcTipo">${Object.keys(PLAZO_RC).map(t => `<option>${t}</option>`).join("")}</select></label>
-        <label class="campo">Serie del equipo<input id="rcSerie" placeholder="${ser(5012)}"></label><label class="campo">Entró por<select id="rcCanal"><option>QR del equipo</option><option>Mail</option><option>Teléfono</option></select></label>
+        <label class="campo">Serie del equipo<input id="rcSerie" placeholder="${AA}-000000"></label><label class="campo">Entró por<select id="rcCanal"><option>QR del equipo</option><option>Mail</option><option>Teléfono</option></select></label>
         <label class="campo ancho">Qué pasa<textarea id="rcTexto" rows="2"></textarea></label><div class="ancho"><button class="btn pri" type="submit">Registrar y dar número</button></div></form></div></div>` : ""}
       <div class="panel"><header><h2>Bandeja</h2>${chips("rcest", [["abiertos", "Abiertos"], ["todos", "Todos"]], "abiertos")}</header>${tabla(["Reclamo", "Fecha", "Cliente", "Serie", "Tipo", "Etapa", "Plazo"], xs.map(x => `<tr class="click" data-det="reclamo" data-id="${x.id}"><td class="mono nw">${x.id}</td><td class="nw">${fecha(x.fecha)}</td><td>${esc(cliente(x.cliente).nombre)}</td><td class="mono nw">${esc(x.serie)}</td><td>${esc(x.tipo)}</td><td>${pill(ETAPAS_RC[x.etapa], x.etapa === 3 ? "ok" : "in")}</td><td>${x.etapa >= 2 ? pill("respondido", "ok") : vencido(x) ? pill("vencido", "no") : pill(`${PLAZO_RC[x.tipo] - dias(x.fecha)} d`, "av")}</td></tr>`), { vacio: "Sin reclamos abiertos" })}</div>`;
   },
@@ -85,7 +90,8 @@ VISTAS.reclamos = {
 ACC.nuevoRC = () => { UI.f.nuevoRC = true; pintar(); };
 ACC.cancelarRC = () => { UI.f.nuevoRC = false; pintar(); };
 FORM.crearRC = () => {
-  const x = { id: `RC-${AA}-${String(S.nRc++).padStart(6, "0")}`, fecha: HOY, cliente: $("#rcCli").value, serie: $("#rcSerie").value || "—", tipo: $("#rcTipo").value, texto: $("#rcTexto").value || "(sin texto)", etapa: 0, canal: $("#rcCanal").value };
+  if (!$("#rcCli").value) return toast("Cargá primero al cliente en Clientes");
+  const x = { id: `RC-${AA}-${String(++S.nRc).padStart(6, "0")}`, fecha: ahoraISO(), cliente: $("#rcCli").value, serie: $("#rcSerie").value || "—", tipo: $("#rcTipo").value, texto: $("#rcTexto").value || "(sin texto)", etapa: 0, canal: $("#rcCanal").value };
   S.reclamos.unshift(x); UI.f.nuevoRC = false; registrar("Reclamo recibido", x.id, x.tipo); toast(`${x.id} registrado`); pintar(); abrirDetalle("reclamo", x.id);
 };
 DETALLES.reclamo = id => {
@@ -97,30 +103,40 @@ DETALLES.reclamo = id => {
       ${vencido(x) ? `<div class="aviso no">Fuera de plazo (${PLAZO_RC[x.tipo]} d).</div>` : ""}
       <dl class="dl"><dt>Recibido</dt><dd>${fecha(x.fecha)}${x.canal ? " · " + esc(x.canal) : ""}</dd><dt>Plazo</dt><dd>${PLAZO_RC[x.tipo]} día${PLAZO_RC[x.tipo] > 1 ? "s" : ""}</dd><dt>Dice</dt><dd>«${esc(x.texto)}»</dd>
       <dt>Equipo</dt><dd>${e ? `<a href="#" data-det="equipo" data-id="${n}" class="mono">${x.serie}</a> · ${esc(e.o.modelo)} · ${e.o.op}` : esc(x.serie)}</dd>
-      ${e ? `<dt>Lote</dt><dd>${e.o.rech.length} rechazos en fábrica · polvo ${e.o.insumos.polvo} · ${S.reclamos.filter(r => numSerie(r.serie) && ordenDe(numSerie(r.serie)) === e.o).length} reclamos del mismo lote</dd>` : ""}</dl>
+      ${e ? `<dt>Lote</dt><dd>${e.o.rech.length} rechazos en fábrica · polvo ${esc(e.o.insumos.polvo || "sin registro")} · ${S.reclamos.filter(r => numSerie(r.serie) && ordenDe(numSerie(r.serie)) === e.o).length} reclamos del mismo lote</dd>` : ""}</dl>
       <div class="aviso in">La respuesta informa la vía de conciliación (Ventanilla Federal / COPREC) si el cliente no queda conforme.</div>` };
 };
 ACC.rcAvanzar = el => { const x = S.reclamos.find(r => r.id === el.dataset.id); x.etapa++; registrar("Reclamo: " + ETAPAS_RC[x.etapa], x.id); toast(`${x.id}: ${ETAPAS_RC[x.etapa]}`); pintar(); };
-ACC.rcDesvio = el => { const x = S.reclamos.find(r => r.id === el.dataset.id); const d = { id: `RD-${AA}-${String(S.nRd++).padStart(3, "0")}`, fecha: HOY, origen: "Cliente", que: x.texto, ref: x.id, sev: x.tipo === "Seguridad" ? "Mayor" : "Menor", resp: "Calidad", estado: "Abierto", causa: "", accion: "" };
+ACC.rcDesvio = el => { const x = S.reclamos.find(r => r.id === el.dataset.id); const d = { id: `RD-${AA}-${String(++S.nRd).padStart(3, "0")}`, fecha: ahoraISO(), origen: "Cliente", que: x.texto, ref: x.id, sev: x.tipo === "Seguridad" ? "Mayor" : "Menor", resp: "Calidad", estado: "Abierto", causa: "", accion: "" };
   S.desvios.unshift(d); registrar("Desvío abierto", d.id, x.id); toast(`${d.id} abierto`); pintar(); };
 
 // ---------------------------------------------------------------- clientes
 VISTAS.clientes = {
   titulo: "Clientes",
-  sub: () => "Distribuidores y usuarios finales",
+  sub: () => `Distribuidores y usuarios finales · rubros del consolidado comercial (${D.zonas.rubros.join(", ")})`,
+  acciones: () => `<button class="btn pri" data-a="nuevoCli">Nuevo cliente</button>`,
   html() {
-    const max = S.ordenes[S.ordenes.length - 1].hasta, cnt = {};
-    for (let n = 1; n <= max; n++) { const e = equipo(n); if (e.estado === "Instalado") cnt[e.cliente.id] = (cnt[e.cliente.id] || 0) + 1; else if (e.estado === "En distribuidor") cnt[e.remito.cliente] = (cnt[e.remito.cliente] || 0) + 1; }
-    return `<div class="panel">${tabla(["Cliente", "Tipo", "CUIT", "Localidad", "Jurisdicción", "Equipos", "Recargas abiertas", "Reclamos abiertos"], S.clientes.map(c => `<tr class="click" data-det="cliente" data-id="${c.id}"><td>${esc(c.nombre)}</td><td>${esc(c.tipo)}</td><td class="mono">${c.cuit}</td><td>${esc(c.loc)}</td><td>${c.jur}</td><td class="num">${n0(cnt[c.id] || 0)}</td><td class="num">${S.recargas.filter(r => r.cliente === c.id && r.etapa < 5).length}</td><td class="num">${S.reclamos.filter(r => r.cliente === c.id && r.etapa < 3).length}</td></tr>`))}</div>`;
+    const cnt = {};
+    if (S.clientes.length) for (let n = 1; n <= maxSerie(); n++) { const e = equipo(n); if (e.estado === "Instalado") cnt[e.cliente.id] = (cnt[e.cliente.id] || 0) + 1; else if (e.estado === "En distribuidor") cnt[e.remito.cliente] = (cnt[e.remito.cliente] || 0) + 1; }
+    return `${UI.f.nuevoCli ? `<div class="panel"><header><h2>Nuevo cliente</h2><button class="btn sm" data-a="cancelarCli">Cancelar</button></header><div class="cuerpo"><form class="form" data-f="crearCli">
+      <label class="campo">Razón social<input id="clN" required></label><label class="campo">CUIT<input id="clC" required placeholder="30-00000000-0"></label>
+      <label class="campo">Tipo<select id="clT"><option>Distribuidor</option><option>Usuario final</option></select></label><label class="campo">Rubro<select id="clR"><option value="">—</option>${D.zonas.rubros.map(r => `<option>${esc(r)}</option>`).join("")}</select></label>
+      <label class="campo">Localidad<input id="clL" required></label><label class="campo">Jurisdicción<select id="clJ"><option>PBA</option><option>CABA</option></select></label>
+      <div class="ancho"><button class="btn pri" type="submit">Dar de alta</button></div></form></div></div>` : ""}
+      <div class="panel">${tabla(["Cliente", "Tipo", "Rubro", "CUIT", "Localidad", "Jurisdicción", "Equipos", "Recargas abiertas", "Reclamos abiertos"], S.clientes.map(c => `<tr class="click" data-det="cliente" data-id="${c.id}"><td>${esc(c.nombre)}</td><td>${esc(c.tipo)}</td><td>${esc(c.rubro || "—")}</td><td class="mono">${esc(c.cuit)}</td><td>${esc(c.loc)}</td><td>${c.jur}</td><td class="num">${n0(cnt[c.id] || 0)}</td><td class="num">${S.recargas.filter(r => r.cliente === c.id && r.etapa < 5).length}</td><td class="num">${S.reclamos.filter(r => r.cliente === c.id && r.etapa < 3).length}</td></tr>`), { vacio: "Todavía no hay clientes cargados" })}</div>`;
   },
 };
+ACC.nuevoCli = () => { UI.f.nuevoCli = true; pintar(); };
+ACC.cancelarCli = () => { UI.f.nuevoCli = false; pintar(); };
+FORM.crearCli = () => { const c = { id: `CL-${String(++S.nCl).padStart(4, "0")}`, nombre: $("#clN").value.trim(), cuit: $("#clC").value.trim(), tipo: $("#clT").value, rubro: $("#clR").value, loc: $("#clL").value.trim(), jur: $("#clJ").value };
+  S.clientes.push(c); UI.f.nuevoCli = false; registrar("Alta de cliente", c.id, `${c.nombre} · ${c.tipo}`); toast(`${c.nombre} dado de alta`); pintar(); };
 DETALLES.cliente = id => {
-  const c = cliente(id); if (!c.cuit) return null;
+  if (!S.clientes.some(x => x.id === id)) return null; const c = cliente(id);
   const max = S.ordenes[S.ordenes.length - 1].hasta, eqs = [];
   for (let n = 1; n <= max && eqs.length < 400; n++) { const e = equipo(n); if ((e.cliente && e.cliente.id === id) || (e.estado === "En distribuidor" && e.remito.cliente === id)) eqs.push(e); }
   return { titulo: esc(c.nombre), sub: `${esc(c.tipo)} · ${c.cuit} · ${esc(c.loc)} (${c.jur})`,
     cuerpo: `<dl class="dl"><dt>Tarjeta oficial</dt><dd>${c.jur === "CABA" ? "SGM de la AGC (Res. 32-AGC/15)" : "Tarjeta DPS (Res. 349/07)"}</dd><dt>Equipos</dt><dd>${eqs.length}</dd><dt>Remitos</dt><dd>${S.remitos.filter(r => r.cliente === id).length}</dd></dl>
-      <div><h3>Equipos</h3>${tabla(["Serie", "Modelo", "Estado", "Mantenimiento"], eqs.slice(0, 60).map(e => `<tr class="click" data-det="equipo" data-id="${e.n}"><td class="mono">${e.s}</td><td>${esc(e.o.modelo)}</td><td>${pill(e.estado, estadoPill[e.estado])}</td><td>${fecha(e.mant)}</td></tr>`), { vacio: "Sin equipos" })}${eqs.length > 60 ? `<p class="muted">y ${eqs.length - 60} más</p>` : ""}</div>
+      <div><h3>Equipos</h3>${tabla(["Serie", "Modelo", "Estado", "Mantenimiento"], eqs.slice(0, 60).map(e => `<tr class="click" data-det="equipo" data-id="${e.n}"><td class="mono">${e.s}</td><td>${esc(e.o.modelo)}</td><td>${pill(e.estado, estadoPill[e.estado])}</td><td>${e.mant ? fecha(e.mant) : "—"}</td></tr>`), { vacio: "Sin equipos" })}${eqs.length > 60 ? `<p class="muted">y ${eqs.length - 60} más</p>` : ""}</div>
       <div><h3>Recargas</h3>${tabla(["Orden", "Tipo", "Etapa"], S.recargas.filter(r => r.cliente === id).map(r => `<tr class="click" data-det="recarga" data-id="${r.os}"><td class="mono">${r.os}</td><td>${esc(r.tipo)}</td><td>${pill(r.inutil ? "Inutilizar" : ETAPAS_OS[r.etapa], r.inutil ? "no" : "in")}</td></tr>`), { vacio: "Sin recargas abiertas" })}</div>` };
 };
 ACC.verEtiqueta = el => ir("equipo", el.dataset.id);

@@ -31,11 +31,11 @@ function paginaPublica(txt) {
   const n = numSerie(txt), e = n ? equipo(n) : null;
   document.body.innerHTML = `<main style="max-width:480px;margin:0 auto;padding:24px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px));display:flex;flex-direction:column;gap:14px">
     <div style="display:flex;align-items:center;gap:10px">${logo(34)}<b style="font:800 24px/1 var(--f-display);font-style:italic;letter-spacing:.06em">FLAMA</b></div>
-    ${!e ? `<div class="aviso av">No encontramos el equipo ${esc(txt)}.</div>` : e.estado === "Rechazado" ? `<div class="aviso no"><b>${e.s}</b>: este número fue rechazado en fábrica y no salió a la venta. Si está instalado, no lo uses y avisá a FLAMA.</div>` :
+    ${!e ? `<div class="aviso av">No encontramos el equipo ${esc(txt)}.</div>` : !e.fab && e.estado !== "Rechazado" ? `<div class="aviso in"><b>${e.s}</b> · ${esc(e.o.modelo)}: todavía no salió de fábrica.</div>` : e.estado === "Rechazado" ? `<div class="aviso no"><b>${e.s}</b>: este número fue rechazado en fábrica y no salió a la venta. Si está instalado, no lo uses y avisá a FLAMA.</div>` :
     `<div class="panel"><div class="cuerpo" style="display:flex;flex-direction:column;gap:10px"><div style="font:700 26px/1 var(--f-mono)">${e.s}</div><div class="muted">${esc(e.o.modelo)} · fuegos A, B y C</div>
       ${pill(e.mant && new Date(e.mant) < HOY ? "Mantenimiento vencido" : "Vigente", e.mant && new Date(e.mant) < HOY ? "no" : "ok")}
       <dl class="dl"><dt>Fabricado</dt><dd>${fecha(e.fab)}</dd><dt>Mantenimiento</dt><dd>vence ${fecha(e.mant)}</dd><dt>Prueba hidráulica</dt><dd>vence ${fecha(e.phVence)}</dd><dt>Vida útil</dt><dd>hasta ${fecha(e.vida)}</dd></dl></div></div>
-      <p class="muted" style="margin:0;font-size:12.5px">Revisalo una vez por mes: precinto y seguro puestos, aguja del manómetro en verde, sin golpes ni óxido, tarjeta oficial sana. Para servicio o reclamos, contactá a tu distribuidor o a FLAMA con este número.</p>`}</main>`;
+      <p class="muted" style="margin:0;font-size:12.5px">Revisalo cada tres meses (IRAM 3517-2 8.2): precinto y seguro puestos, aguja del manómetro en verde, sin golpes ni óxido, tarjeta oficial sana. Para servicio o reclamos, contactá a tu distribuidor o a FLAMA con este número.</p>`}</main>`;
 }
 
 const ruta = location.pathname.match(/\/m\/([^/]+)\/?$/);

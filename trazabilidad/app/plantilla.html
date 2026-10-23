@@ -81,7 +81,7 @@ h1, h2, h3 { text-wrap: balance; margin: 0 }
 .periodo { font: 600 13px/1 var(--f-body); color: var(--ink-2); white-space: nowrap }
 .usuario { display: flex; align-items: center; gap: 8px; margin-left: auto; white-space: nowrap; font-size: 13px }
 .usuario i { width: 28px; height: 28px; border-radius: 50%; background: var(--ink); color: var(--bg); display: grid; place-items: center; font: 700 11px/1 var(--f-body); font-style: normal }
-.prueba { font: 600 10.5px/1 var(--f-body); letter-spacing: .06em; text-transform: uppercase; color: var(--yellow); background: var(--yellow-soft); padding: 5px 7px; border-radius: 4px; white-space: nowrap }
+.prueba { font: 600 10.5px/1 var(--f-body); letter-spacing: .06em; text-transform: uppercase; color: var(--blue); background: var(--blue-soft); padding: 5px 7px; border-radius: 4px; white-space: nowrap }
 .contenido { padding-block: 20px 40px; padding-left: 20px; padding-right: max(20px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 16px; min-width: 0 }
 .cab { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap }
 .cab h1 { font: 700 30px/1 var(--f-display); letter-spacing: .02em; text-transform: uppercase }
@@ -211,7 +211,7 @@ pre.salida { margin: 0; background: var(--surface-2); border: 1px solid var(--li
         <input id="q" type="search" placeholder="Buscar serie, orden, remito, cliente o insumo" autocomplete="off" aria-label="Buscar">
         <div class="res-busqueda" id="resq" hidden></div></div>
       <span class="periodo" id="periodo"></span>
-      <span class="prueba" title="Órdenes, series, planes y materiales salen de los Excel del proyecto. Estados, clientes, stock y reclamos son datos de prueba.">Datos de prueba</span>
+      <span class="prueba" id="regs" title="Plan, capacidad, pallets, zonas, insumos y modelos salen de los Excel del proyecto. Todo lo demás son registros cargados en el sistema.">Registros: 0</span>
       <div class="usuario"><span>T. Sinay · PCP</span><i>TS</i></div>
     </div>
     <main class="contenido" id="vista"></main>

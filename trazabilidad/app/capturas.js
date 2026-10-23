@@ -20,23 +20,18 @@ async function rellenarQR(p) {
   const foto = async (n, sel) => { await p.waitForTimeout(300); await rellenarQR(p); sel ? await p.locator(sel).screenshot({ path: path.join(OUT, n + ".png") }) : await p.screenshot({ path: path.join(OUT, n + ".png") }); };
   const c = async s => { await p.click(s); await p.waitForTimeout(200); };
   const ir = async h => { await p.goto(`${URL}/#${h}`); await p.waitForTimeout(250); };
-  for (const v of ["tablero", "ordenes", "lotes", "calidad", "expedicion", "instalaciones", "recargas", "reclamos", "insumos", "eventos", "reportes"]) { await ir(v); await foto("cap_" + v); }
+  // el navegador arranca sin registros: las capturas muestran solo lo real (archivos del proyecto) y los formularios
+  for (const v of ["tablero", "ordenes", "lotes", "calidad", "estados", "estadoseq", "amfe", "expedicion", "instalaciones", "recargas", "reclamos", "clientes", "insumos", "eventos", "reportes"]) { await ir(v); await foto("cap_" + v); }
   await ir("tablero"); await c("[data-k=tab][data-v=extra]"); await foto("cap_tablero_extra");
-  await ir("lote-26-10-08"); await foto("cap_orden");
-  await c("[data-k=ltab][data-v=hoja]"); await foto("cap_lote_hoja");
-  await c("[data-k=ltab][data-v=ens]"); await foto("cap_lote_ens");
-  await ir("etiquetado"); await c("[data-a=leerSig]"); await c("[data-a=leerSig]"); await c("[data-a=leerRech]"); await foto("cap_etiquetado");
-  await ir("equipo-26-005480"); await foto("cap_equipo");
-  await p.evaluate(() => scrollTo(0, document.body.scrollHeight)); await foto("cap_equipo_hist");
-  await ir("equipos"); await c("[data-k=etip][data-v=Cilindro]"); await c("tr.click"); await foto("cap_cilindro");
-  await ir("traza"); await c("[data-a=trazaLote] >> nth=1"); await foto("cap_lote");
-  for (const v of ["estados", "estadoseq", "amfe"]) { await ir(v); await foto("cap_" + v); }
   await ir("amfe"); await c("[data-k=qtab][data-v=campo]"); await foto("cap_amfe_campo");
   await c("[data-k=qtab][data-v=plan]"); await foto("cap_plan");
   await ir("origen"); await c("[data-k=otab][data-v=intra]"); await foto("cap_origen");
   await c("[data-k=otab][data-v=extra]"); await foto("cap_origen_extra");
-  await ir("lote-26-10-08"); await c("[data-k=ltab][data-v=est]"); await foto("cap_lote_est");
-  await c("[data-k=ltab][data-v=lot]"); await foto("cap_lote_lot");
+  await ir("lote-26-10-08"); await foto("cap_orden");
+  await c("[data-k=ltab][data-v=hoja]"); await foto("cap_lote_hoja");
+  await p.evaluate(() => abrirDetalle("cierre", "OP 26-10-08")); await foto("cap_form_cierre");
+  await ir("equipo-26-005480"); await foto("cap_equipo");
+  await ir("traza"); await p.fill("#trq", "26-005480"); await c("form[data-f=traza] button[type=submit]"); await foto("cap_lote");
   // tablas de calidad para el Word: las mismas filas que muestra el sistema
   const dat = await p.evaluate(() => ({
     amfeP: amfe(false).map(f => [f.id, f.pto + " · " + f.op, f.modo, f.efecto, f.s, f.O, f.d, f.npr, f.accion ? f.acc : "—", f.base]),

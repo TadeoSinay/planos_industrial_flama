@@ -135,20 +135,21 @@ def fig_planta(ruta):
 
 # ----------------------------------------------------------------------------------------------- hoja de ruta
 def fig_hoja_ruta(ruta):
-    """Hoja de ruta A4 del lote (la imprime PCP y viaja en el carro); ejemplo con datos inventados."""
+    """Hoja de ruta A4 del lote (la imprime PCP y viaja en el carro): formato con la OP 26-10-08 del Plan mensual; los
+    campos se completan en planta."""
     fig, ax = plt.subplots(figsize=(8.27, 11.69))
     W, H = 210, 297
     ax.add_patch(Rectangle((0, 0), W, H, fc="white", ec=OSC, lw=1))
     ax.text(12, 284, "FLAMA S.A. · HOJA DE RUTA DEL LOTE", fontsize=13, weight="bold")
-    ax.text(12, 276, "OP 26-0412 · ABC 5 kg · 48 u · series 26-000101 a 148", fontsize=9.5)
-    ax.text(12, 270, "Chapa H-0412 (colada 4521) · emitida por PCP 02/03/26 · viaja en el carro", fontsize=8)
-    _qr(ax, "OP:26-0412", 176, 262, 24)
+    ax.text(12, 276, "OP 26-10-08 · ABC 5 kg · 48 u · series 26-005480 a 26-005527 · partida P-26-10-C1", fontsize=9.5)
+    ax.text(12, 270, "Chapa: lote ________ colada ________ · emitida por PCP al liberar · viaja en el carro", fontsize=8)
+    _qr(ax, "OP:26-10-08", 176, 262, 24)
     ax.text(188, 259, "QR del lote", ha="center", fontsize=7)
     # bloque por puesto
     y = 250
     ax.text(12, y + 2, "1) PUESTOS (una firma por lote; insumo: pegar la etiqueta del lote o anotar su número)",
             fontsize=8, weight="bold")
-    filas = [("2 Corte G2 + Pannier", "grabados 101–148", ""), ("4–7 Cúpulas y cuellos", "lote de cúpulas", "CU-____"),
+    filas = [("2 Corte G2 + Pannier", "grabados 005480–005527", ""), ("4–7 Cúpulas y cuellos", "lote de cúpulas", "CU-____"),
              ("8–12 Cilindrado y soldaduras", "alambre / gas", "AL-____ / G-__"),
              ("16–19 Granallado y pintura", "lote de pintura", "PP-____"),
              ("20–22 Carga y presurización", "polvo / válv.", "PO-___ / VA-___"),
@@ -171,23 +172,17 @@ def fig_hoja_ruta(ruta):
         for j, t in enumerate(cab):
             ax.text(x0 + [0, 21, 31, 41, 52][j], y2 - 7, t, fontsize=6.5, weight="bold")
         for r in range(16):
-            sn = 101 + col * 16 + r
+            sn = 5480 + col * 16 + r
             yy = y2 - 12 - r * 6.2
-            ax.text(x0, yy, f"26-000{sn}", fontsize=6.5, family="DejaVu Sans Mono")
+            ax.text(x0, yy, f"26-00{sn}", fontsize=6.5, family="DejaVu Sans Mono")
             for j in range(4):
                 ax.add_patch(Rectangle((x0 + [21, 31, 41, 52][j], yy - 1.5), 4, 4, fc="white", ec=OSC, lw=0.5))
-                mark = "✗" if (sn == 117 and j == 1) else ("✓" if sn < 130 or j < 2 else "")
-                if sn == 117 and j > 1:
-                    mark = ""
-                if mark:
-                    ax.text(x0 + [21, 31, 41, 52][j] + 2, yy + 0.5, mark, fontsize=6, ha="center", va="center",
-                            color=ROJO if mark == "✗" else "#1F4E79")
     y3 = y2 - 12 - 16 * 6.2 - 4
-    ax.text(12, y3, "3) CIERRE (calidad): rechazos 26-000117 (fuga en PH)   ·   firma ______________   ·   "
+    ax.text(12, y3, "3) CIERRE (calidad): rechazos (serie y ensayo) ____________   ·   firma ______________   ·   "
                     "foto de esta hoja → sistema", fontsize=7.5, weight="bold", color=ROJO)
     ax.text(12, y3 - 7, "El sistema ya sabe qué series tiene el lote. La hoja agrega solo lo que pasa con el lote",
             fontsize=7, color="#595959")
-    ax.text(12, y3 - 12, "(insumos, firmas) y las excepciones (rechazos). Ejemplo con datos inventados.", fontsize=7,
+    ax.text(12, y3 - 12, "(insumos, firmas) y las excepciones (rechazos). Series del Plan mensual de octubre de 2026.", fontsize=7,
             color="#595959")
     ax.add_patch(Rectangle((12, 12), 186, y3 - 30, fc="none", ec=OSC, lw=0.6))
     ax.text(14, y3 - 24, "4) OBSERVACIONES (retrabajos, paradas, cambios de lote de insumo a mitad de lote)",
@@ -215,22 +210,22 @@ def fig_etiquetas(ruta):
             yy -= fs * 0.62 + 2.2
         ax.text(x + w / 2, y - 3, nota, ha="center", va="top", fontsize=6.6, color="#555555")
 
-    etiqueta(5, 50, 90, 50, "FLAMA · ABC 5 kg", [("26-000123", 12, True), ("fabricado 03/2026", 6.5, False),
+    etiqueta(5, 50, 90, 50, "FLAMA · ABC 5 kg", [("26-005480", 12, True), ("fabricado 10/2026", 6.5, False),
                                                   ("escaneá para ver", 6, False), ("su historia", 6, False)],
-             URL + "26-000123", "Etiqueta de serie 45 × 25 mm (dibujada al doble)\npoliéster, lado pared, sobre el "
+             URL + "26-005480", "Etiqueta de serie 45 × 25 mm (dibujada al doble)\npoliéster, lado pared, sobre el "
                                 "QR de los planos")
-    etiqueta(110, 50, 90, 50, "CAJA · 1 u", [("26-000123", 12, True), ("ABC 5 kg", 6.5, False),
-                                            ("OP 26-0412", 6.5, False), ("caja C-88412", 6.5, False)],
-             URL + "26-000123", "Etiqueta de caja (papel)\nmisma serie: une caja ↔ equipo")
+    etiqueta(110, 50, 90, 50, "CAJA · 1 u", [("26-005480", 12, True), ("ABC 5 kg", 6.5, False),
+                                            ("OP 26-10-08", 6.5, False), ("P-26-10-C1", 6.5, False)],
+             URL + "26-005480", "Etiqueta de caja (papel)\nmisma serie: une caja ↔ equipo")
     etiqueta(215, 40, 110, 60, "PALLET (SSCC)", [("(00) 0779xxx", 8, True), ("000000457 4", 8, True),
-                                                 ("48 u · 4 lotes", 6.5, False), ("remito al despachar", 6.5, False)],
+                                                 ("48 u · OP 26-10-08", 6.5, False), ("remito al despachar", 6.5, False)],
              "SSCC:00077900000004574", "Etiqueta de pallet (papel)\nun escaneo = 48 equipos")
-    etiqueta(5, -25, 90, 50, "REVENDIDO · CO₂ 5 kg", [("R-26-000031", 10.5, True), ("grabado del fabr.:", 6, False),
-                                                      ("ACME 12345 2025", 6, False), ("vinilo destructible", 6, False)],
-             URL + "R-26-000031", "Revendido: apunta al grabado de SU fabricante")
-    etiqueta(110, -25, 90, 50, "SERVICIO 2027", [("26-000123", 12, True), ("próx. mant. 03/2028", 6.4, False),
-                                                 ("PH vence 03/2031", 6.4, False), ("recargador FLAMA", 6.4, False)],
-             URL + "26-000123", "Etiqueta de servicio (IRAM 3517-2 9.4.14)\nse renueva cada año: el QR viaja con ella")
+    etiqueta(5, -25, 90, 50, "REVENDIDO · CO₂ 5 kg", [("R-26-000001", 10.5, True), ("grabado del fabr.:", 6, False),
+                                                      ("marca · n° · año", 6, False), ("vinilo destructible", 6, False)],
+             URL + "R-26-000001", "Revendido: apunta al grabado de SU fabricante")
+    etiqueta(110, -25, 90, 50, "SERVICIO 2027", [("26-005480", 12, True), ("próx. mant. 10/2028", 6.4, False),
+                                                 ("PH vence 10/2031", 6.4, False), ("recargador FLAMA", 6.4, False)],
+             URL + "26-005480", "Etiqueta de servicio (IRAM 3517-2 9.4.14)\nse renueva cada año: el QR viaja con ella")
     ax.set_xlim(0, 330)
     ax.set_ylim(-42, 112)
     ax.set_aspect("equal")
@@ -280,7 +275,7 @@ def fig_arquitectura(ruta):
 def fig_intra_pasos(ruta):
     fig, ax = plt.subplots(figsize=(11, 4.6))
     pasos = [("1 PCP", "crea la OP del\nplan mensual;\nimprime hoja\nde ruta", AZUL, "1 vez por lote"),
-             ("2 G2 + Pannier", "graba 26-000101\na 148 desde el\narchivo", VERDE, "0 s extra"),
+             ("2 G2 + Pannier", "graba 26-005480\na 527 desde el\narchivo", VERDE, "0 s extra"),
              ("3 Conformado y\nsoldaduras", "firma por lote,\nanota insumos;\nrechazos con n°", AMAR, "~15 s / lote"),
              ("4 Espesor · PH", "✓ / ✗ por\nserie en la\nhoja (100 %)", AMAR, "~2 s / equipo"),
              ("5 Pintura · carga\npérdidas", "lotes de pintura,\npolvo, válvulas;\n✓ / ✗ por serie", AMAR,
@@ -367,7 +362,7 @@ def fig_pantallas(ruta):
     _pantalla(ax, 5.6, 3.7, 5.2, 3.3, "Etiquetado · puesto 24", [
         ("Lote abierto: OP 26-0412 (ABC 5 kg) · 47 de 48 aptos", 6.4, OSC, False),
         ("LEÉ EL GRABADO", 12, AZ_O, True),
-        ("Último: 26-000123 → etiqueta impresa ✓", 7, VE_O, True),
+        ("Último: 26-005480 → etiqueta impresa ✓", 7, VE_O, True),
         ("26-000117 → BLOQUEADO (rechazo PH) ✗", 7, ROJO, True),
         ("Impresos 31 / 47 · faltan 16", 6.4, OSC, False),
         ("(el lector escribe el número solo; la pantalla", 6.0, "#7F7F7F", False),
@@ -378,12 +373,12 @@ def fig_pantallas(ruta):
         ("☐ faltantes  ☐ daños", 6.0, OSC, False), ("Recibe: nombre, DNI, foto", 6.0, OSC, False)],
               "Confirmar recepción", celu=True)
     _pantalla(ax, 2.9, 0, 2.4, 3.4, "Instalación", [
-        ("26-000123 · ABC 5 kg", 6.2, OSC, True), ("Dirección: Av. X 123", 6.0, OSC, False),
+        ("26-005480 · ABC 5 kg", 6.2, OSC, True), ("Dirección: Av. X 123", 6.0, OSC, False),
         ("Sector: planta baja, hall", 6.0, OSC, False), ("Altura sup. ≤ 1,5 m ✓", 6.0, VE_O, False),
         ("Señal a 2–2,5 m ✓", 6.0, VE_O, False), ("[foto colgado]", 6.0, "#7F7F7F", False)],
                     "Firmar acta", celu=True)
     _pantalla(ax, 5.6, 0, 2.4, 3.4, "QR · solapa comercial", [
-        ("ABC 5 kg · 26-000123", 6.6, OSC, True), ("VIGENTE", 9, VE_O, True), ("Próx. mantenimiento 03/2027", 6.0, OSC, False),
+        ("ABC 5 kg · 26-005480", 6.6, OSC, True), ("VIGENTE", 9, VE_O, True), ("Próx. mantenimiento 03/2027", 6.0, OSC, False),
         ("PH vence 03/2031", 6.0, OSC, False), ("Historia: 4 eventos", 6.0, OSC, False),
         ("Pedir recarga · Garantía", 6.0, AZ_O, True)], "Ver historia", celu=True)
     _pantalla(ax, 8.4, 0, 2.4, 3.4, "QR · solapa técnica", [

@@ -84,10 +84,10 @@ def fig_contenido(ruta):
     """Las tres franjas a escala: manuales 2,5 a 10 kg, 1 kg en dos líneas y carros con la presión de ensayo."""
     fig, axs = plt.subplots(3, 1, figsize=(9.5, 5.2), gridspec_kw={"height_ratios": [1, 1.05, 1]})
     lado = DM_MOD * DM_CELDA
-    casos = [("Manuales 2,5 · 5 · 10 kg (y sus cilindros y sustitutos)", 130.0, 12.0, ["FLAMA S.A.  N° 26-000123  26"]),
-             ("1 kg (Ø 76: dos líneas para no rodear medio cuerpo)", 90.0, 13.0, ["FLAMA S.A.", "N° 26-000123  26"]),
+    casos = [("Manuales 2,5 · 5 · 10 kg (y sus cilindros y sustitutos)", 130.0, 12.0, ["FLAMA S.A.  N° 26-005480  26"]),
+             ("1 kg (Ø 76: dos líneas para no rodear medio cuerpo)", 90.0, 13.0, ["FLAMA S.A.", "N° 26-005480  26"]),
              ("Carros 25 a 100 kg (IRAM 3550 5.1 suma la presión de ensayo)", 115.0, 13.0,
-              ["FLAMA S.A.  PE 4,0 MPa", "N° 26-000123  26"])]
+              ["FLAMA S.A.  PE 4,0 MPa", "N° 26-005480  26"])]
     for ax, (tit, ancho, alto, lineas) in zip(axs, casos):
         ax.add_patch(Rectangle((0, 0), ancho, alto, fc="#F4D7D3", ec=ROJO, lw=1.2))
         _datamatrix(ax, 2.0, (alto - lado) / 2, DM_CELDA)
@@ -411,22 +411,22 @@ def _celular(ax, x0, titulo, filas, pie, color_pie):
 def fig_app(ruta):
     fig, ax = plt.subplots(figsize=(10, 5.0))
     _celular(ax, 0.2, "Puesto 14 · Prueba hidráulica", [
-        ("Serie (leído del grabado)", "26-000123", None), ("Modelo", "ABC 5 kg", None),
+        ("Serie (leído del grabado)", "26-005480", None), ("Modelo", "ABC 5 kg", None),
         ("Estado anterior", "CONFORMADO ✓", True), ("Espesor (puesto 13)", "1,62 ≥ 1,60 ✓", True),
         ("Presión de ensayo (ficha)", "3,5 MPa", None), ("Presión medida (banco)", "3,52 MPa ✓", True),
         ("Tiempo a presión (ficha ≥ 60 s)", "62 s ✓", True), ("Caída de presión", "no ✓", True),
         ("Pérdidas visibles", "no ✓", True), ("Deformación permanente", "no ✓", True),
         ("Banco / patrón", "PH-1 / cal. 03/26", None), ("Operario", "legajo 112", None)], "CUMPLE → PROBADO", "#2E7D32")
     _celular(ax, 3.6, "Puesto 24 · Etiquetado", [
-        ("Serie (grabado)", "26-000123", None), ("Estado anterior", "APROBADO ✓", True),
+        ("Serie (grabado)", "26-005480", None), ("Estado anterior", "APROBADO ✓", True),
         ("Masa total (ficha 8,50 kg)", "8,62 kg ✓", True), ("Carga polvo (5,00 0/+0,30)", "5,14 kg ✓", True),
         ("Presión (1,4 MPa a 20 °C)", "1,40 ✓", True), ("Pérdidas (puesto 23)", "sin pérdida ✓", True),
-        ("Etiqueta impresa", "QR 26-000123", None), ("Lectura del QR pegado", "26-000123", None),
+        ("Etiqueta impresa", "QR 26-005480", None), ("Lectura del QR pegado", "26-005480", None),
         ("QR = grabado", "sí ✓", True), ("Sello IRAM / oblea", "A26 1111053 / 457", None),
         ("Precinto", "lote P-2603", None), ("Foto control final", "visión OK", True)],
         "CUMPLE → IDENTIFICADO", "#2E7D32")
     _celular(ax, 7.0, "Recargas · Recepción", [
-        ("Serie (grabado)", "26-000123", None), ("Rev. de ficha", "3", None),
+        ("Serie (grabado)", "26-005480", None), ("Rev. de ficha", "3", None),
         ("Fabricado", "03/2026", None), ("Vida útil (20 años)", "hasta 03/2046 ✓", True),
         ("Última PH", "03/2026", None), ("PH vence", "03/2031", None),
         ("Agente de la ficha", "ABC (no convertir)", None), ("Corrosión (visión + operario)", "sí ✗", False),

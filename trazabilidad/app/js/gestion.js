@@ -1,6 +1,7 @@
 // ================================================================ gestión: tablero, desvíos, insumos, reportes y configuración
 function estadoInsumo(m) {
   const st = S.insumos[m.cod], dia = m.anio26 / 240, plazo = +(m.pmax || m.pmin || 10);
+  if (!st) return { k: "gr", t: "sin inventario registrado", cob: null };
   if (!dia) return { k: "gr", t: "sin consumo en " + D.anio, cob: null };
   const cob = st.stock / dia;
   // criterio: pedir cuando la cobertura no llega al plazo máximo más la mitad
@@ -26,7 +27,7 @@ VISTAS.desvios = {
 };
 ACC.nuevoRD = () => { UI.f.nuevoRD = true; pintar(); };
 ACC.cancelarRD = () => { UI.f.nuevoRD = false; pintar(); };
-FORM.crearRD = () => { const d = { id: `RD-${AA}-${String(S.nRd++).padStart(3, "0")}`, fecha: HOY, origen: $("#rdOri").value, sev: $("#rdSev").value, ref: $("#rdRef").value || "—", resp: $("#rdResp").value, que: $("#rdQue").value || "(sin descripción)", estado: "Abierto", causa: "", accion: "" };
+FORM.crearRD = () => { const d = { id: `RD-${AA}-${String(++S.nRd).padStart(3, "0")}`, fecha: ahoraISO(), origen: $("#rdOri").value, sev: $("#rdSev").value, ref: $("#rdRef").value || "—", resp: $("#rdResp").value, que: $("#rdQue").value || "(sin descripción)", estado: "Abierto", causa: "", accion: "" };
   S.desvios.unshift(d); UI.f.nuevoRD = false; registrar("Desvío abierto", d.id); toast(`${d.id} registrado`); pintar(); abrirDetalle("desvio", d.id); };
 DETALLES.desvio = id => {
   const d = S.desvios.find(x => x.id === id); if (!d) return null;
@@ -44,40 +45,43 @@ VISTAS.insumos = {
   titulo: "Insumos",
   sub: () => `${D.insumos.length} materiales del MRP · consumo de ${D.anio} (CONSOLIDADO) y plazos de entrega de POLITICA_STOCK`,
   html() {
-    const f = fil("iest", "pedir"), q = (UI.f.iq || "").toUpperCase();
+    const f = fil("iest", "todos"), q = (UI.f.iq || "").toUpperCase();
     const xs = D.insumos.map(m => [m, estadoInsumo(m)]).filter(([m, e]) => (f === "todos" || (f === "pedir" ? e.k === "no" || e.k === "av" : e.k === f)) && (!q || (m.cod + m.mat + m.prov).toUpperCase().includes(q)));
     return `<div class="kpis"><div class="kpi no"><span>Pedir ya</span><b>${D.insumos.filter(m => estadoInsumo(m).k === "no").length}</b><small>la cobertura no llega al plazo</small></div><div class="kpi av"><span>Pedir</span><b>${D.insumos.filter(m => estadoInsumo(m).k === "av").length}</b><small>cobertura menor a 1,5 × plazo (criterio)</small></div><div class="kpi ok"><span>Cubiertos</span><b>${D.insumos.filter(m => estadoInsumo(m).k === "ok").length}</b></div></div>
-      <div class="panel"><header><div class="filtros"><input id="iq" type="search" placeholder="Código, material o proveedor" value="${esc(UI.f.iq || "")}" data-in="iq" aria-label="Buscar insumo">${chips("iest", [["pedir", "A pedir"], ["ok", "Cubiertos"], ["gr", "Sin consumo"], ["todos", "Todos"]], "pedir")}</div><span class="muted">${xs.length}</span></header>
-      ${tabla(["Código", "Material", "Proveedor", "Stock", "Consumo/día", "Cobertura", "Plazo (días háb.)", "Estado"], xs.map(([m, e]) => `<tr class="click" data-det="insumo" data-id="${esc(m.cod)}"><td class="mono nw">${esc(m.cod)}</td><td>${esc(m.mat)}</td><td>${esc(m.prov)}</td><td class="num nw">${nf(S.insumos[m.cod].stock, 1)} ${esc(m.um)}</td><td class="num">${nf(m.anio26 / 240, 2)}</td><td class="num">${e.cob == null ? "—" : n0(e.cob) + " d"}</td><td class="num">${m.pmin === m.pmax ? m.pmin : `${m.pmin}-${m.pmax}`}</td><td>${pill(e.t, e.k)}</td></tr>`), { vacio: "Nada para pedir" })}</div>`;
+      <div class="panel"><header><div class="filtros"><input id="iq" type="search" placeholder="Código, material o proveedor" value="${esc(UI.f.iq || "")}" data-in="iq" aria-label="Buscar insumo">${chips("iest", [["todos", "Todos"], ["pedir", "A pedir"], ["ok", "Cubiertos"], ["gr", "Sin inventario o consumo"]], "todos")}</div><span class="muted">${xs.length}</span></header>
+      ${tabla(["Código", "Material", "Proveedor", "Stock", "Consumo/día", "Cobertura", "Plazo (días háb.)", "Estado"], xs.map(([m, e]) => `<tr class="click" data-det="insumo" data-id="${esc(m.cod)}"><td class="mono nw">${esc(m.cod)}</td><td>${esc(m.mat)}</td><td>${esc(m.prov)}</td><td class="num nw">${S.insumos[m.cod] ? nf(S.insumos[m.cod].stock, 1) + " " + esc(m.um) : "—"}</td><td class="num">${nf(m.anio26 / 240, 2)}</td><td class="num">${e.cob == null ? "—" : n0(e.cob) + " d"}</td><td class="num">${m.pmin === m.pmax ? m.pmin : `${m.pmin}-${m.pmax}`}</td><td>${pill(e.t, e.k)}</td></tr>`), { vacio: "Ningún material con ese filtro" })}</div>`;
   },
 };
 DETALLES.insumo = cod => {
   const m = D.insumos.find(x => x.cod === cod); if (!m) return null;
-  const st = S.insumos[cod], e = estadoInsumo(m);
+  const st = S.insumos[cod] || null, e = estadoInsumo(m);
   return { titulo: esc(m.cod), sub: esc(m.mat), pie: `<button class="btn pri" data-a="ingresoMP" data-id="${esc(cod)}">Registrar ingreso</button>`,
-    cuerpo: `<dl class="dl"><dt>Proveedor</dt><dd>${esc(m.prov)}</dd><dt>Stock</dt><dd>${nf(st.stock, 1)} ${esc(m.um)} · ${pill(e.t, e.k)}</dd><dt>Lote vigente</dt><dd class="mono">${esc(st.lote)} · ingresó ${fecha(st.ingreso)}</dd>
+    cuerpo: `<dl class="dl"><dt>Proveedor</dt><dd>${esc(m.prov)}</dd><dt>Stock</dt><dd>${st ? nf(st.stock, 1) + " " + esc(m.um) : "—"} · ${pill(e.t, e.k)}</dd><dt>Lote vigente</dt><dd class="mono">${st ? esc(st.lote) + " · ingresó " + fecha(st.ingreso) + (st.cert ? " · certificado " + esc(st.cert) : "") : "—"}</dd>
       <dt>Consumo ${D.anio}</dt><dd>${nf(m.anio26, 1)} ${esc(m.um)}/año · ${nf(m.anio26 / 240, 2)} por día hábil</dd><dt>Plazo de entrega</dt><dd>${m.pmin} a ${m.pmax} días hábiles</dd>
       <dt>Política 2035 (MRP)</dt><dd>punto de pedido ${nf(m.pdp, 1)} · stock de seguridad ${nf(m.seg, 1)} ${esc(m.um)}</dd></dl>
-      <form class="form" data-f="ingresoMP"><input type="hidden" id="mpCod" value="${esc(cod)}"><label class="campo">Cantidad (${esc(m.um)})<input id="mpCant" type="number" min="0" step="any" value="${Math.ceil(m.anio26 / 240 * (+m.pmax || 10) * 2)}"></label><label class="campo">Lote del proveedor<input id="mpLote" value="${esc(m.cod.split("/")[0])}-${AA}${String(D.mes).padStart(2, "0")}-${(hashN(st.lote) % 8) + 2}"></label></form>` };
+      <form class="form" data-f="ingresoMP"><input type="hidden" id="mpCod" value="${esc(cod)}"><label class="campo">Cantidad (${esc(m.um)})<input id="mpCant" type="number" min="0" step="any" required></label><label class="campo">Lote del proveedor<input id="mpLote" required></label><label class="campo">Certificado o remito del proveedor<input id="mpCert"></label><div class="ancho"><button class="btn pri" type="submit">Registrar ingreso</button></div></form>` };
 };
 ACC.ingresoMP = () => FORM.ingresoMP();
-FORM.ingresoMP = () => { const cod = $("#mpCod").value, st = S.insumos[cod], q = +$("#mpCant").value || 0; st.stock = Math.round((st.stock + q) * 10) / 10; st.lote = $("#mpLote").value; st.ingreso = HOY; registrar("Ingreso de insumo", cod, `${q} · lote ${st.lote}`); toast(`${cod}: +${q}`); pintar(); };
+FORM.ingresoMP = () => { const cod = $("#mpCod").value, st = S.insumos[cod] || (S.insumos[cod] = { stock: 0 }), q = +$("#mpCant").value || 0;
+  if (!q || !$("#mpLote").value.trim()) return toast("Cantidad y lote del proveedor son obligatorios");
+  st.stock = Math.round((st.stock + q) * 10) / 10; st.lote = $("#mpLote").value.trim(); st.cert = ($("#mpCert") || { value: "" }).value.trim(); st.ingreso = ahoraISO();
+  registrar("Ingreso de insumo", cod, `${q} · lote ${st.lote}${st.cert ? " · certificado " + st.cert : ""}`); toast(`${cod}: +${q}`); pintar(); };
 
 // ---------------------------------------------------------------- reportes
 const REPORTES = {
   dps: ["Libro de actas DPS · estampillas de fabricación", "PBA · Res. 349/07 art. 19 y 21-23", () => {
-    const out = ["serie\tmodelo\torden\tpartida\testampilla\tfecha"];
-    S.ordenes.filter(o => o.mes === D.mes && o.etapa >= E["Depósito PT"]).forEach(o => { const rs = new Set(o.rech.map(x => x.n)); for (let n = o.desde; n <= o.hasta; n++) if (!rs.has(n)) out.push([ser(n), o.modelo, o.op, o.partida, estampilla(n), fecha(o.cierre)].join("\t")); });
+    const out = ["serie\tmodelo\torden\tpartida\tidentificado\tvisado"];
+    S.ordenes.forEach(o => { for (let n = o.desde; n <= o.hasta; n++) if (S.ident[n]) out.push([ser(n), o.modelo, o.op, o.partida, fecha(S.ident[n]), o.visado ? o.visado.quien : ""].join("\t")); });
     return out.join("\n"); }],
   sgm: ["SGM de la AGC · archivo para el proceso batch", "CABA · Res. 32-AGC/15 anexo II art. 4", () => {
     const out = ["cuit;razon_social;rubro;ubicacion;fabricante;recargador;agente;capacidad;serie;fecha_fabricacion;vida_util;fecha_ph;fecha_mantenimiento"];
     const max = S.ordenes[S.ordenes.length - 1].hasta;
-    for (let n = 1; n <= max; n++) { const e = equipo(n); if (e.estado === "Instalado" && e.cliente.jur === "CABA") out.push([e.cliente.cuit, e.cliente.nombre, e.cliente.tipo, e.cliente.loc, "FLAMA S.A.", "FLAMA S.A.", "polvo ABC", e.o.modelo.replace(/.*ABC /, ""), e.s, fecha(e.fab), fecha(e.vida), fecha(e.fab), fecha(e.mant)].join(";")); }
+    for (let n = 1; n <= max; n++) { const e = equipo(n); if (e.estado === "Instalado" && e.cliente.jur === "CABA") out.push([e.cliente.cuit, e.cliente.nombre, e.cliente.rubro || e.cliente.tipo, e.inst.ubic + " · " + e.cliente.loc, "FLAMA S.A.", "FLAMA S.A.", "polvo ABC", e.o.modelo.replace(/.*ABC /, ""), e.s, fecha(e.fab), fecha(e.vida), fecha(e.fab), fecha(e.mant)].join(";")); }
     return out.join("\n"); }],
   venc: ["Vencimientos de mantenimiento · próximos 60 días", "IRAM 3517-2 9.2 · aviso al cliente", () => {
     const out = ["serie\tmodelo\tcliente\tvence"], max = S.ordenes[S.ordenes.length - 1].hasta;
     for (let n = 1; n <= max; n++) { const e = equipo(n); if (e.mant && dias(HOY, e.mant) >= 0 && dias(HOY, e.mant) <= 60) out.push([e.s, e.o.modelo, e.custodia, fecha(e.mant)].join("\t")); }
-    return out.length > 1 ? out.join("\n") : "Sin vencimientos en los próximos 60 días: los primeros equipos FLAMA vencen en enero de " + (D.anio + 1) + "."; }],
+    return out.length > 1 ? out.join("\n") : "Sin equipos identificados con mantenimiento en los próximos 60 días."; }],
   prod: ["Producción del mes por modelo", "FLAMA_Trazabilidad › Rendimiento (Sheets)", () => {
     const out = ["modelo\tplan\tordenes\tcerrados\taptos\trechazos"];
     D.plan.filter(p => p.tipo === "Terminado").forEach(p => { const os = S.ordenes.filter(o => o.mes === D.mes && o.modelo === p.producto), c = os.filter(o => o.etapa >= E["Para etiquetar"]);
@@ -139,15 +143,15 @@ VISTAS.config = {
       <div class="panel c4"><header><h2>Se guarda</h2></header><div class="cuerpo"><dl class="dl" style="grid-template-columns:1fr">${["OP · órdenes, partidas y series", "SERIES · estado, estampilla, custodia", "EVENTOS · qué, cuándo, quién, hash anterior y propio", "LOTES_INSUMO · lotes anotados en la hoja de ruta", "AGREGACION · equipo → caja → pallet → remito", "CUSTODIA · traspasos con documento", "FICHAS · rev. 0 de fábrica y rev. n de cada servicio", "RECLAMOS · DESVIOS · RETIROS"].map(x => `<dd>${esc(x)}</dd>`).join("")}</dl></div></div>
       <div class="panel c4"><header><h2>Sale</h2></header><div class="cuerpo"><dl class="dl" style="grid-template-columns:1fr"><dd><b>FLAMA_Trazabilidad (Google Sheets)</b><br>cada noche: OP, rendimiento, custodia, vencimientos, reclamos, desvíos</dd><dd><b>SGM de la AGC</b><br>archivo txt del proceso batch (Reportes)</dd><dd><b>Libro de actas DPS</b><br>estampillas, tarjetas e inutilizaciones (Reportes)</dd><dd><b>Avisos al cliente</b><br>vencimientos de mantenimiento y PH</dd></dl></div></div>
       <div class="panel c12"><div class="cuerpo"><dl class="dl"><dt>Arquitectura</dt><dd>página web en Vercel + base Postgres; Google Sheets por API con cuenta de servicio de solo lectura; copia nocturna en Sheets</dd><dt>Puestos</dt><dd>lector de mano USB en modo teclado; impresora de etiquetas desde el navegador; archivo de series para la marcadora</dd><dt>Campo</dt><dd>chofer, distribuidor e instalador desde el celular, leyendo el QR del remito o del equipo</dd><dt>Volumen 2035</dt><dd>≈ ${n0(284463 + 3107)} equipos/año · ≈ ${n0((284463 + 3107) * 3)} eventos/año: no entra en un Sheet (10 millones de celdas), por eso la base es Postgres</dd></dl></div></div></div>`;
-    if (t === "usu") c = `<div class="grilla"><div class="panel c7"><header><h2>Usuarios y permisos</h2></header>${tabla(["Rol", "Usuarios", "Puede"], [["PCP", "2", "órdenes, remitos, reportes"], ["Producción", "18", "avanzar etapas, etiquetado"], ["Calidad", "3", "cerrar lotes, medición, desvíos, retiros"], ["Responsable técnico", "1", "visar cierres e inutilizaciones"], ["Recargas", "6", "órdenes de servicio, sustitutos, inutilización"], ["Atención al cliente", "2", "reclamos, clientes, instalaciones"], ["Distribuidor / chofer / instalador", "externos", "confirmar salida, recepción e instalación desde el QR"]].map(f => `<tr>${f.map(x => `<td>${esc(x)}</td>`).join("")}</tr>`))}</div>
-      <div class="panel c5"><header><h2>Datos</h2></header><div class="cuerpo" style="display:flex;flex-direction:column;gap:10px"><dl class="dl"><dt>Origen real</dt><dd>Plan mensual, Aprovechamiento_Recargas, FLAMA_MRP, FLAMA_BOM</dd><dt>De prueba</dt><dd>estados, rechazos, mediciones, clientes, remitos, instalaciones, recargas, reclamos, desvíos, retiros y stock</dd><dt>Eventos de la sesión</dt><dd>${S.eventos.length}</dd></dl><button class="btn" data-a="reiniciar">Restablecer datos de prueba</button></div></div></div>`;
+    if (t === "usu") c = `<div class="grilla"><div class="panel c7"><header><h2>Roles y permisos</h2></header>${tabla(["Rol", "Puede"], [["PCP", "órdenes, remitos, reportes"], ["Producción", "registrar etapas, etiquetado"], ["Calidad", "cerrar lotes, medición, desvíos, retiros"], ["Responsable técnico", "visar cierres e inutilizaciones"], ["Recargas", "órdenes de servicio, sustitutos, inutilización"], ["Atención al cliente", "reclamos, clientes, instalaciones"], ["Distribuidor, chofer, instalador", "confirmar salida, recepción e instalación desde el QR"]].map(f => `<tr>${f.map(x => `<td>${esc(x)}</td>`).join("")}</tr>`))}</div>
+      <div class="panel c5"><header><h2>Datos</h2></header><div class="cuerpo" style="display:flex;flex-direction:column;gap:10px"><dl class="dl"><dt>Del proyecto</dt><dd>Plan mensual y capacidad (Aprovechamiento_Manuales, _Carros, _Recargas), FLAMA_MRP, MRP_MP, FLAMA_BOM, palletizado_PT, Balanceo_Materiales_y_Linea</dd><dt>Registrados acá</dt><dd>etapas, firmas, rechazos, pesadas, ensayos, controles de medición, identificación, clientes, remitos, instalaciones, recargas, reclamos, desvíos, retiros e inventario</dd><dt>Registros</dt><dd>${S.eventos.length} eventos en este navegador</dd></dl><button class="btn" data-a="reiniciar">Borrar los registros de este navegador</button></div></div></div>`;
     return `<div class="filtros" role="tablist">${tabs.map(([k, x]) => `<button role="tab" aria-pressed="${t === k}" data-a="filtro" data-k="ctab" data-v="${k}">${x}</button>`).join("")}</div>${c}`;
   },
 };
-ACC.reiniciar = () => { reiniciar(); toast("Datos de prueba restablecidos"); pintar(); };
+ACC.reiniciar = () => { reiniciar(); toast("Registros de este navegador borrados"); pintar(); };
 
 // ---------------------------------------------------------------- traza y retiros
-function afectados(lote) { const out = []; S.ordenes.filter(o => Object.values(o.insumos).some(v => v.split(" · ")[0] === lote)).forEach(o => { if (o.etapa < E["Para etiquetar"]) return; for (let n = o.desde; n <= o.hasta; n++) if (!o.rech.some(x => x.n === n)) out.push(n); }); return out; }
+function afectados(lote) { const out = []; S.ordenes.filter(o => Object.values(o.insumos).some(v => v === lote)).forEach(o => { if (o.etapa < E["Para etiquetar"]) return; for (let n = o.desde; n <= o.hasta; n++) if (!o.rech.some(x => x.n === n)) out.push(n); }); return out; }
 function traza(q) {
   q = (q || "").trim(); const Q = q.toUpperCase(); if (!q) return "";
   const n = numSerie(Q);
@@ -159,13 +163,13 @@ function traza(q) {
   if (o) return `<div class="aviso in">Orden <b>${o.op}</b> · ${esc(o.modelo)} · ${o.cant} u · <a href="#" data-det="orden" data-id="${o.op}">abrir el historial del lote</a></div>`;
   const rm = S.remitos.find(r => r.id.replace(/\D/g, "").endsWith(Q.replace(/\D/g, "")) && Q.replace(/\D/g, "").length >= 4);
   if (rm) return `<div class="aviso in">Remito <a href="#" data-det="remito" data-id="${rm.id}">${rm.id}</a> · ${esc(cliente(rm.cliente).nombre)} · ${uRem(rm)} equipos · ${rm.ops.join(", ")}</div>`;
-  const ops = S.ordenes.filter(x => Object.values(x.insumos).some(v => v.split(" · ")[0].toUpperCase() === Q));
-  if (ops.length) { const af = afectados(ops[0].insumos && Object.values(ops[0].insumos).map(v => v.split(" · ")[0]).find(v => v.toUpperCase() === Q)), dist = {};
+  const ops = S.ordenes.filter(x => Object.values(x.insumos).some(v => v.toUpperCase() === Q));
+  if (ops.length) { const af = afectados(Object.values(ops[0].insumos).find(v => v.toUpperCase() === Q)), dist = {};
     af.forEach(k => { const e = equipo(k); const key = e.estado + "|" + e.custodia; dist[key] = (dist[key] || 0) + 1; });
     return `<div class="kpis"><div class="kpi in"><span>Órdenes</span><b>${ops.length}</b></div><div class="kpi in"><span>Equipos aptos</span><b>${n0(af.length)}</b></div><div class="kpi in"><span>Usuarios</span><b>${new Set(af.map(k => equipo(k).cliente && equipo(k).cliente.id).filter(Boolean)).size}</b></div><div class="kpi in"><span>Distribuidores</span><b>${new Set(ops.filter(x => x.remito).map(x => remito(x.remito).cliente)).size}</b></div></div>
       <div class="grilla"><div class="panel c6"><header><h2>Órdenes que usaron ${esc(q)}</h2></header>${tabla(["Orden", "Modelo", "Cant", "Etapa", "Remito"], ops.map(x => `<tr class="click" data-det="orden" data-id="${x.op}"><td class="mono">${x.op}</td><td>${esc(x.modelo)}</td><td class="num">${x.cant}</td><td>${pill(ETAPAS[x.etapa], etapaPill(x.etapa))}</td><td class="mono">${x.remito || "—"}</td></tr>`))}</div>
       <div class="panel c6"><header><h2>Dónde están</h2><button class="btn sm pri" data-a="nuevoRetiro" data-q="${esc(q)}">Abrir retiro preventivo</button></header>${tabla(["Estado", "Custodia", "Equipos"], Object.entries(dist).sort((a, b) => b[1] - a[1]).map(([k, v]) => { const [e, c] = k.split("|"); return `<tr><td>${pill(e, estadoPill[e])}</td><td>${esc(c)}</td><td class="num">${v}</td></tr>`; }), { vacio: "Ningún equipo cerrado con ese lote" })}</div></div>`; }
-  return `<div class="aviso av">No encontré «${esc(q)}». Probá con una serie (${ser(maxSerie() - 200)}), una orden (OP ${AA}-${String(D.mes).padStart(2, "0")}-08), un lote de insumo (PO-${AA}${String(D.mes - 1).padStart(2, "0")}) o un remito.</div>`;
+  return `<div class="aviso av">No encontré «${esc(q)}». Se busca una serie (${ser(1)} a ${ser(maxSerie())}), una orden del plan, un lote de insumo anotado en una hoja de ruta o un remito.</div>`;
 }
 VISTAS.traza = {
   titulo: "Traza y retiros",
@@ -173,16 +177,21 @@ VISTAS.traza = {
   html() {
     const q = UI.f.trq || "", t0 = performance.now(), res = traza(q), ms = performance.now() - t0;
     return `<div class="panel"><div class="cuerpo"><form class="lector" data-f="traza"><input id="trq" value="${esc(q)}" placeholder="Serie, orden, lote de insumo o remito" aria-label="Buscar traza"><button class="btn pri" type="submit">Buscar</button></form>
-      <div class="filtros" style="margin-top:10px">${[ser(maxSerie() - 200), `PO-${AA}${String(D.mes - 1).padStart(2, "0")}`, `CU-${AA}${String(D.mes).padStart(2, "0")}`, S.retiros[0] ? S.retiros[0].lote : null].filter(Boolean).map(x => `<button data-a="trazaLote" data-q="${esc(x)}">${esc(x)}</button>`).join("")}${q ? `<span class="muted">respondido en ${nf(ms, 0)} ms</span>` : ""}</div></div></div>
+      <div class="filtros" style="margin-top:10px">${[...new Set(S.ordenes.flatMap(o => Object.values(o.insumos)))].slice(-4).map(x => `<button data-a="trazaLote" data-q="${esc(x)}">${esc(x)}</button>`).join("")}${q ? `<span class="muted">respondido en ${nf(ms, 0)} ms</span>` : ""}</div></div></div>
       ${res}
       <div class="panel"><header><h2>Retiros preventivos</h2><span class="muted">bloquear series, ubicar cada equipo y cambiarlo sin costo</span></header>${tabla(["Retiro", "Fecha", "Lote", "Motivo", "Equipos", "Ubicados", "Estado", ""], S.retiros.map(x => { const a = afectados(x.lote), u = Math.round(a.length * x.ubicados);
         return `<tr><td class="mono">${x.id}</td><td>${fecha(x.fecha)}</td><td class="mono"><a href="#" data-a="trazaLote" data-q="${esc(x.lote)}">${esc(x.lote)}</a></td><td>${esc(x.motivo)}</td><td class="num">${a.length}</td><td style="min-width:140px">${barra(u, a.length, "var(--green)")}<small class="muted">${u} de ${a.length}</small></td><td>${pill(x.estado, x.estado === "Cerrado" ? "ok" : "no")}</td><td class="num">${x.estado !== "Cerrado" ? `<button class="btn sm" data-a="avanceRetiro" data-id="${x.id}">+10 % ubicados</button>` : ""}</td></tr>`; }), { vacio: "Sin retiros" })}</div>`;
   },
 };
 FORM.traza = () => { UI.f.trq = $("#trq").value; const o = S.ordenes.find(x => x.op.replace(/\s/g, "") === UI.f.trq.toUpperCase().replace(/\s/g, "")); o ? ir("lote", o.op) : pintar(); };
-ACC.nuevoRetiro = el => { const r = { id: `RP-${AA}-${String(S.retiros.length + 1).padStart(2, "0")}`, fecha: HOY, lote: el.dataset.q, motivo: "Lote de insumo bajo sospecha: verificación preventiva", estado: "Abierto", ubicados: 0 };
+ACC.nuevoRetiro = el => { const r = { id: `RP-${AA}-${String(++S.nRp).padStart(2, "0")}`, fecha: ahoraISO(), lote: el.dataset.q, motivo: "Lote de insumo bajo sospecha: verificación preventiva", estado: "Abierto", ubicados: 0 };
   S.retiros.unshift(r); registrar("Retiro preventivo abierto", r.id, `${r.lote} · ${afectados(r.lote).length} equipos`); toast(`${r.id} abierto`); pintar(); };
-ACC.avanceRetiro = el => { const r = S.retiros.find(x => x.id === el.dataset.id); r.ubicados = Math.min(1, r.ubicados + 0.1); if (r.ubicados >= 0.999) r.estado = "Cerrado"; registrar("Retiro: equipos ubicados", r.id, nf(100 * r.ubicados, 0) + " %"); pintar(); };
+ACC.avanceRetiro = el => abrirDetalle("retiro", el.dataset.id);
+DETALLES.retiro = id => { const r = S.retiros.find(x => x.id === id), a = afectados(r.lote).length;
+  return { titulo: `${r.id} · ${esc(r.lote)}`, sub: `${a} equipos afectados`, cuerpo: `<form class="form" data-f="regRetiro"><input type="hidden" id="rtId" value="${esc(id)}">
+    <label class="campo">Equipos ubicados hasta hoy<input id="rtU" type="number" min="0" max="${a}" required value="${Math.round(r.ubicados * a)}"></label><div class="ancho"><button class="btn pri" type="submit">Registrar</button></div></form>` }; };
+FORM.regRetiro = () => { const r = S.retiros.find(x => x.id === $("#rtId").value), a = Math.max(1, afectados(r.lote).length), u = +$("#rtU").value;
+  r.ubicados = Math.min(1, u / a); if (r.ubicados >= 0.999) r.estado = "Cerrado"; registrar("Retiro: equipos ubicados", r.id, `${u} de ${a}`); ACC.cerrarDetalle(); pintar(); };
 
 // ---------------------------------------------------------------- registro de eventos
 VISTAS.eventos = {

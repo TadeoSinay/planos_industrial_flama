@@ -1,7 +1,8 @@
 """Arma app/index.html (sistema de gestión FLAMA) desde plantilla.html + js/*.js con los datos reales del proyecto:
 Plan mensual de Aprovechamiento_Manuales y _Carros (órdenes y series de cada mes del año hasta el mes en curso), plan de
-recargas de las dos plantas, política de stock del MRP y modelos del BOM. Lo que no sale de esos archivos (estado de
-cada lote, clientes, stock físico, reclamos) lo simula la app con semilla fija y lo marca como dato de prueba.
+recargas de las dos plantas, política de stock del MRP, modelos del BOM, capacidad y aprovechamiento por puesto,
+pallets y camiones (palletizado_PT), reparto por zona (Indexado Dim Técnico) y tasas del proyecto. Los registros de la
+operación (etapas, rechazos, ensayos, remitos, clientes, reclamos) no se inventan: arrancan vacíos y los carga la app.
 Uso: python3 build.py [año] [mes 1-12]  (por defecto, octubre de 2026)."""
 import json
 import os
@@ -72,6 +73,59 @@ def modelos():
             for r in ws.iter_rows(min_row=3, values_only=True) if r[0] and str(r[0]).startswith("FL_MAT_ABC")]
 
 
+def _filas(libro, hoja):
+    return list(load_workbook(libro, read_only=True, data_only=True)[hoja].iter_rows(values_only=True))
+
+
+def capacidad(anio):
+    """Puestos de Aprovechamiento_Manuales (tiempo tipo s/u, disponibilidad, % que pasa) y de _Carros (min/u por modelo),
+    con el aprovechamiento y las máquinas del año en «Resumen cap. sin sobrestock» y «Resumen Capacidad»."""
+    col = anio - 2026 + 1
+    pm = _filas(os.path.join(SALIDA, "Aprovechamiento_Manuales.xlsx"), "parametros_manuales")
+    rm = _filas(os.path.join(SALIDA, "Aprovechamiento_Manuales.xlsx"), "Resumen cap. sin sobrestock")
+    man = []
+    for i, r in enumerate(pm[18:44]):
+        man.append({"n": r[0], "puesto": r[1], "maq": r[2], "aplica": list(r[3:7]), "pasa": r[9], "t": round(r[10], 2),
+                    "disp": round(r[11], 4), "aprov": round(rm[1 + i][col], 4), "nmaq": rm[30 + i][col]})
+    pc = _filas(os.path.join(SALIDA, "Aprovechamiento_Carros.xlsx"), "parametros_carros")
+    rc = _filas(os.path.join(SALIDA, "Aprovechamiento_Carros.xlsx"), "Resumen Capacidad")
+    car = []
+    for i, r in enumerate(pc[18:36]):
+        car.append({"n": str(r[0]), "puesto": r[1], "maq": r[2], "tmin": [round(x, 2) for x in r[3:7]], "disp": round(r[9], 4),
+                    "aprov": round(rc[1 + i][col], 4), "nmaq": rc[22 + i][col]})
+    return {"man": man, "car": car, "umbral": pm[7][1]}
+
+
+def pallets():
+    """palletizado_PT: matafuegos y cilindros por pallet, carros por furgón y pallets por camión."""
+    f = os.path.join(SALIDA, "palletizado_PT.xlsx")
+    pa, ca = _filas(f, "Pallet"), _filas(f, "Camion")
+    return {"man": dict(zip(["1 kg", "2,5 kg", "5 kg", "10 kg"], pa[10][2:6])),
+            "cil": dict(zip(["1 kg", "2,5 kg", "5 kg", "10 kg", "25 kg", "50 kg", "70 kg", "100 kg"], pa[22][2:10])),
+            "furgon": dict(zip(["25 kg", "50 kg", "70 kg", "100 kg"], ca[13][2:6])), "camion": ca[4][2], "chico": ca[19][2]}
+
+
+def zonas(anio):
+    """Indexado Dim Técnico (MRP_MP): % de recargas y de unidades nuevas revendidas por zona en el año."""
+    rs = _filas(os.path.join(PLANOS, "mrp", "MRP_MP.xlsx"), "Indexado Dim Técnico")
+    col = 11 + anio - 2026
+    rub = _filas(os.path.join(SALIDA, "Aprovechamiento_Recargas_Planta_Comercial.xlsx"), "PROY_Indexado")[55][1:8]
+    return {"recargas": [[r[0], round(r[col], 4)] for r in rs[60:74]], "nuevas": [[r[0], round(r[col], 4)] for r in rs[78:92]],
+            "rubros": list(rub)}
+
+
+def tasas():
+    """Tasas del proyecto con su celda de origen."""
+    pm = _filas(os.path.join(SALIDA, "Aprovechamiento_Manuales.xlsx"), "parametros_manuales")
+    bm = _filas(os.path.join(SALIDA, "Balanceo_Materiales_y_Linea.xlsx"), "Materiales")
+    val = lambda filas, txt: next(r[2] for r in filas if r[0] and str(r[0]).startswith(txt))
+    import re
+    cr = _filas(os.path.join(os.path.dirname(SALIDA), "referencias", "MP_Abastecimiento_Almacenamiento_FLAMA_OpcionD.xlsx"), "Coef Recargas")
+    puffer = next(float(re.search(r"(\d+) % de rechazo", r[3]).group(1)) / 100 for r in cr if r[3] and "Puffer" in str(r[3]))
+    return {"correccion": pm[36][9], "espesor": pm[31][9], "recRecibidos": val(bm, "Recibidos e inspeccionados"),
+            "recPH": val(bm, "Con prueba hidráulica"), "recInutil": val(bm, "Equipos inutilizados"), "puffer": puffer}
+
+
 def lotes_del_anio(man, car, anio, hasta_mes):
     """Órdenes de cada mes desde enero, de matafuegos terminados y de cilindros vendidos vacíos: las series del año son
     correlativas para todos."""
@@ -106,7 +160,8 @@ def main(anio=2026, mes=10):
              "plan": filas, "lotes": lotes_del_anio(man, car, anio, mes),
              "recargas": {"comercial": plan_recargas("Aprovechamiento_Recargas_Planta_Comercial.xlsx", anio, mes),
                           "industrial": plan_recargas("Aprovechamiento_Recargas_Planta_Industrial.xlsx", anio, mes)},
-             "insumos": insumos(), "modelos": modelos()}
+             "insumos": insumos(), "modelos": modelos(), "cap": capacidad(anio), "pallets": pallets(), "zonas": zonas(anio),
+             "tasas": tasas()}
     with open(os.path.join(AQUI, "plantilla.html"), encoding="utf-8") as fh:
         html = fh.read()
     html = html.replace("/*__DATOS__*/null", json.dumps(datos, ensure_ascii=False, separators=(",", ":")))
