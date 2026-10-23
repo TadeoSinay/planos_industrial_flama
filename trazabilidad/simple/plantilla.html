@@ -1,0 +1,207 @@
+<title>Trazabilidad FLAMA</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700;800&display=swap">
+<style>
+/* Mismo lenguaje visual que la app de gestión interna FLAMA (public/styles.css): barra de contexto oscura, encabezado
+   blanco con pestañas, tarjetas blancas sobre gris, rojo FLAMA para la marca y la acción principal, un color por línea.
+   Un solo tema claro, como esa app. */
+:root {
+  color-scheme: light;
+  --bg: #eceef1; --surface: #ffffff; --surface-2: #f6f7f8; --surface-3: #eceff2; --border: #dde1e6; --border-strong: #c3c9d0;
+  --text: #1c2229; --text-2: #4f5863; --muted: #858d97;
+  --accent: #c8102e; --accent-dark: #990c23; --accent-soft: #fbe9ec; --accent-ink: #ffffff; --barra: #1f252c;
+  --rec: #2a6fc4; --man: #e0662f; --car: #17996b; --mp: #6250d6; --pt: #2f7d32; --ext: #6b7480;
+  --good: #1f8f3a; --good-bg: #e4f3e7; --warn: #b26a00; --warn-bg: #fdf0d9; --critical: #c8102e; --crit-bg: #fbe9ec;
+  --info: #2a6fc4; --info-bg: #e6eff9; --idle: #858d97; --idle-bg: #eceff2;
+  --cam: #11161c; --cam-fg: #cfd6e0; --cam-line: #2b3340;
+  --a0: #1f8f3a; --a1: #8bb800; --a2: #e0a100; --a3: #c8102e;
+  --radius: 6px;
+  --font: "Barlow", "Segoe UI", system-ui, Arial, sans-serif;
+  --cond: "Barlow Condensed", "Arial Narrow", "Segoe UI", sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+* { box-sizing: border-box }
+html { min-height: 100% }
+body { background: var(--bg); color: var(--text); font: 14.5px/1.45 var(--font); display: flex; flex-direction: column; min-height: 100%; -webkit-font-smoothing: antialiased }
+button, input, select, textarea { font: inherit; color: inherit }
+a { color: var(--rec) }
+h1, h2, h3, h4 { margin: 0 }
+.mono { font-family: var(--mono); font-size: .9em } .muted, .mut { color: var(--muted) } .num { font-variant-numeric: tabular-nums }
+/* barra de contexto y encabezado */
+.contexto, .encabezado { flex-shrink: 0 }
+.contexto { background: var(--barra); color: #c9d0d8; display: flex; align-items: center; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); font-size: 12.5px; min-height: 34px; gap: 20px; flex-wrap: wrap }
+.contexto .empresa { letter-spacing: .04em; color: #8f99a5 }
+.contexto .modulo { color: #fff; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-size: 12px; border-bottom: 3px solid var(--accent); padding: 7px 4px 4px }
+.contexto .reloj { margin-left: auto; white-space: nowrap }
+.encabezado { background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); min-height: 64px; flex-wrap: wrap; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30 }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 31; background: var(--surface) }
+.marca { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); flex: none }
+.marca .llama { height: 42px; width: auto; display: block } .marca .textos { display: flex; flex-direction: column; gap: 4px }
+.marca .palabra { height: 19px; width: auto; display: block }
+.marca .bajada { font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); font-weight: 600 }
+.pestanas { display: flex; align-self: stretch; gap: 2px; flex-wrap: wrap }
+.pestanas a { display: flex; align-items: center; gap: 6px; padding: 0 9px; color: var(--text-2); text-decoration: none; font-weight: 600; font-size: 14px; border-bottom: 3px solid transparent; border-top: 3px solid transparent; min-height: 58px }
+.pestanas a:hover { color: var(--text) } .pestanas a[aria-current="page"] { color: var(--text); border-bottom-color: var(--accent) }
+.pestanas a b { font: 700 11px var(--font); background: var(--surface-3); color: var(--text-2); border-radius: 9px; padding: 0 6px }
+.pestanas a b.alerta { background: var(--accent); color: #fff }
+.busqueda { flex: 1 1 200px; min-width: 160px; max-width: 300px; margin-left: auto }
+.busqueda input { width: 100%; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px 8px 34px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23858d97' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-4-4'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: 10px center; background-size: 16px }
+.menu-nuevo { position: relative }
+.menu { position: absolute; right: 0; top: calc(100% + 6px); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 12px 32px rgb(20 26 33 / 16%); z-index: 60; min-width: 300px; padding: 4px; max-height: 70vh; overflow: auto }
+.menu a { display: block; padding: 8px 12px; border-radius: 4px; color: var(--text); text-decoration: none; font-size: 14px }
+.menu a:hover { background: var(--surface-2) } .menu a b { font: 600 12px var(--mono); color: var(--accent); margin-right: 6px }
+.menu h4 { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); padding: 8px 12px 2px }
+main { flex: 1; padding-block: 22px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px), 22px); padding-right: max(16px, env(safe-area-inset-right, 0px), 22px); min-width: 0; max-width: 1600px; width: 100%; margin: 0 auto }
+/* piezas comunes */
+.btn { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); padding: 8px 14px; border-radius: var(--radius); cursor: pointer; font-weight: 600; white-space: nowrap; text-decoration: none; font-size: 14px }
+.btn:hover { background: var(--surface-2) } .btn.pri, .btn.primario { background: var(--accent); border-color: var(--accent); color: var(--accent-ink) }
+.btn.pri:hover { background: var(--accent-dark) } .btn.chico { padding: 5px 11px; font-size: 13px }
+.btn:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--rec); outline-offset: 2px }
+.cab { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 14px; margin-bottom: 18px }
+.cab h1 { font-family: var(--cond); font-weight: 700; font-size: 34px; line-height: 1; letter-spacing: .01em; text-wrap: balance }
+.cab p { margin: 6px 0 0; color: var(--text-2); max-width: 90ch }
+.grid { display: grid; gap: 18px; grid-template-columns: repeat(12, minmax(0, 1fr)) }
+.c3 { grid-column: span 3 } .c4 { grid-column: span 4 } .c5 { grid-column: span 5 } .c6 { grid-column: span 6 } .c7 { grid-column: span 7 } .c8 { grid-column: span 8 } .c12 { grid-column: span 12 }
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); min-width: 0 }
+.panel > header { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 14px 18px 10px; flex-wrap: wrap }
+.panel > header h2, h2 { font-family: var(--cond); font-weight: 700; font-size: 17px; letter-spacing: .03em; text-transform: uppercase }
+.panel > .cuerpo { padding: 4px 18px 16px }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px }
+.kpi { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; border-top: 3px solid var(--idle) }
+.kpi span { color: var(--text-2); font-size: 12.5px; display: block } .kpi b { font: 700 30px/1.1 var(--cond); display: block } .kpi small { color: var(--muted); font-size: 12px }
+.kpi.ok { border-top-color: var(--good) } .kpi.warn { border-top-color: var(--warn) } .kpi.crit { border-top-color: var(--critical) } .kpi.info { border-top-color: var(--info) }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 600; white-space: nowrap }
+.pill.ok { background: var(--good-bg); color: var(--good) } .pill.warn { background: var(--warn-bg); color: var(--warn) } .pill.crit { background: var(--crit-bg); color: var(--critical) }
+.pill.info { background: var(--info-bg); color: var(--info) } .pill.idle { background: var(--idle-bg); color: var(--text-2) }
+.filtros { display: flex; flex-wrap: wrap; gap: 8px; align-items: center }
+.filtros select, .filtros input { border: 1px solid var(--border-strong); background: var(--surface); border-radius: var(--radius); padding: 6px 10px; max-width: 100% }
+.segmentado { display: inline-flex; border: 1px solid var(--border-strong); border-radius: var(--radius); overflow: hidden; background: var(--surface) }
+.segmentado button { border: 0; background: none; padding: 5px 13px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-2); border-left: 1px solid var(--border) }
+.segmentado button:first-child { border-left: 0 } .segmentado button[aria-pressed="true"] { background: var(--barra); color: #fff }
+table { border-collapse: collapse; width: 100% } .tabla { overflow-x: auto }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); vertical-align: top; font-size: 13.5px }
+th { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: .08em }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums }
+.vacio { color: var(--muted); padding: 18px; text-align: center; border: 1px dashed var(--border-strong); border-radius: var(--radius); font-size: 13.5px }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-2) }
+.chip::before { content: ""; width: 9px; height: 9px; border-radius: 2px; background: var(--c) }
+/* kanban de MP */
+.tablero { display: grid; grid-template-columns: repeat(5, minmax(220px, 1fr)); gap: 12px; overflow-x: auto; padding-bottom: 6px }
+.col { background: var(--surface-3); border-radius: var(--radius); min-width: 0; display: flex; flex-direction: column; max-height: 74vh }
+.col > h3 { padding: 10px 12px; display: flex; justify-content: space-between; font: 700 15px var(--cond); text-transform: uppercase; letter-spacing: .03em; border-top: 4px solid var(--idle); border-radius: var(--radius) var(--radius) 0 0 }
+.col.crit > h3 { border-top-color: var(--critical) } .col.warn > h3 { border-top-color: var(--warn) } .col.info > h3 { border-top-color: var(--info) } .col.ok > h3 { border-top-color: var(--good) }
+.col .lista { padding: 0 8px 8px; display: grid; gap: 7px; overflow-y: auto; align-content: start }
+.tarjeta { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 10px; cursor: pointer; text-align: left; width: 100%; display: grid; gap: 5px; border-left: 4px solid var(--c, var(--mp)) }
+.tarjeta:hover { border-color: var(--border-strong) }
+.tarjeta .t1 { display: flex; justify-content: space-between; gap: 6px; align-items: baseline } .tarjeta .t1 b { font: 600 12.5px var(--mono) }
+.tarjeta .mat { font-size: 13px; line-height: 1.3; font-weight: 500 }
+.tarjeta .t3 { font-size: 11.5px; color: var(--muted); display: flex; justify-content: space-between; gap: 6px }
+.barra { position: relative; height: 8px; background: var(--surface-3); border-radius: 3px; overflow: hidden }
+.barra i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--good); border-radius: 3px }
+.barra i.warn { background: var(--warn) } .barra i.crit { background: var(--critical) } .barra i.info { background: var(--info) }
+.barra u { position: absolute; top: -1px; bottom: -1px; width: 2px; background: var(--text); opacity: .6 } .barra u.ss { background: var(--critical); opacity: 1 }
+/* cámaras */
+.camaras { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 14px }
+.cam { background: var(--cam); color: var(--cam-fg); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--cam-line) }
+.cam header { display: flex; justify-content: space-between; gap: 8px; padding: 8px 10px; font: 600 13px var(--cond); letter-spacing: .04em; text-transform: uppercase; border-bottom: 1px solid var(--cam-line) }
+.cam header .rec { color: #ff6b5e } .cam .vista { padding: 10px; overflow-x: auto } .cam svg { display: block }
+.cam footer { padding: 8px 10px; font-size: 12px; color: #9aa3b2; border-top: 1px solid var(--cam-line) }
+@keyframes titila { 50% { opacity: .35 } } .alarma { animation: titila 1.2s steps(2) infinite }
+@media (prefers-reduced-motion: reduce) { .alarma { animation: none } }
+/* PT zonificado */
+.zonas { display: grid; gap: 14px; grid-template-columns: repeat(12, minmax(0, 1fr)) }
+.zona { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; min-width: 0 }
+.zona h3 { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px; font: 700 15px var(--cond); text-transform: uppercase; letter-spacing: .03em }
+.rack { display: grid; grid-template-columns: repeat(15, minmax(46px, 1fr)); gap: 6px; overflow-x: auto; padding-bottom: 4px }
+.modulo { display: grid; gap: 3px } .modulo > em { font: 600 11px var(--cond); color: var(--muted); text-align: center; font-style: normal }
+.nivel { display: grid; grid-template-columns: 1fr 1fr; gap: 3px }
+.slot { height: 36px; border: 1px dashed var(--border-strong); border-radius: 3px; background: var(--surface-2); cursor: pointer; padding: 1px 2px; font-size: 9.5px; line-height: 1.15; overflow: hidden; text-align: center; color: var(--muted) }
+.slot.lleno { border-style: solid; color: #fff; font-weight: 700 }
+.slot.a0 { background: var(--a0); border-color: var(--a0) } .slot.a1 { background: var(--a1); border-color: var(--a1); color: #1c2229 }
+.slot.a2 { background: var(--a2); border-color: var(--a2); color: #1c2229 } .slot.a3 { background: var(--a3); border-color: var(--a3) }
+.slot.fifo { outline: 2px solid var(--text); outline-offset: 1px }
+.piso { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 4px }
+.leyenda { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--text-2) }
+.leyenda i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -2px; margin-right: 5px }
+/* fichas */
+.forms { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 10px }
+.fcard { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--c, var(--accent)); border-radius: var(--radius); padding: 11px 13px; text-align: left; display: grid; gap: 3px; text-decoration: none; color: var(--text) }
+.fcard:hover { border-color: var(--border-strong) } .fcard b { font: 600 12px var(--mono); color: var(--accent) } .fcard h3 { font: 700 17px var(--cond); text-transform: uppercase; letter-spacing: .02em }
+.campos { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px 16px }
+.campo { display: flex; flex-direction: column; gap: 5px; min-width: 0 } .campo.ancho { grid-column: 1 / -1 }
+.campo label { font-size: 12.5px; color: var(--text-2); font-weight: 600 }
+.campo input, .campo select, .campo textarea { border: 1px solid var(--border-strong); background: var(--surface); border-radius: var(--radius); padding: 7px 10px; width: 100% }
+.campo .ayuda { font-size: 11.5px; color: var(--muted) }
+.campo.mal input, .campo.mal select { border-color: var(--critical); background: var(--crit-bg) } .campo.bien input, .campo.bien select { border-color: var(--good) }
+.chk { display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; font-weight: 500 } .chk input { width: auto; margin-top: 3px }
+.lect { display: flex; gap: 6px } .lect input { min-width: 0 }
+.normas { display: flex; flex-wrap: wrap; gap: 6px } .normas span { font-size: 12px; font-weight: 600; background: var(--surface-3); color: var(--text-2); border-radius: 3px; padding: 2px 8px }
+/* esquema (como los carriles del dashboard de la app de gestión) */
+.carril { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 14px; padding: 12px 0; border-top: 1px solid var(--border) }
+.carril:first-of-type { border-top: 0 }
+.carril-nombre { border-left: 4px solid var(--c); padding-left: 10px; display: flex; flex-direction: column; justify-content: center }
+.carril-nombre b { font: 700 16px var(--cond); text-transform: uppercase; letter-spacing: .04em } .carril-nombre span { font-size: 12px; color: var(--muted) }
+.flujo { display: flex; flex-wrap: wrap; align-items: center; gap: 6px }
+.paso { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 5px 9px; font-size: 13px; font-weight: 600; text-decoration: none; color: var(--text) }
+.paso.form { border-color: var(--accent); background: var(--accent-soft) } .paso.kan { border-color: var(--info); background: var(--info-bg) }
+.flecha { color: var(--muted); font-size: 12px }
+/* layout */
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; height: calc(100vh - 150px); min-height: 560px }
+.lienzo { display: flex; flex-direction: column; overflow: hidden; padding: 0 }
+.lienzo-cab { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap }
+.lienzo-area { position: relative; flex: 1; min-height: 0; background-color: #f4f6f8; background-image: linear-gradient(#e6e9ed 1px, transparent 1px), linear-gradient(90deg, #e6e9ed 1px, transparent 1px); background-size: 22px 22px }
+.lienzo-area svg { width: 100%; height: 100%; display: block; position: absolute; inset: 0 }
+.ley-layout { display: flex; gap: 16px; flex-wrap: wrap; padding: 9px 16px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-2) }
+.ley-layout span { display: inline-flex; align-items: center; gap: 6px } .ley-layout svg { width: 16px; height: 12px }
+.l-nave { fill: #ffffff } .l-pasillo { fill: #eef1f4; stroke: #e2c25b; stroke-width: .06; stroke-dasharray: .5 .3 }
+.l-muro { stroke: #2b3138; stroke-width: .34; fill: none; stroke-linecap: square }
+.l-sector { stroke: #c3c9d0; stroke-width: .08; fill: #ffffff }
+.l-sector.ficha { fill: color-mix(in srgb, var(--accent) 6%, #ffffff); stroke: color-mix(in srgb, var(--accent) 40%, #c3c9d0); cursor: pointer }
+.l-sector.alm { fill: color-mix(in srgb, var(--mp) 9%, #ffffff); stroke: color-mix(in srgb, var(--mp) 45%, #c3c9d0); cursor: pointer }
+.l-sector.ptz { fill: color-mix(in srgb, var(--pt) 9%, #ffffff); stroke: color-mix(in srgb, var(--pt) 45%, #c3c9d0); cursor: pointer }
+.l-sector.alerta { fill: color-mix(in srgb, var(--critical) 14%, #ffffff); stroke: var(--critical); stroke-width: .16 }
+.l-sector.sel { stroke: var(--text); stroke-width: .22 }
+.l-nombre { fill: #59626d; font-family: var(--cond); font-weight: 600; pointer-events: none }
+.l-porton { stroke: #e07a10; stroke-width: .5 } .l-porton-txt { fill: #b45309; font-size: .72px; font-family: var(--cond); font-weight: 600; pointer-events: none }
+.l-orient { fill: var(--accent); font-family: var(--cond); font-weight: 700; letter-spacing: .08em; pointer-events: none }
+.l-ficha { fill: #fff; stroke: var(--accent); stroke-width: .16; cursor: pointer } .l-ficha-txt { fill: var(--accent); font: 700 .55px var(--cond); text-anchor: middle; dominant-baseline: central; pointer-events: none }
+.l-cam { cursor: pointer } .l-cam rect { fill: #11161c } .l-cam text { fill: #fff; font: 700 .52px var(--cond); text-anchor: middle; dominant-baseline: central; pointer-events: none }
+.l-cuenta { font: 700 1.1px var(--cond); pointer-events: none }
+.lado { display: flex; flex-direction: column; overflow: hidden; padding: 0 } .lado .cuerpo { overflow: auto; padding: 14px 18px 18px }
+.lado h3 { font: 700 24px var(--cond); margin-top: 4px }
+/* diálogo, avisos */
+.velo { position: fixed; inset: 0; background: rgb(20 25 31 / 50%); display: grid; place-items: center; z-index: 100; padding: 16px }
+.dialogo { background: var(--surface); border-radius: 8px; width: min(760px, 100%); max-height: calc(100vh - 32px); display: flex; flex-direction: column; box-shadow: 0 24px 64px rgb(0 0 0 / 30%); overflow: hidden }
+.dialogo > header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--border); border-top: 4px solid var(--accent) }
+.dialogo > header h2 { font-family: var(--cond); font-size: 21px; text-transform: uppercase; letter-spacing: .03em }
+.dialogo > .cuerpo { padding: 16px 20px 20px; overflow: auto; display: grid; gap: 12px }
+.cerrar { border: 0; background: none; font-size: 26px; line-height: 1; cursor: pointer; color: var(--muted) }
+.dl { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 4px 12px; font-size: 13.5px; margin: 0 } .dl dt { color: var(--muted) } .dl dd { margin: 0; overflow-wrap: anywhere }
+.aviso { border-radius: var(--radius); padding: 10px 12px; font-size: 13.5px; border: 1px solid #bcd3f1; background: #eef4fc }
+.aviso.crit { background: #fdecee; border-color: #f2b8c0 } .aviso.ok { background: var(--good-bg); border-color: #b9dcc1 }
+.toasts { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 120 }
+.toast { background: var(--barra); color: #fff; padding: 10px 14px; border-radius: var(--radius); font-weight: 600; box-shadow: 0 8px 24px rgb(0 0 0 / 20%); border-left: 4px solid var(--accent); max-width: 420px }
+@media (min-width: 1001px) { .encabezado { flex-wrap: nowrap } .marca .textos { display: none } }
+@media (min-width: 1500px) { .marca .textos { display: flex } }
+@media (max-width: 1000px) {
+  .encabezado { padding-block: 8px; position: static } .pestanas a { min-height: 40px }
+  .c3, .c4, .c5, .c6, .c7, .c8 { grid-column: span 12 }
+  .layout { grid-template-columns: 1fr; height: auto } .lienzo { height: max(520px, 70vh) }
+  .carril { grid-template-columns: 1fr } .busqueda { order: 3; max-width: none; flex-basis: 100% }
+}
+</style>
+<div class="contexto"><span class="empresa">FLAMA S.A. · Sistema de gestión interna</span><span class="modulo">Trazabilidad, kanban y fichas</span><span class="reloj" id="reloj"></span></div>
+<header class="encabezado">
+  <a class="marca" href="#dashboard" aria-label="FLAMA · inicio"><img class="llama" src="/*LOGO_LLAMA*/" alt=""><span class="textos"><img class="palabra" src="/*LOGO_PALABRA*/" alt="FLAMA"><span class="bajada">Trazabilidad de planta</span></span></a>
+  <nav class="pestanas" id="pestanas" aria-label="Secciones"></nav>
+  <form class="busqueda" id="busqueda-global" autocomplete="off"><input type="search" id="q-global" placeholder="Buscar n° de serie, lote, colada u orden" aria-label="Buscar"></form>
+  <div class="menu-nuevo"><button class="btn pri" id="btn-nuevo" aria-haspopup="true" aria-expanded="false">Nueva ficha ▾</button><div class="menu" id="menu-nuevo" hidden></div></div>
+</header>
+<main id="vista"></main>
+<div id="capa"></div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<script>
+/*DATOS*/
+/*APP*/
+</script>
