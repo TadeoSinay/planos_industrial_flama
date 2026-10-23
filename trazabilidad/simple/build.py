@@ -73,13 +73,40 @@ def puestos(wb):
     return dict(man=pz(34, 59), car=pz(74, 91), rec=pz(104, 126))
 
 
+# Foto de cada cámara (fotos/<archivo>.jpg o .png): si existe se incrusta achicada a 960 px; si no, la app dibuja el
+# esquema del almacén y deja subir la foto desde la pantalla de cámaras.
+FOTOS = {"Chapa (pilas en el piso)": "chapa", "Flejes (rack + volteador)": "flejes", "Cantilever de caños y barras": "cantilever",
+         "Depósito de polvo químico": "polvo", "Embalaje": "embalaje", "Identificación": "identificacion",
+         "Insumos de montaje (manuales)": "insumos_manuales", "Insumos de recargas": "insumos_recargas",
+         "Insumos de soldadura y superficie": "soldadura", "Jaula de gases": "gases",
+         "Rack de casquetes y cuplas (carros)": "casquetes", "Rack de insumos de montaje (carros)": "insumos_carros",
+         "Almacén de producto terminado": "pt"}
+
+
+def fotos():
+    import io
+    from PIL import Image
+    out = {}
+    for alm, nombre in FOTOS.items():
+        for ext in (".jpg", ".jpeg", ".png"):
+            ruta = os.path.join(AQUI, "fotos", nombre + ext)
+            if os.path.exists(ruta):
+                im = Image.open(ruta).convert("RGB")
+                im.thumbnail((960, 960))
+                buf = io.BytesIO()
+                im.save(buf, "JPEG", quality=72)
+                out[alm] = "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
+                break
+    return out
+
+
 def main():
     mp = libro("MP-FLAMA2035.xlsx")
     pt = libro("PTPINTADO-FLAMA2035.xlsx")
     bal = libro("Balanceo-FLAMA2035.xlsx")
     spt, apt, carros, desp = stock_pt(pt)
     layout = json.load(open(os.path.join(AQUI, "layout_rev10.json"), encoding="utf-8"))
-    D = dict(mp=stock_mp(mp), layout=layout, alm=almacenes(mp), pt=spt, apt=apt, carros=carros, desp=desp, puestos=puestos(bal),
+    D = dict(mp=stock_mp(mp), layout=layout, fotos=fotos(), alm=almacenes(mp), pt=spt, apt=apt, carros=carros, desp=desp, puestos=puestos(bal),
              fuente=dict(mp="MP-FLAMA2035.xlsx › Stock_MP (filas 6 a 130) y Almacenes (filas 19 a 31)",
                          pt="PTPINTADO-FLAMA2035.xlsx › Stock_PT (filas 63 a 78), Almacen_PT y Despacho (filas 25 a 28)",
                          bal="Balanceo-FLAMA2035.xlsx › Carga (manuales 34-59, carros 74-91, recargas 104-126)"))

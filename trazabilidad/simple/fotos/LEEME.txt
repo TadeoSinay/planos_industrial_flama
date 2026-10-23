@@ -1,0 +1,3 @@
+Fotos de las cámaras de almacén: chapa, flejes, cantilever, polvo, embalaje, identificacion,
+insumos_manuales, insumos_recargas, soldadura, gases, casquetes, insumos_carros y pt (.jpg o .png).
+build.py las incrusta achicadas a 960 px.

@@ -146,6 +146,18 @@ td.n, th.n { text-align: right; font-variant-numeric: tabular-nums }
 .paso { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 5px 9px; font-size: 13px; font-weight: 600; text-decoration: none; color: var(--text) }
 .paso.form { border-color: var(--accent); background: var(--accent-soft) } .paso.kan { border-color: var(--info); background: var(--info-bg) }
 .flecha { color: var(--muted); font-size: 12px }
+/* banda de ejemplo, fuentes plegadas, foto de la cámara */
+.banda-ejemplo { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; background: #fff7e0; border: 1px solid #f0d58a; border-radius: var(--radius); padding: 8px 12px; margin-bottom: 14px; font-size: 13.5px }
+.banda-ejemplo b { font: 700 13px var(--cond); text-transform: uppercase; letter-spacing: .06em; color: var(--warn) } .banda-ejemplo span { color: var(--text-2); flex: 1 1 260px }
+details.fuente { margin-top: 14px; font-size: 13px; color: var(--text-2) } details.fuente summary { cursor: pointer; color: var(--muted); font-weight: 600 }
+.cam .feed { position: relative; aspect-ratio: 16 / 9; background: #0b0f14; overflow: hidden }
+.cam .feed img { width: 100%; height: 100%; object-fit: cover; display: block; filter: saturate(.85) contrast(1.05) }
+.cam .feed .sin-foto { position: absolute; inset: 0; display: grid; place-items: center; overflow: hidden; padding: 10px }
+.cam .feed .badge { position: absolute; right: 10px; top: 10px; font: 700 12px var(--cond); text-transform: uppercase; letter-spacing: .05em; padding: 3px 8px; border-radius: 3px }
+.cam .feed .badge.alarma { background: var(--critical); color: #fff } .cam .feed .badge.ok { background: #1f8f3acc; color: #fff }
+.cam.con-alarma { border-color: var(--critical) }
+.cam footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap }
+.cam footer .acciones { display: flex; gap: 6px } .cam footer .btn { background: #1d242d; color: #e6ebf2; border-color: #39424f }
 /* layout */
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; height: calc(100vh - 150px); min-height: 560px }
 .lienzo { display: flex; flex-direction: column; overflow: hidden; padding: 0 }
