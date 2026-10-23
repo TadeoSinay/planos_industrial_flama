@@ -1,6 +1,6 @@
 """Word explicativo de la trazabilidad interna (salida/Trazabilidad_interna_FLAMA.docx): esquema, identificación sin QR
-(marcado Pannier y etiqueta del fabricante), kanban de MP con cámaras y puntos de pedido de las 125 MP, kanban de PT por
-zonas con fechas, fichas de control de los procesos críticos con su norma, trazabilidad y layout. Datos: los mismos
+(marcado Pannier y etiqueta del fabricante), kanban de MP que se carga con la planilla de conteo del almacén, lugar fijo
+de cada código, puntos de pedido de las 125 MP, kanban de PT por zonas con fechas, fichas de control de los procesos críticos con su norma, trazabilidad y layout. Datos: los mismos
 libros que build.py; capturas: capturas/*.png (app armada con build.py y recorrida con Playwright)."""
 import json
 import math
@@ -31,6 +31,7 @@ def bloques():
     mp_wb, pt_wb, bal_wb = B.libro("MP-FLAMA2035.xlsx"), B.libro("PTPINTADO-FLAMA2035.xlsx"), B.libro("Balanceo-FLAMA2035.xlsx")
     MP = B.stock_mp(mp_wb)
     ALM = B.almacenes(mp_wb)
+    LUG = B.lugares(MP, ALM)
     PT, APT, CARROS, DESP = B.stock_pt(pt_wb)
     PZ = B.puestos(bal_wb)
     pz = lambda l, k: next((p["nom"] for p in PZ[l] if p["n"] == k), "")
@@ -49,12 +50,12 @@ def bloques():
         bl.append(dict(t="img", ruta=ruta, ancho=ancho, alto=h, anchoPx=w, pie=pie))
 
     add("titulo", "Trazabilidad interna FLAMA")
-    add("sub", "Kanban de almacenes con cámaras, fichas de control de los procesos críticos e identificación sin QR")
+    add("sub", "Kanban de almacenes con planilla de conteo, fichas de control de los procesos críticos e identificación sin QR")
     add("sub", "App: trazabilidad/simple (misma estructura y estilo que la app de gestión interna) · Datos: libros 2035 de MP, PT y balanceo")
 
     add("h1", "En una página")
-    b("**Tres piezas.** Un kanban de los almacenes (MP y PT) que se lee con cámaras, una ficha por cada control crítico y "
-      "una búsqueda que une todo por el número grabado.")
+    b("**Tres piezas.** Un kanban de los almacenes (MP y PT) que se llena con la planilla de conteo del almacén, una ficha "
+      "por cada control crítico y una búsqueda que une todo por el número grabado. Sin cámaras.")
     b("**Sin QR.** El QR queda para la atención al cliente. Adentro de la planta, el producto propio se sigue por el n° de "
       "serie del marcado Pannier; el revendido, por el n° de la etiqueta de su fabricante; el equipo en recarga, por la "
       "orden de servicio y el n° grabado del recipiente.")
@@ -70,8 +71,10 @@ def bloques():
       "pérdidas, PT), 4 de recargas (MP, inspección interior, pérdidas, PT) y 1 de revendidos. Cada campo con criterio se "
       "marca en verde o rojo y la ficha queda conforme o no conforme.")
     b("**Misma estructura que la app de gestión interna.** Barra de contexto, encabezado con pestañas, búsqueda y «Nueva "
-      "ficha», tarjetas por línea y el layout de planta del plano rev10 con los puestos que llevan ficha.")
-    img("01_dashboard.png", "Figura 1. Dashboard: indicadores, mapa de controles por línea y lo que hay que pedir.")
+      "ficha», dashboard con mapa de flujo, y el mismo layout de planta (plano rev10, mismos puestos y recorridos) con "
+      "zoom, filtros por línea y el recorrido de cada lote.")
+    img("01_dashboard.png", "Figura 1. Dashboard (datos de ejemplo): indicadores, mapa de flujo por línea según la última "
+        "ficha de cada lote, entradas y salidas de 14 días, lotes en curso, MP para pedir, PT y actividad de las fichas.", 15)
 
     # ------------------------------------------------------------------ 1
     add("h1", "1. Qué identifica a cada cosa (sin QR)")
@@ -106,35 +109,54 @@ def bloques():
 
     # ------------------------------------------------------------------ 2
     add("h1", "2. Kanban de los almacenes de MP")
-    p("Cada MP es una tarjeta. La tarjeta cambia de columna con cada lectura de cámara, conteo, retiro a la línea o "
-      "recepción: bajo seguridad, para pedir (en el punto de pedido), pedido en curso, sobre el punto de pedido o sin "
-      "lectura. La barra muestra el stock contra el máximo, con una marca roja en la seguridad y una negra en el punto de "
-      "pedido.")
+    p("Cada MP es una tarjeta. La tarjeta cambia de columna con cada planilla de conteo, retiro a la línea o recepción: "
+      "bajo seguridad, para pedir (en el punto de pedido), pedido en camino, bien o sin conteo. La barra muestra el stock "
+      "contra el máximo, con una marca roja en la seguridad y una negra en el punto de pedido.")
     add("nota", "Punto de pedido = stock de seguridad (Stock_MP, columna L) + consumo mientras llega el pedido (columna K). "
                 "Es lo que tiene que quedar cuando sale el pedido para que la entrega llegue antes de tocar la seguridad. "
-                "La revisión periódica del Word de MP (cada «cada» días se pide hasta el máximo) sigue: el kanban avisa si "
-                "entre dos revisiones se cruza el punto.")
-    img("02_kanban_mp.png", "Figura 3. Kanban de MP con lecturas de ejemplo de la prueba de la app: una chapa con pedido "
-        "emitido y las que quedaron en el punto de pedido.")
-    img("02b_mp_detalle.png", "Figura 4. Tarjeta de una MP: de dónde sale cada número, movimiento y pedido sugerido hasta el máximo.")
-    add("h2", "2.1 Cámaras y señal kanban física")
-    p("Una cámara por almacén (criterio) mira los lugares de cada código. La cámara no lee códigos: ve una señal física "
-      "que se pone en el punto de pedido de cada código, según cómo se guarda (Almacenes, columna «Cómo se dispone»).")
-    SEN = {"Apilado en bloque": "Franja roja en el poste a la altura del punto de pedido; la cámara mide el alto de la pila.",
-           "Rack": "Lugar del punto de pedido demarcado en rojo en el larguero: abajo se usa, arriba se repone; vacío = pedir.",
-           "Estantería liviana": "Doble cajón: al abrir el segundo queda a la vista su tarjeta roja.",
-           "Cantilever": "Brazo del punto de pedido pintado de rojo: sin atado = pedir.",
-           "Jaula": "Cilindros llenos con capuchón; la cámara cuenta capuchones."}
+                "Se compara con la posición (stock + lo pedido que viene en camino); la seguridad, con el stock físico. "
+                "La revisión periódica del Word de MP (sección 9: cada 10, 20 o 60 días hábiles se pide hasta el máximo) "
+                "sigue: el kanban avisa si entre dos revisiones se cruza el punto.")
+    img("02_kanban_mp.png", "Figura 3. Kanban de MP con los conteos de ejemplo.", 15)
+    img("02b_mp_detalle.png", "Figura 4. Tarjeta de una MP: de dónde sale cada número, su lugar en el almacén, el "
+        "movimiento (conteo o retiro) y el pedido sugerido hasta el máximo.", 15)
+    add("h2", "2.1 La planilla de conteo del almacén")
+    p("El stock se carga con una planilla de Excel, una hoja por almacén, con los códigos en el orden de sus lugares "
+      "(salida/Planilla_conteo_MP.xlsx; la app también la descarga, entera o de un almacén). El almacenero recorre los "
+      "lugares, anota lo que hay en «Stock contado» con la fecha y quién contó, y la sube en «Cargar planilla». La app "
+      "lee todas las hojas, muestra antes de aplicar qué códigos cambian y en qué estado quedan, y avisa los códigos que no "
+      "existen. También acepta CSV o pegar dos columnas copiadas de Excel (código y stock).")
+    tabla(["Columna", "Qué es", "De dónde sale"], [
+        ["Lugar", "Lugar o lugares fijos del código", "Reparto de la sección 2.2"],
+        ["Código · Material · UM · Se compra en", "Identificación y unidad en que se cuenta", "Stock_MP, columnas B, C, D y M"],
+        ["Seguridad · Punto de pedido · Máximo", "Las tres marcas de la tarjeta", "Stock_MP L, L + K y S"],
+        ["Stock contado", "Lo que anota el almacenero (celda amarilla)", "Conteo"],
+        ["Estado", "BAJO SEGURIDAD, PEDIR u OK (fórmula)", "Contra seguridad y punto de pedido"],
+    ], [28, 40, 32])
+    b("**Cuándo se cuenta.** En cada revisión periódica del proveedor (Word de MP, sección 9) y siempre que un retiro deje "
+      "una tarjeta cerca del punto de pedido. Entre conteos, los retiros a la línea y las recepciones (FAB-01, REC-01) "
+      "mueven la tarjeta solos. La frecuencia por almacén queda como criterio a ajustar con el uso.")
+    img("03b_planilla.png", "Figura 5. Carga de la planilla: vista previa con el stock anterior, lo contado y el estado en "
+        "que queda cada código.", 15)
+    add("h2", "2.2 Lugares del almacén")
+    p("La pestaña «Almacén MP» dibuja cada almacén con sus lugares reales (MP-FLAMA2035 › Almacenes, columna E) y el código "
+      "que vive en cada uno, porque «cada código tiene su lugar fijo y su etiqueta en el larguero» (Word de MP, sección 8). "
+      "Los racks se dibujan por módulo, con 2 pallets por nivel, piso y 2 largueros (sección 8); el de flejes con 4 alturas "
+      "(sección 6.2). Las pilas de chapa, el polvo, el cantilever, la estantería de identificación y la jaula de gases, "
+      "como lugares en fila.")
+    b("**Reparto (criterio).** Cada código ocupa los lugares enteros de su columna U de Stock_MP (cuánto ocupa su stock "
+      "máximo); los restos de varios códigos comparten un lugar, de mayor a menor, en el primero donde entran. En los racks, "
+      "los lugares de un mismo código quedan apilados en la misma columna: abajo el que se usa, arriba la reposición. En "
+      "insumos de recargas no alcanza con lugares enteros (6,98 lugares de stock en 7) y los códigos se ubican de corrido.")
     fil = []
-    for i, a in enumerate([x for x in ALM if "producto terminado" not in x["alm"]], 1):
-        s = next((v for k, v in SEN.items() if k.split()[0] in (a["est"] or "")), "—")
-        cods = sum(1 for m in MP if m["alm"] == a["alm"])
-        fil.append([f"CAM-{i:02d}", a["alm"], a["est"], a["lug"], cods, s])
-    tabla(["Cámara", "Almacén", "Estantería", "Lugares", "Códigos", "Qué ve"], fil, [8, 20, 17, 7, 7, 41], num=[3, 4])
-    img("03_camaras.png", "Figura 5. Vista de cámaras: una columna por código, relleno = stock leído, línea blanca = punto "
-        "de pedido, roja punteada = seguridad. Las que están en el punto titilan.")
-    p("Mientras no estén las cámaras, la misma pantalla se carga a mano («Registrar lectura»). La lectura queda con su "
-      "fuente (cámara o conteo) y su hora.")
+    for a_ in ALM:
+        hs = LUG[a_["alm"]]
+        fil.append([a_["alm"], a_["est"], len(hs), n(sum(m["u"] for m in MP if m["alm"] == a_["alm"]), 2),
+                    sum(1 for m in MP if m["alm"] == a_["alm"]), sum(1 for h in hs if not h["cods"])])
+    tabla(["Almacén", "Estantería", "Lugares", "Suma de U", "Códigos", "Libres"], fil, [28, 30, 10, 11, 10, 11], num=[2, 3, 4, 5])
+    add("nota", "Lugares: Almacenes, filas 19 a 31 (13 de reventa en el PT, Balanceo › Pulmones sección 6). Suma de U: Stock_MP, columna U.")
+    img("03_almacen.png", "Figura 6. Almacén de MP: cada lugar con su código, coloreado por el estado del código, con la barra "
+        "de stock contra el máximo. Arriba, accesos a cada almacén con la cantidad para pedir.", 15)
 
     # ------------------------------------------------------------------ 3
     add("h1", "3. Kanban de producto terminado")
@@ -150,7 +172,7 @@ def bloques():
         ["Sustitutos", 22, "8 propios + 14 comprados", "Balanceo › Pulmones, sección 6"],
         ["Rama de pintura (carros)", 58, "Espera del pintor 29 + pintados 29", "PTPINTADO › Pintura B33:B34"],
     ], [20, 9, 46, 25], num=[1])
-    img("05_kanban_pt.png", "Figura 6. Kanban de PT con pallets de la prueba: rack, piso, andén, reventa, sustitutos, "
+    img("05_kanban_pt.png", "Figura 7. Kanban de PT con pallets de la prueba: rack, piso, andén, reventa, sustitutos, "
         "pintura, días fijos de despacho y stock contra máximo.", 15)
     add("h2", "3.1 Despacho por días fijos y stock máximo")
     tabla(["Vehículo · qué lleva", "Días", "Salidas por semana"], [[d["veh"], d["dias"], n(d["salidas"], 1)] for d in DESP],
@@ -186,9 +208,9 @@ def bloques():
     tabla(["Ficha", "Proceso", "Puestos", "Qué registra", "Criterio que marca", "Norma"], F, [7, 14, 11, 30, 21, 17])
     add("nota", "Puestos: man = manuales, car = carros, rec = recargas, con el número de Balanceo-FLAMA2035 › Carga. "
                 "Las cláusulas se citan; no se transcriben.")
-    img("04_ficha_ph.png", "Figura 7. Ficha FAB-07 (prueba hidráulica): el tiempo de 45 s queda en rojo porque la norma pide "
+    img("04_ficha_ph.png", "Figura 8. Ficha FAB-07 (prueba hidráulica): el tiempo de 45 s queda en rojo porque la norma pide "
         "1 minuto, y la ficha se guarda como no conforme.", 15)
-    img("08_fichas.png", "Figura 8. Las 16 fichas agrupadas por línea, con sus puestos y la cantidad de registros.", 15)
+    img("08_fichas.png", "Figura 9. Las 16 fichas agrupadas por línea, con sus puestos y la cantidad de registros.", 15)
 
     # ------------------------------------------------------------------ 5
     add("h1", "5. Cómo se une todo: la búsqueda de trazabilidad")
@@ -198,20 +220,33 @@ def bloques():
       "cada ficha cuyo rango lo contiene, en orden: marcado, soldaduras, espesor, PH, defectos, pintado, pérdidas, PT.")
     b("**Hacia adelante.** El pallet guarda sus series y su lugar; al despacharlo queda el remito y el vehículo.")
     b("**Revendidos y recargas.** Se buscan por el n° del fabricante o por la orden de servicio.")
-    img("07_traza.png", "Figura 9. Búsqueda del n° 5500: la ficha de marcado, la de PH y el pallet donde está hoy.")
+    img("07_traza.png", "Figura 10. Búsqueda del n° 20400: el lote que lo contiene (con acceso a su recorrido) y las "
+        "fichas cuyo rango lo incluye, en orden.", 15)
 
     # ------------------------------------------------------------------ 6
     add("h1", "6. Layout de planta")
-    p("La pestaña usa el plano rev10 de la app de gestión interna (layout.json), con los mismos sectores y nombres. Los "
-      "puestos que llevan ficha tienen un cuadradito rojo con su número; el almacén de MP muestra sus cámaras (en rojo las "
-      "que ven códigos en el punto de pedido) y las zonas de PT, los lugares ocupados. Al tocar un sector se abren sus "
-      "fichas y las últimas cargadas.")
-    img("06_layout.png", "Figura 10. Layout de planta con el sector de PH elegido: su ficha FAB-07 y el último registro.")
+    p("Es el layout de la app de gestión interna: el mismo plano rev10, los mismos puestos y los mismos recorridos "
+      "(catalogo_gestion.json y caminos.js copiados de esa app), con zoom con la ruedita, arrastre y filtros por línea. "
+      "Cada ficha se carga en un puesto del plano; un lote está en el puesto de su última ficha. El punto de cada puesto "
+      "muestra cuántos lotes u órdenes hay ahí (en rojo si alguno tiene una ficha no conforme); el almacén de MP, cuántos "
+      "códigos hay para pedir; los puestos de PT, los lugares ocupados.")
+    tabla(["Ficha", "Puesto en manuales", "Puesto en carros"], [
+        ["FAB-01 · REC-01", "MP_TRAZ (trazabilidad de MP)", "ídem"], ["FAB-02", "MARC (marcado del cuerpo)", "ídem"],
+        ["FAB-03", "M3", "C5"], ["FAB-04", "M6 (rama del cuello)", "C6"], ["FAB-05", "M7", "C7"], ["FAB-06", "M8", "—"],
+        ["FAB-07", "MPH", "CPH"], ["FAB-08", "M11", "—"], ["FAB-09", "M18", "C12 (recepción de pintados)"],
+        ["FAB-10", "M15", "C15"], ["FAB-11", "PTM", "C16"], ["REC-02 · REC-03 · REC-04", "R9 · R26 · R27 (recargas)", ""],
+        ["REV-01", "REV (sector «Trazabilidad PT»)", ""]], [26, 40, 34])
+    p("Al tocar un lote (desde el layout, el dashboard o la búsqueda) se dibuja su recorrido por los pasillos: verde lo que "
+      "ya tiene ficha, punteado lo que falta y un punto rojo intermitente en su última ficha. El panel lista los pasos y "
+      "marca «sin ficha» los puestos con ficha que el lote pasó sin cargarla.")
+    img("06_layout.png", "Figura 11. Recorrido de un lote de ABC 10 kg: con ficha hasta la prueba hidráulica; falta del "
+        "secado al despacho.", 15)
+    img("06b_layout_almacen.png", "Figura 12. Almacén de MP en el layout: códigos para pedir por almacén.", 15)
 
     # ------------------------------------------------------------------ 7
     add("h1", "7. Quién hace qué")
     tabla(["Rol", "Qué hace en la app", "Cuándo"], [
-        ["Almacén", "Lectura de cámaras o conteo; emite el pedido de la tarjeta; carga FAB-01 / REC-01 al recibir", "Cada turno y en cada recepción"],
+        ["Almacén", "Cuenta con la planilla y la sube; registra retiros; emite el pedido de la tarjeta; carga FAB-01 / REC-01 al recibir", "En cada revisión del proveedor y en cada recepción"],
         ["Operario del puesto", "Carga la ficha de su puesto con el lote y el rango de series", "Al cerrar cada tanda o lote"],
         ["Calidad", "Revisa las no conformes; libera el lote con FAB-11", "Al terminar el lote"],
         ["Depósito de PT", "Ubica el pallet, mueve al andén y despacha con remito", "Los días fijos de cada vehículo"],
@@ -221,9 +256,12 @@ def bloques():
     # ------------------------------------------------------------------ 8
     add("h1", "8. Lo que queda como criterio o por confirmar")
     b("15 mm y 20 mm del marcado (ubicación fija en la chapa): criterio para librar el cordón y el bordón.")
-    b("Una cámara por almacén y la señal física de cada estantería: criterio; falta elegir el equipo y el software de visión.")
+    b("Reparto de códigos en los lugares (sección 2.2) y frecuencia de conteo por almacén: criterio, a ajustar en planta.")
     b("Colores del PT por mes (4 que rotan): criterio; se pueden alinear con la regla de colores del Word de carros.")
-    b("Reventa y sustitutos no tienen sector propio en el plano rev10: la app los muestra como zonas del PT.")
+    b("Reventa y sustitutos no tienen sector propio en el plano rev10: la app los muestra como zonas del PT. La recepción "
+      "de revendidos se ubica en el sector «Trazabilidad PT».")
+    b("Los datos de ejemplo (dos semanas de lotes, recargas y conteos) son para ver la app funcionando; se borran con "
+      "«Empezar en limpio». Los parámetros (seguridad, punto de pedido, máximos, lugares, puestos) son los reales.")
     b("FAB-10: la lectura a las 24 h es criterio FLAMA (DOC-02 R8). FAB-06: sin tolerancia de espesor publicada, se toma ≥ nominal.")
     b("La app de esta entrega guarda lo cargado en el navegador. Para usarla entre varios puestos hay que pasar los "
       "registros a la base de la app de gestión interna (la misma API y la misma base SQLite).")
@@ -231,15 +269,16 @@ def bloques():
     # ------------------------------------------------------------------ anexo
     add("salto")
     add("h1", "Anexo. Puntos de pedido de las 125 MP")
-    p("MP-FLAMA2035 › Stock_MP, filas 6 a 130. Unidades en la unidad de cada código; bulto = unidad de compra.")
-    fil = [[m["cod"], m["mat"], m["um"], n(m["ss"], 1), n(m["pp"], 1), n(m["max"], 1), m["bulto"], m["cada"], m["alm"]] for m in MP]
-    tabla(["Código", "Material", "UM", "Seguridad", "Punto de pedido", "Máximo", "Se compra", "Cada (d)", "Almacén"], fil,
+    p("MP-FLAMA2035 › Stock_MP, filas 6 a 130. Unidades en la unidad de cada código; bulto = unidad de compra; lugar = "
+      "reparto de la sección 2.2.")
+    fil = [[m["cod"], m["mat"], m["um"], n(m["ss"], 1), n(m["pp"], 1), n(m["max"], 1), m["bulto"], m["cada"], ", ".join(m["lugares"])] for m in MP]
+    tabla(["Código", "Material", "UM", "Seguridad", "Punto de pedido", "Máximo", "Se compra", "Cada (d)", "Lugar"], fil,
           [9, 22, 5, 8, 9, 8, 15, 6, 18], num=[3, 4, 5, 7])
 
     add("h1", "Fuentes")
     for t in ["MP-FLAMA2035.xlsx y .docx (Stock_MP, Almacenes)", "PTPINTADO-FLAMA2035.xlsx y .docx (Stock_PT, Almacen_PT, Despacho, Pintura)",
               "Balanceo-FLAMA2035.xlsx y .docx (Carga, Pulmones)", "PULMONES-FLAMA2035.docx",
-              "App de gestión interna FLAMA (estructura, estilo y plano rev10)",
+              "App de gestión interna FLAMA (estructura, estilo, plano rev10, puestos, recorridos y caminos por los pasillos)",
               "IRAM 3517-2:2020 (9.4.5, 9.4.8, 9.4.10, 9.4.13, 9.4.14, 9.6, 9.7, 9.8.2, 9.9, 9.12) · IRAM 3523 y 3550 (5.1) · Res. 349/07 PBA (art. 20, anexo IV)",
               "DOC-01 (pintura) y DOC-02 (ensayos de fabricación) del repositorio de planos",
               "ISO 9606-1, ISO 15614-1, ISO 5817, ISO 2808, ISO 2409, ASTM D5402 (se citan, no se transcriben)",

@@ -1,0 +1,944 @@
+{
+ "fuente": "APP_SISTEMA_DE_GESTION_INTERNA_FLAMA › lib/catalogo.js (PUESTOS, ZONAS_EXTERNAS, LIMITES, RUTAS)",
+ "puestos": [
+  {
+   "id": "EXT_RETIRO",
+   "linea": "EXT",
+   "nombre": "Retiro en cliente",
+   "sector": "ext_retiro",
+   "registro": false,
+   "fuera": true
+  },
+  {
+   "id": "R0",
+   "linea": "REC",
+   "nombre": "Pulmón de recepción",
+   "sector": "rec_ent_n",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "R1",
+   "linea": "REC",
+   "nombre": "Recepción y registro",
+   "sector": "rec_R1",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "R2",
+   "linea": "REC",
+   "nombre": "Inspección visual",
+   "sector": "rec_R2",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "R3",
+   "linea": "REC",
+   "nombre": "Descarga ABC (recuperable)",
+   "sector": "rec_R3",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "R4R5",
+   "linea": "REC",
+   "nombre": "Descarga a descarte",
+   "sector": "rec_R4R5",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "R6",
+   "linea": "REC",
+   "nombre": "Descarga agua / AFFF / sales K",
+   "sector": "rec_R6",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "R7R20",
+   "linea": "REC",
+   "nombre": "Recuperación y carga de CO₂",
+   "sector": "rec_R7R20",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "R8R24",
+   "linea": "REC",
+   "nombre": "Recuperación y carga de halogenado",
+   "sector": "rec_R8R24",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "R9",
+   "linea": "REC",
+   "nombre": "Desarme y limpieza (recinto)",
+   "sector": "rec_R9",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "R10",
+   "linea": "REC",
+   "nombre": "Desarme e inspección general",
+   "sector": "rec_R10",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "R11",
+   "linea": "REC",
+   "nombre": "Laboratorio (Puffer y mufla)",
+   "sector": "rec_R11",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "R12",
+   "linea": "REC",
+   "nombre": "Prueba hidráulica",
+   "sector": "rec_R12",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "R13R14",
+   "linea": "REC",
+   "nombre": "Secado + videoscopio",
+   "sector": "rec_R13R14",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "R15",
+   "linea": "REC",
+   "nombre": "Pintura (cabina)",
+   "sector": "rec_R15",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "R16",
+   "linea": "REC",
+   "nombre": "Carga de polvo ABC",
+   "sector": "rec_R16",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "R17R18",
+   "linea": "REC",
+   "nombre": "Carga BC · Clase D",
+   "sector": "rec_R17R18",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "R19",
+   "linea": "REC",
+   "nombre": "Carga agua / AFFF",
+   "sector": "rec_R19",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "R21",
+   "linea": "REC",
+   "nombre": "Ensamblaje y marbete",
+   "sector": "rec_R21",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "R22",
+   "linea": "REC",
+   "nombre": "Presurización (recinto)",
+   "sector": "rec_R22",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "R23R25",
+   "linea": "REC",
+   "nombre": "Ensamblaje + control de peso",
+   "sector": "rec_R23R25",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "R26",
+   "linea": "REC",
+   "nombre": "Ensayo de pérdidas",
+   "sector": "rec_R26",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "R27",
+   "linea": "REC",
+   "nombre": "Precinto, etiqueta y despacho",
+   "sector": "rec_R27",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "R28",
+   "linea": "REC",
+   "nombre": "Inutilización y disposición",
+   "sector": "rec_R28",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "RDESP",
+   "linea": "REC",
+   "nombre": "Pulmón de despacho",
+   "sector": "rec_desp_n",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "EXT_ENTREGA",
+   "linea": "EXT",
+   "nombre": "Recorrido de entrega",
+   "sector": "ext_entrega",
+   "registro": false,
+   "fuera": true
+  },
+  {
+   "id": "EXT_DISPOSICION",
+   "linea": "EXT",
+   "nombre": "Disposición final",
+   "sector": "ext_disposicion",
+   "registro": false,
+   "fuera": true
+  },
+  {
+   "id": "MP_GALPON",
+   "linea": "MP",
+   "nombre": "Galpón de descarga MP",
+   "sector": "ext_galpon",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "MP_TRAZ",
+   "linea": "MP",
+   "nombre": "Trazabilidad de MP (remitos)",
+   "sector": "mp_trazabilidad",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "MP_ALM",
+   "linea": "MP",
+   "nombre": "Almacén de MP",
+   "sector": "p01_almacen_mp",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "G1",
+   "linea": "MAN",
+   "nombre": "Guillotina 1 (franjas)",
+   "sector": "p02_corte",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "G2",
+   "linea": "MAN",
+   "nombre": "Guillotina 2 (piezas)",
+   "sector": "p02_corte",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "MARC",
+   "linea": "MAN",
+   "nombre": "Marcado del cuerpo (n° de serie)",
+   "sector": "p021_marcado",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "M1",
+   "linea": "MAN",
+   "nombre": "Cilindrado 1 kg",
+   "sector": "m01_cilindrado_1kg",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "M2",
+   "linea": "MAN",
+   "nombre": "Cilindrado 2,5–10 kg",
+   "sector": "m02_cilindrado",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "M3",
+   "linea": "MAN",
+   "nombre": "Soldadura longitudinal",
+   "sector": "m03_sold_long",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "M4",
+   "linea": "MAN",
+   "nombre": "Encastre de fondo",
+   "sector": "m04_encastre",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "M5",
+   "linea": "MAN",
+   "nombre": "Bordoneado",
+   "sector": "m05_bordoneado",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "M9",
+   "linea": "MAN",
+   "nombre": "Corte de disco y embutido (cúpulas y fondos)",
+   "sector": "m10_embutido",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "M6",
+   "linea": "MAN",
+   "nombre": "Preparación y soldadura de cuello",
+   "sector": "m06_cuello",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "M7",
+   "linea": "MAN",
+   "nombre": "Soldadura circunferencial (marcapasos)",
+   "sector": "m07_circunferencial",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "M8",
+   "linea": "MAN",
+   "nombre": "Control de espesor (muestreo 2 %)",
+   "sector": "m08_espesor",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "MPH",
+   "linea": "MAN",
+   "nombre": "Prueba hidráulica",
+   "sector": "m09_ph_secado",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "MSEC",
+   "linea": "MAN",
+   "nombre": "Secado",
+   "sector": "m09_ph_secado",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "M10",
+   "linea": "MAN",
+   "nombre": "Granallado",
+   "sector": "m11_granallado",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "M11",
+   "linea": "MAN",
+   "nombre": "Detección y corrección de defectos",
+   "sector": "m11_granallado",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "M18",
+   "linea": "MAN",
+   "nombre": "Pintura en polvo + horno",
+   "sector": "m18_pintura",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "M12",
+   "linea": "MAN",
+   "nombre": "Carga de polvo",
+   "sector": "m12_carga_polvo",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "M13",
+   "linea": "MAN",
+   "nombre": "Ensamblaje",
+   "sector": "m13_ensamblaje",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "M14",
+   "linea": "MAN",
+   "nombre": "Presurización",
+   "sector": "m14_presurizacion",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "M15",
+   "linea": "MAN",
+   "nombre": "Ensayo de pérdidas",
+   "sector": "m15_perdidas",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "M16",
+   "linea": "MAN",
+   "nombre": "Etiquetado",
+   "sector": "m16_etiquetado",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "M17",
+   "linea": "MAN",
+   "nombre": "Embalaje y paletizado",
+   "sector": "m17_embalaje",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "PTM",
+   "linea": "PT",
+   "nombre": "PT manuales (rack)",
+   "sector": "pt_manuales",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "EXT_DESPACHO",
+   "linea": "EXT",
+   "nombre": "Despacho a cliente",
+   "sector": "ext_cliente",
+   "registro": false,
+   "fuera": true
+  },
+  {
+   "id": "C3",
+   "linea": "CAR",
+   "nombre": "Cilindrado",
+   "sector": "p03_cilindrado",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "C4",
+   "linea": "CAR",
+   "nombre": "Punteo del cuerpo",
+   "sector": "p04_punteo",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "C5",
+   "linea": "CAR",
+   "nombre": "Soldadura longitudinal",
+   "sector": "p05_sold_long",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "C6",
+   "linea": "CAR",
+   "nombre": "Soldadura de cupla en la cúpula",
+   "sector": "p06_sold_cupla",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "C7",
+   "linea": "CAR",
+   "nombre": "Armado y soldadura circunferencial",
+   "sector": "p07_armado_circ",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "C81",
+   "linea": "CAR",
+   "nombre": "Fabricación de accesorios",
+   "sector": "p081_fab_accesorios",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "C8",
+   "linea": "CAR",
+   "nombre": "Soldadura de accesorios",
+   "sector": "p08_sold_accesorios",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "CPH",
+   "linea": "CAR",
+   "nombre": "Prueba hidráulica de carros",
+   "sector": "m09_ph_secado",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "CSEC",
+   "linea": "CAR",
+   "nombre": "Secado",
+   "sector": "m09_ph_secado",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "C11",
+   "linea": "CAR",
+   "nombre": "Pulmón de despacho a pintura",
+   "sector": "p11_pulmon_despacho",
+   "registro": false,
+   "fuera": false
+  },
+  {
+   "id": "EXT_PINTOR",
+   "linea": "EXT",
+   "nombre": "Pintor tercerizado",
+   "sector": "ext_pintor",
+   "registro": false,
+   "fuera": true
+  },
+  {
+   "id": "C12",
+   "linea": "CAR",
+   "nombre": "Recepción de pintados y cambio de juego",
+   "sector": "p12_recepcion_pintados",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "C13",
+   "linea": "CAR",
+   "nombre": "Carga de polvo y presurización",
+   "sector": "p13_carga_presurizacion",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "C15",
+   "linea": "CAR",
+   "nombre": "Montaje, precinto y etiquetado",
+   "sector": "p15_etiquetado",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "C17",
+   "linea": "CAR",
+   "nombre": "Retención: muestra y ensayos de lote",
+   "sector": "p17_ensayos_lote",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "C16",
+   "linea": "PT",
+   "nombre": "PT carros (liberados)",
+   "sector": "p16_deposito_pt",
+   "registro": true,
+   "fuera": false
+  },
+  {
+   "id": "C16B",
+   "linea": "PT",
+   "nombre": "Lugar de carga (furgoneta)",
+   "sector": "p16b_lugar_carga",
+   "registro": false,
+   "fuera": false
+  }
+ ],
+ "zonas": [
+  {
+   "id": "ext_galpon",
+   "nombre": "GALPÓN DE DESCARGA MP",
+   "rect": [
+    -10.3,
+    -8.3,
+    5.6,
+    20.6
+   ],
+   "interna": true
+  },
+  {
+   "id": "ext_proveedor",
+   "nombre": "PROVEEDOR · CAMIÓN DE MP (portón 4)",
+   "rect": [
+    -11,
+    31.5,
+    16,
+    4
+   ]
+  },
+  {
+   "id": "ext_pintor",
+   "nombre": "PINTOR TERCERIZADO (portón E1)",
+   "rect": [
+    54.5,
+    -17,
+    10,
+    9
+   ]
+  },
+  {
+   "id": "ext_retiro",
+   "nombre": "RETIRO EN CLIENTE (flota)",
+   "rect": [
+    -10,
+    -47,
+    15,
+    5
+   ]
+  },
+  {
+   "id": "ext_entrega",
+   "nombre": "RECORRIDO DE ENTREGA (flota)",
+   "rect": [
+    7,
+    -47,
+    18,
+    5
+   ]
+  },
+  {
+   "id": "ext_cliente",
+   "nombre": "DESPACHO A CLIENTE / DISTRIBUIDOR",
+   "rect": [
+    27,
+    -47,
+    22,
+    5
+   ]
+  },
+  {
+   "id": "ext_disposicion",
+   "nombre": "DISPOSICIÓN FINAL",
+   "rect": [
+    51,
+    -47,
+    13.5,
+    5
+   ]
+  }
+ ],
+ "limites": [
+  -12.5,
+  -49.5,
+  79,
+  87
+ ],
+ "rutas": {
+  "REC-ABC": {
+   "linea": "REC",
+   "nombre": "Recarga ABC sin PH",
+   "pasos": [
+    "EXT_RETIRO",
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R9",
+    "R16",
+    "R21",
+    "R22",
+    "R26",
+    "R27",
+    "RDESP",
+    "EXT_ENTREGA"
+   ]
+  },
+  "REC-ABC-PH": {
+   "linea": "REC",
+   "nombre": "Recarga ABC con PH",
+   "pasos": [
+    "EXT_RETIRO",
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R9",
+    "R12",
+    "R13R14",
+    "R16",
+    "R21",
+    "R22",
+    "R26",
+    "R27",
+    "RDESP",
+    "EXT_ENTREGA"
+   ]
+  },
+  "REC-ABC-PH-PINT": {
+   "linea": "REC",
+   "nombre": "Recarga ABC con PH y pintura",
+   "pasos": [
+    "EXT_RETIRO",
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R9",
+    "R12",
+    "R13R14",
+    "R15",
+    "R16",
+    "R21",
+    "R22",
+    "R26",
+    "R27",
+    "RDESP",
+    "EXT_ENTREGA"
+   ]
+  },
+  "REC-BCD": {
+   "linea": "REC",
+   "nombre": "Recarga BC / Clase D",
+   "pasos": [
+    "EXT_RETIRO",
+    "R0",
+    "R1",
+    "R2",
+    "R4R5",
+    "R9",
+    "R17R18",
+    "R21",
+    "R22",
+    "R26",
+    "R27",
+    "RDESP",
+    "EXT_ENTREGA"
+   ]
+  },
+  "REC-AGUA": {
+   "linea": "REC",
+   "nombre": "Recarga agua / AFFF / sales K",
+   "pasos": [
+    "EXT_RETIRO",
+    "R0",
+    "R1",
+    "R2",
+    "R6",
+    "R10",
+    "R12",
+    "R19",
+    "R23R25",
+    "R26",
+    "R27",
+    "RDESP",
+    "EXT_ENTREGA"
+   ]
+  },
+  "REC-CO2": {
+   "linea": "REC",
+   "nombre": "Recarga CO₂",
+   "pasos": [
+    "EXT_RETIRO",
+    "R0",
+    "R1",
+    "R2",
+    "R7R20",
+    "R10",
+    "R13R14",
+    "R23R25",
+    "R7R20",
+    "R26",
+    "R27",
+    "RDESP",
+    "EXT_ENTREGA"
+   ]
+  },
+  "REC-HALO": {
+   "linea": "REC",
+   "nombre": "Recarga halogenado",
+   "pasos": [
+    "EXT_RETIRO",
+    "R0",
+    "R1",
+    "R2",
+    "R8R24",
+    "R10",
+    "R13R14",
+    "R23R25",
+    "R8R24",
+    "R26",
+    "R27",
+    "RDESP",
+    "EXT_ENTREGA"
+   ]
+  },
+  "REC-RECHAZO": {
+   "linea": "REC",
+   "nombre": "Rechazo: inutilización",
+   "pasos": [
+    "EXT_RETIRO",
+    "R0",
+    "R1",
+    "R2",
+    "R28",
+    "EXT_DISPOSICION"
+   ]
+  },
+  "MAN-1KG": {
+   "linea": "MAN",
+   "nombre": "Manuales 1 kg (matafuego)",
+   "pasos": [
+    "MP_ALM",
+    "G1",
+    "G2",
+    "MARC",
+    "M1",
+    "M3",
+    "M4",
+    "M5",
+    "M7",
+    "M8",
+    "MPH",
+    "MSEC",
+    "M10",
+    "M11",
+    "M18",
+    "M12",
+    "M13",
+    "M14",
+    "M15",
+    "M16",
+    "M17",
+    "PTM",
+    "EXT_DESPACHO"
+   ]
+  },
+  "MAN-STD": {
+   "linea": "MAN",
+   "nombre": "Manuales 2,5–10 kg (matafuego)",
+   "pasos": [
+    "MP_ALM",
+    "G1",
+    "G2",
+    "MARC",
+    "M2",
+    "M3",
+    "M4",
+    "M5",
+    "M7",
+    "M8",
+    "MPH",
+    "MSEC",
+    "M10",
+    "M11",
+    "M18",
+    "M12",
+    "M13",
+    "M14",
+    "M15",
+    "M16",
+    "M17",
+    "PTM",
+    "EXT_DESPACHO"
+   ]
+  },
+  "MAN-CIL-1KG": {
+   "linea": "MAN",
+   "nombre": "Cilindro vacío 1 kg",
+   "pasos": [
+    "MP_ALM",
+    "G1",
+    "G2",
+    "MARC",
+    "M1",
+    "M3",
+    "M4",
+    "M5",
+    "M7",
+    "M8",
+    "MPH",
+    "MSEC",
+    "M10",
+    "M11",
+    "M18",
+    "M17",
+    "PTM",
+    "EXT_DESPACHO"
+   ]
+  },
+  "MAN-CIL": {
+   "linea": "MAN",
+   "nombre": "Cilindro vacío 2,5–10 kg",
+   "pasos": [
+    "MP_ALM",
+    "G1",
+    "G2",
+    "MARC",
+    "M2",
+    "M3",
+    "M4",
+    "M5",
+    "M7",
+    "M8",
+    "MPH",
+    "MSEC",
+    "M10",
+    "M11",
+    "M18",
+    "M17",
+    "PTM",
+    "EXT_DESPACHO"
+   ]
+  },
+  "CAR-STD": {
+   "linea": "CAR",
+   "nombre": "Carro rodante",
+   "pasos": [
+    "MP_ALM",
+    "G1",
+    "MARC",
+    "C3",
+    "C4",
+    "C5",
+    "C6",
+    "C7",
+    "C8",
+    "CPH",
+    "CSEC",
+    "C11",
+    "EXT_PINTOR",
+    "C12",
+    "C13",
+    "C15",
+    "C17",
+    "C16",
+    "C16B",
+    "EXT_ENTREGA"
+   ]
+  }
+ }
+}

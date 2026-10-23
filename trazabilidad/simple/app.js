@@ -1,5 +1,6 @@
 // Trazabilidad interna FLAMA (sin QR). Datos fijos en D (build.py, libros 2035 de MP, PT y balanceo); lo que pasa en
-// planta (conteos, pedidos, formularios, pallets, revendidos) arranca vacío y se guarda en este navegador.
+// planta (conteos, pedidos, formularios, pallets, revendidos) arranca vacío y se guarda en este navegador. El stock de MP
+// se carga con la planilla de conteo del almacén (Excel); no hay cámaras.
 "use strict";
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -12,8 +13,8 @@ const fecha = (iso) => iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + is
 const dias = (iso) => iso ? Math.floor((Date.now() - new Date(iso + "T00:00").getTime()) / 864e5) : null;
 
 // ---------------------------------------------------------------- estado (localStorage)
-const CLAVE = "flama-traza-simple-v1";
-const VACIO = () => ({ stock: {}, pedidos: {}, pallets: {}, regs: [], rev: [], n: {}, fotos: {}, verOk: false });
+const CLAVE = "flama-traza-simple-v2";
+const VACIO = () => ({ stock: {}, pedidos: {}, pallets: {}, regs: [], rev: [], n: {}, verOk: false });
 let S;
 let GUARDADO = null;
 try { GUARDADO = JSON.parse(localStorage.getItem(CLAVE) || "null"); } catch (e) { GUARDADO = null; }
@@ -40,19 +41,9 @@ const INSTR = {
   esp: ["ESP-1 · medidor de espesor Melisam MR017"],
   pel: ["EP-1 · medidor de película ISO 2808 (modelo a definir)"],
 };
-// Señal kanban que ve la cámara según cómo se guarda (criterio, sección 3 del Word)
-const SENAL = [
-  [/Apilado/, "Franja roja pintada en el poste a la altura del punto de pedido. La cámara mide el alto de la pila: si queda por debajo de la franja, pide."],
-  [/Rack/, "Lugar del punto de pedido demarcado en rojo en el larguero. Abajo se usa, arriba se repone: cuando el lugar rojo queda vacío, la cámara lo ve y pide."],
-  [/liviana/, "Doble cajón: el segundo cajón es el punto de pedido. Al abrirlo queda a la vista su tarjeta roja y la cámara la detecta."],
-  [/Cantilever/, "Brazo del punto de pedido pintado de rojo: cuando no tiene atado, la cámara lo ve."],
-  [/Jaula/, "Cilindros llenos con capuchón; la cámara cuenta capuchones contra el punto de pedido."],
-  [/PT|producto/, "Lugares de reventa demarcados por modelo; el último lugar antes del punto de pedido va en rojo."],
-];
-const senal = (est) => (SENAL.find(([re]) => re.test(est || "")) || [0, "Señal a definir."])[1];
-const ALMS = [...D.alm.filter((a) => !/producto terminado/.test(a.alm)),
-  { alm: "Almacén de producto terminado", que: "Matafuegos de reventa", est: "En el almacén de PT", lug: RV.length, como: "Por modelo, en la zona de reventa del PT." }];
-const camId = (alm) => "CAM-" + String(ALMS.findIndex((a) => a.alm === alm) + 1).padStart(2, "0");
+// Almacenes (MP-FLAMA2035 › Almacenes, filas 19 a 31) con sus lugares y el lugar fijo de cada código (build.py)
+const ALMS = D.alm;
+const ALM = Object.fromEntries(ALMS.map((a) => [a.alm, a]));
 
 // ---------------------------------------------------------------- kanban de MP
 // Punto de pedido = seguridad + consumo mientras llega (Stock_MP L + K). La revisión periódica del Word de MP
@@ -60,7 +51,7 @@ const camId = (alm) => "CAM-" + String(ALMS.findIndex((a) => a.alm === alm) + 1)
 const COLS = [
   { k: "crit", t: "Bajo seguridad", c: "crit" }, { k: "pedir", t: "Pedir", c: "warn" },
   { k: "ped", t: "Pedido en camino", c: "info" }, { k: "ok", t: "Bien", c: "ok" },
-  { k: "sin", t: "Sin lectura", c: "idle" }];
+  { k: "sin", t: "Sin conteo", c: "idle" }];
 // Se compara la posición (stock + lo pedido que viene en camino) con el punto de pedido; la seguridad, con el stock físico.
 function estado(m) {
   const s = S.stock[m.cod];
@@ -99,11 +90,12 @@ function vMP() {
   const linOpts = ["Manuales", "Carros", "Recargas", "Reventa"].map((l) => `<option ${F.lin === l ? "selected" : ""}>${l}</option>`).join("");
   const sinNada = !Object.keys(S.stock).length;
   return `${bandaEjemplo()}<div class="cab"><div><h1>Kanban de MP</h1>
-    <p>Cada tarjeta es una MP. Se mueve sola con cada lectura de cámara, retiro o recepción.</p></div>
+    <p>Cada tarjeta es una MP. Se mueve con cada planilla de conteo, retiro a la línea o recepción.</p></div>
     <div class="filtros"><select id="fAlm" aria-label="Almacén"><option value="">Todos los almacenes</option>${almOpts}</select>
     <select id="fLin" aria-label="Línea"><option value="">Todas las líneas</option>${linOpts}</select>
-    <input id="fQ" type="search" placeholder="Código, material o proveedor" value="${esc(F.q)}" aria-label="Buscar"></div></div>
-    ${sinNada ? `<div class="aviso" style="margin-bottom:12px">Sin lecturas todavía. <button class="btn chico" data-a="arranque" style="margin-left:6px">Arrancar con el almacén lleno</button></div>` : ""}
+    <input id="fQ" type="search" placeholder="Código, material o proveedor" value="${esc(F.q)}" aria-label="Buscar">
+    <button class="btn pri" data-a="planilla">Cargar planilla</button><button class="btn" data-a="bajarPlanilla">Descargar planilla</button></div></div>
+    ${sinNada ? `<div class="aviso" style="margin-bottom:12px">Sin conteos todavía: cargá la planilla del almacén. <button class="btn chico" data-a="arranque" style="margin-left:6px">Arrancar con el almacén lleno</button></div>` : ""}
     <div class="tablero">${COLS.map((c) => {
       const plegada = c.k === "ok" && !S.verOk && por.ok.length > 6;
       const lista = plegada ? por[c.k].slice(0, 4) : por[c.k];
@@ -125,14 +117,14 @@ function detalleMP(cod) {
       <dt>Stock máximo</dt><dd class="num">${nf(m.max, 1)} ${esc(m.um)} <span class="mut">Stock_MP!S${m.fila}</span></dd>
       <dt>Se compra</dt><dd>${esc(m.bulto)} · se pide cada ${esc(m.cada)} días hábiles · plazo ${esc(m.pmin)} a ${esc(m.pmax)} días</dd>
       <dt>Proveedor</dt><dd>${esc(m.prov)}</dd>
-      <dt>Almacén</dt><dd>${esc(m.alm)} · ${esc(m.lug)} lugar(es) · ${camId(m.alm)}</dd>
+      <dt>Almacén</dt><dd>${esc(m.alm)} · lugar ${esc(m.lugares.join(", ") || "—")} <a href="#almacen" data-cerrar style="font-size:12.5px">ver en el almacén</a></dd>
       <dt>Cómo se guarda</dt><dd style="font-size:12.5px">${esc(m.guarda)}</dd>
       ${p ? `<dt>Pedido</dt><dd>${nf(p.cant, 1)} ${esc(m.um)} el ${esc(p.t)} a ${esc(m.prov)}</dd>` : ""}</dl>
     <form class="campos" id="fMov">
-      <div class="campo"><label for="mvT">Movimiento</label><select id="mvT"><option value="conteo">Lectura / conteo (deja el stock en)</option>
+      <div class="campo"><label for="mvT">Movimiento</label><select id="mvT"><option value="conteo">Conteo (deja el stock en)</option>
         <option value="retiro">Retiro a la línea (resta)</option></select></div>
       <div class="campo"><label for="mvU">Cantidad (${esc(m.um)})</label><input id="mvU" type="number" step="any" min="0" required></div>
-      <div class="campo"><label for="mvS">Fuente</label><select id="mvS"><option>${camId(m.alm)} (cámara)</option><option>Conteo manual</option></select></div>
+      <div class="campo"><label for="mvS">Fuente</label><select id="mvS"><option>Conteo a mano</option><option>Planilla de conteo</option><option>Vale de retiro</option></select></div>
       <div class="campo" style="align-self:end"><button class="btn pri" type="submit">Registrar</button></div></form>
     <div class="filtros">${p ? `<button class="btn" data-a="recibir" data-id="${esc(cod)}">Registrar la recepción (formulario FAB-01)</button>
       <button class="btn" data-a="anularPed" data-id="${esc(cod)}">Anular pedido</button>` :
@@ -142,60 +134,176 @@ function detalleMP(cod) {
     const t = $("#mvT").value, u = parseFloat($("#mvU").value);
     if (isNaN(u)) return;
     const prev = S.stock[cod] ? S.stock[cod].u : 0;
-    if (t === "retiro" && !S.stock[cod]) { toast("Primero registrá una lectura: no hay stock para descontar"); return; }
+    if (t === "retiro" && !S.stock[cod]) { toast("Primero registrá un conteo: no hay stock para descontar"); return; }
     S.stock[cod] = { u: t === "retiro" ? Math.max(0, prev - u) : u, src: $("#mvS").value, t: ahora() };
     guardar(); cerrar(); pintar(); toast(`${cod}: ${nf(S.stock[cod].u, 1)} ${m.um}`);
   });
 }
 
-// ---------------------------------------------------------------- cámaras
-const fotoDe = (alm) => S.fotos[alm] || (D.fotos || {})[alm] || null;
-function vCamaras() {
-  return `${bandaEjemplo()}<div class="cab"><div><h1>Cámaras de almacén</h1>
-    <p>Una cámara por almacén. Ve la señal roja del punto de pedido y avisa sola.</p></div></div>
-    <div class="camaras">${ALMS.map((a) => {
-      const ms = D.mp.filter((m) => m.alm === a.alm), alarma = ms.filter((m) => ["crit", "pedir"].includes(estado(m))).length;
-      const lect = ms.map((m) => S.stock[m.cod]).filter(Boolean).map((x) => x.t).sort().pop(), foto = fotoDe(a.alm);
-      return `<article class="cam ${alarma ? "con-alarma" : ""}"><header><span><span class="rec">●</span> ${camId(a.alm)} · ${esc(a.alm)}</span><span>${lect ? esc(lect.slice(11)) : "—"}</span></header>
-        <div class="feed">${foto ? `<img src="${foto}" alt="${esc(a.alm)}">` : `<div class="sin-foto">${camSvg(ms, 120)}</div>`}
-          ${alarma ? `<span class="badge alarma">${alarma} para pedir</span>` : `<span class="badge ok">sin alarmas</span>`}</div>
-        ${foto ? `<div class="vista">${camSvg(ms, 46)}</div>` : ""}
-        <footer><span title="${esc(senal(a.est))}">${esc(a.est)} · ${esc(a.lug)} lugares</span>
-          <span class="acciones"><button class="btn chico" data-a="lectura" data-id="${esc(a.alm)}">Lectura</button>
-          <label class="btn chico">Foto<input type="file" accept="image/*" data-foto="${esc(a.alm)}" hidden></label></span></footer></article>`;
-    }).join("")}</div>
-    <details class="fuente"><summary>Cómo ve la cámara el punto de pedido</summary>${ALMS.map((a) => `<b>${esc(a.alm)}:</b> ${esc(senal(a.est))}`).join("<br>")}</details>`;
+// ---------------------------------------------------------------- almacén de MP: lugares
+// Cada almacén con sus lugares (Almacenes, col. E) y el código fijo de cada lugar (build.py › lugares). Los racks se
+// dibujan por módulo: 2 pallets por nivel, abajo lo que se usa y arriba la reposición (Word de MP, sección 8).
+const COLOR_EST = { crit: "var(--critical)", pedir: "var(--warn)", ped: "var(--info)", ok: "var(--good)", sin: "var(--border-strong)" };
+const PEOR = ["crit", "pedir", "ped", "ok", "sin"];
+const ultimoConteo = (alm) => D.mp.filter((m) => m.alm === alm).map((m) => S.stock[m.cod])
+  .filter((s) => s && /^(Planilla|Conteo)/.test(s.src)).map((s) => s.t).sort().pop();
+function lugarHtml(h) {
+  if (!h.cods.length) return `<div class="lugar libre"><em>${h.id}</em><span>libre</span></div>`;
+  const est = h.cods.map(([c]) => estado(MP[c])).sort((a, b) => PEOR.indexOf(a) - PEOR.indexOf(b))[0];
+  return `<div class="lugar e-${est}"><em>${h.id}</em>${h.cods.map(([c, f]) => {
+    const m = MP[c], s = S.stock[c], e = estado(m), w = s ? Math.min(100, s.u / (Math.max(m.max, m.pp) || 1) * 100) : 0;
+    return `<button class="cod" data-mp="${esc(c)}" title="${esc(c)} · ${esc(m.mat)}${f < 1 ? ` · ${Math.round(f * 100)} % del lugar` : ""} · ${s ? nf(s.u, 1) + " " + esc(m.um) : "sin conteo"}">
+      <b>${esc(c)}</b><i style="--w:${w.toFixed(0)}%;--c:${COLOR_EST[e]}"></i></button>`; }).join("")}</div>`;
 }
-function camSvg(ms, h = 96) {
-  const w = 40, W = Math.max(300, ms.length * w + 8);
-  const cols = ms.map((m, i) => {
-    const s = S.stock[m.cod], mx = Math.max(m.max, s ? s.u : 0, m.pp) || 1, x = 6 + i * w, e = estado(m);
-    const fill = s ? Math.min(1, s.u / mx) * h : 0, col = { crit: "#ff5c50", pedir: "#f0b04a", ped: "#7fb0ec", ok: "#6cc070", sin: "#3b4452" }[e];
-    const yPP = 6 + h - Math.min(1, m.pp / mx) * h, ySS = 6 + h - Math.min(1, m.ss / mx) * h;
-    return `<g ${["crit", "pedir"].includes(e) ? 'class="alarma"' : ""}><title>${esc(m.cod)} · ${esc(m.mat)}</title>
-      <rect x="${x}" y="6" width="${w - 10}" height="${h}" fill="#1a2029" stroke="#2b3340"/>
-      ${s ? `<rect x="${x}" y="${6 + h - fill}" width="${w - 10}" height="${fill}" fill="${col}" opacity=".85"/>` :
-        `<line x1="${x}" y1="${6 + h}" x2="${x + w - 10}" y2="6" stroke="#3b4452"/>`}
-      <line x1="${x - 2}" x2="${x + w - 8}" y1="${yPP}" y2="${yPP}" stroke="#ffffff" stroke-width="1.5"/>
-      <line x1="${x - 2}" x2="${x + w - 8}" y1="${ySS}" y2="${ySS}" stroke="#ff5c50" stroke-dasharray="3 2"/>
-      <text x="${x + (w - 10) / 2}" y="${h + 20}" fill="#9aa3b2" font-size="9.5" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif">${esc(m.ref)}</text></g>`;
-  }).join("");
-  return `<svg width="${W}" height="${h + 28}" viewBox="0 0 ${W} ${h + 28}" role="img" aria-label="Stock por código">${cols}</svg>`;
+function almacenHtml(a) {
+  const hs = D.lugares[a.alm] || [], ms = D.mp.filter((m) => m.alm === a.alm);
+  const al = ms.filter((m) => ["crit", "pedir"].includes(estado(m))).length, uc = ultimoConteo(a.alm);
+  let cuerpo;
+  if (hs.length && hs[0].mod) {
+    const mods = [...new Set(hs.map((h) => h.mod))], niv = Math.max(...hs.map((h) => h.niv));
+    cuerpo = `<div class="rack-mp">${mods.map((md) => `<div class="modulo">${Array.from({ length: niv }, (_, i) => niv - i).map((n) =>
+      `<div class="nivel">${["A", "B"].map((l) => { const h = hs.find((x) => x.mod === md && x.niv === n && x.lado === l); return h ? lugarHtml(h) : `<div class="lugar nada"></div>`; }).join("")}</div>`).join("")}
+      <span class="pie">módulo ${md}</span></div>`).join("")}</div>`;
+  } else cuerpo = `<div class="fila-mp">${hs.map(lugarHtml).join("")}</div>`;
+  return `<section class="alm-card ${al ? "con-alarma" : ""}" id="alm-${a.pref}"><header><div><h3>${esc(a.alm)}</h3>
+      <span class="mut">${esc(a.est)} · ${hs.length} lugares${a.m2 ? ` · ${nf(a.m2, 1)} m²` : ""} · ${ms.length} códigos</span></div>
+      ${al ? `<span class="pill crit">${al} para pedir</span>` : `<span class="pill ok">sin faltantes</span>`}</header>
+    ${cuerpo}
+    <footer><span class="mut">Último conteo: ${uc ? esc(uc) : "—"}</span><span class="acciones">
+      <button class="btn chico" data-a="conteo" data-id="${esc(a.alm)}">Contar a mano</button>
+      <button class="btn chico" data-a="bajarPlanilla" data-id="${esc(a.alm)}">Planilla de este almacén</button></span></footer></section>`;
 }
-function dlgLectura(alm) {
+function vAlmacen() {
+  const ley = [["crit", "Bajo seguridad"], ["pedir", "Pedir"], ["ped", "Pedido en camino"], ["ok", "Bien"], ["sin", "Sin conteo"]];
+  return `${bandaEjemplo()}<div class="cab"><div><h1>Almacén de MP</h1>
+    <p>Cada lugar con su código fijo. El color es el estado del código; la barra, el stock contra el máximo.</p></div>
+    <div class="filtros"><button class="btn pri" data-a="planilla">Cargar planilla</button><button class="btn" data-a="bajarPlanilla">Descargar planilla</button></div></div>
+    <div class="saltos">${ALMS.map((a) => { const n = D.mp.filter((m) => m.alm === a.alm && ["crit", "pedir"].includes(estado(m))).length;
+      return `<button data-salto="alm-${a.pref}">${esc(a.corto)}${n ? ` <b>${n}</b>` : ""}</button>`; }).join("")}</div>
+    <div class="leyenda" style="margin:0 0 12px">${ley.map(([k, t]) => `<span><i style="background:${COLOR_EST[k]}"></i>${t}</span>`).join("")}<span><i style="background:transparent;border:1px dashed var(--border-strong)"></i>Libre</span></div>
+    <div class="almacenes">${ALMS.map(almacenHtml).join("")}</div>
+    <details class="fuente"><summary>De dónde salen los lugares</summary>Lugares de cada almacén: ${esc(D.fuente.mp.split(" y ")[1] || "Almacenes")}, columna E.
+      Cada código ocupa los lugares enteros de su columna U de Stock_MP (cuánto ocupa el stock máximo) y los restos de varios códigos comparten un lugar
+      (criterio: de mayor a menor, en el primero donde entran). En los racks, los lugares de un código quedan apilados en la misma columna: abajo el que se usa,
+      arriba la reposición (Word de MP, sección 8). El rack de flejes tiene 4 alturas (sección 6.2); los demás, piso y 2 largueros.</details>`;
+}
+function dlgConteo(alm) {
   const ms = D.mp.filter((m) => m.alm === alm);
-  abrir(`Lectura de ${camId(alm)} · ${esc(alm)}`, `<p class="mut" style="margin:0">Cargá lo que muestra la cámara (o el conteo) en la unidad de cada código. Lo que dejes vacío no cambia.</p>
-    <form id="fLect" class="tabla"><table><thead><tr><th>Código</th><th>Material</th><th class="n">PP</th><th class="n">Máx.</th><th>Stock</th></tr></thead><tbody>
-    ${ms.map((m) => `<tr><td class="mono">${esc(m.cod)}</td><td style="font-size:12.5px">${esc(m.mat)}</td><td class="n">${nf(m.pp, 1)}</td><td class="n">${nf(m.max, 1)}</td>
-      <td><input type="number" step="any" min="0" data-cod="${esc(m.cod)}" style="width:110px" aria-label="Stock de ${esc(m.cod)}" value="${S.stock[m.cod] ? S.stock[m.cod].u : ""}"> ${esc(m.um)}</td></tr>`).join("")}
-    </tbody></table><div style="margin-top:10px"><button class="btn pri" type="submit">Guardar lectura</button></div></form>`);
+  abrir(`Conteo a mano · ${esc(alm)}`, `<p class="mut" style="margin:0">Lo que hay en cada código, en su unidad. Lo que quede vacío no cambia.</p>
+    <form id="fLect" class="tabla"><table><thead><tr><th>Lugar</th><th>Código</th><th>Material</th><th class="n">PP</th><th class="n">Máx.</th><th>Stock</th></tr></thead><tbody>
+    ${ms.map((m) => `<tr><td class="mono" style="font-size:11.5px">${esc(m.lugares.join(", "))}</td><td class="mono">${esc(m.cod)}</td><td style="font-size:12.5px">${esc(m.mat)}</td><td class="n">${nf(m.pp, 1)}</td><td class="n">${nf(m.max, 1)}</td>
+      <td><input type="number" step="any" min="0" data-cod="${esc(m.cod)}" style="width:100px" aria-label="Stock de ${esc(m.cod)}" value="${S.stock[m.cod] ? S.stock[m.cod].u : ""}"> ${esc(m.um)}</td></tr>`).join("")}
+    </tbody></table><div style="margin-top:10px"><button class="btn pri" type="submit">Guardar conteo</button></div></form>`);
   $("#fLect").addEventListener("submit", (ev) => {
     ev.preventDefault();
     $$("input[data-cod]", ev.target).forEach((i) => {
-      if (i.value !== "") S.stock[i.dataset.cod] = { u: parseFloat(i.value), src: camId(alm) + " (cámara)", t: ahora() };
+      if (i.value !== "" && (!S.stock[i.dataset.cod] || +i.value !== S.stock[i.dataset.cod].u)) S.stock[i.dataset.cod] = { u: parseFloat(i.value), src: "Conteo a mano", t: ahora() };
     });
-    guardar(); cerrar(); pintar(); toast("Lectura guardada");
+    guardar(); cerrar(); pintar(); toast("Conteo guardado");
   });
+}
+
+// ---------------------------------------------------------------- planilla de conteo (Excel)
+// La misma planilla que salida/Planilla_conteo_MP.xlsx: una hoja por almacén, se completa «Stock contado» y se carga
+// acá. El Excel se lee y se arma en el navegador con SheetJS; también se acepta CSV o pegar desde Excel.
+const XLSX_URL = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+let xlsxProm = null;
+const cargarXLSX = () => xlsxProm || (xlsxProm = new Promise((ok, mal) => {
+  if (window.XLSX) { ok(window.XLSX); return; }
+  const s = document.createElement("script");
+  s.src = XLSX_URL; s.onload = () => ok(window.XLSX); s.onerror = () => { xlsxProm = null; mal(new Error("no se pudo cargar el lector de Excel")); };
+  document.head.appendChild(s);
+}));
+const CAB_PLANILLA = ["Lugar", "Código", "Material", "UM", "Se compra en", "Seguridad", "Punto de pedido", "Máximo", "Stock contado", "Estado", "Observaciones"];
+async function bajarPlanilla(alm) {
+  try {
+    const X = await cargarXLSX(), wb = X.utils.book_new();
+    (alm ? [ALM[alm]] : ALMS).forEach((a) => {
+      const orden = Object.fromEntries((D.lugares[a.alm] || []).map((h, i) => [h.id, i]));
+      const ms = D.mp.filter((m) => m.alm === a.alm).sort((x, y) => (orden[x.lugares[0]] ?? 999) - (orden[y.lugares[0]] ?? 999));
+      const ws = X.utils.aoa_to_sheet([[`Conteo · ${a.alm}`], [`${a.est} · ${a.lug} lugares`], ["Fecha del conteo", "", "Contó", ""], [], CAB_PLANILLA,
+        ...ms.map((m) => [m.lugares.join(", "), m.cod, m.mat, m.um, m.bulto, m.ss, m.pp, m.max, "", "", ""])]);
+      ws["!cols"] = [16, 14, 46, 7, 26, 11, 11, 11, 13, 16, 28].map((w) => ({ wch: w }));
+      X.utils.book_append_sheet(wb, ws, a.corto);
+    });
+    X.writeFile(wb, `Planilla_conteo_MP${alm ? "_" + ALM[alm].pref : ""}_${hoy()}.xlsx`);
+    toast("Planilla descargada");
+  } catch (e) { toast("No se pudo armar la planilla: " + e.message); }
+}
+const norm = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
+function numero(v) {
+  if (typeof v === "number") return v;
+  let t = String(v ?? "").trim().replace(/\s/g, "");
+  if (!t) return null;
+  if (t.includes(",")) t = t.replace(/\./g, "").replace(",", ".");
+  const x = parseFloat(t);
+  return isNaN(x) ? null : x;
+}
+function isoDe(v) {
+  if (v instanceof Date && !isNaN(v)) return v.toISOString().slice(0, 10);
+  const m = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})$/.exec(String(v ?? "").trim());
+  if (m) return `${m[3].length === 2 ? "20" + m[3] : m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  return /^\d{4}-\d{2}-\d{2}/.test(String(v ?? "")) ? String(v).slice(0, 10) : null;
+}
+// Filas de una hoja: busca el encabezado con «Código» y «Stock contado» (o «Stock»); sin encabezado, toma el código de
+// la primera columna y el último número de la fila. «Fecha del conteo» puede estar en cualquier fila de arriba.
+function leerFilas(filas) {
+  const out = [];
+  let fechaC = null, cC = -1, cS = -1;
+  for (const f of filas) {
+    const n = f.map(norm), kF = n.findIndex((x) => x.startsWith("fecha del conteo"));
+    if (kF >= 0 && fechaC == null) fechaC = f.slice(kF + 1).find((x) => x !== "" && x != null) ?? null;
+    if (cC < 0) {
+      const c = n.findIndex((x) => x === "codigo"), s = n.findIndex((x) => x.startsWith("stock contado") || x === "stock");
+      if (c >= 0 && s >= 0) { cC = c; cS = s; }
+      continue;
+    }
+    const cod = String(f[cC] ?? "").trim(), u = numero(f[cS]);
+    if (cod && u != null) out.push({ cod, u });
+  }
+  if (cC < 0) filas.forEach((f) => {
+    const cod = String(f[0] ?? "").trim(), nums = f.slice(1).map(numero).filter((x) => x != null);
+    if (/^(MP|RV)-/i.test(cod) && nums.length) out.push({ cod, u: nums[nums.length - 1] });
+  });
+  return { filas: out, fecha: fechaC };
+}
+const partirLinea = (l) => l.split(/\t|;/).length > 1 ? l.split(/\t|;/) : l.split(",");
+let LEIDO = null;
+function dlgPlanilla() {
+  LEIDO = null;
+  abrir("Cargar planilla de conteo", `<p class="mut" style="margin:0 0 10px">La planilla del almacén (Excel o CSV) con las columnas «Código» y «Stock contado»; la app lee todas las hojas.
+    También se puede pegar desde Excel: una fila por código, el código primero y el stock al final.</p>
+    <div class="campos"><div class="campo ancho"><label for="plArch">Archivo</label><input id="plArch" type="file" accept=".xlsx,.xls,.csv,.txt"></div>
+    <div class="campo ancho"><label for="plPeg">O pegar acá</label><textarea id="plPeg" rows="4" placeholder="MP-01&#9;14&#10;MP-62/M22&#9;35000"></textarea></div></div>
+    <div class="filtros" style="margin-top:10px"><button class="btn" data-a="leerPegado">Leer lo pegado</button><button class="btn chico" data-a="bajarPlanilla">Descargar la planilla vacía</button></div>
+    <div id="plVista"></div>`);
+}
+async function leerArchivo(file) {
+  $("#plVista").innerHTML = `<p class="mut">Leyendo ${esc(file.name)}…</p>`;
+  try {
+    if (/\.(csv|txt)$/i.test(file.name)) { vistaPlanilla(leerFilas((await file.text()).split(/\r?\n/).map(partirLinea)), file.name); return; }
+    const X = await cargarXLSX(), wb = X.read(await file.arrayBuffer(), { cellDates: true });
+    const res = wb.SheetNames.map((n) => leerFilas(X.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: "" })));
+    vistaPlanilla({ filas: res.flatMap((r) => r.filas), fecha: res.map((r) => r.fecha).find((x) => x != null) }, file.name);
+  } catch (e) { $("#plVista").innerHTML = `<div class="aviso">No se pudo leer: ${esc(e.message)}</div>`; }
+}
+function vistaPlanilla(res, origen) {
+  const MPi = Object.fromEntries(D.mp.map((m) => [m.cod.toLowerCase(), m])), ok = [], mal = [];
+  res.filas.forEach((r) => { const m = MPi[r.cod.toLowerCase()]; (m ? ok : mal).push({ ...r, m }); });
+  const f = isoDe(res.fecha) || hoy();
+  LEIDO = { ok, f, origen };
+  const est = (m, u) => u <= m.ss ? ["crit", "bajo seguridad"] : u <= m.pp ? ["warn", "pedir"] : ["ok", "bien"];
+  $("#plVista").innerHTML = ok.length ? `<p style="margin:12px 0 6px"><b>${ok.length} códigos</b> · conteo del ${fecha(f)}${mal.length ? ` · <span style="color:var(--critical)">${mal.length === 1 ? "1 código que no existe" : mal.length + " códigos que no existen"}: ${esc(mal.map((x) => x.cod).slice(0, 6).join(", "))}${mal.length > 6 ? "…" : ""}</span>` : ""}</p>
+    <div class="tabla" style="max-height:300px;overflow:auto"><table><thead><tr><th>Código</th><th>Material</th><th class="n">Antes</th><th class="n">Contado</th><th>Queda</th></tr></thead><tbody>
+    ${ok.map(({ m, u }) => { const [c, t] = est(m, u); return `<tr><td class="mono">${esc(m.cod)}</td><td style="font-size:12.5px">${esc(m.mat)}</td><td class="n">${S.stock[m.cod] ? nf(S.stock[m.cod].u, 1) : "—"}</td><td class="n">${nf(u, 1)} ${esc(m.um)}</td><td><span class="pill ${c}">${t}</span></td></tr>`; }).join("")}
+    </tbody></table></div><div style="margin-top:10px"><button class="btn pri" data-a="aplicarPlanilla">Aplicar el conteo</button></div>`
+    : `<div class="aviso" style="margin-top:10px">No encontré filas con código y stock. ¿Tiene las columnas «Código» y «Stock contado»?</div>`;
+}
+function aplicarPlanilla() {
+  if (!LEIDO) return;
+  const { ok, f, origen } = LEIDO, t = f + " " + ahora().slice(11);
+  ok.forEach(({ m, u }) => { S.stock[m.cod] = { u, src: `Planilla de conteo (${origen})`, t }; });
+  LEIDO = null; guardar(); cerrar(); pintar(); toast(`Conteo aplicado: ${ok.length} códigos`);
 }
 
 // ---------------------------------------------------------------- PT zonificado
@@ -530,6 +638,9 @@ function vTraza() {
     ${!q ? `<div class="vacio">Probá con <a href="#" data-q="5500">5500</a>, <a href="#" data-q="C-45871">C-45871</a> o <a href="#" data-q="OS-1520">OS-1520</a>.</div>` : `
     <div class="grid">${rv.length ? `<section class="panel c12"><header><h2>Revendido</h2></header><div class="cuerpo"><dl class="dl">${rv.map((x) => `<dt>${esc(x.serie)}</dt><dd>${esc(MP[x.cod] ? MP[x.cod].mat : x.cod)} · ${esc(x.fab)} · ${esc(x.anio)} · ${esc(x.estado)} ${x.slot ? "· lugar " + esc(x.slot) : ""} ${x.remito ? "· remito " + esc(x.remito) : ""}</dd>`).join("")}</dl></div></section>` : ""}
     ${pal.length ? `<section class="panel c12"><header><h2>En el PT ahora</h2></header><div class="cuerpo">${pal.map(([s, p]) => `<p style="margin:0"><b>${esc(s)}</b> · ${esc(p.id)} · ${esc(p.prod)} · ${nf(p.cant)} u · fabricado ${fecha(p.ffab)}</p>`).join("")}</div></section>` : ""}
+    ${(() => { const gs = grupos().filter((x) => hits.some(([r]) => (x.tipo === "lote" ? r.v.lote : r.v.os) === x.id));
+      return gs.length ? `<section class="panel c12"><header><h2>${gs.length === 1 ? "Lote" : "Lotes"}</h2></header><div class="cuerpo"><ul class="lista">${gs.map(itemGrupo).join("")}</ul>
+        <p class="mut" style="font-size:12.5px;margin:8px 0 0">Tocá el lote para ver su recorrido en el layout: verde lo que tiene ficha, punteado lo que falta.</p></div></section>` : ""; })()}
     <section class="panel c12"><header><h2>Registros</h2><span class="mut num">${hits.length}</span></header><div class="cuerpo tabla">
       ${hits.length ? `<table><thead><tr><th>Cuándo</th><th>Registro</th><th>Proceso</th><th>Coincide por</th><th>Datos</th><th>Resultado</th></tr></thead><tbody>
       ${hits.sort((a, b) => a[0].t.localeCompare(b[0].t)).map(([r, c]) => `<tr><td class="num">${esc(r.t)}</td><td class="mono">${esc(r.id)}</td><td>${esc(nombre(r.f))}</td><td>${esc(c)}</td>
@@ -600,128 +711,374 @@ function vMarcado() {
       <tr><td>Pallet de PT</td><td>PAL-nnnn + lugar</td><td>Etiqueta de pallet</td><td>FAB-11, REV-01</td></tr></tbody></table></div></section></div>`;
 }
 
-// ---------------------------------------------------------------- dashboard
-function vDashboard() {
-  const est = D.mp.map(estado), cuenta = (k) => est.filter((e) => e === k).length;
-  const hoyR = S.regs.filter((r) => r.t.startsWith(hoy())).length, nc = S.regs.filter((r) => r.res === "No conforme").length;
-  const paso = (t, h, c = "") => `<a class="paso ${c}" href="#${h}">${t}</a>`, fl = `<span class="flecha" aria-hidden="true">▶</span>`;
-  const carril = (c, t, sub, pasos) => `<div class="carril"><div class="carril-nombre" style="--c:${c}"><b>${t}</b><span>${sub}</span></div><div class="flujo">${pasos.join(fl)}</div></div>`;
-  const alertas = D.mp.filter((m) => ["crit", "pedir"].includes(estado(m))).slice(0, 8);
-  return `${bandaEjemplo()}<div class="cab"><div><h1>Trazabilidad de planta</h1><p>Almacenes con cámaras, fichas de control y búsqueda por el número grabado. Sin QR.</p></div>
-    <div class="filtros"><a class="btn" href="#marcado">Identificación sin QR</a><a class="btn" href="#revendidos">Revendidos</a></div></div>
-    <div class="kpis" style="margin-bottom:18px">
-      <div class="kpi crit"><span>MP bajo seguridad</span><b class="num">${cuenta("crit")}</b><small>de ${D.mp.length} códigos</small></div>
-      <div class="kpi warn"><span>MP para pedir</span><b class="num">${cuenta("pedir")}</b><small>en el punto de pedido</small></div>
-      <div class="kpi info"><span>Pedidos en curso</span><b class="num">${cuenta("ped")}</b><small>esperando la recepción</small></div>
-      <div class="kpi"><span>MP sin lectura</span><b class="num">${cuenta("sin")}</b><small>códigos sin conteo</small></div>
-      <div class="kpi ok"><span>Lugares de PT ocupados</span><b class="num">${Object.keys(S.pallets).length}</b><small>de ${TODOS_SLOTS.length}</small></div>
-      <div class="kpi ${nc ? "crit" : "ok"}"><span>Fichas cargadas</span><b class="num">${S.regs.filter((r) => r.f !== "DES").length}</b><small>${hoyR} hoy · ${nc} no conformes</small></div></div>
-    <div class="grid">
-      <section class="panel c8"><header><h2>Mapa de controles</h2><span class="leyenda"><span><i style="background:var(--info-bg);border:1px solid var(--info)"></i>kanban</span><span><i style="background:var(--accent-soft);border:1px solid var(--accent)"></i>ficha</span></span></header><div class="cuerpo">
-        ${carril("var(--mp)", "Materia prima", "kanban + cámaras", [paso("Almacén de MP", "mp", "kan"), paso("Cámaras", "camaras", "kan"), paso("FAB-01 Recepción", "f-FAB-01", "form"), paso("REC-01 Recepción recargas", "f-REC-01", "form")])}
-        ${carril("var(--man)", "Manuales y carros", "n° del marcado Pannier", [paso("FAB-02 Marcado", "f-FAB-02", "form"), paso("FAB-03 Sold. longitudinal", "f-FAB-03", "form"), paso("FAB-04 Sold. de cúpula", "f-FAB-04", "form"),
-          paso("FAB-05 Sold. circunferencial", "f-FAB-05", "form"), paso("FAB-06 Espesor 2 %", "f-FAB-06", "form"), paso("FAB-07 PH", "f-FAB-07", "form"), paso("FAB-08 Defectos", "f-FAB-08", "form"),
-          paso("FAB-09 Pintado", "f-FAB-09", "form"), paso("FAB-10 Pérdidas", "f-FAB-10", "form"), paso("FAB-11 PT", "f-FAB-11", "form")])}
-        ${carril("var(--rec)", "Recargas", "orden de servicio + n° grabado", [paso("REC-02 Inspección interior", "f-REC-02", "form"), paso("REC-03 Pérdidas", "f-REC-03", "form"), paso("REC-04 PT y despacho", "f-REC-04", "form")])}
-        ${carril("var(--ext)", "Revendidos", "n° de la etiqueta del fabricante", [paso("REV-01 Recepción", "f-REV-01", "form"), paso("Zona de reventa", "pt", "kan")])}
-        ${carril("var(--pt)", "Producto terminado", "zonificado con fechas", [paso("Kanban de PT", "pt", "kan"), paso("Despacho por días fijos", "pt")])}</div></section>
-      <section class="panel c4"><header><h2>Para pedir</h2><a href="#mp" style="font-size:13px">Kanban de MP</a></header><div class="cuerpo">
-        ${alertas.length ? `<table><tbody>${alertas.map((m) => `<tr><td class="mono">${esc(m.cod)}</td><td>${esc(m.mat)}</td><td><span class="pill ${estado(m) === "crit" ? "crit" : "warn"}">${estado(m) === "crit" ? "bajo seguridad" : "pedir"}</span></td></tr>`).join("")}</tbody></table>`
-          : `<div class="vacio">${Object.keys(S.stock).length ? "Ningún código en el punto de pedido." : "Todavía no hay lecturas de stock: cargalas desde Cámaras o desde una tarjeta del kanban."}</div>`}</div></section>
-      <details class="fuente c12"><summary>De dónde salen los números</summary>${esc(D.fuente.mp)} · ${esc(D.fuente.pt)} · ${esc(D.fuente.bal)} · plano rev ${esc(D.layout.revision)} de la app de gestión interna.
-        Lo que se carga queda guardado en este navegador. ${S.demo ? "" : `<button class="btn chico" data-a="ejemplo">Ver con datos de ejemplo</button>`} <button class="btn chico" data-a="borrar">Borrar todo lo cargado</button></details></div>`;
+// ---------------------------------------------------------------- puestos, lotes y recorridos
+// Mismo plano (rev10), mismos puestos y mismos recorridos que la app de gestión interna (catalogo_gestion.json y
+// caminos.js copiados de APP_SISTEMA_DE_GESTION_INTERNA_FLAMA). Cada ficha se carga en un puesto del plano; dónde está
+// cada lote sale de la última ficha que tiene cargada. REV es el puesto de recepción de revendidos (sector del plano
+// «Trazabilidad PT»), que la app de gestión no tiene.
+const CAT = D.cat;
+const PUESTOS = Object.fromEntries([...CAT.puestos, { id: "REV", linea: "PT", nombre: "Recepción de revendidos", sector: "exp_trazabilidad", registro: true }]
+  .map((p, i) => [p.id, { ...p, orden: i }]));
+const LIN = { REC: ["Recargas", "var(--rec)"], MAN: ["Manuales", "var(--man)"], CAR: ["Carros", "var(--car)"], MP: ["Materia prima", "var(--mp)"],
+  PT: ["Producto terminado", "var(--pt)"], EXT: ["Fuera de planta", "var(--ext)"] };
+// Puesto del plano donde se carga cada ficha: [manuales, carros] (Balanceo › Carga, puestos de cada ficha)
+const PUESTO_FICHA = { "FAB-01": ["MP_TRAZ"], "FAB-02": ["MARC"], "FAB-03": ["M3", "C5"], "FAB-04": ["M6", "C6"], "FAB-05": ["M7", "C7"],
+  "FAB-06": ["M8"], "FAB-07": ["MPH", "CPH"], "FAB-08": ["M11"], "FAB-09": ["M18", "C12"], "FAB-10": ["M15", "C15"], "FAB-11": ["PTM", "C16"],
+  "REC-01": ["MP_TRAZ"], "REC-02": ["R9"], "REC-03": ["R26"], "REC-04": ["R27"], "REV-01": ["REV"] };
+const FICHAS_DE = {};
+Object.entries(PUESTO_FICHA).forEach(([f, ps]) => ps.forEach((p) => (FICHAS_DE[p] = (FICHAS_DE[p] || []).concat(f))));
+const esCarro = (r) => !!(MOD(r.v.modelo) || {}).car || /^Carro|de carro/.test(r.v.prod || "");
+const puestoDe = (r) => { const p = PUESTO_FICHA[r.f]; return !p ? null : p.length > 1 && esCarro(r) ? p[1] : p[0]; };
+// Lotes (fichas FAB con lote) y órdenes de servicio (fichas REC con OS), con su recorrido y el paso donde están.
+function grupos() {
+  const g = {};
+  S.regs.forEach((r) => {
+    const k = r.v.lote && /^FAB-(0[2-9]|1[01])$/.test(r.f) ? "L:" + r.v.lote : r.v.os && /^REC-0[2-4]$/.test(r.f) ? "O:" + r.v.os : null;
+    if (!k) return;
+    const x = g[k] || (g[k] = { k, id: k.slice(2), tipo: k[0] === "L" ? "lote" : "os", regs: [], modelo: null, u: 0, sd: null, sh: null });
+    x.regs.push(r);
+    if (r.v.modelo) x.modelo = r.v.modelo;
+    if (r.v.sd != null && r.v.sh != null) { x.sd = x.sd == null ? r.v.sd : Math.min(x.sd, r.v.sd); x.sh = Math.max(x.sh || 0, r.v.sh); }
+    if (r.v.serie && x.tipo === "os") x.serie = r.v.serie;
+  });
+  return Object.values(g).map((x) => {
+    x.regs.sort((a, b) => a.t.localeCompare(b.t));
+    const ref = x.regs.find((r) => r.v.modelo) || x.regs[0];
+    x.linea = x.tipo === "os" ? "REC" : esCarro(ref) ? "CAR" : "MAN";
+    x.ruta = x.tipo === "os" ? "REC-ABC" : x.linea === "CAR" ? "CAR-STD" : x.modelo === "ABC 1 kg" ? "MAN-1KG" : "MAN-STD";
+    x.u = x.tipo === "os" ? 1 : x.sd != null ? x.sh - x.sd + 1 : +((x.regs.find((r) => r.f === "FAB-11") || { v: {} }).v.cant || 0);
+    const pasos = CAT.rutas[x.ruta].pasos, idx = x.regs.map((r) => pasos.indexOf(puestoDe(r))).filter((i) => i >= 0);
+    x.paso = idx.length ? Math.max(...idx) : 0;
+    x.puesto = pasos[x.paso];
+    x.fin = x.regs.some((r) => ["FAB-11", "REC-04"].includes(r.f) && r.res === "Conforme");
+    x.nc = x.regs.some((r) => r.res === "No conforme");
+    x.ultima = x.regs[x.regs.length - 1];
+    return x;
+  });
 }
+const enCurso = () => grupos().filter((x) => !x.fin);
 
-// ---------------------------------------------------------------- layout de planta (plano rev10 de la app de gestión)
-// Sectores donde se carga cada ficha y zonas de almacén; los nombres y la geometría son los del plano.
-const SECTOR_FICHA = {
-  "FAB-01": ["mp_trazabilidad", "p01_almacen_mp"], "FAB-02": ["p021_marcado"], "FAB-03": ["m03_sold_long", "p05_sold_long"],
-  "FAB-04": ["m06_cuello", "p06_sold_cupla"], "FAB-05": ["m07_circunferencial", "p07_armado_circ"], "FAB-06": ["m08_espesor"],
-  "FAB-07": ["m09_ph_secado"], "FAB-08": ["m11_granallado"], "FAB-09": ["m18_pintura", "p12_recepcion_pintados"],
-  "FAB-10": ["m15_perdidas", "p17_ensayos_lote"], "FAB-11": ["m17_embalaje", "p16_deposito_pt"], "REC-01": ["rec_polvo"],
-  "REC-02": ["rec_R10", "rec_R13R14"], "REC-03": ["rec_R26"], "REC-04": ["rec_R27"], "REV-01": ["exp_trazabilidad"],
-};
-const SECTOR_PT = { pt_manuales: ["rack"], p16_deposito_pt: ["carros"], p16b_lugar_carga: ["anden"], p11_pulmon_despacho: ["pint"], p12_recepcion_pintados: ["pint"] };
-const SECTOR_MP = ["p01_almacen_mp"];
-const geo = Object.fromEntries(D.layout.sectores.map((s) => [s.id, s]));
+// ---------------------------------------------------------------- layout de planta
+const GEO = {};
+D.layout.sectores.forEach((s) => (GEO[s.id] = s));
+CAT.zonas.forEach((z) => (GEO[z.id] = { ...z, externa: true }));
 const caja = (s) => s.rect || (() => { const xs = s.poly.map((p) => p[0]), ys = s.poly.map((p) => p[1]); return [Math.min(...xs), Math.min(...ys), Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)]; })();
-let SEL = null;
-function textoSector(nombre, x, y, w, h) {
-  const fs = Math.max(0.3, Math.min(0.9, (w - 0.3) / (nombre.length * 0.58), h * 0.28));
-  const lineas = nombre.length * fs * 0.58 > w - 0.3 && nombre.includes(" ") ? [nombre.slice(0, nombre.lastIndexOf(" ", Math.ceil(nombre.length / 2) + 4)), nombre.slice(nombre.lastIndexOf(" ", Math.ceil(nombre.length / 2) + 4) + 1)] : [nombre];
-  const f2 = Math.max(0.3, Math.min(fs * (lineas.length > 1 ? 1.6 : 1), 0.9, ...lineas.map((t) => (w - 0.3) / (t.length * 0.58))));
-  return `<text class="l-nombre" font-size="${f2.toFixed(2)}" x="${(x + 0.18).toFixed(2)}" y="${(y + f2 * 1.05 + 0.08).toFixed(2)}">${lineas.map((t, i) => `<tspan x="${(x + 0.18).toFixed(2)}" dy="${i ? (f2 * 1.1).toFixed(2) : 0}">${esc(t)}</tspan>`).join("")}</text>`;
+// Un punto por puesto en el centro de su sector; si varios comparten sector, se reparten sobre el lado largo (como la app de gestión).
+const PUNTOS = {}, LINEA_SECTOR = {};
+(() => {
+  const por = {};
+  Object.values(PUESTOS).forEach((p) => (por[p.sector] = por[p.sector] || []).push(p.id));
+  Object.entries(por).forEach(([sid, ids]) => {
+    const g = GEO[sid]; if (!g) return;
+    const [x, y, w, h] = caja(g), hor = w >= h;
+    ids.forEach((id, k) => {
+      const f = (k + 1) / (ids.length + 1), chico = h < 3.2 && !g.externa;
+      PUNTOS[id] = hor ? { x: x + w * f, y: y + h * (chico ? 0.66 : 0.62) } : { x: x + w / 2, y: y + h * f };
+      const l = PUESTOS[id].linea; if (!LINEA_SECTOR[sid] && l !== "EXT") LINEA_SECTOR[sid] = l;
+    });
+  });
+})();
+let CAMINO = null;
+const camino = (a, b) => (CAMINO || (CAMINO = crearCaminos({ layout: D.layout, zonas: CAT.zonas, limites: CAT.limites, puestos: PUESTOS })))(a, b, PUNTOS[a], PUNTOS[b]);
+const LAY = { filtro: "todas", vb: null };
+function textoSector(nombre, x, y, w, h, clase = "l-nombre") {
+  const palabras = nombre.split(" ");
+  let mejor = { lineas: [nombre], fs: Math.min(0.95, (w - 0.3) / (nombre.length * 0.58), h * 0.3) };
+  for (let i = 1; i < palabras.length; i++) {
+    const l = [palabras.slice(0, i).join(" "), palabras.slice(i).join(" ")];
+    const fs = Math.min(0.95, ...l.map((t) => (w - 0.3) / (t.length * 0.58)), h * 0.22);
+    if (fs > mejor.fs) mejor = { lineas: l, fs };
+  }
+  const fs = Math.max(0.3, mejor.fs);
+  return `<text class="${clase}" font-size="${fs.toFixed(2)}" x="${(x + 0.18).toFixed(2)}" y="${(y + fs * 1.05 + 0.08).toFixed(2)}">${mejor.lineas.map((t, i) => `<tspan x="${(x + 0.18).toFixed(2)}" dy="${i ? (fs * 1.1).toFixed(2) : 0}">${esc(t)}</tspan>`).join("")}</text>`;
 }
-function svgPlano() {
-  const L = D.layout, fichaDe = {};
-  Object.entries(SECTOR_FICHA).forEach(([fid, ss]) => ss.forEach((sid) => (fichaDe[sid] = (fichaDe[sid] || []).concat(fid))));
-  const alarmaMP = D.mp.some((m) => ["crit", "pedir"].includes(estado(m)));
-  const p = [`<text class="l-orient" font-size="1.25" x="-2" y="-41.2">▲ SALIDA DE PT Y RECARGAS</text>`, `<text class="l-orient" font-size="1.25" x="-2" y="16.6">▼ INGRESO DE MATERIA PRIMA</text>`];
+function svgPlanta() {
+  const L = D.layout;
+  const p = [`<defs><pattern id="rayado" width="0.9" height="0.9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="0.9" height="0.9" fill="#f7f8f9"/><line x1="0" y1="0" x2="0" y2="0.9" stroke="#dfe3e8" stroke-width="0.22"/></pattern></defs>`,
+    `<text class="l-orient" font-size="1.25" x="-10" y="-40.8">▲ ARRIBA · SALIDA DE PT Y RECARGAS</text>`, `<text class="l-orient" font-size="1.25" x="24.5" y="34.6">▼ ABAJO · INGRESO DE MATERIA PRIMA</text>`];
+  CAT.zonas.forEach((z) => { const [x, y, w, h] = z.rect;
+    p.push(`<rect class="l-externa ${z.interna ? "interna" : ""}" data-sector="${z.id}" x="${x}" y="${y}" width="${w}" height="${h}" rx="0.4"/>`, textoSector(z.nombre, x + 0.2, y + 0.1, w - 0.4, h, "l-nombre-ext")); });
   p.push(`<rect class="l-nave" x="0" y="0" width="${L.nave.ancho}" height="${L.nave.largo}"/>`);
   L.nave.anexos.forEach(([x, y, w, h]) => p.push(`<rect class="l-nave" x="${x}" y="${y}" width="${w}" height="${h}"/>`));
   L.pasillos.forEach((q) => { const [x, y, w, h] = q.rect; p.push(`<rect class="l-pasillo" x="${x}" y="${y}" width="${w}" height="${h}"/>`); });
   L.sectores.forEach((s) => {
-    const cls = ["l-sector", fichaDe[s.id] ? "ficha" : "", SECTOR_MP.includes(s.id) ? "alm" : "", SECTOR_PT[s.id] ? "ptz" : "",
-      SECTOR_MP.includes(s.id) && alarmaMP ? "alerta" : "", SEL === s.id ? "sel" : ""].join(" ");
-    const forma = s.rect ? `<rect class="${cls}" data-sector="${s.id}" x="${s.rect[0]}" y="${s.rect[1]}" width="${s.rect[2]}" height="${s.rect[3]}"/>`
-      : `<polygon class="${cls}" data-sector="${s.id}" points="${s.poly.map((q) => q.join(",")).join(" ")}"/>`;
-    const [x, y, w, h] = caja(s);
-    p.push(forma, textoSector(s.nombre, x, y, s.rect ? w : Math.min(w, 9), s.rect ? h : 4));
+    const lin = LINEA_SECTOR[s.id], est = lin ? `style="--c:${LIN[lin][1]}"` : "", cls = `l-sector ${lin ? "lin" : ""}`;
+    if (s.rect) { const [x, y, w, h] = s.rect; p.push(`<rect class="${cls}" ${est} data-sector="${s.id}" x="${x}" y="${y}" width="${w}" height="${h}"/>`, textoSector(s.nombre, x, y, w, h)); }
+    else { const [x, y, w] = caja(s); p.push(`<polygon class="${cls}" ${est} data-sector="${s.id}" points="${s.poly.map((q) => q.join(",")).join(" ")}"/>`, textoSector(s.nombre, x, y, Math.min(w, 9), 4)); }
   });
   L.muros.forEach((m) => p.push(`<polyline class="l-muro" points="${m.map((q) => q.join(",")).join(" ")}"/>`));
-  L.portones.forEach((q) => p.push(`<line class="l-porton" x1="${q.de[0]}" y1="${q.de[1]}" x2="${q.a[0]}" y2="${q.a[1]}"/>`));
-  // fichas: un cuadradito por sector (como los puestos con ficha de la app de gestión), con el número de la ficha
-  Object.entries(fichaDe).forEach(([sid, fs]) => {
-    const g = geo[sid]; if (!g) return;
-    const [x, y, w, h] = caja(g);
-    fs.forEach((fid, k) => { const cx = x + w - 0.75 - k * 1.5, cy = y + h - 0.7;
-      p.push(`<rect class="l-ficha" data-sector="${sid}" x="${cx - 0.65}" y="${cy - 0.45}" width="1.3" height="0.9" rx="0.15"/><text class="l-ficha-txt" x="${cx}" y="${cy}">${fid.split("-")[1]}</text>`); });
-  });
-  // cámaras del almacén de MP repartidas dentro del sector 1, con la cantidad para pedir
-  const [ax, ay, , ah] = caja(geo.p01_almacen_mp);
-  ALMS.filter((a) => !/producto terminado/.test(a.alm)).forEach((a, i) => {
-    const cx = ax + 4.2 + (i % 2) * 2.9, cy = ay + 6 + Math.floor(i / 2) * ((ah - 7) / 6);
-    const n = D.mp.filter((m) => m.alm === a.alm && ["crit", "pedir"].includes(estado(m))).length;
-    p.push(`<g class="l-cam ${n ? "alarma" : ""}" data-cam="${esc(a.alm)}"><title>${camId(a.alm)} · ${esc(a.alm)}</title><rect x="${cx - 1.4}" y="${cy - 0.45}" width="2.8" height="0.9" rx="0.2" ${n ? 'style="fill:var(--critical)"' : ""}/><text x="${cx}" y="${cy}">${camId(a.alm)}${n ? " · " + n : ""}</text></g>`);
-  });
-  // ocupación de las zonas de PT
-  Object.entries(SECTOR_PT).forEach(([sid, zs]) => {
-    const g = geo[sid]; if (!g) return;
-    const [x, y, w, h] = caja(g), sl = ZONAS.filter((z) => zs.includes(z.k)).flatMap((z) => z.slots), oc = sl.filter((q) => S.pallets[q]).length;
-    p.push(`<text class="l-cuenta" x="${x + w / 2}" y="${y + h / 2 + 0.6}" text-anchor="middle" style="fill:var(--pt)">${oc}/${sl.length}</text>`);
+  L.portones.forEach((q) => {
+    p.push(`<line class="l-porton" x1="${q.de[0]}" y1="${q.de[1]}" x2="${q.a[0]}" y2="${q.a[1]}"/>`);
+    const v = q.de[0] === q.a[0], tx = v ? q.de[0] + (q.de[0] < 0 ? -0.5 : 0.5) : (q.de[0] + q.a[0]) / 2, ty = v ? (q.de[1] + q.a[1]) / 2 : q.de[1] - 0.5;
+    p.push(`<text class="l-porton-txt" x="${tx}" y="${ty}" text-anchor="${v ? (q.de[0] < 0 ? "end" : "start") : "middle"}">${esc(q.texto.split(" — ")[0])}</text>`);
   });
   return p.join("");
 }
-function vLayout() {
-  return `<div class="layout"><section class="panel lienzo"><div class="lienzo-cab"><h2>Layout de planta <span class="mut" style="font:500 12.5px var(--font);text-transform:none;letter-spacing:0">plano rev ${esc(D.layout.revision)} · tocá un sector</span></h2></div>
-    <div class="lienzo-area"><svg id="plano" viewBox="-4 -43 59 61" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Layout de la planta con fichas, cámaras y zonas de almacén">${svgPlano()}</svg></div>
-    <div class="ley-layout"><span><svg viewBox="0 0 16 12"><rect x="1" y="2" width="14" height="8" rx="2" fill="#fff" stroke="#c8102e" stroke-width="1.4"/></svg>Puesto con ficha (número)</span>
-      <span><svg viewBox="0 0 16 12"><rect x="1" y="3" width="14" height="6" rx="1" fill="#11161c"/></svg>Cámara de almacén</span>
-      <span><svg viewBox="0 0 16 12"><rect x="1" y="1" width="14" height="10" fill="#efedfb" stroke="#6250d6"/></svg>Almacén de MP</span>
-      <span><svg viewBox="0 0 16 12"><rect x="1" y="1" width="14" height="10" fill="#eaf3eb" stroke="#2f7d32"/></svg>Zona de PT (ocupados/lugares)</span>
-      <span><svg viewBox="0 0 16 12"><rect x="1" y="1" width="14" height="10" fill="#fbe2e6" stroke="#c8102e"/></svg>Hay MP para pedir</span></div></section>
-    <aside class="panel lado" id="lado">${ladoLayout()}</aside></div>`;
+// Qué se cuenta en cada punto: lotes y órdenes de servicio en curso en el puesto de su última ficha; en el almacén de MP,
+// los códigos para pedir; en los puestos de PT, los lugares ocupados.
+const PT_PUESTO = { PTM: ["rack"], C16: ["carros"], C16B: ["anden"], REV: ["rv"] };
+function cargaPuestos() {
+  const f = LAY.filtro, c = {};
+  if (f !== "ALM") enCurso().filter((x) => f === "todas" || x.linea === f).forEach((x) => {
+    const q = c[x.puesto] || (c[x.puesto] = { n: 0, u: 0, lin: x.linea, nc: false, txt: "lotes" });
+    q.n++; q.u += x.u; q.nc = q.nc || x.nc;
+  });
+  if (f === "todas" || f === "ALM") {
+    const n = D.mp.filter((m) => ["crit", "pedir"].includes(estado(m))).length;
+    if (n) c.MP_ALM = { n, lin: "MP", nc: D.mp.some((m) => estado(m) === "crit"), txt: "MP para pedir" };
+    Object.entries(PT_PUESTO).forEach(([id, zs]) => { const n2 = ZONAS.filter((z) => zs.includes(z.k)).flatMap((z) => z.slots).filter((s) => S.pallets[s]).length;
+      if (n2) c[id] = { n: n2, lin: "PT", txt: "lugares ocupados" }; });
+  }
+  return c;
 }
-function ladoLayout() {
-  if (!SEL || !geo[SEL]) return `<div class="cuerpo"><span class="mut" style="font-size:12.5px">PLANTA INDUSTRIAL</span><h3>Elegí un sector</h3>
-    <p class="mut">Los puestos con cuadradito rojo tienen ficha de control. En el almacén de MP están las cámaras; en rojo las que ven códigos en el punto de pedido.
-    Las zonas verdes son del PT, con los lugares ocupados.</p></div>`;
-  const g = geo[SEL], fichas = Object.entries(SECTOR_FICHA).filter(([, ss]) => ss.includes(SEL)).map(([fid]) => FORM[fid]);
-  const regs = S.regs.filter((r) => fichas.some((x) => x.id === r.f)).slice(-6).reverse();
-  let extra = "";
-  if (SECTOR_MP.includes(SEL)) extra = `<h4 style="margin:14px 0 6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Cámaras</h4><table><tbody>${ALMS.filter((a) => !/producto terminado/.test(a.alm)).map((a) => {
-    const n = D.mp.filter((m) => m.alm === a.alm && ["crit", "pedir"].includes(estado(m))).length;
-    return `<tr><td class="mono">${camId(a.alm)}</td><td>${esc(a.alm)}</td><td>${n ? `<span class="pill crit">${n} para pedir</span>` : ""}</td></tr>`; }).join("")}</tbody></table>
-    <div class="filtros" style="margin-top:10px"><a class="btn chico" href="#mp">Kanban de MP</a><a class="btn chico" href="#camaras">Cámaras</a></div>`;
-  if (SECTOR_PT[SEL]) { const zs = ZONAS.filter((z) => SECTOR_PT[SEL].includes(z.k));
-    extra = `<h4 style="margin:14px 0 6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Zonas de PT</h4>${zs.map((z) => `<p style="margin:0 0 4px"><b>${esc(z.t)}</b> · ${z.slots.filter((q) => S.pallets[q]).length} de ${z.slots.length} ocupados</p>`).join("")}
-    <a class="btn chico" href="#pt">Kanban de PT</a>`; }
-  return `<div class="cuerpo"><span class="mut" style="font-size:12.5px">SECTOR DEL PLANO</span><h3>${esc(g.nombre)}</h3>
-    ${fichas.length ? `<h4 style="margin:14px 0 6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Fichas de este puesto</h4>
-      <div style="display:grid;gap:8px">${fichas.map((x) => `<a class="fcard" href="#f-${x.id}"><b>${x.id}</b><h3>${esc(x.nombre)}</h3><span class="mut" style="font-size:12px">${esc(x.normas.slice(0, 2).join(" · "))}</span></a>`).join("")}</div>
-      <h4 style="margin:14px 0 6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Últimas fichas</h4>
-      ${regs.length ? `<table><tbody>${regs.map((r) => `<tr><td class="mono">${esc(r.id)}</td><td class="num">${esc(r.t.slice(5))}</td><td><span class="pill ${r.res === "Conforme" ? "ok" : "crit"}">${esc(r.res)}</span></td></tr>`).join("")}</tbody></table>` : `<div class="vacio">Sin fichas cargadas.</div>`}` : ""}
-    ${extra || (!fichas.length ? `<p class="mut">Este sector no tiene ficha de control ni stock que seguir.</p>` : "")}</div>`;
+function svgPuntos() {
+  const c = cargaPuestos(), p = [];
+  Object.entries(PUNTOS).forEach(([id, pt]) => {
+    const P = PUESTOS[id], w = c[id], r = w ? 0.92 : 0.42, x = pt.x.toFixed(2), y = pt.y.toFixed(2), reg = !!FICHAS_DE[id] || P.registro;
+    const col = LIN[w ? w.lin : P.linea] ? LIN[w ? w.lin : P.linea][1] : "var(--ext)";
+    const forma = reg ? `<rect class="forma" x="${(pt.x - r).toFixed(2)}" y="${(pt.y - r).toFixed(2)}" width="${(r * 2).toFixed(2)}" height="${(r * 2).toFixed(2)}" rx="${(r * 0.3).toFixed(2)}"/>`
+      : `<circle class="forma" cx="${x}" cy="${y}" r="${r}"/>`;
+    const txt = w ? (w.n > 99 ? "99+" : String(w.n)) : "";
+    p.push(`<g class="l-punto ${w ? "con-carga" : ""} ${w && w.nc ? "nc" : ""} ${LAY.sel === id ? "sel" : ""}" style="--c:${col}" data-puesto="${id}"><title>${esc(P.nombre)} · ${id}${w ? ` · ${w.n} ${w.txt}${w.u ? ` · ${nf(w.u)} u` : ""}` : ""}${FICHAS_DE[id] ? ` · ficha ${FICHAS_DE[id].join(", ")}` : ""}</title>${forma}${txt ? `<text class="cant" x="${x}" y="${(pt.y + 0.04).toFixed(2)}" font-size="${txt.length > 2 ? 0.62 : 0.85}">${txt}</text>` : ""}</g>`,
+      `<text class="l-cod" x="${x}" y="${(pt.y + r + 0.7).toFixed(2)}" text-anchor="middle">${esc(id.replace("EXT_", ""))}</text>`);
+  });
+  return p.join("");
+}
+// Recorrido del lote: verde lo que ya tiene ficha, punteado lo que falta, punto rojo intermitente en su última ficha.
+function svgRuta(x) {
+  const pasos = CAT.rutas[x.ruta].pasos, act = x.fin ? pasos.length : x.paso, casco = [], hecho = [], falta = [], marcas = [], pts = [];
+  for (let i = 0; i < pasos.length - 1; i++) {
+    const a = pasos[i], b = pasos[i + 1];
+    if (!PUNTOS[a] || !PUNTOS[b] || a === b) continue;
+    const tramo = camino(a, b), linea = `points="${tramo.map(([u, v]) => `${u.toFixed(2)},${v.toFixed(2)}`).join(" ")}"`;
+    if (i + 1 <= act) {
+      casco.push(`<polyline class="r-casco" ${linea}/>`); hecho.push(`<polyline class="r-hecho" ${linea}/>`);
+      let m = null;
+      for (let k = 0; k < tramo.length - 1; k++) { const [p, q] = [tramo[k], tramo[k + 1]], l = Math.hypot(q[0] - p[0], q[1] - p[1]); if (!m || l > m.l) m = { p, q, l }; }
+      if (m && m.l > 2.5) marcas.push(`<path d="M-0.4,-0.36 L0.36,0 L-0.4,0.36 Z" fill="#fff" transform="translate(${(m.p[0] + m.q[0]) / 2},${(m.p[1] + m.q[1]) / 2}) rotate(${Math.atan2(m.q[1] - m.p[1], m.q[0] - m.p[0]) * 180 / Math.PI})"/>`);
+    } else falta.push(`<polyline class="r-falta" ${linea}/>`);
+  }
+  pasos.forEach((id, i) => {
+    const p = PUNTOS[id]; if (!p || i === act) return;
+    const h = i < act;
+    pts.push(`<circle class="${h ? "r-punto-hecho" : "r-punto-falta"}" cx="${p.x}" cy="${p.y}" r="0.55"/><text class="r-num ${h ? "hecho" : "falta"}" x="${p.x}" y="${p.y}">${i + 1}</text>`);
+  });
+  if (act < pasos.length && PUNTOS[pasos[act]]) {
+    const p = PUNTOS[pasos[act]];
+    pts.push(`<circle class="r-pulso" cx="${p.x}" cy="${p.y}" r="0.8"/><circle class="r-pulso" cx="${p.x}" cy="${p.y}" r="0.8" style="animation-delay:.7s"/>
+      <circle class="r-actual ${x.nc ? "" : "ok"}" cx="${p.x}" cy="${p.y}" r="0.85"/><text class="r-num hecho" x="${p.x}" y="${p.y}">${act + 1}</text>`);
+  }
+  return [...falta, ...casco, ...hecho, ...marcas, ...pts].join("");
+}
+const LEY_LAYOUT = `<span><svg viewBox="0 0 16 12"><line x1="1" y1="6" x2="15" y2="6" stroke="#1f9d48" stroke-width="3" stroke-linecap="round"/></svg>Recorrido con ficha</span>
+  <span><svg viewBox="0 0 16 12"><circle cx="8" cy="6" r="5" fill="#c8102e"/></svg>Última ficha (dónde está)</span>
+  <span><svg viewBox="0 0 16 12"><line x1="1" y1="6" x2="15" y2="6" stroke="#56606b" stroke-width="1.6" stroke-dasharray="3 2"/></svg>Lo que le falta</span>
+  <span><svg viewBox="0 0 16 12"><circle cx="8" cy="6" r="3.5" fill="#fff" stroke="#8f99a4" stroke-width="1.2"/></svg>Puesto</span>
+  <span><svg viewBox="0 0 16 12"><rect x="4" y="2" width="8" height="8" rx="2" fill="#fff" stroke="#8f99a4" stroke-width="1.2"/></svg>Puesto con ficha</span>
+  <span><svg viewBox="0 0 16 12"><rect x="4" y="2" width="8" height="8" rx="2" fill="#fff" stroke="#c8102e" stroke-width="2"/></svg>Con ficha no conforme</span>
+  <span><svg viewBox="0 0 16 12"><rect x="1" y="1" width="14" height="10" fill="url(#rayado-ley)" stroke="#9aa3ad" stroke-dasharray="2 1.5"/><defs><pattern id="rayado-ley" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="3" stroke="#dfe3e8" stroke-width="1.2"/></pattern></defs></svg>Fuera de planta</span>`;
+const FILTROS = [["todas", "Todas"], ["MAN", "Manuales"], ["CAR", "Carros"], ["REC", "Recargas"], ["ALM", "Almacenes"]];
+function vLayout() {
+  return `<div class="layout"><section class="panel lienzo"><div class="lienzo-cab">
+      <h2 class="titulo-seccion">Layout de planta<small>plano rev ${esc(D.layout.revision)} · ruedita para acercar, arrastrar para mover</small></h2>
+      <div class="segmentado" id="filtro-linea">${FILTROS.map(([v, t]) => `<button data-l="${v}">${t}</button>`).join("")}</div></div>
+    <div class="lienzo-area"><svg id="plano" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Layout de la planta con los puestos, las fichas y el recorrido del lote">
+      <g id="capa-planta">${svgPlanta()}</g><g id="capa-puntos"></g><g id="capa-ruta"></g></svg>
+      <div class="zoom"><button id="z-mas" aria-label="Acercar">+</button><button id="z-menos" aria-label="Alejar">−</button><button id="z-reset" aria-label="Ver toda la planta" title="Ver toda la planta">⤢</button></div></div>
+    <div class="ley-layout">${LEY_LAYOUT}</div></section>
+    <aside class="panel lado" id="lado"></aside></div>`;
+}
+function aplicarVB() { const s = $("#plano"); if (s) s.setAttribute("viewBox", LAY.vb.map((v) => v.toFixed(2)).join(" ")); }
+function prepararZoom() {
+  const svg = $("#plano");
+  LAY.vbBase = [...CAT.limites];
+  if (!LAY.vb) LAY.vb = [...LAY.vbBase];
+  aplicarVB();
+  const zoom = (f, cx, cy) => { const [x, y, w, h] = LAY.vb, nw = Math.min(LAY.vbBase[2] * 1.6, Math.max(8, w * f)), nh = nw * (h / w);
+    LAY.vb = [cx - (cx - x) * (nw / w), cy - (cy - y) * (nh / h), nw, nh]; aplicarVB(); };
+  const aPlano = (e) => { const r = svg.getBoundingClientRect(), [x, y, w, h] = LAY.vb, k = Math.max(w / r.width, h / r.height);
+    return [x + (w - r.width * k) / 2 + (e.clientX - r.left) * k, y + (h - r.height * k) / 2 + (e.clientY - r.top) * k, k]; };
+  svg.addEventListener("wheel", (e) => { e.preventDefault(); const [cx, cy] = aPlano(e); zoom(e.deltaY > 0 ? 1.15 : 1 / 1.15, cx, cy); }, { passive: false });
+  let arr = null;
+  svg.addEventListener("pointerdown", (e) => { if (e.target.closest(".l-punto")) return; arr = { x: e.clientX, y: e.clientY, vb: [...LAY.vb], k: aPlano(e)[2], mov: false }; });
+  svg.addEventListener("pointermove", (e) => { if (!arr) return; if (!arr.mov && Math.hypot(e.clientX - arr.x, e.clientY - arr.y) < 4) return;
+    if (!arr.mov) { arr.mov = true; svg.setPointerCapture(e.pointerId); svg.classList.add("arrastrando"); }
+    LAY.vb = [arr.vb[0] - (e.clientX - arr.x) * arr.k, arr.vb[1] - (e.clientY - arr.y) * arr.k, arr.vb[2], arr.vb[3]]; aplicarVB(); });
+  svg.addEventListener("pointerup", () => { if (arr && arr.mov) LAY.arrastro = Date.now(); arr = null; svg.classList.remove("arrastrando"); });
+  const centro = () => [LAY.vb[0] + LAY.vb[2] / 2, LAY.vb[1] + LAY.vb[3] / 2];
+  $("#z-mas").onclick = () => zoom(1 / 1.3, ...centro());
+  $("#z-menos").onclick = () => zoom(1.3, ...centro());
+  $("#z-reset").onclick = () => { LAY.vb = [...LAY.vbBase]; aplicarVB(); };
+  $$("#filtro-linea button").forEach((b) => (b.onclick = () => { LAY.filtro = b.dataset.l; actualizarLayout(); }));
+}
+function encuadrar(ids) {
+  const ps = ids.map((i) => PUNTOS[i]).filter(Boolean); if (!ps.length) return;
+  const xs = ps.map((p) => p.x), ys = ps.map((p) => p.y), pad = 5;
+  let [x, y, w, h] = [Math.min(...xs) - pad, Math.min(...ys) - pad, Math.max(...xs) - Math.min(...xs) + pad * 2, Math.max(...ys) - Math.min(...ys) + pad * 2];
+  if (w < 30) { x -= (30 - w) / 2; w = 30; }
+  if (h < 30) { y -= (30 - h) / 2; h = 30; }
+  LAY.vb = [x, y, w, h]; aplicarVB();
+}
+// Lee los parámetros del hash (#layout?lote=…, ?os=…, ?puesto=…, ?linea=…) y redibuja puntos, recorrido y panel.
+function actualizarLayout() {
+  const P = PARAMS, gs = grupos();
+  if (P.get("linea")) LAY.filtro = P.get("linea");
+  LAY.sel = P.get("puesto") || null;
+  const gid = P.get("lote") ? "L:" + P.get("lote") : P.get("os") ? "O:" + P.get("os") : null;
+  LAY.g = gid ? gs.find((x) => x.k === gid) || null : null;
+  $$("#filtro-linea button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.l === LAY.filtro)));
+  $("#capa-puntos").innerHTML = svgPuntos();
+  $$(".l-sector.activo").forEach((s) => s.classList.remove("activo"));
+  if (LAY.g) {
+    $("#capa-ruta").innerHTML = svgRuta(LAY.g);
+    const sec = (PUESTOS[LAY.g.puesto] || {}).sector; if (sec) { const el = $(`[data-sector="${sec}"]`); if (el) el.classList.add("activo"); }
+    if (LAY.encuadrado !== LAY.g.k) { encuadrar(CAT.rutas[LAY.g.ruta].pasos); LAY.encuadrado = LAY.g.k; }
+  } else {
+    LAY.encuadrado = null;
+    const p = LAY.sel && PUNTOS[LAY.sel];
+    $("#capa-ruta").innerHTML = p ? `<circle class="r-pulso" cx="${p.x}" cy="${p.y}" r="1" style="stroke:var(--text)"/>` : "";
+    if (p) { const el = $(`[data-sector="${PUESTOS[LAY.sel].sector}"]`); if (el) el.classList.add("activo"); }
+  }
+  $("#lado").innerHTML = ladoLayout(gs);
+}
+const h4 = (t) => `<h4 class="h4">${t}</h4>`;
+const itemGrupo = (x) => `<li data-ir="${x.tipo === "os" ? "os" : "lote"}=${encodeURIComponent(x.id)}" style="--c:${LIN[x.linea][1]}"><span><b class="mono">${esc(x.id)}</b>${x.nc ? ' <span class="pill crit">no conforme</span>' : ""}<br>
+  <span class="mut">${esc(x.tipo === "os" ? "Recarga · serie " + (x.serie || "—") : (x.modelo || "") + (x.sd != null ? ` · series ${x.sd}–${x.sh}` : ""))}</span></span>
+  <span class="der">${esc((PUESTOS[x.puesto] || {}).nombre || "")}<br><span class="mut">${x.u} u · ${esc(x.ultima.t.slice(5))}</span></span></li>`;
+function ladoLayout(gs) {
+  const vivos = gs.filter((x) => !x.fin);
+  if (LAY.g) return panelGrupo(LAY.g);
+  if (LAY.sel && PUESTOS[LAY.sel]) {
+    const P = PUESTOS[LAY.sel], fs = FICHAS_DE[LAY.sel] || [], aca = vivos.filter((x) => x.puesto === LAY.sel);
+    const regs = S.regs.filter((r) => puestoDe(r) === LAY.sel).slice(-6).reverse();
+    let extra = "";
+    if (LAY.sel === "MP_ALM" || LAY.sel === "MP_TRAZ") extra = h4("Almacenes con faltantes") + (ALMS.map((a) => [a, D.mp.filter((m) => m.alm === a.alm && ["crit", "pedir"].includes(estado(m))).length]).filter(([, n]) => n)
+      .map(([a, n]) => `<p class="renglon"><span>${esc(a.alm)}</span><span class="pill crit">${n} para pedir</span></p>`).join("") || `<p class="mut">Ninguno.</p>`) + `<div class="filtros"><a class="btn chico" href="#almacen">Almacén de MP</a><a class="btn chico" href="#mp">Kanban de MP</a></div>`;
+    if (PT_PUESTO[LAY.sel]) extra = h4("Zonas de PT") + ZONAS.filter((z) => PT_PUESTO[LAY.sel].includes(z.k)).map((z) => `<p class="renglon"><span>${esc(z.t)}</span><span class="num">${z.slots.filter((q) => S.pallets[q]).length} de ${z.slots.length}</span></p>`).join("") + `<a class="btn chico" href="#pt">Kanban de PT</a>`;
+    return `<div class="panel-cab"><a class="volver" href="#layout">← Toda la planta</a><h3>${esc(P.nombre)}</h3><span class="chip linea" style="--c:${(LIN[P.linea] || LIN.EXT)[1]}">${esc((LIN[P.linea] || LIN.EXT)[0])}</span> <span class="mono mut">${esc(P.id)}</span></div>
+      <div class="panel-cuerpo">${fs.length ? h4("Ficha de este puesto") + `<div style="display:grid;gap:8px">${fs.map((f) => `<a class="fcard" href="#f-${f}"><b>${f}</b><h3>${esc(FORM[f].nombre)}</h3><span class="mut" style="font-size:12px">${esc(FORM[f].normas.slice(0, 2).join(" · "))}</span></a>`).join("")}</div>` : `<p class="mut">En este puesto no se carga ficha.</p>`}
+      ${aca.length ? h4(`Acá ahora · ${aca.length}`) + `<ul class="lista">${aca.map(itemGrupo).join("")}</ul>` : ""}
+      ${regs.length ? h4("Últimas fichas") + `<table><tbody>${regs.map((r) => `<tr><td class="mono">${esc(r.id)}</td><td class="num">${esc(r.t.slice(5))}</td><td><span class="pill ${r.res === "Conforme" ? "ok" : "crit"}">${esc(r.res)}</span></td></tr>`).join("")}</tbody></table>` : ""}${extra}</div>`;
+  }
+  const f = LAY.filtro, lista = vivos.filter((x) => f === "todas" || x.linea === f).sort((a, b) => PUESTOS[a.puesto].orden - PUESTOS[b.puesto].orden);
+  const u = (l) => vivos.filter((x) => x.linea === l).reduce((a, x) => a + x.u, 0);
+  return `<div class="panel-cab"><span class="mut" style="font-size:12px;letter-spacing:.08em">PLANTA AHORA</span><h3>${lista.length} ${lista.length === 1 ? "lote u orden" : "lotes y órdenes"} en curso</h3>
+    <span class="subtitulo">${nf(u("MAN"))} manuales · ${nf(u("CAR"))} carros · ${nf(u("REC"))} recargas</span></div>
+    <div class="panel-cuerpo">${f === "ALM" ? `<p class="mut">El almacén de MP muestra los códigos para pedir; los puestos del PT, los lugares ocupados. Tocá uno para ver el detalle.</p>`
+      : lista.length ? `<ul class="lista">${lista.map(itemGrupo).join("")}</ul>` : `<div class="vacio">Nada en curso. Cargá una ficha para que aparezca el lote.</div>`}
+      <p class="mut" style="font-size:12px;margin-top:12px">Cada lote está en el puesto de su última ficha. Tocá un lote para ver su recorrido.</p></div>`;
+}
+function panelGrupo(x) {
+  const pasos = CAT.rutas[x.ruta].pasos, porP = {};
+  x.regs.forEach((r) => { const p = puestoDe(r); (porP[p] = porP[p] || []).push(r); });
+  const fuera = x.regs.filter((r) => !pasos.includes(puestoDe(r)));
+  const act = x.fin ? pasos.length : x.paso;
+  return `<div class="panel-cab"><a class="volver" href="#layout">← Toda la planta</a><h3 class="mono" style="font-family:var(--cond)">${esc(x.id)}</h3>
+    <span class="chip linea" style="--c:${LIN[x.linea][1]}">${esc(LIN[x.linea][0])}</span> <span class="subtitulo">${esc(x.tipo === "os" ? "Recarga · serie " + (x.serie || "—") : (x.modelo || "") + (x.sd != null ? ` · series ${x.sd} a ${x.sh}` : ""))} · ${x.u} u</span>
+    <p style="margin:8px 0 0">${x.fin ? `<span class="pill ok">Terminado</span>` : `Está en <b>${esc(PUESTOS[x.puesto].nombre)}</b>`}${x.nc ? ` <span class="pill crit">tiene una ficha no conforme</span>` : ""}</p>
+    <div class="filtros" style="margin-top:8px"><a class="btn chico" href="#" data-q="${esc(x.id)}">Ver en Trazabilidad</a></div></div>
+    <div class="panel-cuerpo"><ol class="pasos">${pasos.map((id, i) => {
+      const rs = porP[id] || [], P = PUESTOS[id], deb = (FICHAS_DE[id] || []).length && i < act && !rs.length;
+      return `<li class="${i < act ? "hecho" : i === act ? "actual" : ""}"><span class="n">${i + 1}</span><span><b>${esc(P.nombre)}</b>${rs.map((r) => `<br><a href="#" data-q="${esc(r.id)}" class="mono">${esc(r.id)}</a> <span class="pill ${r.res === "Conforme" ? "ok" : "crit"}">${esc(r.res)}</span> <span class="mut">${esc(r.t.slice(5))}</span>`).join("")}
+        ${deb ? `<br><span class="pill warn">sin ficha ${esc(FICHAS_DE[id].join("/"))}</span>` : ""}</span></li>`; }).join("")}</ol>
+      ${fuera.length ? h4("Fichas en ramas del recorrido") + fuera.map((r) => `<p class="renglon"><span><span class="mono">${esc(r.id)}</span> · ${esc((PUESTOS[puestoDe(r)] || {}).nombre || "")}</span><span class="pill ${r.res === "Conforme" ? "ok" : "crit"}">${esc(r.res)}</span></p>`).join("") : ""}</div>`;
+}
+
+// ---------------------------------------------------------------- dashboard
+// Como el de la app de gestión: indicadores, mapa de flujo (qué hay en cada etapa según la última ficha de cada lote),
+// entradas y salidas de los últimos 14 días, lotes en curso, stock de MP, PT y la actividad de las fichas.
+const ETAPAS = {
+  MAN: ["FAB-02", "FAB-03", "FAB-05", "FAB-06", "FAB-07", "FAB-08", "FAB-09", "FAB-10"],
+  CAR: ["FAB-02", "FAB-03", "FAB-04", "FAB-05", "FAB-07", "FAB-09", "FAB-10"],
+  REC: ["REC-02", "REC-03"],
+};
+const CORTOS = { "FAB-02": "Marcado", "FAB-03": "Sold. longitudinal", "FAB-04": "Sold. de cúpula", "FAB-05": "Sold. circunferencial", "FAB-06": "Espesor",
+  "FAB-07": "Prueba hidráulica", "FAB-08": "Defectos", "FAB-09": "Pintado", "FAB-10": "Pérdidas", "REC-02": "Inspección interior", "REC-03": "Pérdidas" };
+const DASH = { lin: "MAN" };
+const ultimaFicha = (x) => x.regs.filter((r) => puestoDe(r) === x.puesto).pop() || x.ultima;
+function carrilFlujo(l, vivos) {
+  const val = Object.fromEntries(ETAPAS[l].map((f) => [f, 0])), deL = vivos.filter((x) => x.linea === l);
+  deL.forEach((x) => { const f = ultimaFicha(x).f; if (f in val) val[f] += x.u; });
+  const mx = Math.max(1, ...Object.values(val)), tot = deL.reduce((a, x) => a + x.u, 0);
+  const con = `<span class="conector" aria-hidden="true"><svg viewBox="0 0 10 14"><path d="M1 0l8 7-8 7z"/></svg></span>`;
+  return `<div class="carril"><div class="carril-nombre" style="--c:${LIN[l][1]}"><b>${LIN[l][0]}</b><span>${nf(tot)} ${l === "REC" ? "equipos" : "unidades"}</span></div>
+    <div class="etapas">${ETAPAS[l].map((f) => { const p = PUESTO_FICHA[f][l === "CAR" && PUESTO_FICHA[f].length > 1 ? 1 : 0];
+      return `<a class="etapa ${val[f] ? "" : "vacia"}" style="--c:${LIN[l][1]}" href="#layout?puesto=${p}" title="${f} · ${esc(FORM[f].nombre)}"><span class="nom">${CORTOS[f]}</span><span class="n">${nf(val[f])}</span><span class="etb"><i style="width:${val[f] / mx * 100}%"></i></span></a>`; }).join(con)}</div></div>`;
+}
+// Entradas: unidades que empiezan (marcado, inspección de la recarga, recepción de revendidos); salidas: liberadas a PT,
+// recargas despachadas y despachos de PT.
+function serieDias(l) {
+  const dias = Array.from({ length: 14 }, (_, i) => new Date(Date.now() - (13 - i) * 864e5).toISOString().slice(0, 10));
+  const e = Object.fromEntries(dias.map((d) => [d, 0])), s = Object.fromEntries(dias.map((d) => [d, 0]));
+  const u = (r) => r.v.sd != null && r.v.sh != null ? r.v.sh - r.v.sd + 1 : +r.v.cant || 1;
+  S.regs.forEach((r) => {
+    const d = r.t.slice(0, 10); if (!(d in e)) return;
+    const lin = r.f.startsWith("REC") ? "REC" : r.f === "DES" ? (/^Carro/.test(r.v.prod || "") ? "CAR" : "MAN") : esCarro(r) ? "CAR" : "MAN";
+    if (lin !== l) return;
+    if (["FAB-02", "REC-02"].includes(r.f)) e[d] += u(r);
+    if ((r.f === "FAB-11" && r.res === "Conforme") || r.f === "REC-04" || r.f === "DES") s[d] += u(r);
+  });
+  return { dias, e, s };
+}
+function grafico(l) {
+  const { dias, e, s } = serieDias(l), W = 640, H = 220, pl = 34, pb = 26, mx = Math.max(4, ...dias.map((d) => Math.max(e[d], s[d])));
+  const paso = Math.pow(10, Math.floor(Math.log10(mx))), tope = Math.ceil(mx / paso) * paso, cw = (W - pl) / dias.length, bw = Math.min(16, cw / 2 - 3);
+  const y = (v) => H - pb - v / tope * (H - pb - 10);
+  const grilla = [0, 0.25, 0.5, 0.75, 1].map((k) => `<line class="g" x1="${pl}" x2="${W}" y1="${y(tope * k)}" y2="${y(tope * k)}"/><text class="t" x="${pl - 6}" y="${y(tope * k) + 4}" text-anchor="end">${nf(tope * k)}</text>`).join("");
+  const DS = ["D", "L", "M", "M", "J", "V", "S"];
+  const barras = dias.map((d, i) => { const x = pl + i * cw + cw / 2, f = new Date(d + "T12:00"), fin = [0, 6].includes(f.getDay());
+    return `${e[d] ? `<rect class="be" x="${x - bw - 1}" y="${y(e[d])}" width="${bw}" height="${H - pb - y(e[d])}"><title>${fecha(d)} · entraron ${e[d]}</title></rect>` : ""}
+      ${s[d] ? `<rect class="bs" x="${x + 1}" y="${y(s[d])}" width="${bw}" height="${H - pb - y(s[d])}"><title>${fecha(d)} · salieron ${s[d]}</title></rect>` : ""}
+      <text class="t ${fin ? "fin" : ""}" x="${x}" y="${H - 8}" text-anchor="middle">${DS[f.getDay()]} ${f.getDate()}</text>`; }).join("");
+  const te = dias.reduce((a, d) => a + e[d], 0), ts = dias.reduce((a, d) => a + s[d], 0);
+  return `<div class="totales" style="--c-e:${LIN[l][1]}"><span><b class="num">${nf(te)}</b>entraron</span><span><b class="num">${nf(ts)}</b>salieron</span>
+    <span class="leyenda" style="margin-left:auto"><span><i style="background:var(--c-e)"></i>Entradas</span><span><i style="background:var(--c-s)"></i>Salidas</span></span></div>
+    <svg class="grafico" viewBox="0 0 ${W} ${H}" role="img" aria-label="Entradas y salidas diarias de ${LIN[l][0]}" style="--c-e:${LIN[l][1]}">${grilla}<line class="eje" x1="${pl}" x2="${W}" y1="${H - pb}" y2="${H - pb}"/>${barras}</svg>`;
+}
+function vDashboard() {
+  const gs = grupos(), vivos = gs.filter((x) => !x.fin), est = D.mp.map(estado), cuenta = (k) => est.filter((e) => e === k).length;
+  const uL = (l) => vivos.filter((x) => x.linea === l).reduce((a, x) => a + x.u, 0), nL = (l) => vivos.filter((x) => x.linea === l).length;
+  const nc = S.regs.filter((r) => r.res === "No conforme" && r.t >= new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10)).length;
+  const sobre = D.mp.filter((m) => S.stock[m.cod] && S.stock[m.cod].u > m.ss).length;
+  const ptU = Object.values(S.pallets).reduce((a, p) => a + (+p.cant || 0), 0), despHoy = S.regs.filter((r) => r.f === "DES" && r.t.startsWith(hoy())).reduce((a, r) => a + (+r.v.cant || 0), 0);
+  const ind = (t, v, sub, c, h) => `<a class="indicador" style="--c:${c}" href="${h}"><span class="et">${t}</span><span class="valor num">${v}</span><span class="sub">${sub}</span></a>`;
+  const pedir = D.mp.filter((m) => ["crit", "pedir"].includes(estado(m))).sort((a, b) => (S.stock[a.cod].u / (a.pp || 1)) - (S.stock[b.cod].u / (b.pp || 1))).slice(0, 8);
+  const ptProd = D.pt.map((p) => [p.prod, Object.values(S.pallets).filter((x) => x.prod === p.prod).reduce((a, x) => a + (+x.cant || 0), 0), p.max]).filter(([, u]) => u);
+  const act = S.regs.slice().sort((a, b) => b.t.localeCompare(a.t)).slice(0, 9);
+  const linR = (r) => r.f.startsWith("REC") ? "REC" : r.f === "REV-01" || r.f === "DES" ? "PT" : r.f === "FAB-01" ? "MP" : esCarro(r) ? "CAR" : "MAN";
+  return `${bandaEjemplo()}<div class="cab"><div><h1>Trazabilidad de planta</h1><p>Kanban de almacenes, fichas de control y búsqueda por el número grabado. Sin QR.</p></div>
+    <div class="filtros"><a class="btn" href="#marcado">Identificación sin QR</a><a class="btn" href="#revendidos">Revendidos</a></div></div>
+    <div class="indicadores">
+      ${ind("Manuales en proceso", `${nf(uL("MAN"))}<small>u</small>`, `en ${nL("MAN")} lotes`, "var(--man)", "#layout?linea=MAN")}
+      ${ind("Carros en proceso", nf(uL("CAR")), `en ${nL("CAR")} lotes`, "var(--car)", "#layout?linea=CAR")}
+      ${ind("Recargas en planta", nf(uL("REC")), "órdenes de servicio abiertas", "var(--rec)", "#layout?linea=REC")}
+      ${ind("MP para pedir", nf(cuenta("crit") + cuenta("pedir")), `${cuenta("crit")} bajo seguridad · ${cuenta("ped")} pedidas`, "var(--mp)", "#mp")}
+      ${ind("Fichas no conformes", nf(nc), "últimos 7 días", "var(--critical)", "#formularios")}</div>
+    <section class="panel mapa"><header><div><h2>Mapa de flujo</h2><span class="mut" style="font-size:13px">Qué hay ahora en cada etapa, según la última ficha de cada lote. Tocá una etapa para verla en el layout.</span></div></header>
+      <div class="cuerpo mapa-cuerpo">
+        <a class="extremo" href="#almacen"><span class="ez">Abajo · ingreso</span><h4>Materia prima</h4><span class="grande num">${sobre}<small> / ${D.mp.length}</small></span><span class="mut">MP sobre la seguridad</span>
+          <span class="grande num" style="font-size:24px">${cuenta("crit") + cuenta("pedir")}</span><span class="mut">para pedir · ${cuenta("ped")} pedidos en camino</span></a>
+        <div class="carriles">${carrilFlujo("MAN", vivos)}${carrilFlujo("CAR", vivos)}${carrilFlujo("REC", vivos)}</div>
+        <a class="extremo" href="#pt"><span class="ez">Arriba · salida</span><h4>Producto terminado</h4><span class="grande num">${nf(ptU)}</span><span class="mut">unidades en el PT</span>
+          <span class="grande num" style="font-size:24px">${nf(despHoy)}</span><span class="mut">despachadas hoy</span></a></div></section>
+    <div class="grid">
+      <section class="panel c8"><header><div><h2>Entradas y salidas</h2><span class="mut" style="font-size:13px">Unidades por día, últimos 14 días, según las fichas.</span></div>
+        <div class="segmentado" id="seg-dash">${["REC", "MAN", "CAR"].map((l) => `<button data-dl="${l}" aria-pressed="${DASH.lin === l}">${LIN[l][0]}</button>`).join("")}</div></header>
+        <div class="cuerpo" id="graf">${grafico(DASH.lin)}</div></section>
+      <section class="panel c4"><header><div><h2>Lotes en curso</h2><span class="mut" style="font-size:13px">Dónde está cada uno: su última ficha.</span></div></header>
+        <div class="cuerpo"><ul class="lista">${vivos.sort((a, b) => b.ultima.t.localeCompare(a.ultima.t)).slice(0, 7).map(itemGrupo).join("") || `<div class="vacio">Nada en curso.</div>`}</ul></div></section>
+      <section class="panel c4"><header><div><h2>Stock de materia prima</h2><span class="mut" style="font-size:13px"><b class="num" style="font-size:22px;color:var(--text)">${sobre}</b> de ${D.mp.length} sobre la seguridad</span></div></header>
+        <div class="cuerpo">${pedir.length ? `<p class="mut" style="font-size:12.5px;margin:0 0 4px">Para pedir (la marca es el punto de pedido):</p>${pedir.map((m) => { const s = S.stock[m.cod].u, mx = Math.max(m.max, s) || 1;
+          return `<button class="fbar" data-mp="${esc(m.cod)}"><span><span class="mono">${esc(m.cod)}</span> ${esc(m.mat.replace(/\s*\(.*\)$/, ""))}</span><span class="val">${nf(s)} / ${nf(m.pp)} ${esc(m.um)}</span>
+            <span class="pista"><i style="width:${Math.min(100, s / mx * 100)}%;background:${estado(m) === "crit" ? "var(--critical)" : "var(--warn)"}"></i><u style="left:${Math.min(99, m.pp / mx * 100)}%"></u></span></button>`; }).join("")}`
+          : `<div class="vacio">${Object.keys(S.stock).length ? "Ningún código en el punto de pedido." : "Todavía no hay conteos: cargá la planilla del almacén."}</div>`}</div></section>
+      <section class="panel c4"><header><div><h2>Producto terminado</h2><span class="mut" style="font-size:13px">Unidades en el PT contra el máximo (Stock_PT, col. J).</span></div></header>
+        <div class="cuerpo">${ptProd.map(([p, u, mx]) => `<a class="fbar" href="#pt" style="--c:${/^Carro|de carro/.test(p) ? "var(--car)" : "var(--man)"}"><span>${esc(p)}</span><span class="val">${nf(u)} u</span><span class="pista"><i style="width:${Math.min(100, u / (mx || 1) * 100)}%"></i></span></a>`).join("") || `<div class="vacio">El PT está vacío.</div>`}</div></section>
+      <section class="panel c4"><header><div><h2>Actividad en los puestos</h2><span class="mut" style="font-size:13px">Últimas fichas cargadas.</span></div></header>
+        <div class="cuerpo"><ul class="actividad">${act.map((r) => `<li style="--c:${LIN[linR(r)][1]}"><span class="hora num">${esc(r.t.slice(11) || r.t.slice(5, 10))}</span><span><b class="mono">${esc(r.id)}</b>${r.res === "No conforme" ? ' <span class="pill crit">NC</span>' : ""}<br>
+          <span class="mut">${esc(r.f === "DES" ? "Despacho" : FORM[r.f].nombre)}${r.v.oper ? " · " + esc(r.v.oper) : ""}</span></span></li>`).join("") || `<div class="vacio">Sin fichas todavía.</div>`}</ul></div></section>
+      <details class="fuente c12"><summary>De dónde salen los números</summary>${esc(D.fuente.mp)} · ${esc(D.fuente.pt)} · ${esc(D.fuente.bal)} · plano rev ${esc(D.layout.revision)} y puestos de la app de gestión interna.
+        Lo que se carga queda guardado en este navegador. ${S.demo ? "" : `<button class="btn chico" data-a="ejemplo">Ver con datos de ejemplo</button>`} <button class="btn chico" data-a="borrar">Borrar todo lo cargado</button></details></div>`;
 }
 
 // ---------------------------------------------------------------- datos de ejemplo
@@ -738,7 +1095,7 @@ function ejemplo() {
     const tope = Math.min(m.pp, m.max), x = r();
     let u = x < 0.03 ? m.ss * (0.4 + 0.5 * r()) : x < 0.16 ? m.ss + (tope - m.ss) * r() : m.pp >= m.max ? m.ss + (m.max - m.ss) * r() : tope + (m.max - tope) * r();
     u = ent(m.um) ? Math.round(u) : Math.round(u * 10) / 10;
-    E.stock[m.cod] = { u, src: camId(m.alm) + " (cámara)", t: hMenos(r() * 5) };
+    E.stock[m.cod] = { u, src: "Planilla de conteo (ejemplo)", t: hMenos(20 + r() * 30) };
     if (u <= m.pp && u > m.ss && r() < 0.45) E.pedidos[m.cod] = { cant: bultos(m, m.max - u) * m.cont, t: hMenos(24 + r() * 96) };
   });
   // PT: la mitad de los pallets del máximo de cada producto, en el rack (los 10 kg en caja en el nivel 1)
@@ -799,6 +1156,59 @@ function ejemplo() {
   reg("REC-03", { os: "OS-1520", serie: "A-114502", met: "Detector" }, 8);
   reg("REC-04", { os: "OS-1520", serie: "A-114502", prec: "PR-88213", jaula: "J-03", remito: "R-0002-01177" }, 7);
   reg("REV-01", { mp: "RV-CO2_5kg", fab: "Fabricante (ejemplo)", seriesRv: E.rev.filter((x) => x.cod === "RV-CO2_5kg").map((x) => x.serie).join("\n"), anio: 2026, sello: "IRAM-EJ", remito: "R-0001-00398", slot: "RV-06" }, 300);
+  // Dos semanas de planta para el mapa de flujo y el gráfico: un lote de manuales por día hábil y uno de carros cada tres,
+  // que recorren sus fichas y se despachan, y cinco recargas por día. Los últimos días quedan a mitad de camino.
+  const habiles = [];
+  for (let d = 13; d >= 0; d--) if (![0, 6].includes(new Date(Date.now() - d * 864e5).getDay())) habiles.push(d);
+  const MAN_F = ["FAB-02", "FAB-03", "FAB-04", "FAB-05", "FAB-06", "FAB-07", "FAB-08", "FAB-09", "FAB-10", "FAB-11"];
+  const CAR_F = ["FAB-02", "FAB-03", "FAB-04", "FAB-05", "FAB-07", "FAB-09", "FAB-10", "FAB-11"];
+  const sold = { calif: "ISO 9606-1 n° 118", alambre: "B-2210", gas: "AL-7781" };
+  const valores = (f, mo, x) => {
+    const M = MOD(mo), car = M.car;
+    return ({
+      "FAB-02": { anio: 26, colada: "C-4" + (5900 + x.i) },
+      "FAB-03": { ...sold, wps: mo === "ABC 1 kg" ? "WPS-TIG-01" : "WPS-MAG-05", proc: mo === "ABC 1 kg" ? "TIG 141 (1 kg)" : "MAG 135 (2,5 a 10 kg y carros)", amp: 165, volt: 19 },
+      "FAB-04": { ...sold, wps: "WPS-MAG-07", pieza: car ? "Cupla en la cúpula (carros)" : "Cuello a la cúpula (manuales)", amp: 140, volt: 18 },
+      "FAB-05": { ...sold, wps: "WPS-MAG-06", amp: 170, volt: 20 },
+      "FAB-06": { instr: INSTR.esp[0], serie: x.sd + 3, lect: [M.t + 0.02, M.t + 0.01, M.t + 0.03, M.t + 0.01] },
+      "FAB-07": { banco: INSTR.ph[x.i % 2], contraste: 1 + x.i % 12, p: M.pe, seg: 60, et: 120, ep: 6, rot: 2 * M.pe + 0.8 },
+      "FAB-08": { def: "Sin defectos", acc: "Ninguna", reph: "No corresponde" },
+      "FAB-09": { polvo: "SP-03105", hs: 2, hr: 58, instr: INSTR.pel[0], pel: [72, 78, 81, 69, 75], adh: "0", pintor: car ? "Pintor externo (carros, recepción de pintados)" : "En planta (manuales)" },
+      "FAB-10": { met: "Inmersión" },
+    })[f] || {};
+  };
+  const prodDe = (mo) => MOD(mo).car ? `Carro ${mo.replace("Carro ABC ", "")} terminado` : (D.pt.find((p) => p.prod.startsWith("Nuevo " + mo.replace("ABC ", "") + " ")) || D.pt[0]).prod;
+  const cadena = (mo, lote, sd, n, h0, hasta, i) => {
+    const fs = MOD(mo).car ? CAR_F : MAN_F, x = { sd, i };
+    fs.slice(0, hasta).forEach((f, k) => {
+      const h = h0 - k * (MOD(mo).car ? 4 : 2.5) - (MOD(mo).car && f === "FAB-09" ? 48 : 0);
+      if (f === "FAB-11") reg(f, { prod: prodDe(mo), cant: n, lote, series: `${sd}-${sd + n - 1}`, ffab: dMenos(h / 24), slot: "—" }, h);
+      else reg(f, { modelo: mo, lote, sd, sh: sd + n - 1, ...valores(f, mo, x) }, h);
+    });
+    if (hasta >= fs.length) {
+      const h = h0 - fs.length * 3 - 20, prod = prodDe(mo);
+      E.regs.push({ id: "DES-" + String(nx("DES")).padStart(4, "0"), f: "DES", t: hMenos(h), res: "Despachado", demo: true,
+        v: { remito: "R-0001-0" + (700 + i), veh: (VEH(prod) || "Master").split(" · ")[0], pallet: "—", prod, cant: n, series: `${sd}-${sd + n - 1}`, lote, slot: "—" } });
+    }
+  };
+  const MODS_M = ["ABC 5 kg", "ABC 1 kg", "ABC 2,5 kg", "ABC 10 kg"], MODS_C = ["Carro ABC 25 kg", "Carro ABC 50 kg", "Carro ABC 70 kg", "Carro ABC 100 kg"];
+  let sM = 20000, sC = 30000, os = 1400;
+  const ahoraH = new Date().getUTCHours() + new Date().getUTCMinutes() / 60;
+  habiles.forEach((d, i) => {
+    const h0 = d * 24 + ahoraH - 7.5, viejo = d >= 4;   // arranca 7:30 de ese día
+    const hastaM = viejo ? 99 : { 3: 8, 2: 6, 1: 4, 0: 2 }[d] || 2;
+    if (h0 > 0) { cadena(MODS_M[i % 4], op(dMenos(d)), sM, 48, h0, hastaM, i); sM += 48; }
+    if (i % 3 === 0 && h0 > 0) { cadena(MODS_C[(i / 3) % 4], op(dMenos(d)) + " C", sC, 6, h0 - 1, viejo ? 99 : d >= 2 ? 5 : 2, i); sC += 6; }
+    for (let k = 0; k < 5; k++) {
+      const hr = h0 - 0.5 - k * 1.2, o = "OS-" + os++, serie = "A-" + (114000 + i * 10 + k);
+      if (hr <= 0) continue;
+      const v = { os: o, serie, fab: "Fabricante del cliente", agente: "ABC", video: "VS-1", corr: "No", dano: "No" };
+      reg("REC-02", v, hr);
+      if (d > 0 || k < 3) reg("REC-03", { os: o, serie, met: "Detector" }, hr - 2.5);
+      if (d > 0 || k < 1) reg("REC-04", { os: o, serie, prec: "PR-" + (88300 + i * 10 + k), jaula: "J-0" + (1 + k % 4), remito: "R-0002-0" + (1200 + i * 10 + k) }, hr - 4);
+    }
+  });
+  E.regs.sort((a, b) => a.t.localeCompare(b.t));
   return E;
 }
 function bandaEjemplo() {
@@ -806,7 +1216,7 @@ function bandaEjemplo() {
 }
 
 // ---------------------------------------------------------------- shell
-const MENU = [["dashboard", "Dashboard"], ["mp", "Kanban de MP"], ["camaras", "Cámaras"], ["pt", "Kanban de PT"], ["formularios", "Fichas"], ["layout", "Layout de planta"], ["traza", "Trazabilidad"]];
+const MENU = [["dashboard", "Dashboard"], ["mp", "Kanban MP"], ["almacen", "Almacén MP"], ["pt", "Kanban PT"], ["formularios", "Fichas"], ["layout", "Layout"], ["traza", "Trazabilidad"]];
 function menu(actual) {
   const al = D.mp.filter((m) => ["crit", "pedir"].includes(estado(m))).length;
   const cuenta = { mp: al ? `<b class="alerta">${al}</b>` : "", pt: Object.keys(S.pallets).length ? `<b>${Object.keys(S.pallets).length}</b>` : "" };
@@ -815,13 +1225,18 @@ function menu(actual) {
   $("#menu-nuevo").innerHTML = [["fab", "Fabricación"], ["rec", "Recargas"], ["rev", "Revendidos"]].map(([l, t]) => `<h4>${t}</h4>` +
     FORMS.filter((x) => x.linea === l).map((x) => `<a href="#f-${x.id}"><b>${x.id}</b>${esc(x.nombre)}</a>`).join("")).join("");
 }
+let PARAMS = new URLSearchParams();
 function pintar() {
-  let h = (location.hash || "#dashboard").slice(1) || "dashboard";
+  let [h, qs] = ((location.hash || "#dashboard").slice(1) || "dashboard").split("?");
   if (h === "inicio") h = "dashboard";
+  PARAMS = new URLSearchParams(qs || "");
   menu(h);
-  const V = { dashboard: vDashboard, mp: vMP, camaras: vCamaras, pt: vPT, formularios: vFormularios, traza: vTraza, revendidos: vRevendidos, marcado: vMarcado, layout: vLayout };
+  // el layout no se redibuja entero si ya está en pantalla: así no se pierde el zoom
+  if (h === "layout" && $("#plano")) { actualizarLayout(); return; }
+  const V = { dashboard: vDashboard, mp: vMP, almacen: vAlmacen, pt: vPT, formularios: vFormularios, traza: vTraza, revendidos: vRevendidos, marcado: vMarcado, layout: vLayout };
   $("#vista").innerHTML = h.startsWith("f-") ? vForm(h.slice(2)) : (V[h] || vDashboard)();
   if (h.startsWith("f-")) armarForm(h.slice(2));
+  if (h === "layout") { prepararZoom(); actualizarLayout(); }
   const fA = $("#fAlm"), fL = $("#fLin"), fQ = $("#fQ");
   if (fA) { fA.onchange = () => { F.alm = fA.value; pintar(); }; fL.onchange = () => { F.lin = fL.value; pintar(); }; fQ.oninput = () => { F.q = fQ.value; const p = fQ.selectionStart; pintar(); const n = $("#fQ"); n.focus(); n.setSelectionRange(p, p); }; }
   const fb = $("#fBus");
@@ -841,9 +1256,14 @@ function toast(t) { clearTimeout(tt); $("#toasts").innerHTML = `<div class="toas
 document.addEventListener("click", (ev) => {
   const t = ev.target;
   if (!t.closest(".menu-nuevo")) { $("#menu-nuevo").hidden = true; $("#btn-nuevo").setAttribute("aria-expanded", "false"); }
-  const sec = t.closest("[data-sector]"); if (sec && $("#plano")) { SEL = sec.dataset.sector; $("#plano").innerHTML = svgPlano(); $("#lado").innerHTML = ladoLayout(); return; }
-  const dq = t.closest("[data-q]"); if (dq) { ev.preventDefault(); Q = dq.dataset.q; pintar(); return; }
-  const cam = t.closest("[data-cam]"); if (cam) { dlgLectura(cam.dataset.cam); return; }
+  if (t.closest("#plano") && LAY.arrastro && Date.now() - LAY.arrastro < 250) return;
+  const pu = t.closest("[data-puesto]"); if (pu) { location.hash = "layout?puesto=" + pu.dataset.puesto; return; }
+  const sec = t.closest("[data-sector]");
+  if (sec && $("#plano")) { const p = Object.values(PUESTOS).find((x) => x.sector === sec.dataset.sector); if (p) location.hash = "layout?puesto=" + p.id; return; }
+  const ir = t.closest("[data-ir]"); if (ir) { location.hash = "layout?" + ir.dataset.ir; return; }
+  const dq = t.closest("[data-q]"); if (dq) { ev.preventDefault(); Q = dq.dataset.q; if (location.hash === "#traza") pintar(); else location.hash = "traza"; return; }
+  const sa = t.closest("[data-salto]"); if (sa) { const el = document.getElementById(sa.dataset.salto); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+  const dl = t.closest("[data-dl]"); if (dl) { DASH.lin = dl.dataset.dl; $("#graf").innerHTML = grafico(DASH.lin); $$("#seg-dash button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.dl === DASH.lin))); return; }
   if (t.matches("[data-cerrar-velo]")) { cerrar(); return; }
   if (t.closest("[data-cerrar]")) cerrar();
   const mp = t.closest("[data-mp]"); if (mp) { detalleMP(mp.dataset.mp); return; }
@@ -851,14 +1271,18 @@ document.addEventListener("click", (ev) => {
   const a = t.closest("[data-a]"); if (!a) return;
   const k = a.dataset.a, id = a.dataset.id;
   if (k === "cerrar") cerrar();
-  else if (k === "lectura") dlgLectura(id);
+  else if (k === "conteo") dlgConteo(id);
+  else if (k === "planilla") dlgPlanilla();
+  else if (k === "bajarPlanilla") bajarPlanilla(id || null);
+  else if (k === "aplicarPlanilla") aplicarPlanilla();
+  else if (k === "leerPegado") { const tx = $("#plPeg").value; if (tx.trim()) vistaPlanilla(leerFilas(tx.split(/\r?\n/).map(partirLinea)), "pegado desde Excel"); }
   else if (k === "pedir") { S.pedidos[id] = { cant: +a.dataset.cant, t: ahora() }; guardar(); cerrar(); pintar(); toast(`Pedido emitido a ${MP[id].prov}`); }
   else if (k === "anularPed") { delete S.pedidos[id]; guardar(); cerrar(); pintar(); }
   else if (k === "recibir") { cerrar(); location.hash = "f-" + (/ecargas/.test(MP[id].linea) && !/Manuales|Carros/.test(MP[id].linea) ? "REC-01" : "FAB-01"); setTimeout(() => { const s = $("#c_mp"); if (s) { s.value = id; s.dispatchEvent(new Event("change", { bubbles: true })); } }, 0); }
   else if (k === "limpio") { S = VACIO(); guardar(); pintar(); toast("Listo: sin datos de ejemplo"); }
   else if (k === "ejemplo") { S = ejemplo(); guardar(); pintar(); toast("Datos de ejemplo cargados"); }
   else if (k === "verOk") { S.verOk = true; pintar(); }
-  else if (k === "arranque") { D.mp.forEach((m) => { S.stock[m.cod] = { u: m.max, src: "Arranque al stock máximo", t: ahora() }; }); guardar(); pintar(); toast("Arranque cargado: todo al stock máximo"); }
+  else if (k === "arranque") { D.mp.forEach((m) => { S.stock[m.cod] = { u: m.max, src: "Conteo a mano (arranque al stock máximo)", t: ahora() }; }); guardar(); pintar(); toast("Arranque cargado: todo al stock máximo"); }
   else if (k === "borrar") { if (a.dataset.ok) { S = VACIO(); guardar(); pintar(); toast("Se borró todo lo cargado"); } else { a.dataset.ok = "1"; a.textContent = "Tocá de nuevo para confirmar"; } }
   else if (k === "csv") {
     const filas = [["registro", "formulario", "fecha_hora", "resultado", "datos"]].concat(S.regs.map((r) => [r.id, r.f, r.t, r.res, JSON.stringify(r.v)]));
@@ -867,24 +1291,9 @@ document.addEventListener("click", (ev) => {
   }
 });
 document.addEventListener("change", (ev) => {
-  const inp = ev.target.closest("input[data-foto]");
-  if (!inp || !inp.files || !inp.files[0]) return;
-  const lector = new FileReader();
-  lector.onload = () => {
-    const img = new Image();
-    img.onload = () => {
-      const k = Math.min(1, 960 / Math.max(img.width, img.height)), c = document.createElement("canvas");
-      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
-      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-      S.fotos[inp.dataset.foto] = c.toDataURL("image/jpeg", 0.72);
-      try { localStorage.setItem(CLAVE, JSON.stringify(S)); toast("Foto guardada"); } catch (e) { toast("La foto no entra en el almacenamiento del navegador; se ve hasta recargar"); }
-      pintar();
-    };
-    img.src = lector.result;
-  };
-  lector.readAsDataURL(inp.files[0]);
+  if (ev.target.id === "plArch" && ev.target.files && ev.target.files[0]) leerArchivo(ev.target.files[0]);
 });
 document.addEventListener("keydown", (ev) => { if (ev.key === "Escape") cerrar(); });
-window.addEventListener("hashchange", () => { cerrar(); pintar(); window.scrollTo(0, 0); });
+window.addEventListener("hashchange", () => { cerrar(); const enLayout = location.hash.startsWith("#layout") && $("#plano"); pintar(); if (!enLayout) window.scrollTo(0, 0); });
 if (!GUARDADO) S = ejemplo();
 pintar();
