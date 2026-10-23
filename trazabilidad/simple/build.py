@@ -83,9 +83,9 @@ PREF = {"Chapa (pilas en el piso)": "CH", "Flejes (rack + volteador)": "FL", "Ca
         "Almacén de producto terminado": "RV"}
 CORTO = {"Chapa (pilas en el piso)": "Chapa", "Flejes (rack + volteador)": "Flejes", "Cantilever de caños y barras": "Cantilever",
          "Depósito de polvo químico": "Polvo", "Embalaje": "Embalaje", "Identificación": "Identificación",
-         "Insumos de montaje (manuales)": "Ins. manuales", "Insumos de recargas": "Ins. recargas",
+         "Insumos de montaje (manuales)": "Insumos manuales", "Insumos de recargas": "Insumos recargas",
          "Insumos de soldadura y superficie": "Soldadura", "Jaula de gases": "Gases", "Rack de casquetes y cuplas (carros)": "Casquetes",
-         "Rack de insumos de montaje (carros)": "Ins. carros", "Almacén de producto terminado": "Reventa (PT)"}
+         "Rack de insumos de montaje (carros)": "Insumos carros", "Almacén de producto terminado": "Reventa (PT)"}
 
 
 def huecos(a, n):

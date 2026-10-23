@@ -65,7 +65,7 @@ const bultos = (m, u) => Math.ceil(u / (m.cont || 1));
 // Días de stock = unidades ÷ consumo por día (Stock_MP, col. G: consumo del año ÷ 240 días hábiles).
 const diasDe = (m, u) => (m.dia > 0 && u != null ? u / m.dia : null);
 const diasStock = (m) => (S.stock[m.cod] ? diasDe(m, S.stock[m.cod].u) : null);
-const txtD = (d) => (d == null ? "—" : d >= 999 ? "+999 d" : nf(d, d < 10 ? 1 : 0) + " d");
+const txtD = (d) => (d == null ? "—" : d >= 999 ? "más de 999 días" : nf(d, d < 10 ? 1 : 0) + (Math.abs(d - 1) < 0.05 ? " día" : " días"));
 function barra(m) {
   const s = S.stock[m.cod], mx = Math.max(m.max, s ? s.u : 0, m.pp) || 1, e = estado(m);
   const w = s ? Math.min(100, s.u / mx * 100) : 0;
@@ -197,7 +197,7 @@ function vAlmacen() {
 function dlgConteo(alm) {
   const ms = D.mp.filter((m) => m.alm === alm);
   abrir(`Conteo a mano · ${esc(alm)}`, `<p class="mut" style="margin:0">Lo que hay en cada código, en su unidad. Lo que quede vacío no cambia.</p>
-    <form id="fLect" class="tabla"><table><thead><tr><th>Lugar</th><th>Código</th><th>Material</th><th class="n">PP</th><th class="n">Máx.</th><th>Stock</th></tr></thead><tbody>
+    <form id="fLect" class="tabla"><table><thead><tr><th>Lugar</th><th>Código</th><th>Material</th><th class="n">Punto de pedido</th><th class="n">Máximo</th><th>Stock</th></tr></thead><tbody>
     ${ms.map((m) => `<tr><td class="mono" style="font-size:11.5px">${esc(m.lugares.join(", "))}</td><td class="mono">${esc(m.cod)}</td><td style="font-size:12.5px">${esc(m.mat)}</td><td class="n">${nf(m.pp, 1)}</td><td class="n">${nf(m.max, 1)}</td>
       <td><input type="number" step="any" min="0" data-cod="${esc(m.cod)}" style="width:100px" aria-label="Stock de ${esc(m.cod)}" value="${S.stock[m.cod] ? S.stock[m.cod].u : ""}"> ${esc(m.um)}</td></tr>`).join("")}
     </tbody></table><div style="margin-top:10px"><button class="btn pri" type="submit">Guardar conteo</button></div></form>`);
@@ -452,11 +452,21 @@ function fifo() {
   Object.entries(S.pallets).forEach(([slot, p]) => { if (!viejo[p.prod] || p.ffab < S.pallets[viejo[p.prod]].ffab) viejo[p.prod] = slot; });
   return new Set(Object.values(viejo));
 }
+// Nombre del producto en dos renglones para el lugar del PT: tipo y tamaño, sin siglas.
+function nombreSlot(prod) {
+  const fijo = { "Sustituto propio": ["Sustituto", "propio"], "Sustituto comprado": ["Sustituto", "comprado"],
+    "Recipiente de carro (a pintar)": ["Carro", "a pintar"], "Recipiente de carro (pintado)": ["Carro", "pintado"] }[prod];
+  if (fijo) return fijo;
+  let m = /^Cilindro de carro (.+)$/.exec(prod); if (m) return ["Cilindro", "de carro", m[1]];
+  m = /^(Nuevo|Cilindro|Carro) (\d+(?:,\d+)? kg)/.exec(prod); if (m) return [m[1], m[2]];
+  const rv = MP && Object.values(MP).find((x) => x.mat === prod);
+  return ["Reventa", (rv ? rv.cod.replace("RV-", "") : prod).replace(/_/g, " ")];
+}
 function slotHtml(id, ff) {
   const p = S.pallets[id];
   if (!p) return `<button class="slot" data-slot="${id}" title="${id} libre" aria-label="${id} libre">${id.startsWith("R") && id.length === 6 && id[1] !== "V" ? id.split("-")[1] : id.replace("-", "·")}</button>`;
-  const corto = ({ "Sustituto propio": "Sust. propio", "Sustituto comprado": "Sust. compr.", "Recipiente de carro (a pintar)": "A pintar", "Recipiente de carro (pintado)": "Pintado" })[p.prod] || p.prod.replace("Nuevo ", "N ").replace("Cilindro ", "Cil ").replace(" (en caja)", "").replace(" (manuales)", "").replace("Cilindro de carro", "CilC").replace("Carro ", "C ").replace(" terminado", "").replace("Matafuego ", "").replace(" (reventa)", "");
-  return `<button class="slot lleno ${COLOR_MES(p.ffab)} ${ff.has(id) ? "fifo" : ""}" data-slot="${id}" title="${id} · ${esc(p.prod)} · ${nf(p.cant)} u · fabricado ${fecha(p.ffab)}">${esc(corto)}<br>${fecha(p.ffab).slice(0, 5)}</button>`;
+  const corto = nombreSlot(p.prod).map(esc).join("<br>");
+  return `<button class="slot lleno ${COLOR_MES(p.ffab)} ${ff.has(id) ? "fifo" : ""}" data-slot="${id}" title="${id} · ${esc(p.prod)} · ${nf(p.cant)} u · fabricado ${fecha(p.ffab)}">${corto}<br>${fecha(p.ffab).slice(0, 5)}</button>`;
 }
 function vPT() {
   const ff = fifo(), ocup = Object.keys(S.pallets).length;
@@ -604,7 +614,7 @@ function vDespacho() {
           <div class="campo"><button class="btn pri" type="submit">Registrar el despacho</button></div></form></section>
       <section class="panel c5"><header><h2>Semáforo del PT</h2><span class="pill idle">criterio</span></header><div class="cuerpo">
         <p class="mut" style="font-size:12.5px;margin:0 0 6px">Días = unidades ÷ venta por día (Stock_PT, col. F). Rojo: bajo la seguridad (Stock_PT, col. H = 5 días de venta), hay que producir · amarillo: a menos de un pallet de la seguridad, programar el lote · verde: hay stock.</p>
-        ${D.pt.map((p) => { const u = enStock(p.prod), [l, t] = DESP_LUZ(u, p); return `<div class="sem-pt"><span class="luz ${l}"></span><span>${esc(p.prod)}<br><span class="mut">${t}</span></span><span class="num der">${nf(u)} u · <b class="dias">${txtD(diasPT(u, p))}</b><br><span class="mut">seg. ${nf(p.ss)} (${txtD(diasPT(p.ss, p))}) · máx. ${nf(p.max)} (${txtD(diasPT(p.max, p))})</span></span></div>`; }).join("")}</div></section>
+        ${D.pt.map((p) => { const u = enStock(p.prod), [l, t] = DESP_LUZ(u, p); return `<div class="sem-pt"><span class="luz ${l}"></span><span>${esc(p.prod)}<br><span class="mut">${t}</span></span><span class="num der">${nf(u)} u · <b class="dias">${txtD(diasPT(u, p))}</b><br><span class="mut">seguridad ${nf(p.ss)} (${txtD(diasPT(p.ss, p))}) · máximo ${nf(p.max)} (${txtD(diasPT(p.max, p))})</span></span></div>`; }).join("")}</div></section>
       <section class="panel c5"><header><h2>Andén y próximas salidas</h2></header><div class="cuerpo tabla"><table><tbody>
         ${D.desp.slice(0, 3).map((v) => { const p = proxima(v.veh); return `<tr><td><b>${esc(v.veh)}</b><br><span class="mut">${esc(v.dias)}</span></td><td class="n">${p ? fecha(p.f) : "—"}</td></tr>`; }).join("")}</tbody></table>
         <p style="margin:10px 0 4px"><b>En el andén:</b> ${anden.length ? anden.map((s) => `${s} · ${esc(S.pallets[s].prod)} (${nf(S.pallets[s].cant)} u)`).join(" — ") : "vacío"}</p></div></section>
@@ -892,7 +902,7 @@ function vRevendidos() {
   return `${bandaEjemplo()}<div class="cab"><div><h1>Revendidos</h1><p>Cada unidad se sigue con el n° de la etiqueta de su fabricante.</p></div>
     <div class="filtros"><a class="btn pri" href="#f-REV-01">Recibir revendidos</a></div></div>
     <div class="grid"><section class="panel c7"><header><h2>Modelos de reventa</h2></header><div class="cuerpo tabla"><table>
-      <thead><tr><th>Código</th><th>Modelo</th><th>Proveedor</th><th class="n">En PT</th><th class="n">PP</th><th class="n">Máx.</th></tr></thead><tbody>
+      <thead><tr><th>Código</th><th>Modelo</th><th>Proveedor</th><th class="n">En PT</th><th class="n">Punto de pedido</th><th class="n">Máximo</th></tr></thead><tbody>
       ${RV.map((m) => `<tr><td class="mono">${esc(m.cod)}</td><td>${esc(m.mat)}</td><td>${esc(m.prov)}</td><td class="n">${nf(S.rev.filter((x) => x.cod === m.cod && x.estado === "En PT").length)}</td><td class="n">${nf(m.pp, 1)}</td><td class="n">${nf(m.max, 1)}</td></tr>`).join("")}
       </tbody></table></div></section>
     <section class="panel c5"><header><h2>Unidades recibidas</h2><span class="mut num">${S.rev.length}</span></header><div class="cuerpo tabla">
@@ -1228,8 +1238,8 @@ const ETAPAS = {
   CAR: ["FAB-02", "FAB-03", "FAB-04", "FAB-05", "FAB-07", "FAB-09", "FAB-10"],
   REC: ["REC-02", "REC-03"],
 };
-const CORTOS = { "FAB-02": "Marcado", "FAB-03": "Sold. longitudinal", "FAB-04": "Sold. de cúpula", "FAB-05": "Sold. circunferencial", "FAB-06": "Espesor",
-  "FAB-07": "Prueba hidráulica", "FAB-08": "Defectos", "FAB-09": "Pintado", "FAB-10": "Pérdidas", "REC-02": "Inspección interior", "REC-03": "Pérdidas" };
+const CORTOS = { "FAB-02": "Marcado", "FAB-03": "Soldadura longitudinal", "FAB-04": "Soldadura de cúpula", "FAB-05": "Soldadura circunferencial", "FAB-06": "Control de espesor",
+  "FAB-07": "Prueba hidráulica", "FAB-08": "Detección de defectos", "FAB-09": "Pintado", "FAB-10": "Ensayo de pérdidas", "REC-02": "Inspección interior", "REC-03": "Ensayo de pérdidas" };
 const DASH = { lin: "MAN" };
 const ultimaFicha = (x) => x.regs.filter((r) => puestoDe(r) === x.puesto).pop() || x.ultima;
 function carrilFlujo(l, vivos) {
@@ -1257,15 +1267,15 @@ function serieDias(l) {
   return { dias, e, s };
 }
 function grafico(l) {
-  const { dias, e, s } = serieDias(l), W = 640, H = 220, pl = 34, pb = 26, mx = Math.max(4, ...dias.map((d) => Math.max(e[d], s[d])));
+  const { dias, e, s } = serieDias(l), W = 900, H = 250, pl = 34, pb = 42, mx = Math.max(4, ...dias.map((d) => Math.max(e[d], s[d])));
   const paso = Math.pow(10, Math.floor(Math.log10(mx))), tope = Math.ceil(mx / paso) * paso, cw = (W - pl) / dias.length, bw = Math.min(16, cw / 2 - 3);
   const y = (v) => H - pb - v / tope * (H - pb - 10);
   const grilla = [0, 0.25, 0.5, 0.75, 1].map((k) => `<line class="g" x1="${pl}" x2="${W}" y1="${y(tope * k)}" y2="${y(tope * k)}"/><text class="t" x="${pl - 6}" y="${y(tope * k) + 4}" text-anchor="end">${nf(tope * k)}</text>`).join("");
-  const DS = ["D", "L", "M", "M", "J", "V", "S"];
+  const DS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
   const barras = dias.map((d, i) => { const x = pl + i * cw + cw / 2, f = new Date(d + "T12:00"), fin = [0, 6].includes(f.getDay());
     return `${e[d] ? `<rect class="be" x="${x - bw - 1}" y="${y(e[d])}" width="${bw}" height="${H - pb - y(e[d])}"><title>${fecha(d)} · entraron ${e[d]}</title></rect>` : ""}
       ${s[d] ? `<rect class="bs" x="${x + 1}" y="${y(s[d])}" width="${bw}" height="${H - pb - y(s[d])}"><title>${fecha(d)} · salieron ${s[d]}</title></rect>` : ""}
-      <text class="t ${fin ? "fin" : ""}" x="${x}" y="${H - 8}" text-anchor="middle">${DS[f.getDay()]} ${f.getDate()}</text>`; }).join("");
+      <text class="t ${fin ? "fin" : ""}" x="${x}" y="${H - 24}" text-anchor="middle">${DS[f.getDay()]}</text><text class="t ${fin ? "fin" : ""}" x="${x}" y="${H - 9}" text-anchor="middle">${f.getDate()}/${f.getMonth() + 1}</text>`; }).join("");
   const te = dias.reduce((a, d) => a + e[d], 0), ts = dias.reduce((a, d) => a + s[d], 0);
   return `<div class="totales" style="--c-e:${LIN[l][1]}"><span><b class="num">${nf(te)}</b>entraron</span><span><b class="num">${nf(ts)}</b>salieron</span>
     <span class="leyenda" style="margin-left:auto"><span><i style="background:var(--c-e)"></i>Entradas</span><span><i style="background:var(--c-s)"></i>Salidas</span></span></div>
@@ -1288,11 +1298,11 @@ function vDashboard() {
       ${ind("Manuales en proceso", `${nf(uL("MAN"))}<small>u</small>`, `en ${nL("MAN")} lotes`, "var(--man)", "#layout?linea=MAN")}
       ${ind("Carros en proceso", nf(uL("CAR")), `en ${nL("CAR")} lotes`, "var(--car)", "#layout?linea=CAR")}
       ${ind("Recargas en planta", nf(uL("REC")), "órdenes de servicio abiertas", "var(--rec)", "#layout?linea=REC")}
-      ${ind("MP para pedir", nf(cuenta("crit") + cuenta("pedir")), `${cuenta("crit")} bajo seguridad · ${cuenta("ped")} pedidas`, "var(--mp)", "#mp")}
+      ${ind("Materia prima para pedir", nf(cuenta("crit") + cuenta("pedir")), `${cuenta("crit")} bajo seguridad · ${cuenta("ped")} pedidas`, "var(--mp)", "#mp")}
       ${ind("Fichas no conformes", nf(nc), "últimos 7 días", "var(--critical)", "#formularios")}</div>
     <section class="panel mapa"><header><div><h2>Mapa de flujo</h2><span class="mut" style="font-size:13px">Qué hay ahora en cada etapa, según la última ficha de cada lote. Tocá una etapa para verla en el layout.</span></div></header>
       <div class="cuerpo mapa-cuerpo">
-        <a class="extremo" href="#almacen"><span class="ez">Abajo · ingreso</span><h4>Materia prima</h4><span class="grande num">${sobre}<small> / ${D.mp.length}</small></span><span class="mut">MP sobre la seguridad</span>
+        <a class="extremo" href="#almacen"><span class="ez">Abajo · ingreso</span><h4>Materia prima</h4><span class="grande num">${sobre}<small> / ${D.mp.length}</small></span><span class="mut">materias primas sobre la seguridad</span>
           <span class="grande num" style="font-size:24px">${cuenta("crit") + cuenta("pedir")}</span><span class="mut">para pedir · ${cuenta("ped")} pedidos en camino</span></a>
         <div class="carriles">${carrilFlujo("MAN", vivos)}${carrilFlujo("CAR", vivos)}${carrilFlujo("REC", vivos)}</div>
         <a class="extremo" href="#pt"><span class="ez">Arriba · salida</span><h4>Producto terminado</h4><span class="grande num">${nf(ptU)}</span><span class="mut">unidades en el PT</span>
