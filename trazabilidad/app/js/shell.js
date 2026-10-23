@@ -12,14 +12,18 @@ const IC = {
   desvios: '<path d="M12 3 2 20h20zM12 10v4M12 17h.01"/>',
   insumos: '<path d="M21 8 12 3 3 8v8l9 5 9-5zM3 8l9 5 9-5M12 13v8"/>',
   reportes: '<path d="M6 3h9l5 5v13H6zM14 3v6h6M9 13h8M9 17h8"/>',
+  lotes: '<path d="M4 4h16v5H4zM4 11h16v4H4zM4 17h16v3H4z"/>',
+  instalaciones: '<path d="M3 21h18M5 21V8l7-5 7 5v13M10 21v-6h4v6"/>',
+  traza: '<circle cx="5" cy="6" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M7 6h10M6 8l5 8M18 8l-5 8"/>',
+  eventos: '<path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/>',
   config: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.1-2.7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 2.7-1.1V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1.1z"/>',
 };
 const MENU = [
   ["", [["tablero", "Tablero"]]],
-  ["Producción", [["ordenes", "Órdenes"], ["calidad", "Calidad"], ["etiquetado", "Etiquetado"]]],
-  ["Logística", [["expedicion", "Expedición"], ["equipos", "Equipos"]]],
-  ["Servicio", [["recargas", "Recargas"], ["reclamos", "Reclamos"], ["clientes", "Clientes"]]],
-  ["Gestión", [["desvios", "Desvíos"], ["insumos", "Insumos"], ["reportes", "Reportes"], ["config", "Configuración"]]],
+  ["Trazabilidad intraplanta", [["ordenes", "Órdenes"], ["lotes", "Historial de lotes"], ["calidad", "Calidad y ensayos"], ["etiquetado", "Etiquetado"]]],
+  ["Trazabilidad extraplanta", [["expedicion", "Expedición"], ["instalaciones", "Instalaciones"], ["equipos", "Equipos"], ["recargas", "Recargas"]]],
+  ["Atención", [["reclamos", "Reclamos"], ["clientes", "Clientes"]]],
+  ["Gestión", [["traza", "Traza y retiros"], ["desvios", "Desvíos"], ["insumos", "Insumos"], ["eventos", "Registro de eventos"], ["reportes", "Reportes"], ["config", "Configuración"]]],
 ];
 const VISTAS = {};               // id → { titulo, sub(), acciones(), html() } (las agrega cada módulo)
 const UI = { vista: "tablero", f: {}, pag: {}, det: null };
@@ -40,19 +44,33 @@ function pintarMenu() {
     MENU.map(([g, items]) => `<nav class="grupo-nav" aria-label="${esc(g || "Inicio")}">${g ? `<h6>${esc(g)}</h6>` : ""}${items.map(([id, t]) => {
       const k = c[id]; return `<a href="#${id}" data-v="${id}" ${UI.vista === id ? 'aria-current="page"' : ""}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[id]}</svg>${esc(t)}${k && k[0] ? `<span class="cnt ${k[1] ? "alerta" : ""}">${k[0]}</span>` : ""}</a>`; }).join("")}</nav>`).join("");
 }
+const PAGINAS = { orden: "lote", equipo: "equipo" };   // estos registros abren su página completa con el historial
 function pintar() {
   const v = VISTAS[UI.vista];
-  $("#vista").innerHTML = `<div class="cab"><div><h1>${esc(v.titulo)}</h1>${v.sub ? `<div class="sub">${v.sub()}</div>` : ""}</div>${v.acciones ? `<div class="acciones">${v.acciones()}</div>` : ""}</div>${v.html()}`;
+  $("#vista").innerHTML = `<div class="cab"><div><h1>${typeof v.titulo === "function" ? v.titulo() : esc(v.titulo)}</h1>${v.sub ? `<div class="sub">${v.sub()}</div>` : ""}</div>${v.acciones ? `<div class="acciones">${v.acciones()}</div>` : ""}</div>${v.html()}`;
   pintarMenu();
   if (UI.det) abrirDetalle(UI.det.tipo, UI.det.id, true);
+  hashear();
 }
-function ir(v) { UI.vista = VISTAS[v] ? v : "tablero"; UI.det = null; $("#capa").innerHTML = ""; try { history.replaceState(null, "", "#" + UI.vista); } catch (e) {} pintar(); window.scrollTo(0, 0); }
+const hashDe = (v, p) => p == null ? v : v + "-" + String(p).replace(/^OP\s*/, "").replace(/\s/g, "");
+function ir(v, param) {
+  UI.vista = VISTAS[v] ? v : "tablero"; UI.param = param ?? null; UI.det = null; $("#capa").innerHTML = "";
+  try { history.replaceState(null, "", "#" + hashDe(UI.vista, UI.param)); } catch (e) {}
+  pintar(); window.scrollTo(0, 0);
+}
+function desdeHash(h) {
+  const m = h.match(/^(lote|equipo)-(.+)$/);
+  if (m) return m[1] === "lote" ? ["lote", "OP " + m[2]] : ["equipo", numSerie(m[2]) ?? m[2]];
+  return [VISTAS[h] ? h : "tablero", null];
+}
 
 // ---------------------------------------------------------------- panel de detalle
 const DETALLES = {};           // tipo → id → { titulo, sub, cuerpo, pie }
 function abrirDetalle(tipo, id, re) {
+  if (PAGINAS[tipo]) return ir(PAGINAS[tipo], id);
   const d = DETALLES[tipo](id); if (!d) return;
   UI.det = { tipo, id };
+  setTimeout(hashear, 0);
   const scroll = re && $(".detalle .cuerpo") ? $(".detalle .cuerpo").scrollTop : 0;
   $("#capa").innerHTML = `<div class="velo" data-a="cerrarDetalle"></div><section class="detalle" role="dialog" aria-label="${esc(d.titulo)}"><header><div><h2>${d.titulo}</h2>${d.sub ? `<div class="sub">${d.sub}</div>` : ""}</div><button class="cerrar" data-a="cerrarDetalle" aria-label="Cerrar">×</button></header>
     <div class="cuerpo">${d.cuerpo}</div>${d.pie ? `<footer>${d.pie}</footer>` : ""}</section>`;
@@ -65,13 +83,15 @@ function buscar(q) {
   q = q.trim(); if (q.length < 2) return [];
   const Q = q.toUpperCase(), out = [];
   const n = numSerie(Q) ?? (/^\d{3,6}$/.test(Q) ? +Q : null);
-  if (n && ordenDe(n)) out.push(["Equipo", ser(n), () => abrirDetalle("equipo", n)]);
-  S.ordenes.filter(o => o.op.replace(/\s/g, "").includes(Q.replace(/\s/g, ""))).slice(0, 5).forEach(o => out.push(["Orden", `${o.op} · ${o.modelo}`, () => abrirDetalle("orden", o.op)]));
+  if (n && ordenDe(n)) out.push([tipoEq(ordenDe(n)), `${ser(n)} · ${ordenDe(n).modelo}`, () => ir("equipo", n)]);
+  S.recargas.filter(r => r.etiqueta.includes(Q) || r.nro === q).slice(0, 3).forEach(r => out.push(["Servicio", `${r.etiqueta} · ${r.tipo}`, () => ir("equipo", r.etiqueta)]));
+  S.ordenes.filter(o => o.op.replace(/\s/g, "").includes(Q.replace(/\s/g, ""))).slice(0, 5).forEach(o => out.push(["Lote", `${o.op} · ${o.modelo}`, () => ir("lote", o.op)]));
   S.remitos.filter(r => r.id.replace(/\s/g, "").includes(Q.replace(/\s/g, ""))).slice(0, 4).forEach(r => out.push(["Remito", `${r.id} · ${cliente(r.cliente).nombre}`, () => abrirDetalle("remito", r.id)]));
   S.clientes.filter(c => c.nombre.toUpperCase().includes(Q) || c.cuit.includes(q)).slice(0, 4).forEach(c => out.push(["Cliente", c.nombre, () => abrirDetalle("cliente", c.id)]));
   S.recargas.filter(r => r.os.includes(Q) || r.etiqueta.includes(Q)).slice(0, 4).forEach(r => out.push(["Recarga", `${r.os} · ${r.tipo}`, () => abrirDetalle("recarga", r.os)]));
   D.insumos.filter(m => m.cod.toUpperCase().includes(Q) || m.mat.toUpperCase().includes(Q)).slice(0, 4).forEach(m => out.push(["Insumo", `${m.cod} · ${m.mat}`, () => abrirDetalle("insumo", m.cod)]));
-  S.ordenes.filter(o => Object.values(o.insumos).includes(Q)).slice(0, 1).forEach(() => out.push(["Lote MP", `${Q}: órdenes que lo usaron`, () => abrirDetalle("loteMP", Q)]));
+  const mp = [...new Set(S.ordenes.flatMap(o => Object.values(o.insumos).map(v => v.split(" · ")[0])))].filter(v => v.includes(Q)).slice(0, 3);
+  mp.forEach(v => out.push(["Lote MP", `${v}: órdenes y equipos que lo usaron`, () => { UI.f.trq = v; ir("traza"); }]));
   return out.slice(0, 12);
 }
 let RES = [];

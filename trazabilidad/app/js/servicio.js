@@ -27,21 +27,22 @@ function formOS() {
   return `<div class="panel"><header><h2>Recepción</h2><button class="btn sm" data-a="cancelarOS">Cancelar</button></header><div class="cuerpo"><form class="form" data-f="crearOS">
     <label class="campo">Cliente<select id="osCli">${S.clientes.map(c => `<option value="${c.id}">${esc(c.nombre)}</option>`).join("")}</select></label>
     <label class="campo">Tipo de equipo<select id="osTipo">${tiposRecarga().map(t => `<option>${esc(t)}</option>`).join("")}</select></label>
-    <label class="campo">Marca<select id="osMarca"><option>Otra marca</option><option>FLAMA</option></select></label>
-    <label class="campo">Serie o n° grabado<input id="osNro" placeholder="si es FLAMA, la serie ${AA}-000000"></label>
+    <label class="campo">Marca<select id="osMarca"><option>Otra marca</option><option ${UI.f.osSerie ? "selected" : ""}>FLAMA</option></select></label>
+    <label class="campo">Serie o n° grabado<input id="osNro" value="${esc(UI.f.osSerie || "")}" placeholder="si es FLAMA, la serie ${AA}-000000"></label>
+    <label class="campo">Año de fabricación<input id="osFab" type="number" value="${UI.f.osSerie ? D.anio : D.anio - 4}"></label>
     <label class="campo">Planta<select id="osPlanta"><option>Comercial</option><option>Industrial</option></select></label>
     <label class="campo">Sustituto<select id="osSus"><option value="">No</option><option>Sí, entregar sustituto habilitado</option></select></label>
     <label class="campo ancho">Observaciones de la recepción<input id="osObs" placeholder="estado visual, precinto, manómetro"></label>
     <div class="ancho"><button class="btn pri" type="submit">Registrar y enviar presupuesto</button></div></form></div></div>`;
 }
 ACC.nuevaOS = () => { UI.f.nuevaOS = true; pintar(); };
-ACC.cancelarOS = () => { UI.f.nuevaOS = false; pintar(); };
+ACC.cancelarOS = () => { UI.f.nuevaOS = false; UI.f.osSerie = null; pintar(); };
 FORM.crearOS = () => {
   const tipo = $("#osTipo").value, t = [...D.recargas.comercial, ...D.recargas.industrial].find(x => x.tipo === tipo);
   const r = { os: `OS-${AA}-${String(++S.nOs).padStart(5, "0")}`, fecha: HOY, planta: $("#osPlanta").value, tipo, agente: t ? t.agente : "", cliente: $("#osCli").value, marca: $("#osMarca").value,
-    nro: $("#osNro").value, etiqueta: `S-${AA}-${String(30000 + S.nOs).padStart(6, "0")}`, etapa: 1, sustituto: $("#osSus").value ? `SUS-${(S.nOs % 120) + 1}` : null, ph: false, polvoBajo: false,
+    nro: $("#osNro").value, fab: +$("#osFab").value, tecnico: OPER[S.nOs % OPER.length], etiqueta: `S-${AA}-${String(30000 + S.nOs).padStart(6, "0")}`, etapa: 1, sustituto: $("#osSus").value ? `SUS-${(S.nOs % 120) + 1}` : null, ph: false, polvoBajo: false,
     presupuesto: Math.round((t && t.agente === "CO₂" ? 18000 : 14000) / 100) * 100, inutil: null, obs: $("#osObs").value };
-  S.recargas.unshift(r); UI.f.nuevaOS = false; registrar("Recepción de recarga", r.os, `${r.tipo} · ${cliente(r.cliente).nombre}`); toast(`${r.os} registrada · presupuesto enviado`); pintar(); abrirDetalle("recarga", r.os);
+  S.recargas.unshift(r); UI.f.nuevaOS = false; UI.f.osSerie = null; if (numSerie(r.nro)) registrar("Recibido para servicio", r.nro, r.os); registrar("Recepción de recarga", r.os, `${r.tipo} · ${cliente(r.cliente).nombre}`); toast(`${r.os} registrada · presupuesto enviado`); pintar(); abrirDetalle("recarga", r.os);
 };
 DETALLES.recarga = id => {
   const r = S.recargas.find(x => x.os === id); if (!r) return null;
@@ -52,9 +53,9 @@ DETALLES.recarga = id => {
   return { titulo: r.os, sub: `${esc(r.tipo)} · ${esc(r.marca)} · planta ${r.planta.toLowerCase()}`, pie,
     cuerpo: `<div class="etapas">${ETAPAS_OS.map((e, i) => `<span class="${i < r.etapa ? "hecha" : i === r.etapa ? "actual" : ""}">${esc(e)}</span>`).join("")}</div>
       ${r.inutil ? `<div class="aviso no">Inutilizar: ${esc(r.inutil)}. Agente a disposición final, 2 orificios Ø10 mm, manguera cortada${cliente(r.cliente).jur === "PBA" ? " y corte de la rosca (PBA)" : ""}; 30 días a disposición del propietario.</div>` : ""}
-      <div style="display:grid;grid-template-columns:110px 1fr;gap:14px;align-items:start"><div class="qr">${qr(D.url + r.etiqueta)}</div>
-      <dl class="dl"><dt>Cliente</dt><dd><a href="#" data-det="cliente" data-id="${c.id}">${esc(c.nombre)}</a> · ${c.jur}</dd><dt>Recibido</dt><dd>${fecha(r.fecha)} · hace ${dias(r.fecha)} d</dd><dt>Etiqueta de servicio</dt><dd class="mono">${r.etiqueta}</dd>
-      ${r.nro ? `<dt>Serie</dt><dd class="mono">${esc(r.nro)}</dd>` : ""}<dt>Presupuesto</dt><dd>$ ${n0(r.presupuesto)} · ${r.etapa >= 2 ? "aprobado" : "enviado"}</dd><dt>Sustituto</dt><dd>${r.sustituto ? esc(r.sustituto) + " (tarjeta «sustituto habilitado»)" : "no"}</dd>
+      <div class="qrgrid" style="display:grid;grid-template-columns:110px 1fr;gap:14px;align-items:start"><div class="qr">${qr(D.url + r.etiqueta)}</div>
+      <dl class="dl"><dt>Cliente</dt><dd><a href="#" data-det="cliente" data-id="${c.id}">${esc(c.nombre)}</a> · ${c.jur}</dd><dt>Recibido</dt><dd>${fecha(r.fecha)} · hace ${dias(r.fecha)} d</dd><dt>Etiqueta de servicio</dt><dd class="mono"><a href="#" data-a="verEtiqueta" data-id="${r.etiqueta}">${r.etiqueta}</a></dd>
+      ${r.nro ? `<dt>N° del equipo</dt><dd class="mono">${numSerie(r.nro) ? `<a href="#" data-det="equipo" data-id="${numSerie(r.nro)}">${esc(r.nro)}</a>` : esc(r.nro)} · fabricado ${r.fab || "—"}</dd>` : ""}<dt>Técnico</dt><dd>${esc(r.tecnico || "—")}</dd><dt>Presupuesto</dt><dd>$ ${n0(r.presupuesto)} · ${r.etapa >= 2 ? "aprobado" : "enviado"}</dd><dt>Sustituto</dt><dd>${r.sustituto ? esc(r.sustituto) + " (tarjeta «sustituto habilitado»)" : "no"}</dd>
       <dt>Garantía</dt><dd>${r.etapa === 5 ? "30 días desde la entrega" : "—"}</dd><dt>Tarjeta oficial</dt><dd>${c.jur === "CABA" ? "SGM de la AGC" : "tarjeta DPS + estampilla de control"}</dd></dl></div>
       <div><h3>Trabajo</h3><ul class="tl">${pasos.map((p, i) => `<li class="${r.etapa > 3 || (r.etapa >= 2 && i < 2) ? "" : "p"}"><time></time><i></i><span>${esc(p)}</span></li>`).join("")}</ul></div>` };
 };
@@ -122,3 +123,4 @@ DETALLES.cliente = id => {
       <div><h3>Equipos</h3>${tabla(["Serie", "Modelo", "Estado", "Mantenimiento"], eqs.slice(0, 60).map(e => `<tr class="click" data-det="equipo" data-id="${e.n}"><td class="mono">${e.s}</td><td>${esc(e.o.modelo)}</td><td>${pill(e.estado, estadoPill[e.estado])}</td><td>${fecha(e.mant)}</td></tr>`), { vacio: "Sin equipos" })}${eqs.length > 60 ? `<p class="muted">y ${eqs.length - 60} más</p>` : ""}</div>
       <div><h3>Recargas</h3>${tabla(["Orden", "Tipo", "Etapa"], S.recargas.filter(r => r.cliente === id).map(r => `<tr class="click" data-det="recarga" data-id="${r.os}"><td class="mono">${r.os}</td><td>${esc(r.tipo)}</td><td>${pill(r.inutil ? "Inutilizar" : ETAPAS_OS[r.etapa], r.inutil ? "no" : "in")}</td></tr>`), { vacio: "Sin recargas abiertas" })}</div>` };
 };
+ACC.verEtiqueta = el => ir("equipo", el.dataset.id);

@@ -13,7 +13,7 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 SALIDA = os.path.join(os.path.dirname(os.path.dirname(AQUI)), "salida")
 PLANOS = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(AQUI))), "planos_flama-", "salida")
 URL = "https://trazabilidad-flama.vercel.app/m/"
-JS = ["base.js", "datos.js", "shell.js", "produccion.js", "logistica.js", "servicio.js", "gestion.js", "app.js"]
+JS = ["base.js", "datos.js", "shell.js", "produccion.js", "logistica.js", "servicio.js", "tablero.js", "gestion.js", "app.js"]
 MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
 # tamaño de lote = lo que entra en el carro de transporte interno del modelo (criterio, lo fija PCP)
 LOTE = {"ABC 1 kg": 60, "ABC 2,5 kg": 48, "ABC 5 kg": 48, "ABC 10 kg": 24, "Carro ABC 25 kg": 4, "Carro ABC 50 kg": 4,
@@ -73,21 +73,24 @@ def modelos():
 
 
 def lotes_del_anio(man, car, anio, hasta_mes):
-    """Órdenes de cada mes desde enero: las series del año son correlativas para todos los modelos."""
+    """Órdenes de cada mes desde enero, de matafuegos terminados y de cilindros vendidos vacíos: las series del año son
+    correlativas para todos."""
     serie, lotes = 1, []
     for k in range(hasta_mes):
         n = 0
         for prod, tipo, v in man + car:
             cant = round(v[k])
-            if tipo != "Terminado" or cant == 0:
+            if tipo not in ("Terminado", "Cilindro") or cant == 0:
                 continue
-            tam = LOTE.get(prod, 48)
+            base = prod.replace("Cilindros ", "")                       # cilindro vendido vacío: mismo recipiente
+            tam = LOTE.get(base, LOTE.get("Carro " + base, 48))
             hecho = 0
             while hecho < cant:
                 c = min(tam, cant - hecho)
                 n += 1
+                carro = prod.startswith("Carro") or any(f"ABC {x} kg" in prod for x in (25, 50, 70, 100))
                 lotes.append({"op": f"OP {anio % 100:02d}-{k + 1:02d}-{n:02d}", "mes": k + 1, "modelo": prod, "cant": c,
-                              "desde": serie, "hasta": serie + c - 1, "carro": prod.startswith("Carro")})
+                              "desde": serie, "hasta": serie + c - 1, "carro": carro, "cilindro": tipo == "Cilindro"})
                 serie += c
                 hecho += c
     return lotes

@@ -146,7 +146,8 @@ table.t { width: 100%; border-collapse: collapse; font-size: 13px }
 .aviso.ok { background: var(--green-soft); color: var(--green) } .aviso.no { background: var(--red-soft); color: var(--red) }
 .aviso.av { background: var(--yellow-soft); color: var(--ink) } .aviso.in { background: var(--blue-soft); color: var(--blue) }
 .dl { display: grid; grid-template-columns: 130px 1fr; gap: 6px 12px; margin: 0; font-size: 13px }
-.dl dt { color: var(--ink-3) } .dl dd { margin: 0; min-width: 0 }
+.dl dt { color: var(--ink-3) } .dl dd { margin: 0; min-width: 0; overflow-wrap: anywhere }
+@media (max-width: 600px) { .qrgrid { grid-template-columns: minmax(0, 1fr) !important } .qrgrid > .qr { max-width: 160px } .dl { grid-template-columns: 100px 1fr } }
 .lista-alertas { list-style: none; margin: 0; padding: 0 }
 .lista-alertas li { display: grid; grid-template-columns: 10px 1fr auto; gap: 10px; align-items: start; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 13px }
 .lista-alertas li:last-child { border: 0 }

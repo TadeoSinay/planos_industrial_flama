@@ -41,3 +41,13 @@ async function copiar(texto) {
 const pill = (t, c) => `<span class="pill ${c}">${esc(t)}</span>`;
 const barra = (v, max, col = "var(--blue)") => `<div class="barra" title="${n0(v)} de ${n0(max)}"><i style="width:${Math.min(100, max ? 100 * v / max : 0)}%;background:${col}"></i></div>`;
 const tabla = (cab, filas, opt = {}) => `<div class="tscroll"><table class="t"><thead><tr>${cab.map(c => `<th class="${/^(Cant|u\b|%|Stock|Días|Plan|Hechos|Aptos|Rech|Equipos|Consumo|Cobertura|Punto)/.test(c) ? "num" : ""}">${esc(c)}</th>`).join("")}</tr></thead><tbody>${filas.join("") || `<tr><td colspan="${cab.length}" class="muted">${esc(opt.vacio || "Sin registros")}</td></tr>`}</tbody></table></div>`;
+
+// SHA-256 (Web Crypto) para la cadena de eventos; las celdas [data-hash] se completan después de pintar
+async function sha256(t) {
+  try { const x = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)); return [...new Uint8Array(x)].map(v => v.toString(16).padStart(2, "0")).join(""); }
+  catch (e) { return hashN(t).toString(16).padStart(8, "0").repeat(8); }
+}
+async function hashear() {
+  const els = [...document.querySelectorAll("[data-hash]")]; let prev = "0".repeat(64);
+  for (const el of els) { prev = await sha256(prev + el.dataset.hash); el.textContent = prev.slice(0, 16) + "…"; el.title = prev; }
+}

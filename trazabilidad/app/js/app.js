@@ -6,7 +6,7 @@ document.addEventListener("click", e => {
   const v = e.target.closest("[data-v]");
   if (v && !v.matches("[data-a]")) { e.preventDefault(); return ir(v.dataset.v); }
   const d = e.target.closest("[data-det]");
-  if (d) { e.preventDefault(); $("#resq").hidden = true; return abrirDetalle(d.dataset.det, d.dataset.det === "equipo" ? +d.dataset.id : d.dataset.id); }
+  if (d) { e.preventDefault(); $("#resq").hidden = true; return abrirDetalle(d.dataset.det, d.dataset.det === "equipo" && /^\d+$/.test(d.dataset.id) ? +d.dataset.id : d.dataset.id); }
   const a = e.target.closest("[data-a]");
   if (a && ACC[a.dataset.a]) { if (a.tagName === "A" || a.type === "button" || a.tagName === "BUTTON") e.preventDefault(); ACC[a.dataset.a](a); guardar(); }
   if (!e.target.closest(".buscar")) $("#resq").hidden = true;
@@ -41,8 +41,8 @@ function paginaPublica(txt) {
 const ruta = location.pathname.match(/\/m\/([^/]+)\/?$/);
 if (ruta) paginaPublica(decodeURIComponent(ruta[1]));
 else {
-  const h = location.hash.slice(1);
-  UI.vista = VISTAS[h] ? h : "tablero";
-  window.addEventListener("hashchange", () => { const k = location.hash.slice(1); if (VISTAS[k] && k !== UI.vista) ir(k); });
+  const [v, p] = desdeHash(location.hash.slice(1));
+  UI.vista = v; UI.param = p;
+  window.addEventListener("hashchange", () => { const [k, q] = desdeHash(location.hash.slice(1)); if (hashDe(k, q) !== hashDe(UI.vista, UI.param)) ir(k, q); });
   pintar();
 }
